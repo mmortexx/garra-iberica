@@ -1,0 +1,73 @@
+# Web de GARRA IBÉRICA
+
+Web estática del clan GARRA IBÉRICA (clan español de The Isle Evrima), publicada con GitHub Pages
+desde la carpeta `docs/`. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+
+Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
+
+## Qué hay
+
+| Fichero | Para qué |
+|---|---|
+| `docs/index.html` | La página en español (la principal). |
+| `docs/en/index.html` | La versión en inglés. Si cambias un texto, cámbialo en las dos. |
+| `docs/estilos.css` | Todo el diseño y las animaciones. |
+| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, menú activo. La página funciona igual sin él. |
+| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
+| `docs/404.html` | Página de «no encontrada». |
+| `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
+| `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
+| `herramientas/` | Scripts de mantenimiento (abajo). |
+
+## Probar en local
+
+```
+python -m http.server 8765 --bind 127.0.0.1 --directory docs
+```
+
+y abrir http://127.0.0.1:8765/
+
+## Después de tocar algo
+
+```
+python herramientas/versionar.py
+python herramientas/comprobar.py
+node herramientas/prueba_caceria.js
+```
+
+- `versionar.py` pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
+  el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
+- `comprobar.py` revisa las dos páginas: título, encabezado, metadatos, idiomas, datos estructurados
+  (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes y
+  que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
+  `herramientas/vigilar.local.txt`, uno por línea; ese fichero no se sube a GitHub. Sin él, el
+  comprobador se niega a dar el visto bueno.
+- `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
+- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las dos
+  páginas en un navegador real: todo visible con y sin JavaScript, sin errores, y ningún texto
+  cortado en móviles estrechos.
+
+## Cambiar la dirección
+
+Si el repositorio o la cuenta cambian de nombre:
+
+```
+python herramientas/cambiar_dominio.py https://CUENTA.github.io/REPO/
+```
+
+## Regenerar imágenes y fuentes
+
+Desde la carpeta original del material del clan (solo se lee, no se modifica):
+
+```
+python herramientas/preparar_imagenes.py RUTA/A/garra-iberica
+```
+
+Necesita Python con Pillow y fontTools.
+
+## Buscadores
+
+Al estar en una subcarpeta (`/garra-iberica/`), Google no lee nuestro `robots.txt`: el mapa del sitio
+hay que enviarlo a mano en Google Search Console y en Bing Webmaster Tools (`sitemap.xml`).
+
+Las fuentes Anton y Barlow Condensed se distribuyen con su licencia OFL (`docs/fonts/LICENCIA-OFL.txt`).

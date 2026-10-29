@@ -1,0 +1,191 @@
+(() => {
+  'use strict';
+  const raiz = document.documentElement;
+  const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
+  const punteroFino = matchMedia('(hover: hover) and (pointer: fine)');
+  const unaVezPorFotograma = fn => {
+    let raf = 0, ultimo;
+    return ev => {
+      ultimo = ev;
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; fn(ultimo); });
+    };
+  };
+
+  // Barra fija: se compacta al bajar (con margen para que no tiemble) y muestra el progreso.
+  const barra = document.querySelector('.barra');
+  const progreso = document.querySelector('.progreso');
+  const alDesplazar = () => {
+    const y = scrollY;
+    if (y > 60) barra.classList.add('compacta');
+    else if (y < 20) barra.classList.remove('compacta');
+    const total = raiz.scrollHeight - innerHeight;
+    progreso.style.transform = `scaleX(${total > 0 ? Math.min(1, y / total) : 0})`;
+  };
+  addEventListener('scroll', unaVezPorFotograma(alDesplazar), { passive: true });
+  alDesplazar();
+
+  // Menú: marca la sección que se está leyendo; en la portada no marca ninguna.
+  const menu = document.querySelector('.menu');
+  const enlaces = new Map([...menu.querySelectorAll('a')].map(a => [a.hash.slice(1), a]));
+  const vigia = new IntersectionObserver(entradas => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      enlaces.forEach(o => o.removeAttribute('aria-current'));
+      const a = enlaces.get(e.target.id);
+      if (!a) {
+        if (menu.scrollLeft) menu.scrollTo({ left: 0, behavior: sinMovimiento.matches ? 'auto' : 'smooth' });
+        continue;
+      }
+      a.setAttribute('aria-current', 'true');
+      if (menu.scrollWidth > menu.clientWidth) {
+        menu.scrollTo({ left: a.offsetLeft - 16, behavior: sinMovimiento.matches ? 'auto' : 'smooth' });
+      }
+    }
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  [document.querySelector('.portada'), ...[...enlaces.keys()].map(id => document.getElementById(id))]
+    .forEach(s => { if (s) vigia.observe(s); });
+
+  // Punto exacto de los arañazos en la portada, sea cual sea el recorte de la imagen.
+  const portada = document.querySelector('.portada');
+  const fondo = portada && portada.querySelector('.portada-fondo');
+  const GARRA = { x: 0.785, y: 0.5 };
+  const situarGarra = () => {
+    if (!fondo || !fondo.naturalWidth) return;
+    const cs = getComputedStyle(fondo);
+    const cw = fondo.clientWidth, ch = fondo.clientHeight;
+    const esc = Math.max(cw / fondo.naturalWidth, ch / fondo.naturalHeight);
+    const iw = fondo.naturalWidth * esc, ih = fondo.naturalHeight * esc;
+    const [px, py] = cs.objectPosition.split(' ').map(v => parseFloat(v) / 100);
+    const x = (cw - iw) * px + iw * GARRA.x;
+    const y = (ch - ih) * py + ih * GARRA.y;
+    portada.style.setProperty('--garra-x', `${x}px`);
+    portada.style.setProperty('--garra-y', `${y + fondo.offsetTop}px`);
+  };
+  if (fondo) {
+    if (fondo.complete) situarGarra(); else fondo.addEventListener('load', situarGarra, { once: true });
+    addEventListener('resize', unaVezPorFotograma(situarGarra), { passive: true });
+  }
+
+  if (sinMovimiento.matches) return;
+
+  // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer
+  // fotograma para que no parpadee.
+  const revelables = [...document.querySelectorAll('.revelar')];
+  const enPantalla = el => el.getBoundingClientRect().top < innerHeight * 0.92;
+  revelables.forEach(el => { if (enPantalla(el)) el.classList.add('visible'); });
+  raiz.classList.add('anim');
+  const observador = new IntersectionObserver(entradas => {
+    for (const e of entradas) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observador.unobserve(e.target); }
+    }
+  }, { rootMargin: '0px 0px -8% 0px' });
+  revelables.forEach(el => { if (!el.classList.contains('visible')) observador.observe(el); });
+
+  if (punteroFino.matches) {
+    // Paralaje suave de la portada con el ratón.
+    if (portada) {
+      portada.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        const r = portada.getBoundingClientRect();
+        portada.style.setProperty('--px', ((ev.clientX - r.left) / r.width - 0.5).toFixed(3));
+        portada.style.setProperty('--py', ((ev.clientY - r.top) / r.height - 0.5).toFixed(3));
+      }));
+      portada.addEventListener('pointerleave', () => { portada.style.setProperty('--px', 0); portada.style.setProperty('--py', 0); });
+    }
+    // Luz que sigue al ratón e inclinación leve de los paneles. El rectángulo se mide una vez
+    // y se vuelve a medir solo si la página se ha desplazado.
+    let desplazamientos = 0;
+    addEventListener('scroll', () => { desplazamientos++; }, { passive: true });
+    document.querySelectorAll('.luz').forEach(el => {
+      let r = null, medidoEn = -1;
+      el.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        if (!r || medidoEn !== desplazamientos) { r = el.getBoundingClientRect(); medidoEn = desplazamientos; }
+        const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+        el.style.setProperty('--mx', `${x * 100}%`);
+        el.style.setProperty('--my', `${y * 100}%`);
+        el.style.setProperty('--rx', `${(0.5 - y) * 5}deg`);
+        el.style.setProperty('--ry', `${(x - 0.5) * 5}deg`);
+      }));
+      el.addEventListener('pointerleave', () => { r = null; el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
+    });
+  }
+
+  // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean
+  // tras la carga y se paran fuera de pantalla o con la pestaña oculta.
+  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const brillo = (() => {
+    const tam = 64, c = document.createElement('canvas');
+    c.width = c.height = tam;
+    const g = c.getContext('2d'), m = tam / 2;
+    const d = g.createRadialGradient(m, m, 0, m, m, m);
+    d.addColorStop(0, 'rgba(255, 196, 120, 1)');
+    d.addColorStop(0.35, 'rgba(255, 110, 30, .55)');
+    d.addColorStop(1, 'rgba(255, 80, 10, 0)');
+    g.fillStyle = d;
+    g.fillRect(0, 0, tam, tam);
+    return c;
+  })();
+  const ascuas = contenedor => {
+    const lienzo = document.createElement('canvas');
+    lienzo.className = 'ascuas';
+    lienzo.setAttribute('aria-hidden', 'true');
+    contenedor.prepend(lienzo);
+    const ctx = lienzo.getContext('2d');
+    let w = 0, h = 0, particulas = [], activo = false, ultimo = 0, id = 0;
+    const cuantas = () => Math.round(Math.min(70, Math.max(22, w * h / 16000)));
+    const nueva = (alAzar) => ({
+      x: Math.random() * w,
+      y: alAzar ? Math.random() * h : h + 10,
+      r: 0.6 + Math.random() * 1.8,
+      vy: 14 + Math.random() * 38,
+      vx: -6 + Math.random() * 12,
+      fase: Math.random() * Math.PI * 2,
+      vida: 0.55 + Math.random() * 0.45,
+    });
+    const medir = () => {
+      const r = contenedor.getBoundingClientRect();
+      if (r.width === w && r.height === h) return;
+      w = r.width; h = r.height;
+      lienzo.width = Math.round(w * dpr); lienzo.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = 'lighter';
+      const n = cuantas();
+      while (particulas.length < n) particulas.push(nueva(true));
+      particulas.length = n;
+    };
+    const pintar = t => {
+      if (!activo) return;
+      const dt = Math.min(0.05, (t - (ultimo || t)) / 1000);
+      ultimo = t;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particulas) {
+        p.fase += dt * 2.2;
+        p.y -= p.vy * dt;
+        p.x += (p.vx + Math.sin(p.fase) * 10) * dt;
+        if (p.y < -10 || p.x < -10 || p.x > w + 10) Object.assign(p, nueva(false));
+        const alto = Math.max(0, Math.min(1, p.y / h));
+        const a = p.vida * alto * (0.65 + 0.35 * Math.sin(p.fase * 3));
+        if (a <= 0.01) continue;
+        const lado = p.r * 8;
+        ctx.globalAlpha = a;
+        ctx.drawImage(brillo, p.x - lado / 2, p.y - lado / 2, lado, lado);
+      }
+      ctx.globalAlpha = 1;
+      id = requestAnimationFrame(pintar);
+    };
+    const arrancar = () => {
+      if (activo || document.hidden) return;
+      activo = true; ultimo = 0; id = requestAnimationFrame(pintar);
+    };
+    const parar = () => { activo = false; cancelAnimationFrame(id); };
+    medir();
+    new ResizeObserver(unaVezPorFotograma(medir)).observe(contenedor);
+    let visible = false;
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? arrancar() : parar(); }).observe(contenedor);
+    document.addEventListener('visibilitychange', () => (document.hidden ? parar() : visible && arrancar()));
+    requestAnimationFrame(() => lienzo.classList.add('encendido'));
+  };
+  const iniciarAscuas = () => document.querySelectorAll('[data-ascuas]').forEach(ascuas);
+  const cuandoLibre = window.requestIdleCallback || (fn => setTimeout(fn, 200));
+  if (document.readyState === 'complete') cuandoLibre(iniciarAscuas);
+  else addEventListener('load', () => cuandoLibre(iniciarAscuas), { once: true });
+})();
