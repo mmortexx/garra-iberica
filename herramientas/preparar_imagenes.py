@@ -13,7 +13,7 @@ WEB = Path(__file__).resolve().parent.parent / 'docs'
 IMG = WEB / 'img'
 FONTS = WEB / 'fonts'
 
-BANNERS = ['bienvenida', 'normas', 'rangos', 'evento_caceria']
+BANNERS = ['evento_caceria']
 EMOJIS = ['garra', 'caza', 'nido', 'voz', 'sinmicro', 'carnivoro', 'votacion', 'clips',
           'alfa', 'beta', 'lider', 'veterano', 'miembro', 'recluta', 'aliado', 'normas', 'trofeo']
 CARACTERES = (''.join(chr(c) for c in range(0x20, 0x7f))
