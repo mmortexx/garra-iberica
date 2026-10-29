@@ -61,6 +61,42 @@ const BASE = 'http://127.0.0.1:8765/';
       console.log(('/' + ruta).padEnd(5), `${ancho}px desbordes:`, fuera.length ? JSON.stringify(fuera.slice(0, 5)) : 'ninguno');
       await ctx.close();
     }
+    // Cabecera: marca, enlaces del menú, idioma y botón no se pisan a ningún ancho de escritorio.
+    // Se mide lo que se pinta (el contenido), no la caja: con white-space:nowrap el texto puede
+    // salirse de una caja que la rejilla ha encogido. Los enlaces cuentan solo en la parte que
+    // deja ver el menú (en móvil se desliza).
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + ruta, { waitUntil: 'load' });
+    await p.evaluate(() => document.fonts.ready);
+    const anchos = [1100, 1170];
+    for (let w = 1000; w <= 1440; w += 5) anchos.push(w);
+    const solapes = [];
+    for (const ancho of anchos) {
+      await p.setViewportSize({ width: ancho, height: 850 });
+      const s = await p.evaluate(() => {
+        const menu = document.querySelector('.menu').getBoundingClientRect();
+        const cajas = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton')].map(el => {
+          const caja = el.getBoundingClientRect(), rango = document.createRange();
+          rango.selectNodeContents(el);
+          const c = rango.getBoundingClientRect();
+          let r = { left: Math.min(caja.left, c.left), right: Math.max(caja.right, c.right), top: caja.top, bottom: caja.bottom };
+          if (el.closest('.menu')) r = { left: Math.max(r.left, menu.left), right: Math.min(r.right, menu.right), top: r.top, bottom: r.bottom };
+          return { r, nombre: el.textContent.trim().slice(0, 20) };
+        }).filter(c => c.r.right - c.r.left > 0.5);
+        const res = [];
+        for (let i = 0; i < cajas.length; i++) for (let j = i + 1; j < cajas.length; j++) {
+          const a = cajas[i].r, b = cajas[j].r;
+          const x = Math.min(a.right, b.right) - Math.max(a.left, b.left), y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (x > 0.5 && y > 0.5) res.push(`«${cajas[i].nombre}» y «${cajas[j].nombre}» ${x.toFixed(0)} px`);
+        }
+        return res;
+      });
+      if (s.length) solapes.push(`${ancho}px: ${s[0]}`);
+    }
+    if (solapes.length) malos++;
+    console.log(('/' + ruta).padEnd(5), 'cabecera 1000–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    await ctx.close();
   }
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');

@@ -42,10 +42,22 @@ node herramientas/prueba_caceria.js
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
   `herramientas/vigilar.local.txt`, uno por línea; ese fichero no se sube a GitHub. Sin él, el
   comprobador se niega a dar el visto bueno.
+  También exige que la web diga lo mismo que `herramientas/datos_clan.json`: los plazos de ascenso
+  y la franja horaria de la Cacería en Latinoamérica (calculada con las zonas horarias de cada país
+  para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni
+  apodos, de `tarjetas.json` (los textos del Discord, fuera de este repositorio). Si el comprobador
+  encuentra `tarjetas.json` (variable `GARRA_TARJETAS` o `~/Downloads/garra-iberica/tarjetas.json`),
+  comprueba además que el extracto siga al día; si no, lo avisa. Si cambian los textos del
+  Discord: actualizar el extracto y la web a la vez.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las dos
-  páginas en un navegador real: todo visible con y sin JavaScript, sin errores, y ningún texto
-  cortado en móviles estrechos.
+  páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
+  cortado en móviles estrechos y la cabecera sin solapes de 1000 a 1440 px.
+
+GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
+Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
+`gh secret set VIGILAR_APODOS < herramientas/vigilar.local.txt`. Pages publica aunque falle: si
+sale en rojo, se arregla y se vuelve a subir.
 
 ## Cambiar la dirección
 

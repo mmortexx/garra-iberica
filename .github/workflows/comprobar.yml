@@ -1,0 +1,57 @@
+# Comprueba la web en cada push y pull request. GitHub Pages publica la rama aunque esto falle:
+# si sale en rojo, hay que arreglarlo y volver a subir.
+name: Comprobar la web
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web, datos y navegador
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Los apodos van en su propio trabajo, con el secreto.
+      - name: Comprobar HTML, enlaces, versiones y datos del clan
+        run: python herramientas/comprobar.py --sin-apodos
+      - name: Prueba de la cuenta atrás
+        run: node herramientas/prueba_caceria.js
+      - name: Instalar Playwright y Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.60.0
+          npx playwright install --with-deps chromium
+      - name: Prueba en navegador
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 --directory docs > /dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/ > /dev/null && break; sleep 1; done
+          node herramientas/prueba_navegador.js
+
+  apodos:
+    name: Sin apodos de miembros
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Buscar apodos de miembros en la web
+        env:
+          VIGILAR_APODOS: ${{ secrets.VIGILAR_APODOS }}
+        run: |
+          if [ -z "$VIGILAR_APODOS" ]; then
+            echo "::error::Falta el secreto VIGILAR_APODOS (los apodos de herramientas/vigilar.local.txt). Créalo con: gh secret set VIGILAR_APODOS < herramientas/vigilar.local.txt"
+            exit 1
+          fi
+          python herramientas/comprobar.py

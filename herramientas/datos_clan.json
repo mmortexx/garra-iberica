@@ -1,0 +1,35 @@
+{
+  "_nota": "Extracto sin datos personales de tarjetas.json (los textos del Discord del clan, que viven fuera del repositorio). comprobar.py exige que la web diga lo mismo que este extracto y, si encuentra tarjetas.json (variable GARRA_TARJETAS o ~/Downloads/garra-iberica/tarjetas.json), que el extracto siga al día con el original. Cada «fuente» es una cita literal de tarjetas.json.",
+  "caceria": {
+    "dia_semana": 6,
+    "hora": 22,
+    "zona": "Europe/Madrid",
+    "fuente": "cada sábado a las 22:00"
+  },
+  "zonas_latinoamerica": [
+    "America/Tijuana", "America/Hermosillo", "America/Mazatlan", "America/Chihuahua", "America/Ciudad_Juarez",
+    "America/Ojinaga", "America/Bahia_Banderas", "America/Mexico_City", "America/Monterrey", "America/Matamoros",
+    "America/Merida", "America/Cancun",
+    "America/Guatemala", "America/El_Salvador", "America/Tegucigalpa", "America/Managua", "America/Costa_Rica",
+    "America/Panama", "America/Havana", "America/Santo_Domingo", "America/Puerto_Rico",
+    "America/Bogota", "America/Caracas", "America/Guayaquil", "America/Lima", "America/La_Paz",
+    "America/Santiago", "America/Punta_Arenas", "America/Asuncion", "America/Argentina/Buenos_Aires",
+    "America/Montevideo"
+  ],
+  "ascensos": [
+    {
+      "rango": "Miembro",
+      "fuente_es": "**Recluta a Miembro**: 1-2 semanas activo",
+      "fuente_en": "**Recruit to Member**: 1-2 weeks active",
+      "web_es": "Tras una o dos semanas activo como Recluta",
+      "web_en": "After one or two active weeks as a Recruit"
+    },
+    {
+      "rango": "Veterano",
+      "fuente_es": "**Miembro a Veterano**: ~1 mes",
+      "fuente_en": "**Member to Veteran**: ~1 month",
+      "web_es": "Tras ~1 mes como Miembro",
+      "web_en": "After ~1 month as a Member"
+    }
+  ]
+}

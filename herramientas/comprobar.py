@@ -1,12 +1,19 @@
 """Comprueba la web antes de publicarla. Sale con código 1 si algo falla.
 
-Uso: python herramientas/comprobar.py [carpeta]   (por defecto, docs/ del proyecto)
+Uso: python herramientas/comprobar.py [carpeta] [--sin-apodos]   (por defecto, docs/ del proyecto)
+
+Los apodos a vigilar salen de herramientas/vigilar.local.txt o, si no existe, de la variable
+VIGILAR_APODOS (uno por línea; así los recibe la integración continua desde un secreto).
+--sin-apodos se salta solo esa parte, y lo dice.
 """
+import datetime as dt
 import hashlib
 import json
+import os
 import re
 import sys
 import xml.etree.ElementTree as ET
+from zoneinfo import ZoneInfo
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -22,6 +29,10 @@ MAX_KB_IMAGEN = 120
 ID_DISCORD = r'\b\d{17,20}\b'
 VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
+# Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
+DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
+TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'tarjetas.json')
+FRANJA = {'es': r'entre las (\d{2}):00 y las (\d{2}):00', 'en': r'between (\d{2}):00 and (\d{2}):00'}
 
 
 def huella(ruta):
@@ -203,12 +214,76 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
     return usados
 
 
-def main(raiz):
+def franja_latinoamerica(datos, anios):
+    """Primera y última hora local en Latinoamérica a la que empieza la Cacería, en todos los
+    sábados de esos años."""
+    cac = datos['caceria']
+    madrid = ZoneInfo(cac['zona'])
+    zonas = [ZoneInfo(z) for z in datos['zonas_latinoamerica']]
+    horas = set()
+    dia = dt.date(anios[0], 1, 1)
+    while dia.year <= anios[-1]:
+        if dia.isoweekday() % 7 == cac['dia_semana']:
+            inicio = dt.datetime(dia.year, dia.month, dia.day, cac['hora'], tzinfo=madrid)
+            for z in zonas:
+                local = inicio.astimezone(z)
+                horas.add(local.hour + local.minute / 60)
+        dia += dt.timedelta(days=1)
+    return min(horas), max(horas)
+
+
+def revisar_datos(raiz, falla, avisa):
+    datos = json.loads(DATOS.read_text(encoding='utf-8'))
+    cac = datos['caceria']
+    js = leer(raiz, 'caceria.js')
+    for constante, valor in (('ZONA', f"'{cac['zona']}'"), ('SABADO', str(cac['dia_semana'])), ('HORA', str(cac['hora']))):
+        if not re.search(rf'const {constante} = {re.escape(valor)};', js):
+            falla(f'caceria.js: {constante} no vale {valor} como dice {DATOS.name}')
+
+    hoy = dt.date.today()
+    primera, ultima = franja_latinoamerica(datos, [hoy.year, hoy.year + 1])
+    if primera % 1 or ultima % 1:
+        falla(f'La Cacería no cae en hora en punto en Latinoamérica ({primera}–{ultima}): revisa el texto de la franja')
+    esperada = (f'{int(primera):02d}', f'{int(ultima):02d}')
+    for nombre, (lang, _, _) in PAGINAS.items():
+        html = leer(raiz, nombre)
+        franjas = re.findall(FRANJA[lang], html)
+        if not franjas:
+            falla(f'{nombre}: no dice a qué hora cae la Cacería en Latinoamérica')
+        for f in set(franjas):
+            if f != esperada:
+                falla(f'{nombre}: dice {f[0]}:00–{f[1]}:00 en Latinoamérica y, con {DATOS.name}, es {esperada[0]}:00–{esperada[1]}:00')
+        for a in datos['ascensos']:
+            m = re.search(rf'<h4>{re.escape(a["rango"])}(?: \([^)<]*\))?</h4><p>([^<]*)</p>', html)
+            if not m:
+                falla(f'{nombre}: no encuentro la tarjeta del rango {a["rango"]}')
+            elif a[f'web_{lang}'] not in m.group(1):
+                falla(f'{nombre}: el rango {a["rango"]} no dice «{a[f"web_{lang}"]}» ({DATOS.name}); dice «{m.group(1)}»')
+
+    if not TARJETAS.is_file():
+        avisa(f'sin {TARJETAS}: no se comprueba que {DATOS.name} siga al día con el original')
+        return
+    tarjetas = json.loads(TARJETAS.read_text(encoding='utf-8'))
+    citas = [(cac['fuente'], tarjetas['indice']['texto'])]
+    for a in datos['ascensos']:
+        citas += [(a['fuente_es'], tarjetas['rangos']['texto']), (a['fuente_en'], tarjetas['rangos']['ingles'])]
+    for cita, texto in citas:
+        if cita not in texto:
+            falla(f'{DATOS.name} cita «{cita}» y tarjetas.json ya no lo dice: actualiza el extracto y la web')
+
+
+def main(raiz, sin_apodos=False, avisa=print):
     fallos = []
     falla = fallos.append
-    if not VIGILAR.is_file():
-        return [f'Falta herramientas/{VIGILAR.name}: crea ese fichero con los apodos de miembros que no deben aparecer, uno por línea']
-    apodos = [l.strip() for l in VIGILAR.read_text(encoding='utf-8').splitlines() if l.strip()]
+    if sin_apodos:
+        avisa('--sin-apodos: no se buscan apodos de miembros (sí los IDs de Discord)')
+        apodos = []
+    elif VIGILAR.is_file():
+        apodos = [l.strip() for l in VIGILAR.read_text(encoding='utf-8').splitlines() if l.strip()]
+    elif os.environ.get('VIGILAR_APODOS', '').strip():
+        apodos = [l.strip() for l in os.environ['VIGILAR_APODOS'].splitlines() if l.strip()]
+    else:
+        return [f'Falta herramientas/{VIGILAR.name} (o la variable VIGILAR_APODOS): los apodos de miembros que no deben aparecer, uno por línea']
     prohibidos = [ID_DISCORD] + [r'(?i)\b' + re.escape(a) + r'\b' for a in apodos]
 
     for nombre in [*PAGINAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
@@ -225,6 +300,7 @@ def main(raiz):
     usados = set()
     for nombre, (lang, sufijo, titulo) in PAGINAS.items():
         usados |= revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla)
+    revisar_datos(raiz, falla, avisa)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
@@ -283,8 +359,10 @@ def main(raiz):
 
 
 if __name__ == '__main__':
-    raiz = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / 'docs'
-    fallos = main(raiz)
+    sys.stdout.reconfigure(encoding='utf-8')
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    raiz = Path(args[0]) if args else Path(__file__).resolve().parent.parent / 'docs'
+    fallos = main(raiz, sin_apodos='--sin-apodos' in sys.argv, avisa=lambda t: print('Aviso:', t))
     for f in fallos:
         print('FALLO:', f)
     print(f'{len(fallos)} fallos' if fallos else 'Todo correcto')
