@@ -91,7 +91,7 @@
       }));
       portada.addEventListener('pointerleave', () => { portada.style.setProperty('--px', 0); portada.style.setProperty('--py', 0); });
     }
-    // Luz que sigue al ratón e inclinación leve de los paneles. El rectángulo se mide una vez
+    // Luz suave que sigue al ratón en los bloques. El rectángulo se mide una vez
     // y se vuelve a medir solo si la página se ha desplazado.
     let desplazamientos = 0;
     addEventListener('scroll', () => { desplazamientos++; }, { passive: true });
@@ -102,10 +102,7 @@
         const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
         el.style.setProperty('--mx', `${x * 100}%`);
         el.style.setProperty('--my', `${y * 100}%`);
-        el.style.setProperty('--rx', `${(0.5 - y) * 5}deg`);
-        el.style.setProperty('--ry', `${(x - 0.5) * 5}deg`);
       }));
-      el.addEventListener('pointerleave', () => { r = null; el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
     });
   }
 
