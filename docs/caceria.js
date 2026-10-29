@@ -55,8 +55,14 @@
   const nodoFalta = caja.querySelector('[data-falta]');
   const nodoLocal = caja.querySelector('[data-local]');
   const TEXTOS = {
-    es: { locale: 'es-ES', enCurso: 'Empezó a las 22:00: entra en la voz de caza.', faltan: 'Faltan ', local: 'En tu hora: ' },
-    en: { locale: 'en-GB', enCurso: 'Started at 22:00: join the hunt voice channel.', faltan: 'Starts in ', local: 'Your time: ' },
+    es: {
+      locale: 'es-ES', enCurso: 'Empezó a las 22:00: entra en la voz de caza.', faltan: 'Faltan ', local: 'En tu hora: ',
+      unidades: { d: ['día', 'días'], h: ['hora', 'horas'], m: ['min', 'min'], s: ['seg', 'seg'] },
+    },
+    en: {
+      locale: 'en-GB', enCurso: 'Started at 22:00: join the hunt voice channel.', faltan: 'Starts in ', local: 'Your time: ',
+      unidades: { d: ['day', 'days'], h: ['hour', 'hours'], m: ['min', 'min'], s: ['sec', 'sec'] },
+    },
   };
   const t = TEXTOS[document.documentElement.lang.slice(0, 2)] || TEXTOS.es;
   const fechaLarga = new Intl.DateTimeFormat(t.locale, { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long' });
@@ -64,23 +70,32 @@
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const dos = n => String(n).padStart(2, '0');
 
-  // Las cifras van en piezas propias para cambiar solo la que cambia y animar los segundos.
+  // Cada unidad es un bloque (cifra y nombre) para cambiar solo lo que cambia y animar los
+  // segundos. «Faltan» queda para los lectores de pantalla; a la vista lo dicen los bloques.
   const piezas = {};
   let montada = false, ultimoInicio = 0;
   const montar = () => {
-    nodoFalta.replaceChildren(t.faltan);
-    for (const [k, sufijo] of [['d', ' d '], ['h', ' h '], ['m', ' min '], ['s', ' s']]) {
+    const previo = document.createElement('span');
+    previo.className = 'oculto';
+    previo.textContent = t.faltan;
+    nodoFalta.replaceChildren(previo);
+    for (const k of ['d', 'h', 'm', 's']) {
       const grupo = document.createElement('span');
       const cifra = document.createElement('span');
+      const nombre = document.createElement('span');
+      grupo.className = 't';
       cifra.className = 'n';
-      grupo.append(cifra, sufijo);
+      nombre.className = 'u';
+      grupo.append(cifra, ' ', nombre);
       nodoFalta.append(grupo);
-      piezas[k] = { grupo, cifra };
+      piezas[k] = { grupo, cifra, nombre };
     }
     montada = true;
   };
-  const poner = (k, texto) => {
-    const { cifra } = piezas[k];
+  const poner = (k, valor, texto) => {
+    const { cifra, nombre } = piezas[k];
+    const unidad = t.unidades[k][valor === 1 ? 0 : 1];
+    if (nombre.textContent !== unidad) nombre.textContent = unidad;
     if (cifra.textContent === texto) return;
     cifra.textContent = texto;
     if (k === 's' && !sinMovimiento.matches && cifra.animate) {
@@ -107,10 +122,10 @@
       if (!montada) montar();
       const r = restante(inicio - ahora);
       piezas.d.grupo.hidden = r.d === 0;
-      poner('d', String(r.d));
-      poner('h', dos(r.h));
-      poner('m', dos(r.m));
-      poner('s', dos(r.s));
+      poner('d', r.d, String(r.d));
+      poner('h', r.h, dos(r.h));
+      poner('m', r.m, dos(r.m));
+      poner('s', r.s, dos(r.s));
       caja.classList.remove('en-curso');
     }
     caja.hidden = false;

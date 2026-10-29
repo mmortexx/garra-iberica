@@ -35,9 +35,28 @@ const BASE = 'http://127.0.0.1:8765/';
           ocultos: ocultos.length,
           ejemplo: ocultos.slice(0, 3).map(e => e.className),
           cuentaVisible: !document.querySelector('[data-cuenta]').hidden,
+          bloques: [...document.querySelectorAll('.cuenta-falta .t')].filter(e => !e.hidden && e.querySelector('.n').textContent && e.querySelector('.u').textContent).length,
+          compartir: !!document.querySelector('[data-compartir]:not([hidden])'),
         };
       });
+      // Con JavaScript: cuenta atrás en bloques (3 o 4, según queden días) y botón de compartir.
+      // Sin él, ninguna de las dos cosas, que no funcionarían.
+      const conJs = nombre !== 'sin JavaScript';
+      if (conJs !== r.cuentaVisible || conJs !== r.compartir || (conJs && r.bloques < 3)) malos++;
       if (r.ocultos || errores.length) malos++;
+      // «Compartir» sin menú del sistema: copia la dirección canónica y lo dice.
+      if (nombre === 'normal tras scroll' && r.compartir) {
+        await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE.slice(0, -1) });
+        await p.evaluate(() => { Object.defineProperty(navigator, 'share', { value: undefined }); });
+        await p.click('[data-compartir] button');
+        await p.waitForTimeout(300);
+        r.copiado = await p.evaluate(async () => {
+          const c = document.querySelector('[data-compartir]');
+          return c.querySelector('[role="status"]').textContent === c.dataset.copiado
+            && await navigator.clipboard.readText() === document.querySelector('link[rel="canonical"]').href;
+        });
+        if (!r.copiado) malos++;
+      }
       console.log(('/' + ruta).padEnd(5), nombre.padEnd(20), JSON.stringify(r), 'errores:', JSON.stringify(errores));
       await ctx.close();
     }

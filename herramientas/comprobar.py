@@ -14,6 +14,8 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
+
+import calendario
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -236,9 +238,22 @@ def revisar_datos(raiz, falla, avisa):
     datos = json.loads(DATOS.read_text(encoding='utf-8'))
     cac = datos['caceria']
     js = leer(raiz, 'caceria.js')
-    for constante, valor in (('ZONA', f"'{cac['zona']}'"), ('SABADO', str(cac['dia_semana'])), ('HORA', str(cac['hora']))):
+    for constante, valor in (('ZONA', f"'{cac['zona']}'"), ('SABADO', str(cac['dia_semana'])),
+                             ('HORA', str(cac['hora'])), ('DURACION_MIN', str(cac['duracion_min']))):
         if not re.search(rf'const {constante} = {re.escape(valor)};', js):
             falla(f'caceria.js: {constante} no vale {valor} como dice {DATOS.name}')
+
+    base = re.search(r'<link rel="canonical" href="([^"]+)"', leer(raiz, 'index.html')).group(1)
+    for lang, nombre in calendario.FICHEROS.items():
+        fichero = raiz / nombre
+        if not fichero.is_file() or fichero.read_bytes() != calendario.ics(lang, base).encode('utf-8'):
+            falla(f'{nombre} no coincide con {DATOS.name}: ejecuta herramientas/calendario.py')
+    for nombre, (lang, _, _) in PAGINAS.items():
+        html = leer(raiz, nombre)
+        if 'href="caceria.ics"' not in html:
+            falla(f'{nombre}: falta el enlace para añadir la Cacería al calendario (caceria.ics)')
+        if f'href="{calendario.enlace_google(lang, base)}"' not in html:
+            falla(f'{nombre}: el enlace a Google Calendar no coincide con {DATOS.name}: copia el que imprime herramientas/calendario.py')
 
     hoy = dt.date.today()
     primera, ultima = franja_latinoamerica(datos, [hoy.year, hoy.year + 1])
@@ -347,7 +362,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {MAX_KB_IMAGEN} KB)')
 
     for fichero in sorted(raiz.rglob('*')):
-        if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md'):
+        if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')
         for patron in prohibidos:

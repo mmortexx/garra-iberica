@@ -69,6 +69,29 @@
     addEventListener('resize', unaVezPorFotograma(situarGarra), { passive: true });
   }
 
+  // Compartir la web: el menú de compartir del sistema si lo hay; si no, copiar la dirección.
+  // Sin ninguna de las dos cosas, el botón no aparece.
+  const compartir = document.querySelector('[data-compartir]');
+  if (compartir && (navigator.share || navigator.clipboard)) {
+    const estado = compartir.querySelector('[role="status"]');
+    const canonica = document.querySelector('link[rel="canonical"]');
+    const direccion = canonica ? canonica.href : location.href.split('#')[0];
+    compartir.hidden = false;
+    compartir.querySelector('button').addEventListener('click', async () => {
+      estado.textContent = '';
+      if (navigator.share) {
+        try { await navigator.share({ title: document.title, url: direccion }); return; }
+        catch (e) { if (e.name === 'AbortError') return; }
+      }
+      try {
+        await navigator.clipboard.writeText(direccion);
+        estado.textContent = compartir.dataset.copiado;
+      } catch {
+        estado.textContent = `${compartir.dataset.fallo} ${direccion}`;
+      }
+    });
+  }
+
   if (sinMovimiento.matches) return;
 
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer

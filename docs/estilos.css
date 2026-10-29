@@ -430,11 +430,24 @@ h2::after {
 .cuenta p { margin: 0; }
 .cuenta-titulo { font: 600 .9rem/1.2 var(--etiquetas); letter-spacing: .2em; text-transform: uppercase; color: var(--ascua); }
 .cuenta-fecha { margin-top: .4rem !important; font: 1.55rem/1.15 var(--titulos); color: var(--hueso); text-transform: uppercase; letter-spacing: .02em; }
-.cuenta-falta { margin-top: .5rem !important; font: 600 1.45rem/1.2 var(--etiquetas); letter-spacing: .06em; color: var(--ascua-viva); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(255, 122, 31, .5); }
+.cuenta-falta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem 1.3rem; margin-top: .8rem !important; font: 600 1.45rem/1.2 var(--etiquetas); letter-spacing: .06em; color: var(--ascua-viva); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(255, 122, 31, .5); }
+.cuenta-falta .t { display: flex; flex-direction: column; min-width: 2.4ch; }
+.cuenta-falta .n { font-size: 2.3rem; line-height: 1; }
+.cuenta-falta .u { margin-top: .4rem; font-size: .72rem; line-height: 1; letter-spacing: .18em; text-transform: uppercase; color: var(--suave); text-shadow: none; }
 .cuenta-local { margin-top: .4rem !important; color: var(--suave); font-size: .95rem; }
 .cuenta.en-curso .cuenta-falta { animation: respirar 2s ease-in-out infinite; }
 .cuenta-falta .n { display: inline-block; }
 .cuenta-falta [hidden] { display: none; }
+.calendario { margin-top: 1.4rem; padding-top: 1.3rem; border-top: 1px solid var(--linea); }
+.calendario-botones { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.3rem; }
+.boton-cal::after { content: "+"; content: "+" / ""; font-size: 1.25em; line-height: .8; }
+.boton-cal:hover::after { transform: rotate(90deg); }
+.enlace-cal { font: 600 .95rem/1.4 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }
+.enlace-cal:hover { color: var(--ascua-viva); }
+.compartir { display: flex; flex-direction: column; align-items: center; gap: .7rem; margin: 1.6rem 0 0 !important; }
+.compartir[hidden] { display: none; }
+.compartir .boton::after { content: none; }
+.compartir-estado { min-height: 1.4em; font-size: .95rem; color: var(--suave); }
 
 /* Tarjetas */
 .tarjetas { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; gap: 0 2.4rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }

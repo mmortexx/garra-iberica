@@ -3,6 +3,8 @@
   "caceria": {
     "dia_semana": 6,
     "hora": 22,
+    "duracion_min": 60,
+    "primera": "2026-10-31",
     "zona": "Europe/Madrid",
     "fuente": "cada sábado a las 22:00"
   },

@@ -4,3 +4,5 @@
 *.png binary
 *.ico binary
 *.woff2 binary
+# iCalendar exige CRLF (RFC 5545): git no debe tocar sus finales de línea.
+*.ics -text

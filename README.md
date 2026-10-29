@@ -30,10 +30,17 @@ y abrir http://127.0.0.1:8765/
 ## Después de tocar algo
 
 ```
+python herramientas/calendario.py
 python herramientas/versionar.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 ```
+
+- `calendario.py` genera `docs/caceria.ics` y `docs/en/caceria.ics` (la Cacería semanal, para
+  añadirla al calendario con aviso 30 minutos antes) y escribe el enlace de Google Calendar que va
+  en las páginas, todo a partir de `herramientas/datos_clan.json` y de la dirección de la web. Hay
+  que ejecutarlo si cambia la hora de la Cacería o la dirección. Los `.ics` llevan finales de línea
+  CRLF, como pide el formato; `.gitattributes` evita que git los cambie.
 
 - `versionar.py` pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
