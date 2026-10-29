@@ -1,7 +1,7 @@
 // Uso: node herramientas/prueba_caceria.js [ruta a caceria.js]
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { proximaCaceria } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
+const { proximaCaceria, restante } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
 
 const casos = [
   ['jueves, horario de invierno', '2026-10-29T12:00:00Z', '2026-10-31T21:00:00Z', false],
@@ -29,5 +29,24 @@ for (const [nombre, ahora, inicio, enCurso] of casos) {
     console.log('FALLO', nombre, '→', e.message.split('\n')[0]);
   }
 }
-console.log(fallos ? `${fallos} fallos` : `Todo correcto (${casos.length} casos)`);
+// Lo que falta, como se muestra en la cuenta atrás.
+const tiempos = [
+  ['un día, una hora, un minuto y un segundo', 90061000, { d: 1, h: 1, m: 1, s: 1 }],
+  ['medio segundo cuenta como un segundo', 500, { d: 0, h: 0, m: 0, s: 1 }],
+  ['justo a la hora', 0, { d: 0, h: 0, m: 0, s: 0 }],
+  ['negativo no baja de cero', -5000, { d: 0, h: 0, m: 0, s: 0 }],
+  ['una semana menos un segundo', 7 * 86400000 - 1000, { d: 6, h: 23, m: 59, s: 59 }],
+];
+for (const [nombre, ms, esperado] of tiempos) {
+  try {
+    assert.deepEqual(restante(ms), esperado);
+    console.log('ok   ', nombre);
+  } catch (e) {
+    fallos++;
+    console.log('FALLO', nombre, '→', e.message.split('\n')[0]);
+  }
+}
+
+const total = casos.length + tiempos.length;
+console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);

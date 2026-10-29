@@ -12,12 +12,15 @@
   };
 
   // Barra fija: se compacta al bajar (con margen para que no tiemble) y muestra el progreso.
+  // Donde el CSS sabe animar con el scroll, el progreso lo pinta él sin pasar por aquí.
   const barra = document.querySelector('.barra');
   const progreso = document.querySelector('.progreso');
+  const progresoPorCss = window.CSS && CSS.supports('animation-timeline: scroll()');
   const alDesplazar = () => {
     const y = scrollY;
     if (y > 60) barra.classList.add('compacta');
     else if (y < 20) barra.classList.remove('compacta');
+    if (progresoPorCss) return;
     const total = raiz.scrollHeight - innerHeight;
     progreso.style.transform = `scaleX(${total > 0 ? Math.min(1, y / total) : 0})`;
   };
@@ -104,6 +107,36 @@
         el.style.setProperty('--my', `${y * 100}%`);
       }));
     });
+    // Botones que se dejan atraer un poco por el ratón.
+    document.querySelectorAll('.boton').forEach(bt => {
+      bt.classList.add('magnetico');
+      bt.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        if (!bt.matches(':hover')) return;
+        const r = bt.getBoundingClientRect();
+        bt.style.setProperty('--bx', `${((ev.clientX - r.left) / r.width - 0.5) * 10}px`);
+        bt.style.setProperty('--by', `${((ev.clientY - r.top) / r.height - 0.5) * 8}px`);
+      }));
+      bt.addEventListener('pointerleave', () => { bt.style.removeProperty('--bx'); bt.style.removeProperty('--by'); });
+    });
+    // Brillo tenue que sigue al cursor por toda la página, con algo de inercia. Solo anima
+    // mientras le queda camino; quieto no gasta nada.
+    const luz = document.createElement('div');
+    luz.className = 'cursor-luz';
+    luz.setAttribute('aria-hidden', 'true');
+    document.body.append(luz);
+    let lx = -1, ly = -1, tx = 0, ty = 0, siguiendo = 0;
+    const seguir = () => {
+      lx += (tx - lx) * 0.14; ly += (ty - ly) * 0.14;
+      luz.style.transform = `translate3d(${lx.toFixed(1)}px, ${ly.toFixed(1)}px, 0)`;
+      siguiendo = Math.abs(tx - lx) + Math.abs(ty - ly) > 0.5 ? requestAnimationFrame(seguir) : 0;
+    };
+    addEventListener('pointermove', ev => {
+      tx = ev.clientX; ty = ev.clientY;
+      if (lx < 0) { lx = tx; ly = ty; }
+      luz.classList.add('activa');
+      if (!siguiendo) siguiendo = requestAnimationFrame(seguir);
+    }, { passive: true });
+    raiz.addEventListener('pointerleave', () => luz.classList.remove('activa'));
   }
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean

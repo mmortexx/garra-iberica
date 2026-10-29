@@ -39,7 +39,14 @@
     throw new Error('Sin próxima cacería');
   };
 
-  const api = { proximaCaceria, ZONA };
+  // Lo que falta, en días, horas, minutos y segundos. Los segundos se redondean hacia arriba
+  // para que la cuenta no marque 0 antes de tiempo.
+  const restante = ms => {
+    const t = Math.max(0, Math.ceil(ms / 1000));
+    return { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 };
+  };
+
+  const api = { proximaCaceria, restante, ZONA };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
 
   const caja = document.querySelector('[data-cuenta]');
@@ -54,28 +61,70 @@
   const t = TEXTOS[document.documentElement.lang.slice(0, 2)] || TEXTOS.es;
   const fechaLarga = new Intl.DateTimeFormat(t.locale, { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long' });
   const horaLocal = new Intl.DateTimeFormat(t.locale, { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const dos = n => String(n).padStart(2, '0');
+
+  // Las cifras van en piezas propias para cambiar solo la que cambia y animar los segundos.
+  const piezas = {};
+  let montada = false, ultimoInicio = 0;
+  const montar = () => {
+    nodoFalta.replaceChildren(t.faltan);
+    for (const [k, sufijo] of [['d', ' d '], ['h', ' h '], ['m', ' min '], ['s', ' s']]) {
+      const grupo = document.createElement('span');
+      const cifra = document.createElement('span');
+      cifra.className = 'n';
+      grupo.append(cifra, sufijo);
+      nodoFalta.append(grupo);
+      piezas[k] = { grupo, cifra };
+    }
+    montada = true;
+  };
+  const poner = (k, texto) => {
+    const { cifra } = piezas[k];
+    if (cifra.textContent === texto) return;
+    cifra.textContent = texto;
+    if (k === 's' && !sinMovimiento.matches && cifra.animate) {
+      cifra.animate([{ opacity: 0.2, transform: 'translateY(-40%)' }, { opacity: 1, transform: 'none' }], { duration: 350, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    }
+  };
 
   const pintar = () => {
     const ahora = Date.now();
     const { inicio, enCurso } = proximaCaceria(ahora);
-    nodoTiempo.dateTime = new Date(inicio).toISOString();
-    nodoTiempo.textContent = fechaLarga.format(inicio) + ', 22:00';
+    if (inicio !== ultimoInicio) {
+      ultimoInicio = inicio;
+      nodoTiempo.dateTime = new Date(inicio).toISOString();
+      nodoTiempo.textContent = fechaLarga.format(inicio) + ', 22:00';
+      const mismoDesfase = new Date(inicio).getTimezoneOffset() * -60000 === desfase(inicio);
+      nodoLocal.hidden = mismoDesfase;
+      if (!mismoDesfase) nodoLocal.textContent = t.local + horaLocal.format(inicio);
+    }
     if (enCurso) {
-      nodoFalta.textContent = t.enCurso;
+      if (montada) { nodoFalta.textContent = t.enCurso; montada = false; }
+      else if (nodoFalta.textContent !== t.enCurso) nodoFalta.textContent = t.enCurso;
       caja.classList.add('en-curso');
     } else {
-      const min = Math.ceil((inicio - ahora) / 60000);
-      const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
-      nodoFalta.textContent = t.faltan + (d ? `${d} d ` : '') + `${dos(h)} h ${dos(m)} min`;
+      if (!montada) montar();
+      const r = restante(inicio - ahora);
+      piezas.d.grupo.hidden = r.d === 0;
+      poner('d', String(r.d));
+      poner('h', dos(r.h));
+      poner('m', dos(r.m));
+      poner('s', dos(r.s));
       caja.classList.remove('en-curso');
     }
-    const mismoDesfase = new Date(inicio).getTimezoneOffset() * -60000 === desfase(inicio);
-    nodoLocal.hidden = mismoDesfase;
-    if (!mismoDesfase) nodoLocal.textContent = t.local + horaLocal.format(inicio);
     caja.hidden = false;
   };
+
+  // Un tic por segundo, solo mientras la caja se ve y la pestaña está delante.
+  let reloj = 0, aLaVista = false;
+  const encender = () => {
+    if (reloj || !aLaVista || document.hidden) return;
+    pintar();
+    reloj = setInterval(pintar, 1000);
+  };
+  const apagar = () => { clearInterval(reloj); reloj = 0; };
   pintar();
-  setInterval(() => { if (!document.hidden) pintar(); }, 20000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) pintar(); });
+  new IntersectionObserver(([e]) => { aLaVista = e.isIntersecting; aLaVista ? encender() : apagar(); }).observe(caja);
+  document.addEventListener('visibilitychange', () => (document.hidden ? apagar() : encender()));
 })();
