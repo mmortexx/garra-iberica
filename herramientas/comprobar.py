@@ -145,6 +145,9 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
     for clave in ('og:title', 'og:description', 'og:image:alt', 'twitter:card'):
         if not metas.get(clave):
             falla(f'{nombre}: falta la meta {clave}')
+    # Google Search Console verifica la propiedad con esta etiqueta: si desaparece, se pierde el acceso.
+    if nombre == 'index.html' and not metas.get('google-site-verification'):
+        falla(f'{nombre}: falta <meta name="google-site-verification">; sin ella Search Console deja de verificar la web')
     if "script-src 'self'" not in csp or "default-src 'none'" not in csp:
         falla(f'{nombre}: falta la política de seguridad (CSP) o es más laxa de lo previsto')
 
