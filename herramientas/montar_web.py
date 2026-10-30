@@ -1,7 +1,9 @@
 """Monta la web (docs/): todas las páginas, en español e inglés, y el mapa del sitio.
 
-El contenido de cada página está en paginas/<idioma>/<página>.html: unas líneas de datos (título,
-descripción, h1) y, tras una línea «---», lo que va dentro de <main>. La cabecera, el menú, el pie,
+El contenido de cada página está en paginas/<idioma>/<página>.html: unas líneas de datos (titulo,
+descripcion, h1 y, si al compartir debe salir otra descripción, og_descripcion) y, tras una línea
+«---», lo que va dentro de <main>. REVISADA es la fecha que el mapa del sitio da a esas páginas:
+súbela al cambiar su contenido. La cabecera, el menú, el pie,
 los metadatos y los datos estructurados son comunes y salen de aquí. La guía de dinosaurios sale de
 herramientas/fichas_dinos.json (ver guia_dinos.py).
 
@@ -130,7 +132,7 @@ def enlace(desde, hasta):
 def fuente(pagina, lang):
     """Datos y contenido de una página escrita a mano en paginas/."""
     ruta = FUENTES / lang / f'{pagina}.html'
-    texto = ruta.read_bytes().decode('utf-8')
+    texto = ruta.read_bytes().decode('utf-8').replace('\r\n', '\n')
     cabeza, separador, cuerpo = texto.partition('\n---\n')
     if not separador:
         sys.exit(f'{ruta}: falta la línea «---» entre los datos y el contenido')
@@ -151,7 +153,8 @@ def especies(lang, d):
     for g in ('carnivoros', 'herbivoros', 'omnivoros'):
         enlaces = ', '.join(f'<a href="@/{guia_dinos.RUTAS[lang]}#{guia_dinos.ancla(f["nombre"])}">{escape(f["nombre"])}</a>'
                             for f in d['fichas'] if guia_dinos.GRUPO[f['dieta']] == g)
-        filas.append(f'<div><dt>{guia_dinos.T[lang]["grupos"][g]}</dt><dd>{enlaces}</dd></div>')
+        if enlaces:
+            filas.append(f'<div><dt>{guia_dinos.T[lang]["grupos"][g]}</dt><dd>{enlaces}</dd></div>')
     return '<dl class="especies">' + ''.join(filas) + '</dl>'
 
 
@@ -222,6 +225,8 @@ def precarga(cuerpo):
     if not m:
         return []
     a = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(0)))
+    if 'src' not in a or ('srcset' in a) != ('sizes' in a):
+        sys.exit(f'imagen de cabecera sin src, o con srcset y sizes a medias: {m.group(0)[:120]}')
     extra = (f' imagesrcset="{a["srcset"]}" imagesizes="{a["sizes"]}"' if 'srcset' in a else '')
     return [f'<link rel="preload" as="image" href="{a["src"]}"{extra} fetchpriority="high">']
 

@@ -7,7 +7,8 @@
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
 const { chromium } = require('playwright');
-const BASE = 'http://127.0.0.1:8765/';
+// WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
+const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
 // Las 12 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
@@ -207,8 +208,35 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
   }
   // Menú en el móvil, con el dedo y con el teclado: el botón lo abre a pantalla completa con todos
-  // los enlaces a la vista, Escape y la X lo cierran devolviendo el foco al botón, y cada enlace
-  // lleva a su página. Se recorren las páginas de una en una desde el menú, como haría alguien.
+  // los enlaces alcanzables (también en apaisado, donde no caben: se recorre el menú), el foco
+  // entra por el primer enlace y no se escapa a la página de detrás, Escape y la X lo cierran
+  // devolviendo el foco al botón, se cierra solo al pasar a escritorio y cada enlace lleva a su
+  // página. Se recorren las páginas de una en una desde el menú, como haría alguien.
+  const abierto = p => p.evaluate(() => document.querySelector('.menu').matches(':popover-open'));
+  for (const [w, h] of [[375, 667], [667, 375], [568, 320]]) {
+    const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(700);
+    const vista = await p.evaluate(() => {
+      const W = innerWidth, H = innerHeight;
+      const m = document.querySelector('.menu').getBoundingClientRect();
+      const fuera = [...document.querySelectorAll('.menu a, .menu-cerrar')].filter(el => {
+        el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+        // 1 px de margen: el desplazamiento va en píxeles enteros y el enlace puede quedar a medio píxel.
+        const rc = el.getBoundingClientRect();
+        return !rc.width || rc.left < -1 || rc.right > W + 1 || rc.top < -1 || rc.bottom > H + 1;
+      }).map(el => el.textContent.trim() || el.className);
+      return { cubre: m.left <= 0 && m.top <= 0 && m.right >= W && m.bottom >= H, fuera, rueda: getComputedStyle(document.documentElement).overflow };
+    });
+    const fallos = [];
+    if (!(await abierto(p)) || !vista.cubre || vista.fuera.length) fallos.push(`al abrir: ${JSON.stringify(vista)}`);
+    if (vista.rueda !== 'hidden') fallos.push('con el menú abierto la página de detrás se mueve');
+    if (fallos.length) malos++;
+    console.log(ruta(''), `menú abierto a ${w}×${h}, todo alcanzable:`, fallos.length ? fallos.join('; ') : 'sí');
+    await ctx.close();
+  }
   for (const lang of ['', 'en/']) {
     const ctx = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
@@ -216,38 +244,53 @@ const ruta = r => ('/' + r).padEnd(15);
     p.on('pageerror', e => errores.push(e.message));
     await p.goto(BASE + lang, { waitUntil: 'load' });
     const fallos = [];
-    const abierto = () => p.evaluate(() => document.querySelector('.menu').matches(':popover-open'));
     const destinos = await p.evaluate(() => [...document.querySelectorAll('.menu a:not(.menu-idioma)')].map(a => a.href));
-    await p.tap('.menu-boton');
-    await p.waitForTimeout(700);
-    const vista = await p.evaluate(() => {
-      const W = innerWidth, H = innerHeight;
-      const m = document.querySelector('.menu').getBoundingClientRect();
-      const fuera = [...document.querySelectorAll('.menu a, .menu-cerrar')].filter(el => {
-        const rc = el.getBoundingClientRect();
-        return !rc.width || rc.left < 0 || rc.right > W || rc.top < 0 || rc.bottom > H;
-      }).map(el => el.textContent.trim() || el.className);
-      return { cubre: m.left <= 0 && m.top <= 0 && m.right >= W && m.bottom >= H, fuera, rueda: getComputedStyle(document.documentElement).overflow };
+    // Con el teclado: el foco entra en el menú y, tabulando más veces que elementos tiene, nunca
+    // cae en la página tapada.
+    await p.focus('.menu-boton');
+    await p.keyboard.press('Enter');
+    await p.waitForTimeout(500);
+    const dentro = () => p.evaluate(() => {
+      const a = document.activeElement;
+      return a === document.body || !!a.closest('.menu') ? '' : (a.className || a.tagName) + ' «' + a.textContent.trim().slice(0, 15) + '»';
     });
-    if (!(await abierto()) || !vista.cubre || vista.fuera.length) fallos.push(`al abrir: ${JSON.stringify(vista)}`);
-    if (vista.rueda !== 'hidden') fallos.push('con el menú abierto la página de detrás se mueve');
+    const primero = await p.evaluate(() => document.activeElement === document.querySelector('.menu a'));
+    if (!primero) fallos.push(`al abrir, el foco está en ${await p.evaluate(() => document.activeElement.className || document.activeElement.tagName)}`);
+    const n = await p.evaluate(() => document.querySelectorAll('.menu a, .menu button').length);
+    for (let i = 0; i < n + 2; i++) {
+      await p.keyboard.press('Tab');
+      const fuera = await dentro();
+      if (fuera) { fallos.push(`con Tab el foco sale del menú a ${fuera}`); break; }
+    }
     await p.keyboard.press('Escape');
     await p.waitForTimeout(200);
     const foco = await p.evaluate(() => document.activeElement.className);
-    if (await abierto()) fallos.push('Escape no lo cierra');
+    if (await abierto(p)) fallos.push('Escape no lo cierra');
     if (foco !== 'menu-boton') fallos.push(`tras cerrar, el foco está en «${foco}»`);
+    if (await p.evaluate(() => !!document.querySelector('[inert]'))) fallos.push('al cerrar queda parte de la página inerte');
+    await p.evaluate(() => { const m = document.querySelector('.menu'); if (m.matches(':popover-open')) m.hidePopover(); });
     await p.tap('.menu-boton');
     await p.waitForTimeout(400);
     await p.tap('.menu-cerrar');
     await p.waitForTimeout(200);
-    if (await abierto()) fallos.push('la X no lo cierra');
+    if (await abierto(p)) fallos.push('la X no lo cierra');
+    // Abierto y se ensancha la ventana hasta escritorio: se cierra y el menú vuelve a la barra.
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    await p.setViewportSize({ width: 1366, height: 800 });
+    await p.waitForTimeout(300);
+    const barra = await p.evaluate(() => [...document.querySelectorAll('.menu a')].filter(a => { const rc = a.getBoundingClientRect(); return rc.width && rc.top >= 0 && rc.bottom < 120; }).length);
+    if (await abierto(p) || barra !== 5) fallos.push(`al ensanchar con el menú abierto: ${await abierto(p) ? 'sigue abierto' : 'cerrado'}, ${barra} enlaces en la barra`);
+    await p.setViewportSize({ width: 375, height: 667 });
+    // Si algo de lo anterior lo dejó abierto (ya contado como fallo), se cierra para seguir.
+    await p.evaluate(() => { const m = document.querySelector('.menu'); if (m.matches(':popover-open')) m.hidePopover(); });
     for (const destino of destinos) {
       await p.tap('.menu-boton');
       await p.waitForTimeout(400);
       await p.tap(`.menu a[href="${await p.evaluate(d => [...document.querySelectorAll('.menu a')].find(a => a.href === d).getAttribute('href'), destino)}"]`);
       await p.waitForURL(destino, { timeout: 5000 }).catch(() => fallos.push(`no llega a ${destino} (está en ${p.url()})`));
       await p.waitForLoadState('load');
-      if (await abierto()) fallos.push(`${destino} se abre con el menú abierto`);
+      if (await abierto(p)) fallos.push(`${destino} se abre con el menú abierto`);
     }
     if (errores.length) fallos.push(`errores: ${JSON.stringify(errores)}`);
     if (fallos.length) malos++;
@@ -270,6 +313,43 @@ const ruta = r => ('/' + r).padEnd(15);
     if (fallos.length) malos++;
     console.log(ruta(''), `enlaces viejos de la portada (${MOVIDAS.length}):`, fallos.length ? fallos.join('; ') : 'bien');
     await ctx.close();
+  }
+  // Transición entre páginas (zarpazo): la hay al pulsar un enlace, y no con «reducir movimiento».
+  // Se mira en la página que se deja (pageswap): pagereveal llega antes de que la prueba escuche.
+  for (const [nombre, opts, esperada] of [['normal', {}, true], ['reducir movimiento', { reducedMotion: 'reduce' }, false]]) {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
+    await ctx.addInitScript(() => addEventListener('pageswap', e => { sessionStorage.setItem('transicion', String(!!e.viewTransition)); }));
+    const p = await ctx.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.click('.menu a[href="clan/"]');
+    await p.waitForURL(BASE + 'clan/');
+    await p.waitForLoadState('load');
+    const hay = await p.evaluate(() => sessionStorage.getItem('transicion') === 'true');
+    if (hay !== esperada) malos++;
+    console.log(ruta(''), `transición entre páginas (${nombre}):`, hay === esperada ? 'bien' : `${hay ? 'la hay' : 'no la hay'} y ${esperada ? 'debe haberla' : 'no debe'}`);
+    await ctx.close();
+  }
+  // Volver con «Atrás» a una página que se dejó con el menú abierto (la recupera de la memoria,
+  // tal cual): el menú debe estar cerrado. Playwright apaga esa memoria por defecto; aquí no.
+  {
+    const conMemoria = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), ignoreDefaultArgs: ['--disable-back-forward-cache'] });
+    const ctx = await conMemoria.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() => addEventListener('pageshow', e => { window.__memoria = e.persisted; }));
+    const p = await ctx.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    await p.tap('.menu a[href="clan/"]');
+    await p.waitForURL(BASE + 'clan/');
+    await p.waitForLoadState('load');
+    // De memoria no hay evento «load»: basta con que vuelva.
+    await p.goBack({ waitUntil: 'commit' });
+    await p.waitForTimeout(400);
+    const r = await p.evaluate(() => ({ memoria: window.__memoria, abierto: document.querySelector('.menu').matches(':popover-open'), inerte: !!document.querySelector('[inert]') }));
+    // Si este Chromium no guarda la página, la prueba no dice nada: se avisa en vez de dar verde.
+    if (!r.memoria || r.abierto || r.inerte) malos++;
+    console.log(ruta(''), 'menú al volver atrás:', !r.memoria ? 'el navegador no recuperó la página de memoria: no se pudo probar' : r.abierto || r.inerte ? `sigue abierto o inerte ${JSON.stringify(r)}` : 'cerrado');
+    await conMemoria.close();
   }
   // Visor de la galería, con ratón y con el dedo: abre, cambia de foto, amplía y vuelve, cierra
   // devolviendo el foco a la foto. Las grandes no se descargan hasta abrir el visor.
@@ -298,7 +378,9 @@ const ruta = r => ('/' + r).padEnd(15);
       });
       let motivo = '';
       const esperar = cond => p.waitForFunction(cond, null, { timeout: 8000 }).then(() => true, err => { motivo = err.message.split('\n')[0]; return false; });
-      const cargada = '(() => { const v = document.querySelector(".visor"); const i = v && v.querySelector(".visor-img"); return !!i && i.complete && i.naturalWidth > 0 && !v.classList.contains("cargando"); })()';
+      // Funciones, no texto: un texto se evalúa dentro de la página y la CSP de la web (sin
+      // 'unsafe-eval') lo bloquea a veces.
+      const cargada = () => { const v = document.querySelector('.visor'); const i = v && v.querySelector('.visor-img'); return !!i && i.complete && i.naturalWidth > 0 && !v.classList.contains('cargando'); };
       const pulsar = sel => tipo === 'dedo' ? p.tap(sel) : p.click(sel);
       const total = await p.locator('.foto-ampliar').count();
       if (total < 2) fallos.push(`la galería tiene ${total} fotos`);
@@ -318,7 +400,7 @@ const ruta = r => ('/' + r).padEnd(15);
       e = await estado();
       if (!e.real || !e.recorre) fallos.push(`ampliar: ${JSON.stringify(e)}`);
       if (tipo === 'ratón') {
-        if (!(await esperar('document.querySelector(".visor-img").currentSrc.includes("-3080.")'))) fallos.push('ampliada sin la resolución original');
+        if (!(await esperar(() => document.querySelector('.visor-img').currentSrc.includes('-3080.')))) fallos.push('ampliada sin la resolución original');
         await p.keyboard.press('Escape');
         e = await estado();
         if (e.real || !e.abierto) fallos.push(`Escape con la foto ampliada: ${JSON.stringify(e)}`);

@@ -39,9 +39,10 @@ def main(nueva):
         cambios[nombre] = (datos.replace(vieja, nueva), veces)
     for nombre, (datos, veces) in cambios.items():
         (WEB / nombre).write_bytes(datos.encode('utf-8'))
-        quedan = (WEB / nombre).read_bytes().decode('utf-8').count(vieja)
-        if quedan:
-            sys.exit(f'{nombre}: siguen quedando {quedan} apariciones de {vieja}')
+        # Se compara lo escrito con lo calculado (contar la vieja falla si la nueva la contiene,
+        # p. ej. de …/garra-iberica/ a …/garra-iberica/web/).
+        if (WEB / nombre).read_bytes() != datos.encode('utf-8'):
+            sys.exit(f'{nombre}: lo escrito no es lo esperado; revisa ese fichero')
         print(f'{nombre}: {veces} cambios')
     print(f'Hecho: {vieja} -> {nueva}. Ejecuta ahora calendario.py, montar_web.py y comprobar.py')
 

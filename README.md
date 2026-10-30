@@ -39,8 +39,10 @@ node herramientas/prueba_caceria.js
 - `montar_web.py` genera las 12 páginas, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
-  `titulo:`, `descripcion:` (70–160 letras) y `h1:`, luego una línea `---` y después lo que va dentro
-  de la página. En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
+  `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
+  compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
+  contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
+  del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
   `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}` y `{{migas}}` se rellenan
   solos. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.

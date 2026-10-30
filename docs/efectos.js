@@ -31,6 +31,25 @@
   addEventListener('scroll', unaVezPorFotograma(alDesplazar), { passive: true });
   alDesplazar();
 
+  // Menú a pantalla completa (móvil): mientras está abierto, el foco no se escapa a la página de
+  // detrás y entra por el primer enlace. Se cierra al pasar a escritorio (allí va en la barra) y
+  // al volver con «Atrás» a una página que se fue con él abierto.
+  const menu = document.querySelector('.menu[popover]');
+  if (menu && menu.showPopover) {
+    const detras = [...document.querySelectorAll('.saltar, .marca, .barra-acciones, main, .pie')];
+    menu.addEventListener('beforetoggle', e => {
+      if (e.newState === 'closed') detras.forEach(el => { el.inert = false; });
+    });
+    menu.addEventListener('toggle', e => {
+      if (e.newState !== 'open') return;
+      detras.forEach(el => { el.inert = true; });
+      menu.querySelector('a').focus();
+    });
+    const cerrar = () => { if (menu.matches(':popover-open')) menu.hidePopover(); };
+    matchMedia('(min-width: 1020px)').addEventListener('change', e => { if (e.matches) cerrar(); });
+    addEventListener('pageshow', e => { if (e.persisted) cerrar(); });
+  }
+
   // Punto exacto de los arañazos en la portada, sea cual sea el recorte de la imagen.
   const portada = document.querySelector('.portada');
   const fondo = portada && portada.querySelector('.portada-fondo');

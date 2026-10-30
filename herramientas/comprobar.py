@@ -27,7 +27,7 @@ FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Download
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
-VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
+VERSIONADOS = montar_web.VERSIONADOS
 MAX_KB_IMAGEN = 120
 # Las fotos de la galería a tamaño grande solo se descargan si alguien abre una.
 AMPLIADA = '-ampliada-'
@@ -324,6 +324,16 @@ def revisar_datos(raiz, falla, avisa):
         for f in set(franjas):
             if f != esperada:
                 falla(f'{nombre}: dice {f[0]}:00–{f[1]}:00 en Latinoamérica y, con {DATOS.name}, es {esperada[0]}:00–{esperada[1]}:00')
+        # Cualquier otra hora en punto que diga la página es la de la Cacería (o la del Reino Unido,
+        # una menos todo el año): si cambia en datos_clan.json, ningún texto se queda en la vieja.
+        resto = re.sub(FRANJA[lang], '', plano(html))
+        for h in re.findall(r'\b(\d{2}):00 in the UK\b', resto):
+            if int(h) != (cac['hora'] - 1) % 24:
+                falla(f'{nombre}: dice {h}:00 en el Reino Unido y, con {DATOS.name}, son las {(cac["hora"] - 1) % 24:02d}:00')
+        resto = re.sub(r'\b\d{2}:00 in the UK\b', '', resto)
+        for h in sorted(set(re.findall(r'\b(\d{1,2}):00\b', resto))):
+            if int(h) != cac['hora']:
+                falla(f'{nombre}: dice {h}:00 y la Cacería es a las {cac["hora"]:02d}:00 ({DATOS.name})')
         if pagina == 'caceria':
             if not franjas:
                 falla(f'{nombre}: no dice a qué hora cae la Cacería en Latinoamérica')
@@ -441,8 +451,14 @@ def main(raiz, sin_apodos=False, avisa=print):
         return [f'{guia_dinos.FICHAS.name}: {e}']
 
     usados = set()
+    vistos = {}
     for nombre, (pagina, lang) in PAGINAS.items():
         datos = montar_web.contenido(pagina, lang, d)[0]
+        # Cada página con su título y su descripción: repetidos, los buscadores muestran solo una.
+        for campo in ('titulo', 'descripcion'):
+            if (campo, datos[campo]) in vistos:
+                falla(f'{nombre}: misma {campo} que {vistos[campo, datos[campo]]}')
+            vistos[campo, datos[campo]] = nombre
         pareja = (RUTA[pagina, 'es'], RUTA[pagina, 'en'])
         usados |= revisar_pagina(raiz, nombre, lang, RUTA[pagina, lang], datos['titulo'], base, falla,
                                  h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete')

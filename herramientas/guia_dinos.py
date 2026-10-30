@@ -115,6 +115,8 @@ T = {
 
 def datos():
     d = json.loads(FICHAS.read_text(encoding='utf-8'))
+    if not d.get('fichas'):
+        sys.exit(f'{FICHAS.name}: no trae ninguna ficha; la web diría «0 especies»')
     nombres = [f['nombre'] for f in d['fichas']]
     if len(set(nombres)) != len(nombres):
         sys.exit(f'{FICHAS.name}: especies repetidas')
