@@ -113,11 +113,18 @@ const BASE = 'http://127.0.0.1:8765/';
     const p = await ctx.newPage();
     await p.goto(BASE + ruta, { waitUntil: 'load' });
     await p.evaluate(() => document.fonts.ready);
+    // Además, ningún enlace del menú fuera de la pantalla y, desde 360 px, todos en una línea.
     const anchos = [];
-    for (let w = 760; w <= 1440; w += 5) anchos.push(w);
-    const solapes = [];
+    for (let w = 320; w <= 1440; w += 5) anchos.push(w);
+    const solapes = [], cortados = [];
     for (const ancho of anchos) {
       await p.setViewportSize({ width: ancho, height: 850 });
+      const m = await p.evaluate(() => {
+        const W = document.documentElement.clientWidth;
+        const rs = [...document.querySelectorAll('.menu a')].map(a => a.getBoundingClientRect());
+        return { fuera: rs.filter(r => r.left < -0.5 || r.right > W + 0.5).length, lineas: new Set(rs.map(r => Math.round(r.top))).size };
+      });
+      if (m.fuera || (ancho >= 360 && m.lineas > 1)) cortados.push(`${ancho}px: ${m.fuera} fuera, ${m.lineas} líneas`);
       const s = await p.evaluate(() => {
         const menu = document.querySelector('.menu').getBoundingClientRect();
         const cajas = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton')].map(el => {
@@ -139,7 +146,9 @@ const BASE = 'http://127.0.0.1:8765/';
       if (s.length) solapes.push(`${ancho}px: ${s[0]}`);
     }
     if (solapes.length) malos++;
-    console.log(('/' + ruta).padEnd(5), 'cabecera 760–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    if (cortados.length) malos++;
+    console.log(('/' + ruta).padEnd(5), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    console.log(('/' + ruta).padEnd(5), 'menú 320–1440px cortado:', cortados.length ? `${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'nunca');
     await ctx.close();
   }
   await navegador.close();

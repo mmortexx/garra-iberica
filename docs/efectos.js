@@ -36,14 +36,7 @@
       if (!e.isIntersecting) continue;
       enlaces.forEach(o => o.removeAttribute('aria-current'));
       const a = enlaces.get(e.target.id);
-      if (!a) {
-        if (menu.scrollLeft) menu.scrollTo({ left: 0, behavior: sinMovimiento.matches ? 'auto' : 'smooth' });
-        continue;
-      }
-      a.setAttribute('aria-current', 'true');
-      if (menu.scrollWidth > menu.clientWidth) {
-        menu.scrollTo({ left: a.offsetLeft - 16, behavior: sinMovimiento.matches ? 'auto' : 'smooth' });
-      }
+      if (a) a.setAttribute('aria-current', 'true');
     }
   }, { rootMargin: '-45% 0px -50% 0px' });
   document.querySelectorAll('main section[id]').forEach(s => vigia.observe(s));
