@@ -84,4 +84,32 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/join/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/unete/"/>
   </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/normas/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/normas/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/rules/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/normas/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/rules/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/normas/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/rules/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/normas/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/legal/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/legal/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/legal/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/legal/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/legal/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/legal/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/legal/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/legal/"/>
+  </url>
 </urlset>

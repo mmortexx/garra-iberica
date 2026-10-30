@@ -8,6 +8,8 @@ juego (arriba a la derecha). Por cada captura salen dos juegos de ficheros:
   PESO_GALERIA (las carga la página);
 - la vista ampliada, la captura entera menos la franja de la marca, en varios anchos hasta la
   resolución original (solo se descargan al abrir una foto).
+Las capturas de noche salen casi negras: las de ACLARAR se aclaran antes de recortar, canal a canal,
+con valor = 255·(v/255)^gamma (gamma por debajo de 1 levanta las sombras sin quemar las luces).
 """
 import io
 import sys
@@ -39,11 +41,13 @@ FOTOS = {
     'galeria-noche': ('Captura de pantalla 2026-10-30 145144.png', (0, 150, 3080, 1439), (800, 1200, 1600)),
     'galeria-tarde': ('Captura de pantalla 2026-10-30 175817.png', (560, 200, 3080, 1439), (600, 1000, 1300)),
     'galeria-cuernos': ('Captura de pantalla 2026-10-30 175839.png', (500, 40, 3080, 1439), (600, 1000, 1300)),
-    'galeria-desfiladero': ('Captura de pantalla 2026-10-30 210612.png', (0, 150, 3080, 1439), (800, 1200, 1600)),
-    'galeria-colina': ('Captura de pantalla 2026-10-30 210254.png', (200, 0, 3078, 1439), (600, 1000, 1300)),
-    'galeria-manada': ('Captura de pantalla 2026-10-30 210318.png', (202, 0, 3080, 1439), (600, 1000, 1300)),
+    'galeria-desfiladero': ('Captura de pantalla 2026-10-30 210612.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
+    'galeria-colina': ('Captura de pantalla 2026-10-30 210254.png', (0, 200, 3080, 1439), (600, 1000, 1300)),
+    'galeria-manada': ('Captura de pantalla 2026-10-30 210318.png', (0, 200, 3080, 1439), (600, 1000, 1300)),
     'galeria-descanso': ('Captura de pantalla 2026-10-30 190521.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
+    'galeria-brasas': ('Captura de pantalla 2026-10-30 213422.png', (300, 150, 2900, 1439), (800, 1200, 1600)),
 }
+ACLARAR = {'galeria-brasas': 0.45}
 
 
 def solapa(a, b):
@@ -74,6 +78,8 @@ def main(origen, nombres):
             if solapa(c, MARCA):
                 sys.exit(f'{nombre}: el recorte {c} toca la marca de agua {MARCA}')
         im = im.convert('RGB')
+        if nombre in ACLARAR:
+            im = im.point([round(255 * (i / 255) ** ACLARAR[nombre]) for i in range(256)] * 3)
         recorte = im.crop(caja)
         for w in anchos:
             reducida = a_ancho(recorte, w)

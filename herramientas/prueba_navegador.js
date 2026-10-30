@@ -10,18 +10,21 @@
 const { chromium } = require('playwright');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
-// Las 12 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
+// Las 16 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
   ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
   ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
+  ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
+// Páginas que solo se enlazan desde el pie y desde las páginas de su tema, no desde el menú.
+const FUERA_MENU = ['inicio', 'normas', 'legal'];
 const CON_CUENTA = ['inicio', 'caceria'];
 const CON_COMPARTIR = ['inicio'];
 const CON_CARTEL = ['caceria'];
 const CON_GALERIA = ['galeria'];
 // Enlaces de cuando todo estaba en la portada: deben llevar a su página nueva.
-const MOVIDAS = [['#normas', 'clan/#normas'], ['#guia', 'dinosaurios/'], ['en/#faq', 'en/join/#faq'], ['en/#hunt', 'en/hunt/']];
+const MOVIDAS = [['#normas', 'normas/'], ['en/#rules', 'en/rules/'], ['#guia', 'dinosaurios/'], ['en/#faq', 'en/join/#faq'], ['en/#hunt', 'en/hunt/']];
 const ruta = r => ('/' + r).padEnd(15);
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
@@ -113,7 +116,7 @@ const ruta = r => ('/' + r).padEnd(15);
       }
       await ctx.close();
     }
-    // Menú en escritorio: en una fila, marcando la página en la que se está (el inicio no está en él).
+    // Menú en escritorio: en una fila, marcando la página en la que se está (si está en él).
     {
       const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
       const p = await ctx.newPage();
@@ -128,7 +131,7 @@ const ruta = r => ('/' + r).padEnd(15);
       });
       const fallos = [];
       if (m.visibles !== 5 || m.boton) fallos.push(`${m.visibles} enlaces a la vista y botón ${m.boton ? 'visible' : 'oculto'}`);
-      const esperado = tipo === 'inicio' ? [] : [m.aqui];
+      const esperado = FUERA_MENU.includes(tipo) ? [] : [m.aqui];
       if (JSON.stringify(m.marcados) !== JSON.stringify(esperado)) fallos.push(`marca ${JSON.stringify(m.marcados)} y debe marcar ${JSON.stringify(esperado)}`);
       if (fallos.length) malos++;
       console.log(ruta(r), 'menú en escritorio:', fallos.length ? fallos.join('; ') : 'bien');

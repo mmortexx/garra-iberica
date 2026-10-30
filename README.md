@@ -9,12 +9,12 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 
 | Fichero | Para qué |
 |---|---|
-| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, galería, únete), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
-| `docs/**/index.html` | Las 12 páginas publicadas (6 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
+| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
+| `docs/**/index.html` | Las 16 páginas publicadas (8 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
-| `docs/404.html` | Página de «no encontrada». |
+| `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
 | `herramientas/` | Scripts de mantenimiento (abajo). |
@@ -36,15 +36,16 @@ python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 ```
 
-- `montar_web.py` genera las 12 páginas, el mapa del sitio y la versión de los estilos en
+- `montar_web.py` genera las 16 páginas, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
   `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
-  `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}` y `{{migas}}` se rellenan
-  solos. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
+  `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}` y `{{normas}}` se
+  rellenan solos. El menú de arriba lleva solo las cinco páginas de `MENU`; Normas y el aviso legal
+  van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
   `comprobar.py` falla si `docs/` no es exactamente lo que sale del script.
 - La guía de dinosaurios sale de `herramientas/fichas_dinos.json` (con `guia_dinos.py`, que usa
@@ -54,7 +55,7 @@ node herramientas/prueba_caceria.js
   (variable `GARRA_FICHAS` o `~/Downloads/garra-iberica/wiki/fichas.json`), si la copia se ha
   quedado atrás.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
-  dónde lleva cada enlace viejo (`/#normas` → `clan/#normas`) y `comprobar.py` vigila que el destino
+  dónde lleva cada enlace viejo (`/#normas` → `normas/`) y `comprobar.py` vigila que el destino
   exista.
 
 - `calendario.py` genera `docs/caceria.ics` y `docs/en/caceria.ics` (la Cacería semanal, para
@@ -63,7 +64,7 @@ node herramientas/prueba_caceria.js
   que ejecutarlo si cambia la hora de la Cacería o la dirección. Los `.ics` llevan finales de línea
   CRLF, como pide el formato; `.gitattributes` evita que git los cambie.
 
-- `comprobar.py` revisa las 12 páginas: título, encabezado, metadatos, idiomas, datos estructurados
+- `comprobar.py` revisa las 16 páginas: título, encabezado, metadatos, idiomas, datos estructurados
   (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
   fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
@@ -76,8 +77,12 @@ node herramientas/prueba_caceria.js
   encuentra `tarjetas.json` (variable `GARRA_TARJETAS` o `~/Downloads/garra-iberica/tarjetas.json`),
   comprueba además que el extracto siga al día; si no, lo avisa. Si cambian los textos del
   Discord: actualizar el extracto y la web a la vez.
+  La página de normas sale entera de ese extracto (`normas` en `datos_clan.json`): cada norma, con
+  su número, tiene que estar tal cual en la tarjeta `#normas`, y la tarjeta no puede tener ni una
+  más. Si el staff cambia o añade una norma en Discord, el comprobador falla hasta copiarla aquí.
+  También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
-- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 12
+- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 16
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde 1020 px
   o, por debajo, tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha
@@ -125,7 +130,8 @@ python herramientas/preparar_galeria.py RUTA/A/LAS/CAPTURAS
 Saca de cada una la foto de la galería (encuadrada en el dinosaurio, la mejor calidad que cabe en
 120 KB) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
 resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp`). Qué captura y
-qué recorte va en cada foto está al principio del script. Las ampliadas solo se descargan al abrir
+qué recorte va en cada foto está al principio del script. Las de noche que salen casi negras se aclaran
+en el mismo script (`ACLARAR`). Las ampliadas solo se descargan al abrir
 una foto en el visor; `comprobar.py` no deja que la página las cargue por su cuenta.
 
 Necesita Python con Pillow y fontTools.

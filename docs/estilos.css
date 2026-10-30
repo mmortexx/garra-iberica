@@ -577,7 +577,9 @@ h2::after {
 @media (min-width: 600px) { .foto:not(.foto-grande) { aspect-ratio: 4 / 3; } }
 .galeria .foto-ancha { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
 .galeria .foto-panoramica { grid-column: 1 / -1; aspect-ratio: 1600 / 670; }
-.galeria .foto-descanso { aspect-ratio: 1600 / 748; }
+.galeria .foto-entera { aspect-ratio: 3080 / 1439; }
+.galeria .foto-baja { aspect-ratio: 3080 / 1239; }
+.galeria .foto-media { aspect-ratio: 2600 / 1289; }
 @media (min-width: 860px) {
   .galeria { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
   .foto { grid-column: span 2; }
@@ -700,6 +702,27 @@ html:has(.visor[open]) { overflow: hidden; }
 .bloque li { position: relative; padding: 0 0 .8rem 1.35rem; color: var(--texto); font-size: 1rem; }
 .bloque li::before, .dino-lista li::before { content: ""; position: absolute; left: .1rem; top: .62em; width: 6px; height: 6px; rotate: 45deg; background: var(--ascua); box-shadow: 0 0 8px rgba(255, 122, 31, .8); }
 
+/* Página de normas: los bloques numerados como en el Discord y las sanciones, en cadena. */
+.reglamento { display: grid; gap: 1.2rem 2.6rem; margin-top: 2rem; }
+@media (min-width: 860px) { .reglamento { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.reglas { margin: 0; padding: 0 0 0 2.1rem; }
+.bloque .reglas li { padding: 0 0 .9rem .35rem; }
+.bloque .reglas li::before { content: none; }
+.reglas li::marker { font-family: var(--titulos); font-size: 1.15rem; color: var(--ascua-viva); }
+.pasos-sancion { list-style: none; margin: .2rem 0 1.1rem; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.bloque .pasos-sancion li { display: flex; align-items: center; gap: .55rem; padding: 0; }
+.bloque .pasos-sancion li::before { content: none; }
+.pasos-sancion li:not(:last-child)::after { content: "➜"; content: "➜" / ""; color: var(--ascua); }
+.pasos-sancion span { padding: .35rem .75rem; border: 1px solid var(--borde); border-radius: 3px; background: rgba(20, 14, 10, .55); font-family: var(--etiquetas); font-weight: 600; font-size: .95rem; letter-spacing: .04em; text-transform: uppercase; color: var(--hueso); }
+.pasos-sancion li:last-child span { border-color: rgba(255, 122, 31, .6); color: var(--ascua-viva); }
+.bloque > p { margin: 0 0 .8rem; }
+.cierre-normas { margin: 2rem 0 0; color: var(--suave); font-size: 1.05rem; }
+.seccion .volver { margin: 2rem 0 0; }
+
+/* Aviso legal: texto corrido, a una columna. */
+.texto-legal > * { max-width: 48rem; }
+.texto-legal h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
+
 /* Rangos: una escalera. Cada peldaño, más alto que el anterior, con su escalón encendido. */
 .escalera { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; gap: 2.4rem; }
 .peldano { position: relative; padding-bottom: 1.2rem; }
@@ -786,6 +809,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 
 .pagina-404 { min-height: 100vh; display: grid; place-items: center; }
 .pagina-404 h1 { font-size: clamp(2.2rem, 7vw, 4rem); text-transform: uppercase; }
+.acciones-404 { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; margin: 1.6rem 0 0; }
 .pagina-404 .pie-legal { margin-top: 1.6rem; }
 .pagina-404 .pie-legal a { color: var(--suave); }
 

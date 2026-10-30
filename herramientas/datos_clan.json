@@ -33,5 +33,56 @@
       "web_es": "Tras ~1 mes como Miembro",
       "web_en": "After ~1 month as a Member"
     }
-  ]
+  ],
+  "normas": {
+    "_nota": "Las normas de la tarjeta #normas, tal cual (sin los emojis de Discord ni las negritas) y en su orden: comprobar.py exige que cada una siga en tarjetas.json con su número y que la tarjeta no tenga más. La página normas/ sale de aquí. «rango» viene de la tarjeta #rangos.",
+    "es": {
+      "apartados": [
+        {"titulo": "Convivencia", "emoji": "aliado", "normas": [
+          "Respeto ante todo. Nada de insultos, racismo, acoso ni toxicidad, ni aquí ni dentro del juego.",
+          "Sin contenido NSFW, gore ni spam. Tampoco publicidad de otros servidores sin permiso del staff.",
+          "No compartas datos personales de nadie (fotos, direcciones, cuentas).",
+          "Los problemas entre miembros se hablan por privado o con el staff, no en el chat general."
+        ]},
+        {"titulo": "Dentro del juego", "emoji": "caza", "normas": [
+          "Prohibido usar hacks, exploits o bugs para sacar ventaja.",
+          "Nada de traicionar a la manada: no se ataca a miembros ni aliados del clan.",
+          "Las ubicaciones de nidos, rutas y planes del clan no salen del Discord.",
+          "Si vas en grupo, sigue las indicaciones del Líder de Escuadra, Beta o Alfa que lidere la partida."
+        ]},
+        {"titulo": "Rangos", "emoji": "veterano", "normas": [
+          "Todo nuevo miembro entra como Recluta durante un periodo de prueba antes de pasar a Miembro."
+        ]}
+      ],
+      "sanciones_titulo": "Sanciones",
+      "sanciones": ["Aviso", "Silencio temporal", "Expulsión del clan", "Ban del Discord"],
+      "sanciones_nota": "Según la gravedad, el staff puede saltarse pasos.",
+      "rango": "Saltarse las normas puede suponer bajar de rango.",
+      "cierre": "Al estar en este servidor aceptas estas normas."
+    },
+    "en": {
+      "apartados": [
+        {"titulo": "Living together", "emoji": "aliado", "normas": [
+          "Respect above all. No insults, racism, harassment or toxicity, here or in game.",
+          "No NSFW, gore or spam. No advertising other servers without staff permission.",
+          "Don't share anyone's personal data (photos, addresses, accounts).",
+          "Problems between members are sorted out in private or with the staff, not in the general chat."
+        ]},
+        {"titulo": "In game", "emoji": "caza", "normas": [
+          "Using hacks, exploits or bugs to get an advantage is forbidden.",
+          "Never betray the pack: don't attack clan members or allies.",
+          "Nest locations, routes and clan plans never leave the Discord.",
+          "In a group, follow the Squad Leader, Beta or Alfa leading the game."
+        ]},
+        {"titulo": "Ranks", "emoji": "veterano", "normas": [
+          "Every new member joins as Recluta (Recruit) for a trial period before becoming Miembro (Member)."
+        ]}
+      ],
+      "sanciones_titulo": "Sanctions",
+      "sanciones": ["Warning", "Temporary mute", "Kick from the clan", "Discord ban"],
+      "sanciones_nota": "Depending on how serious it is, the staff may skip steps.",
+      "rango": "Breaking the rules can cost you your rank.",
+      "cierre": "By being on this server you accept these rules."
+    }
+  }
 }

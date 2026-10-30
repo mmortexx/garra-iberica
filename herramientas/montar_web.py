@@ -14,6 +14,7 @@ En los textos de paginas/:
   {{especies}}         lista de especies con enlace a su ficha
   {{google_calendar}}  enlace para añadir la Cacería a Google Calendar (de datos_clan.json)
   {{migas}}            «Inicio / página», con enlace al inicio
+  {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
@@ -33,6 +34,7 @@ import guia_dinos  # noqa: E402
 RAIZ = HERRAMIENTAS.parent
 DOCS = RAIZ / 'docs'
 FUENTES = RAIZ / 'paginas'
+DATOS_CLAN = HERRAMIENTAS / 'datos_clan.json'
 INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
@@ -40,7 +42,8 @@ VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
 REVISADA = '2026-10-30'
 LANGS = ('es', 'en')
 
-# id, ruta (es, en), nombre en el menú y en las migas (es, en). El inicio no va en el menú.
+# id, ruta (es, en), nombre en el pie y en las migas (es, en). Arriba solo van las de MENU; en el
+# pie, todas menos el aviso legal, que va junto a la nota legal.
 PAGINAS = [
     ('inicio', ('', 'en/'), ('Inicio', 'Home')),
     ('clan', ('clan/', 'en/clan/'), ('El clan', 'The clan')),
@@ -48,16 +51,20 @@ PAGINAS = [
     ('caceria', ('caceria/', 'en/hunt/'), ('Cacería', 'Clan hunt')),
     ('galeria', ('galeria/', 'en/gallery/'), ('Galería', 'Gallery')),
     ('unete', ('unete/', 'en/join/'), ('Cómo entrar', 'How to join')),
+    ('normas', ('normas/', 'en/rules/'), ('Normas', 'Rules')),
+    ('legal', ('legal/', 'en/legal/'), ('Aviso legal y privacidad', 'Legal notice and privacy')),
 ]
+MENU = ('clan', 'dinosaurios', 'caceria', 'galeria', 'unete')
+PIE = [p for p, _, _ in PAGINAS if p != 'legal']
 RUTA = {(p, lang): rutas[i] for p, rutas, _ in PAGINAS for i, lang in enumerate(LANGS)}
 NOMBRE = {(p, lang): nombres[i] for p, _, nombres in PAGINAS for i, lang in enumerate(LANGS)}
 FICHEROS = {RUTA[clave] + 'index.html': clave for clave in RUTA}
 # Secciones que antes estaban en la portada: un enlace viejo (/#normas) lleva a su sitio nuevo.
 MOVIDAS = {
     'es': {'guia': 'dinosaurios/', 'galeria': 'galeria/', 'entrar': 'unete/', 'caceria': 'caceria/',
-           'normas': 'clan/#normas', 'rangos': 'clan/#rangos', 'preguntas': 'unete/#preguntas'},
+           'normas': 'normas/', 'rangos': 'clan/#rangos', 'preguntas': 'unete/#preguntas'},
     'en': {'guide': 'dinosaurs/', 'gallery': 'gallery/', 'join': 'join/', 'hunt': 'hunt/',
-           'rules': 'clan/#rules', 'ranks': 'clan/#ranks', 'faq': 'join/#faq'},
+           'rules': 'rules/', 'ranks': 'clan/#ranks', 'faq': 'join/#faq'},
 }
 
 T = {
@@ -158,6 +165,28 @@ def especies(lang, d):
     return '<dl class="especies">' + ''.join(filas) + '</dl>'
 
 
+def normas(lang):
+    n = json.loads(DATOS_CLAN.read_text(encoding='utf-8'))['normas'][lang]
+    bloques, numero = [], 1
+    for a in n['apartados']:
+        ancla = guia_dinos.ancla(a['titulo'])
+        reglas = ''.join(f'<li>{escape(r)}</li>' for r in a['normas'])
+        bloques.append(
+            f'<section class="bloque panel luz revelar" id="{ancla}" aria-labelledby="t-{ancla}">'
+            f'<h3 id="t-{ancla}"><img src="@/img/emoji-{a["emoji"]}.webp" alt="" width="42" height="42" loading="lazy">{escape(a["titulo"])}</h3>'
+            f'<ol class="reglas" start="{numero}">{reglas}</ol></section>')
+        numero += len(a['normas'])
+    ancla = guia_dinos.ancla(n['sanciones_titulo'])
+    pasos = ''.join(f'<li><span>{escape(s)}</span></li>' for s in n['sanciones'])
+    bloques.append(
+        f'<section class="bloque panel luz revelar" id="{ancla}" aria-labelledby="t-{ancla}">'
+        f'<h3 id="t-{ancla}"><img src="@/img/emoji-normas.webp" alt="" width="42" height="42" loading="lazy">{escape(n["sanciones_titulo"])}</h3>'
+        f'<ol class="pasos-sancion" role="list">{pasos}</ol>'
+        f'<p>{escape(n["sanciones_nota"])}</p><p>{escape(n["rango"])}</p></section>')
+    return (f'<div class="reglamento escalonado">{"".join(bloques)}</div>'
+            f'<p class="cierre-normas revelar"><em>{escape(n["cierre"])}</em></p>')
+
+
 def migas(pagina, lang):
     inicio = NOMBRE['inicio', lang]
     return (f'<nav class="migas" aria-label="{T[lang]["migas"]}"><a href="@/{RUTA["inicio", lang]}">{inicio}</a>'
@@ -165,18 +194,20 @@ def migas(pagina, lang):
 
 
 def rellenar(cuerpo, pagina, lang, base, d):
+    # Cada marcador se calcula solo si la página lo usa.
     valores = {
-        'discord': INVITACION,
-        'n_fichas': str(len(d['fichas'])),
-        'especies': especies(lang, d),
-        'google_calendar': calendario.enlace_google(lang, base),
-        'migas': migas(pagina, lang),
+        'discord': lambda: INVITACION,
+        'n_fichas': lambda: str(len(d['fichas'])),
+        'especies': lambda: especies(lang, d),
+        'google_calendar': lambda: calendario.enlace_google(lang, base),
+        'migas': lambda: migas(pagina, lang),
+        'normas': lambda: normas(lang),
     }
 
     def poner(m):
         if m.group(1) not in valores:
             sys.exit(f'paginas/{lang}/{pagina}.html: marcador desconocido {m.group(0)}')
-        return valores[m.group(1)]
+        return valores[m.group(1)]()
     cuerpo = re.sub(r'\{\{(\w+)\}\}', poner, cuerpo)
     pre = prefijo(RUTA[pagina, lang])
     cuerpo = cuerpo.replace('@/', pre)
@@ -237,7 +268,7 @@ def cabecera(pagina, lang):
     otra_lang, otra_titulo, otra_corto = t['otra']
     actual = ' aria-current="page"'
     menu = [f'      <a href="{enlace(desde, RUTA[p, lang])}"{actual if p == pagina else ""}>{NOMBRE[p, lang]}</a>'
-            for p, _, _ in PAGINAS[1:]]
+            for p in MENU]
     return [
         '<header class="barra">',
         '  <div class="barra-in">',
@@ -274,7 +305,7 @@ def pie(pagina, lang):
         f'      <p><b>GARRA IBÉRICA</b><br>{t["pie_texto"]}</p>',
         '    </div>',
         f'    <nav class="pie-menu" aria-label="{t["pie_menu"]}">',
-        *[f'      <a href="{enlace(desde, RUTA[p, lang])}">{NOMBRE[p, lang]}</a>' for p, _, _ in PAGINAS],
+        *[f'      <a href="{enlace(desde, RUTA[p, lang])}">{NOMBRE[p, lang]}</a>' for p in PIE],
         '    </nav>',
         '    <p class="pie-enlaces">',
         f'      <a href="{INVITACION}" rel="noopener" target="_blank">{t["pie_discord"]}<span class="oculto">{nueva}</span></a>',
@@ -282,7 +313,7 @@ def pie(pagina, lang):
         f'      <a href="{enlace(desde, RUTA[pagina, otra_lang])}" hreflang="{otra_lang}" lang="{otra_lang}">{otra_titulo}</a>',
         f'      <a href="#contenido">{t["arriba"]}</a>',
         '    </p>',
-        f'    <p class="pie-legal">{t["legal"]}</p>',
+        f'    <p class="pie-legal">{t["legal"]} <a href="{enlace(desde, RUTA["legal", lang])}">{NOMBRE["legal", lang]}</a></p>',
         '  </div>',
         '</footer>',
         # Atajo flotante (lo enseña efectos.js al subir en una página larga); el del pie es el de siempre.
@@ -378,14 +409,14 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
 
 
 def sitemap(base, d):
-    fecha_guia = guia_dinos.revision(d)[1]
+    fecha = {'dinosaurios': guia_dinos.revision(d)[1]}
     lineas = ['<?xml version="1.0" encoding="UTF-8"?>',
               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
     for pagina, _, _ in PAGINAS:
         for lang in LANGS:
             lineas += ['  <url>',
                        f'    <loc>{base + RUTA[pagina, lang]}</loc>',
-                       f'    <lastmod>{fecha_guia if pagina == "dinosaurios" else REVISADA}</lastmod>',
+                       f'    <lastmod>{fecha.get(pagina, REVISADA)}</lastmod>',
                        *[f'    <xhtml:link rel="alternate" hreflang="{h}" href="{base + RUTA[pagina, l]}"/>'
                          for h, l in (('es', 'es'), ('en', 'en'), ('x-default', 'es'))],
                        '  </url>']

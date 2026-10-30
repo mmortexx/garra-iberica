@@ -361,6 +361,35 @@ def revisar_datos(raiz, falla, avisa):
     for cita, texto in citas:
         if cita not in texto:
             falla(f'{DATOS.name} cita «{cita}» y tarjetas.json ya no lo dice: actualiza el extracto y la web')
+    revisar_normas(datos['normas'], tarjetas, falla)
+
+
+def sin_formato(texto):
+    """Texto de una tarjeta de Discord sin sus emojis propios (<:nombre:id>) ni negritas o cursivas."""
+    return re.sub(r'\*', '', re.sub(r'<a?:\w+:\d+>\s*', '', texto))
+
+
+def revisar_normas(normas, tarjetas, falla):
+    """La página de normas sale del extracto: cada norma, con su número, igual que en la tarjeta,
+    y ni una más ni una menos."""
+    for lang, clave in (('es', 'texto'), ('en', 'ingles')):
+        tarjeta = '\n' + sin_formato(tarjetas['normas'][clave]) + '\n'
+        n = normas[lang]
+        reglas = [r for a in n['apartados'] for r in a['normas']]
+        en_tarjeta = re.findall(r'^\d+\. ', tarjeta, re.M)
+        if len(en_tarjeta) != len(reglas):
+            falla(f'La tarjeta de normas ({clave}) tiene {len(en_tarjeta)} normas y {DATOS.name} ({lang}) {len(reglas)}: actualiza el extracto')
+        for i, regla in enumerate(reglas, 1):
+            if f'\n{i}. {regla}\n' not in tarjeta:
+                falla(f'{DATOS.name} ({lang}): la norma {i} no dice lo mismo que la tarjeta de normas: «{regla}»')
+        for a in n['apartados']:
+            if f'\n### {a["titulo"]}\n' not in tarjeta:
+                falla(f'{DATOS.name} ({lang}): el apartado «{a["titulo"]}» no está en la tarjeta de normas')
+        for frase in (n['sanciones_titulo'], ' ➜ '.join(n['sanciones']), n['sanciones_nota'], n['cierre']):
+            if frase not in tarjeta:
+                falla(f'{DATOS.name} ({lang}): «{frase}» no está en la tarjeta de normas')
+        if n['rango'] not in sin_formato(tarjetas['rangos'][clave]):
+            falla(f'{DATOS.name} ({lang}): «{n["rango"]}» no está en la tarjeta de rangos')
 
 
 def revisar_montaje(raiz, d, falla):
@@ -486,7 +515,15 @@ def main(raiz, sin_apodos=False, avisa=print):
         falla(f'sitemap.xml no es válido: {e}')
 
     pagina404 = leer(raiz, '404.html')
+    # Fuera de la web, la 404 solo puede llevar a la invitación de Discord, avisando de la pestaña nueva.
+    discord404 = re.findall(r'<a [^>]*href="https://discord\.[^"]*"[^>]*>.*?</a>', pagina404, re.S)
+    if len(discord404) != 1 or f'href="{INVITACION}"' not in discord404[0]:
+        falla(f'404.html debe llevar un enlace, y solo uno, a la invitación de Discord ({INVITACION})')
+    elif 'rel="noopener"' not in discord404[0] or AVISO_PESTANA['es'] not in discord404[0]:
+        falla('404.html: el enlace a Discord abre pestaña nueva sin rel="noopener" o sin avisarlo')
     for url in re.findall(r'(?:href|src)="(https://[^"]+)"', pagina404):
+        if url == INVITACION:
+            continue
         limpia, _, version = url.partition('?v=')
         relativa = limpia[len(base):]
         destino = raiz / (relativa + 'index.html' if relativa.endswith('/') or not relativa else relativa)
@@ -535,14 +572,16 @@ def main(raiz, sin_apodos=False, avisa=print):
         if kb > maximo:
             falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {maximo} KB)')
 
-    for fichero in sorted(raiz.rglob('*')):
+    # También el extracto de herramientas/: el repositorio es público.
+    for fichero in [*sorted(raiz.rglob('*')), DATOS]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')
+        nombre = fichero.relative_to(raiz).as_posix() if fichero.is_relative_to(raiz) else f'herramientas/{fichero.name}'
         for patron in prohibidos:
             for m in re.finditer(patron, texto):
                 linea = texto.count('\n', 0, m.start()) + 1
-                falla(f'{fichero.relative_to(raiz).as_posix()}:{linea}: dato de miembro o de Discord en la web pública: «{m.group(0)}»')
+                falla(f'{nombre}:{linea}: dato de miembro o de Discord en la web pública: «{m.group(0)}»')
 
     return fallos
 
