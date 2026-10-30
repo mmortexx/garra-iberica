@@ -103,6 +103,19 @@ const BASE = 'http://127.0.0.1:8765/';
       });
       if (fuera.length) malos++;
       console.log(('/' + ruta).padEnd(5), `${ancho}px desbordes:`, fuera.length ? JSON.stringify(fuera.slice(0, 5)) : 'ninguno');
+      // Cartel de la Cacería: en móvil, a todo el ancho y recortado (a su proporción original,
+      // 2,5:1, el rótulo queda ilegible).
+      const cartel = await p.evaluate(async () => {
+        const img = document.querySelector('.marco-ancho img');
+        img.loading = 'eager';
+        await img.decode();
+        const r = img.getBoundingClientRect();
+        return { ancho: Math.round(r.width), proporcion: +(r.width / r.height).toFixed(2), pantalla: document.documentElement.clientWidth };
+      });
+      if (cartel.ancho < cartel.pantalla || cartel.proporcion > 1.7) {
+        malos++;
+        console.log(('/' + ruta).padEnd(5), `${ancho}px cartel de la Cacería pequeño:`, JSON.stringify(cartel));
+      }
       await ctx.close();
     }
     // Cabecera: marca, enlaces del menú, idioma y botón no se pisan a ningún ancho de escritorio.
