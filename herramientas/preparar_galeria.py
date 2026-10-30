@@ -31,6 +31,11 @@ FOTOS = {
     'galeria-bosque': ('Captura de pantalla 2026-10-30 120523.png', (820, 0, 2739, 1439), (400, 800)),
     'galeria-rugido': ('Captura de pantalla 2026-10-30 120652.png', (500, 0, 2419, 1439), (400, 800)),
     'galeria-valle': ('Captura de pantalla 2026-10-30 120933.png', (800, 0, 2719, 1439), (400, 800)),
+    'galeria-charca': ('Captura de pantalla 2026-10-30 144319.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
+    'galeria-secuoyas': ('Captura de pantalla 2026-10-30 144346.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
+    'galeria-pareja': ('Captura de pantalla 2026-10-30 144646.png', (430, 330, 2648, 1439), (600, 1000, 1300)),
+    'galeria-espesura': ('Captura de pantalla 2026-10-30 144625.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
+    'galeria-noche': ('Captura de pantalla 2026-10-30 145144.png', (0, 150, 3080, 1439), (800, 1200, 1600)),
 }
 
 

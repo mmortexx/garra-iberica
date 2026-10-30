@@ -516,11 +516,14 @@ h2::after {
 .foto-bosque img { object-position: 70% 50%; }
 .foto-rugido img { object-position: 0 50%; }
 @media (min-width: 600px) { .foto:not(.foto-grande) { aspect-ratio: 4 / 3; } }
+.galeria .foto-ancha { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.galeria .foto-panoramica { grid-column: 1 / -1; aspect-ratio: 1600 / 670; }
 @media (min-width: 860px) {
   .galeria { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
   .foto { grid-column: span 2; }
   .foto-grande { grid-column: span 4; }
   .galeria .foto-alta { aspect-ratio: auto; }
+  .galeria .foto-ancha { grid-column: span 3; }
 }
 .foto-ampliar { display: block; height: 100%; cursor: zoom-in; }
 .foto-ampliar:focus-visible { outline-offset: -3px; }
