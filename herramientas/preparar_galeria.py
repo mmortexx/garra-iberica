@@ -1,6 +1,7 @@
 """Genera las fotos de la galería a partir de las capturas del juego (3439x1439).
 
-Uso: python herramientas/preparar_galeria.py <carpeta con las capturas>
+Uso: python herramientas/preparar_galeria.py <carpeta con las capturas> [nombre ...]
+Con nombres (p. ej. galeria-tarde), solo genera esas fotos y deja las demás como están.
 Solo lee las capturas; escribe docs/img/galeria-*.webp. Ningún recorte toca la marca de agua del
 juego (arriba a la derecha). Por cada captura salen dos juegos de ficheros:
 - las fotos de la galería, encuadradas en el dinosaurio, con la mejor calidad que cabe en
@@ -36,6 +37,8 @@ FOTOS = {
     'galeria-pareja': ('Captura de pantalla 2026-10-30 144646.png', (430, 330, 2648, 1439), (600, 1000, 1300)),
     'galeria-espesura': ('Captura de pantalla 2026-10-30 144625.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
     'galeria-noche': ('Captura de pantalla 2026-10-30 145144.png', (0, 150, 3080, 1439), (800, 1200, 1600)),
+    'galeria-tarde': ('Captura de pantalla 2026-10-30 175817.png', (560, 200, 3080, 1439), (600, 1000, 1300)),
+    'galeria-cuernos': ('Captura de pantalla 2026-10-30 175839.png', (500, 40, 3080, 1439), (600, 1000, 1300)),
 }
 
 
@@ -53,8 +56,13 @@ def webp(im, calidad):
     return b.getvalue()
 
 
-def main(origen):
+def main(origen, nombres):
+    desconocidas = set(nombres) - set(FOTOS)
+    if desconocidas:
+        sys.exit(f'No hay ninguna foto llamada {", ".join(sorted(desconocidas))}; las hay: {", ".join(FOTOS)}')
     for nombre, (fichero, caja, anchos) in FOTOS.items():
+        if nombres and nombre not in nombres:
+            continue
         im = Image.open(origen / fichero)
         if im.size != TAMANO:
             sys.exit(f'{fichero} mide {im.size}, no {TAMANO}: revisa los recortes')
@@ -82,6 +90,6 @@ def main(origen):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2 or not Path(sys.argv[1]).is_dir():
+    if len(sys.argv) < 2 or not Path(sys.argv[1]).is_dir():
         sys.exit(__doc__)
-    main(Path(sys.argv[1]))
+    main(Path(sys.argv[1]), sys.argv[2:])
