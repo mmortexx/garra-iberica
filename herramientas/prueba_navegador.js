@@ -342,8 +342,9 @@ const ruta = r => ('/' + r).padEnd(15);
     console.log(ruta(''), `transición entre páginas (${nombre}):`, hay === esperada ? 'bien' : `${hay ? 'la hay' : 'no la hay'} y ${esperada ? 'debe haberla' : 'no debe'}`);
     await ctx.close();
   }
-  // Reposo: con otra ventana delante, o tras 20 s sin actividad, el ambiente se para (las ascuas
-  // dejan de pintarse y las animaciones de ambiente quedan en pausa) y vuelve al mover el ratón.
+  // Reposo: con otra ventana delante, tras 20 s sin actividad o con el menú o el visor encima, el
+  // ambiente se para (las ascuas dejan de pintarse y las animaciones de ambiente quedan en pausa) y
+  // vuelve al mover el ratón o al cerrarlos.
   {
     const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
     const p = await ctx.newPage();
@@ -386,6 +387,28 @@ const ruta = r => ('/' + r).padEnd(15);
     await p2.mouse.move(200, 200);
     if (await enReposo()) fallos.push('sigue en reposo tras mover el ratón');
     await ctx2.close();
+    // Con el menú del móvil o el visor de la galería tapando la página, el ambiente de detrás se
+    // para (el cristal no tiene que desenfocarlo en cada fotograma) y vuelve al cerrarlos.
+    const ctx3 = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    const p3 = await ctx3.newPage();
+    const quieta = () => p3.evaluate(() => document.documentElement.classList.contains('reposo'));
+    await p3.goto(BASE, { waitUntil: 'load' });
+    await p3.tap('.menu-boton');
+    await p3.waitForTimeout(300);
+    if (!await quieta()) fallos.push('el ambiente sigue con el menú abierto');
+    await p3.tap('.menu-cerrar');
+    await p3.waitForTimeout(300);
+    if (await quieta()) fallos.push('el ambiente no vuelve al cerrar el menú');
+    await p3.goto(BASE + 'galeria/', { waitUntil: 'load' });
+    await p3.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+    await p3.waitForTimeout(400);
+    await p3.tap('.foto-ampliar >> nth=0');
+    await p3.waitForTimeout(300);
+    if (!await quieta()) fallos.push('el ambiente sigue con el visor abierto');
+    await p3.tap('.visor-cerrar');
+    await p3.waitForTimeout(300);
+    if (await quieta()) fallos.push('el ambiente no vuelve al cerrar el visor');
+    await ctx3.close();
     if (fallos.length) malos++;
     console.log(ruta(''), 'ambiente en reposo:', fallos.length ? fallos.join('; ') : 'se para y vuelve');
   }

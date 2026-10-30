@@ -25,6 +25,12 @@
   --borde: rgba(192, 122, 69, .28);
   --borde-fuerte: rgba(240, 178, 122, .55);
   --linea: rgba(192, 122, 69, .2);
+  /* Cristal: tinte, filo de luz arriba y desenfoque. Desenfoque solo en lo fijo o abierto a
+     propósito (barra, menú, visor, cuenta atrás), nunca en lo que pasa al hacer scroll. */
+  --cristal: linear-gradient(160deg, rgba(46, 29, 18, .55), rgba(14, 10, 7, .62));
+  --cristal-borde: rgba(240, 178, 122, .22);
+  --cristal-brillo: inset 0 1px 0 rgba(255, 228, 196, .1);
+  --cristal-desenfoque: blur(16px) saturate(1.35);
   --titulos: "Anton", Impact, "Arial Narrow Bold", sans-serif;
   --etiquetas: "Barlow Condensed", "Arial Narrow", sans-serif;
   --cuerpo: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -89,8 +95,11 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   border-bottom: 1px solid transparent;
   transition: background .35s, border-color .35s, box-shadow .35s;
 }
-@supports (backdrop-filter: blur(10px)) { .barra { backdrop-filter: blur(10px) saturate(1.2); } }
-.barra.compacta { background: rgba(11, 8, 6, .9); border-color: var(--borde); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.barra.compacta { background: rgba(11, 8, 6, .9); border-color: var(--cristal-borde); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+@supports (backdrop-filter: blur(1px)) {
+  .barra { backdrop-filter: var(--cristal-desenfoque); }
+  .barra.compacta { background: linear-gradient(180deg, rgba(18, 12, 8, .8), rgba(11, 8, 6, .66)); }
+}
 .progreso {
   position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
   background: linear-gradient(90deg, #8c3a0c, var(--ascua), var(--ascua-viva));
@@ -124,6 +133,10 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .barra-acciones { display: flex; align-items: center; gap: .9rem; }
 .idioma { font: 600 .95rem/1 var(--etiquetas); letter-spacing: .12em; color: var(--suave); text-decoration: none; padding: .55rem .2rem; }
 .idioma:hover { color: var(--hueso); }
+/* Enlaces sueltos de texto pequeño: una capa invisible les da 44 px de alto para el dedo sin
+   cambiar cómo se ven. Solo donde no hay otro enlace encima o debajo a menos de esa distancia. */
+.idioma, .migas a, .enlace-cal, .menu-idioma { position: relative; }
+.idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
 /* El menú en una fila necesita ~960 px. Por debajo, un botón lo abre a pantalla completa. Sin
    popover (navegadores antiguos) baja a su propia fila y se parte en líneas si no cabe: nunca queda
    cortado. La prueba de navegador recorre los anchos y avisa de solapes y de enlaces fuera. */
@@ -139,6 +152,14 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
       background:
         radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 110, 25, .22), transparent 70%),
         var(--fondo);
+    }
+    @supports (backdrop-filter: blur(1px)) {
+      .menu[popover]:popover-open {
+        background:
+          radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 110, 25, .24), transparent 70%),
+          rgba(11, 8, 6, .72);
+        backdrop-filter: blur(22px) saturate(1.4);
+      }
     }
     .menu[popover]::backdrop { background: transparent; }
     .menu:popover-open a {
@@ -159,6 +180,15 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   }
 }
 @keyframes menu-entra { from { opacity: 0; translate: -24px 0; } }
+/* Escritorio: el menú en una cápsula de cristal; la página actual, con su ficha encendida. */
+@media (min-width: 1020px) {
+  .menu, .menu[popover] { justify-self: center; gap: .1rem; padding: .25rem; border: 1px solid var(--cristal-borde); border-radius: 99px; background: rgba(255, 236, 214, .035); box-shadow: var(--cristal-brillo); }
+  .menu a { padding: .55rem .8rem; border-radius: 99px; transition: color .25s, background-color .25s, box-shadow .25s; }
+  .menu a::after { left: .8rem; right: .8rem; bottom: .2rem; }
+  .menu a:hover { background: rgba(255, 236, 214, .06); }
+  .menu a[aria-current] { background: rgba(255, 122, 31, .12); box-shadow: inset 0 0 0 1px rgba(255, 122, 31, .28), inset 0 1px 0 rgba(255, 228, 196, .12); }
+  .menu a[aria-current]::after { transform: scaleX(0); }
+}
 .menu-boton, .menu-cerrar {
   place-items: center; width: 44px; height: 44px; padding: 0; flex: none;
   border: 1px solid var(--borde); border-radius: 50%; background: rgba(11, 8, 6, .5); color: var(--hueso); cursor: pointer;
@@ -209,7 +239,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .boton-sec { background: rgba(20, 14, 10, .55); color: var(--hueso); border-color: rgba(240, 178, 122, .55); box-shadow: inset 0 0 0 1px rgba(240, 178, 122, .12); }
 .boton-sec::before { background: linear-gradient(105deg, transparent 30%, rgba(240, 178, 122, .25) 48%, transparent 66%); }
 .boton-sec:hover { color: var(--hueso); background: rgba(192, 122, 69, .16); box-shadow: inset 0 0 0 1px rgba(240, 178, 122, .3), 0 10px 30px -10px rgba(240, 178, 122, .4); }
-.boton-mini { min-height: 40px; padding: .5rem 1.05rem; font-size: 1rem; }
+.boton-mini { min-height: 44px; padding: .5rem 1.05rem; font-size: 1rem; }
 .boton-grande { font-size: clamp(1.05rem, 3.2vw, 1.4rem); padding: 1.05rem 2rem; }
 .latido::after { animation: empuje 2.8s ease-in-out 1.5s 4; }
 @keyframes empuje { 0%, 60%, 100% { transform: none; } 75% { transform: translateX(5px); } }
@@ -502,7 +532,7 @@ h2::after {
 .cuenta-falta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem 1.3rem; margin-top: .8rem !important; font: 600 1.45rem/1.2 var(--etiquetas); letter-spacing: .06em; color: var(--ascua-viva); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(255, 122, 31, .5); }
 .cuenta-falta .t { display: flex; flex-direction: column; min-width: 2.4ch; }
 .cuenta-falta .n { font-size: 2.3rem; line-height: 1; }
-.cuenta-falta .u { margin-top: .4rem; font-size: .72rem; line-height: 1; letter-spacing: .18em; text-transform: uppercase; color: var(--suave); text-shadow: none; }
+.cuenta-falta .u { margin-top: .4rem; font-size: .8rem; line-height: 1; letter-spacing: .18em; text-transform: uppercase; color: var(--suave); text-shadow: none; }
 .cuenta-local { margin-top: .4rem !important; color: var(--suave); font-size: .95rem; }
 .cuenta.en-curso .cuenta-falta { animation: respirar 2s ease-in-out infinite; }
 .cuenta-falta .n { display: inline-block; }
@@ -555,6 +585,7 @@ h2::after {
 @media (min-width: 600px) { .foto:not(.foto-grande) { aspect-ratio: 4 / 3; } }
 .galeria .foto-ancha { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
 .galeria .foto-panoramica { grid-column: 1 / -1; aspect-ratio: 1600 / 670; }
+.galeria .foto-descanso { aspect-ratio: 1600 / 748; }
 @media (min-width: 860px) {
   .galeria { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
   .foto { grid-column: span 2; }
@@ -602,12 +633,16 @@ html:has(.visor[open]) { overflow: hidden; }
 @keyframes visor-gira { to { transform: rotate(1turn); } }
 .visor-cuenta {
   position: absolute; top: .85rem; left: .75rem; margin: 0; padding: .5rem .8rem; border-radius: 99px;
+  border: 1px solid var(--cristal-borde); box-shadow: var(--cristal-brillo);
   background: rgba(11, 8, 6, .7); font: 600 1rem/1 var(--etiquetas); letter-spacing: .12em; color: var(--suave);
 }
 .visor-boton {
   position: absolute; display: grid; place-items: center; width: 2.9rem; height: 2.9rem; padding: 0;
   border: 1px solid var(--borde-fuerte); border-radius: 50%; background: rgba(11, 8, 6, .7); color: var(--hueso);
-  cursor: pointer; transition: border-color .25s, background-color .25s;
+  box-shadow: var(--cristal-brillo); cursor: pointer; transition: border-color .25s, background-color .25s;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .visor-cuenta, .visor-boton { background: rgba(11, 8, 6, .42); backdrop-filter: var(--cristal-desenfoque); }
 }
 .visor-boton:hover { border-color: var(--ascua); background: rgba(40, 22, 10, .85); }
 .visor-boton::before, .visor-boton::after { content: ""; grid-area: 1 / 1; }
@@ -774,7 +809,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
 .pie-enlaces { display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; margin: 0; padding-top: 1.4rem; border-top: 1px solid rgba(192, 122, 69, .15); }
 .pie-enlaces a:last-child { margin-left: auto; }
-.pie-legal { margin: 0; font-size: .85rem; opacity: .8; }
+.pie-legal { margin: 0; font-size: .9rem; opacity: .8; }
 
 /* Cifras del clan, bajo la portada */
 .cifras { list-style: none; max-width: calc(var(--ancho) + 32px); margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.6rem 1rem; }
@@ -808,7 +843,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .dino-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: 1rem; }
 .dino-cabeza h3 { margin: 0; font-size: clamp(1.55rem, 3.6vw, 2rem); text-transform: uppercase; letter-spacing: .02em; }
 .dino:hover .dino-cabeza h3 { color: #fff3dd; }
-.dieta { padding: .4rem .75rem; border: 1px solid; border-radius: 99px; font: 600 .85rem/1 var(--etiquetas); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.dieta { padding: .4rem .75rem; border: 1px solid; border-radius: 99px; font: 600 .9rem/1 var(--etiquetas); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 .dieta-carnivoro { color: #ff9d5c; border-color: rgba(255, 122, 31, .45); background: rgba(255, 90, 20, .08); }
 .dieta-herbivoro { color: #b3d68f; border-color: rgba(150, 195, 110, .45); background: rgba(120, 170, 80, .08); }
 .dieta-omnivoro { color: #f2c66f; border-color: rgba(240, 190, 90, .45); background: rgba(230, 170, 60, .08); }
@@ -861,10 +896,19 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   100% { transform: translate3d(7%, 5%, 0) rotate(4deg) scale(1.12); }
 }
 
-/* Reposo (lo pone efectos.js tras 20 s sin actividad o con otra ventana delante): el ambiente se
-   queda quieto donde esté. */
+/* Reposo (lo pone efectos.js tras 20 s sin actividad, con otra ventana delante o con el menú o el
+   visor tapando la página): el ambiente se queda quieto donde esté. Así el cristal del menú no
+   tiene que volver a desenfocar lo de detrás en cada fotograma. */
 .reposo .niebla::before, .reposo .niebla::after, .reposo .portada::after, .reposo .bajar::before,
 .reposo .tira, .reposo .llamada::before, .reposo .cuenta.en-curso .cuenta-falta { animation-play-state: paused; }
+
+/* Quien pide menos transparencias en su sistema ve el cristal opaco y sin desenfoque. */
+@media (prefers-reduced-transparency: reduce) {
+  .barra, .barra.compacta, .menu[popover]:popover-open, .visor-cuenta, .visor-boton, .cuenta-grande { backdrop-filter: none !important; }
+  .barra, .barra.compacta { background: #110b08; }
+  .menu[popover]:popover-open { background: radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 110, 25, .22), transparent 70%), var(--fondo) !important; }
+  .visor-cuenta, .visor-boton, .cuenta-grande, .saltos a, .indice-grupo li a { background: #160e09; }
+}
 
 /* Cabecera de las páginas interiores: foto a sangre, ascuas y el título encima. */
 .cabecera {
@@ -904,7 +948,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .saltos a, .indice-grupo li a {
   display: inline-block; padding: .4rem .9rem; border: 1px solid var(--borde); border-radius: 99px;
   font: 600 1rem/1.2 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase; color: var(--hueso); text-decoration: none;
-  background: rgba(11, 8, 6, .45); transition: color .2s, border-color .2s, background-color .2s;
+  background: var(--cristal); box-shadow: var(--cristal-brillo); transition: color .2s, border-color .2s, background-color .2s;
 }
 .saltos a:hover { border-color: var(--ascua); background: rgba(255, 122, 31, .1); color: var(--hueso); }
 
@@ -923,7 +967,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   position: relative; isolation: isolate; overflow: hidden; min-height: 14rem;
   display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem;
   border: 1px solid var(--linea); border-radius: 6px;
-  background: linear-gradient(160deg, rgba(48, 28, 15, .5), rgba(14, 10, 7, .85));
+  background: linear-gradient(160deg, rgba(48, 28, 15, .5), rgba(14, 10, 7, .85)); box-shadow: var(--cristal-brillo);
   transition: border-color .4s, box-shadow .5s, translate .5s var(--suave-salida);
 }
 .baldosa-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .6; transition: scale 1.4s var(--suave-salida), opacity .5s; }
@@ -938,7 +982,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .baldosa:has(.baldosa-enlace:focus-visible) { outline: 2px solid var(--ascua-viva); outline-offset: 3px; }
 .baldosa p { margin: 0; color: #d7c8ad; max-width: 34rem; }
 @media (hover: hover) {
-  .baldosa:hover { border-color: var(--borde-fuerte); box-shadow: 0 22px 50px -24px rgba(255, 110, 20, .55); translate: 0 -3px; }
+  .baldosa:hover { border-color: var(--borde-fuerte); box-shadow: 0 22px 50px -24px rgba(255, 110, 20, .55), var(--cristal-brillo); translate: 0 -3px; }
   .baldosa:hover .baldosa-fondo { scale: 1.06; opacity: .75; }
   .baldosa:hover h3::after { translate: 5px 0; }
 }
@@ -965,8 +1009,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 @keyframes tira { to { translate: min(0px, 100cqw - 100%) 0; } }
 
 /* Cuenta atrás grande, en la cabecera de la Cacería. */
-.cuenta-grande { margin: 2rem 0 0; padding: 1.5rem 1.7rem; border: 1px solid var(--borde); border-radius: 6px; background: rgba(11, 8, 6, .62); }
-@supports (backdrop-filter: blur(8px)) { .cuenta-grande { background: rgba(11, 8, 6, .45); backdrop-filter: blur(8px); } }
+.cuenta-grande { margin: 2rem 0 0; padding: 1.5rem 1.7rem; border: 1px solid var(--cristal-borde); border-radius: 8px; background: rgba(11, 8, 6, .62); box-shadow: var(--cristal-brillo), 0 20px 50px -30px rgba(0, 0, 0, .8); }
+@supports (backdrop-filter: blur(1px)) { .cuenta-grande { background: var(--cristal); backdrop-filter: var(--cristal-desenfoque); } }
 @media (min-width: 900px) { .cuenta-grande { margin: 0; } }
 .cuenta-grande .cuenta-falta .n { font-size: clamp(2.5rem, 5.5vw, 3.6rem); }
 

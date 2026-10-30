@@ -226,18 +226,27 @@
 
   if (sinMovimiento.matches) return;
 
-  // Reposo: tras 20 s sin ratón, dedo, rueda ni teclado, o con otra ventana delante, los efectos
-  // de ambiente (ascuas, niebla, pulsos, tira de fotos) se quedan quietos y vuelven en cuanto hay
-  // actividad. Así la web abierta y sin usar no gasta procesador ni batería.
+  // Reposo: tras 20 s sin ratón, dedo, rueda ni teclado, con otra ventana delante o con el menú o
+  // el visor tapando la página, los efectos de ambiente (ascuas, niebla, pulsos, tira de fotos) se
+  // quedan quietos y vuelven en cuanto hay actividad o se cierra lo que tapaba. Así la web abierta
+  // y sin usar no gasta procesador ni batería.
   const REPOSO_MS = 20000;
   const alCambiarReposo = [];
-  let enReposo = false, ultima = 0, reloj = 0;
-  const ponerReposo = quieto => {
+  let enReposo = false, inactiva = false, tapada = false, ultima = 0, reloj = 0;
+  const aplicarReposo = () => {
+    const quieto = inactiva || tapada;
     if (quieto === enReposo) return;
     enReposo = quieto;
     raiz.classList.toggle('reposo', quieto);
     alCambiarReposo.forEach(fn => fn());
   };
+  const ponerReposo = quieto => { inactiva = quieto; aplicarReposo(); };
+  // «toggle» no sube por el documento: se escucha en la fase de captura.
+  const TAPAN = CSS.supports('selector(:popover-open)') ? '.menu:popover-open, .visor[open]' : '.visor[open]';
+  document.addEventListener('toggle', () => {
+    tapada = !!document.querySelector(TAPAN);
+    aplicarReposo();
+  }, true);
   const vigilar = () => {
     const falta = ultima + REPOSO_MS - performance.now();
     if (falta > 0) reloj = setTimeout(vigilar, falta);
