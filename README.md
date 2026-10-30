@@ -85,6 +85,16 @@ Desde la carpeta original del material del clan (solo se lee, no se modifica):
 python herramientas/preparar_imagenes.py RUTA/A/garra-iberica
 ```
 
+Las fotos de la galería salen de capturas del juego a 3439x1439 (los originales no se tocan):
+
+```
+python herramientas/preparar_galeria.py RUTA/A/LAS/CAPTURAS
+```
+
+Recorta cada una dejando fuera la marca de agua de arriba a la derecha y la guarda en WebP en
+varios tamaños (`docs/img/galeria-*.webp`). Qué captura y qué recorte va en cada foto está al
+principio del script.
+
 Necesita Python con Pillow y fontTools.
 
 ## Buscadores

@@ -493,6 +493,33 @@ h2::after {
   .tarjeta p { font-size: .95rem; }
 }
 
+/* Galería: una foto grande y cuatro más. Cada caja fija su proporción (sin saltos al cargar) y la
+   foto la llena; object-position mantiene al dinosaurio dentro en los recortes cuadrados. */
+.galeria { list-style: none; margin: 2.4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .9rem; }
+.foto {
+  position: relative; overflow: hidden; aspect-ratio: 1; margin: 0;
+  background: #130d09; border: 1px solid var(--linea); border-radius: 4px;
+  transition: border-color .4s, box-shadow .4s;
+}
+.foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--suave-salida); }
+.foto::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgba(11, 8, 6, .35));
+}
+.foto:hover { border-color: var(--borde-fuerte); box-shadow: 0 0 24px -6px rgba(255, 122, 31, .45); }
+.foto:hover img { transform: scale(1.04); }
+.foto-grande { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.foto-alta img { object-position: 50% 30%; }
+.foto-bosque img { object-position: 70% 50%; }
+.foto-rugido img { object-position: 0 50%; }
+@media (min-width: 600px) { .foto:not(.foto-grande) { aspect-ratio: 4 / 3; } }
+@media (min-width: 860px) {
+  .galeria { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
+  .foto { grid-column: span 2; }
+  .foto-grande { grid-column: span 4; }
+  .galeria .foto-alta { aspect-ratio: auto; }
+}
+
 /* Pasos: línea de tiempo */
 .pasos { list-style: none; margin: 2.6rem 0 2.2rem; padding: 0; display: grid; }
 .pasos li { display: grid; grid-template-columns: 60px 1fr; column-gap: 1.3rem; padding: 0 0 2.2rem; }
