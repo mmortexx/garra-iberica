@@ -65,15 +65,20 @@ const BASE = 'http://127.0.0.1:8765/';
       const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, reducedMotion: 'reduce' });
       const p = await ctx.newPage();
       await p.goto(BASE + ruta, { waitUntil: 'load' });
+      await p.evaluate(() => document.fonts.ready);
       const ids = await p.evaluate(() => [...document.querySelectorAll('main section[id]')].map(s => s.id));
+      const estado = id => ({
+        marcado: [...document.querySelectorAll('.menu a[aria-current]')].map(a => a.hash.slice(1)).join(','),
+        esperado: document.querySelector(`.menu a[href="#${id}"]`) ? id : '',
+      });
       const mal = [];
       for (const id of ids) {
-        await p.evaluate(id => scrollTo(0, document.getElementById(id).getBoundingClientRect().top + scrollY - innerHeight * 0.47), id);
-        await p.waitForTimeout(250);
-        const r = await p.evaluate(id => ({
-          marcado: [...document.querySelectorAll('.menu a[aria-current]')].map(a => a.hash.slice(1)).join(','),
-          esperado: document.querySelector(`.menu a[href="#${id}"]`) ? id : '',
-        }), id);
+        // El borde de la sección al 40 % de la altura: la franja de lectura (45–50 %) queda dentro.
+        await p.evaluate(id => scrollTo(0, document.getElementById(id).getBoundingClientRect().top + scrollY - innerHeight * 0.40), id);
+        // Se espera a que el menú llegue a lo esperado; si no llega en 2 s, se informa de lo que hay.
+        await p.waitForFunction(`(e => e.marcado === e.esperado)((${estado})(${JSON.stringify(id)}))`, null, { timeout: 2000 })
+          .catch(() => {});
+        const r = await p.evaluate(estado, id);
         if (r.marcado !== r.esperado) mal.push(`#${id}: marcado «${r.marcado}», esperado «${r.esperado}»`);
       }
       if (mal.length) malos++;
