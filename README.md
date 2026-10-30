@@ -12,7 +12,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `docs/index.html` | La página en español (la principal). |
 | `docs/en/index.html` | La versión en inglés. Si cambias un texto, cámbialo en las dos. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
-| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, menú activo. La página funciona igual sin él. |
+| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, menú activo, visor de la galería. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
 | `docs/404.html` | Página de «no encontrada». |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
@@ -62,7 +62,9 @@ node herramientas/prueba_caceria.js
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes ni enlaces del menú cortados de 320 a 1440 px
   y, de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha que la pantalla y la marca de
-  la cabecera en la misma vertical que los títulos de todas las secciones.
+  la cabecera en la misma vertical que los títulos de todas las secciones. También usa el visor de
+  la galería con ratón y con el dedo, y comprueba que, si las fuentes llegan tarde, la página no
+  da saltos y que, si llegan a tiempo, se pintan las fuentes propias.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
@@ -91,9 +93,11 @@ Las fotos de la galería salen de capturas del juego a 3439x1439 (los originales
 python herramientas/preparar_galeria.py RUTA/A/LAS/CAPTURAS
 ```
 
-Recorta cada una dejando fuera la marca de agua de arriba a la derecha y la guarda en WebP en
-varios tamaños (`docs/img/galeria-*.webp`). Qué captura y qué recorte va en cada foto está al
-principio del script.
+Saca de cada una la foto de la galería (encuadrada en el dinosaurio, la mejor calidad que cabe en
+120 KB) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
+resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp`). Qué captura y
+qué recorte va en cada foto está al principio del script. Las ampliadas solo se descargan al abrir
+una foto en el visor; `comprobar.py` no deja que la página las cargue por su cuenta.
 
 Necesita Python con Pillow y fontTools.
 

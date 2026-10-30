@@ -85,6 +85,132 @@
     });
   }
 
+  // Visor de la galería. Sin él, cada foto es un enlace a su imagen grande.
+  // Ajustada, la foto cabe en pantalla; al pulsarla pasa a su resolución real, centrada en ese punto.
+  const fotos = [...document.querySelectorAll('.foto-ampliar')];
+  if (fotos.length && window.HTMLDialogElement) {
+    const t = raiz.lang.startsWith('en')
+      ? { visor: 'Photo viewer', cerrar: 'Close', ant: 'Previous photo', sig: 'Next photo' }
+      : { visor: 'Visor de fotos', cerrar: 'Cerrar', ant: 'Foto anterior', sig: 'Foto siguiente' };
+    const visor = document.createElement('dialog');
+    visor.className = 'visor';
+    visor.setAttribute('aria-label', t.visor);
+    visor.innerHTML = '<div class="visor-marco"><img class="visor-img" alt=""></div><p class="visor-cuenta" aria-live="polite"></p>'
+      + `<button class="visor-boton visor-cerrar" type="button" aria-label="${t.cerrar}" autofocus></button>`
+      + `<button class="visor-boton visor-ant" type="button" aria-label="${t.ant}"></button>`
+      + `<button class="visor-boton visor-sig" type="button" aria-label="${t.sig}"></button>`;
+    document.body.append(visor);
+    const marco = visor.querySelector('.visor-marco');
+    const img = visor.querySelector('.visor-img');
+    const cuenta = visor.querySelector('.visor-cuenta');
+    const anchoMayor = a => Math.max(...a.dataset.srcset.split(',').map(p => parseInt(p.trim().split(/\s+/)[1], 10)));
+    const ahorro = navigator.connection && navigator.connection.saveData;
+    let actual = 0;
+    const enReal = () => visor.classList.contains('real');
+    // Rectángulo que ocupa la foto dentro de su caja (object-fit: contain).
+    const zonaFoto = () => {
+      const c = img.getBoundingClientRect();
+      if (!img.naturalWidth) return c;
+      const esc = Math.min(c.width / img.naturalWidth, c.height / img.naturalHeight);
+      const w = img.naturalWidth * esc, h = img.naturalHeight * esc;
+      return { left: c.left + (c.width - w) / 2, top: c.top + (c.height - h) / 2, width: w, height: h };
+    };
+    const ajustar = () => {
+      visor.classList.remove('real');
+      img.style.removeProperty('width');
+      img.sizes = '100vw';
+    };
+    const ampliar = (x, y) => {
+      const z = zonaFoto();
+      const fx = Math.min(1, Math.max(0, (x - z.left) / z.width)), fy = Math.min(1, Math.max(0, (y - z.top) / z.height));
+      const ancho = Math.round(Math.max(anchoMayor(fotos[actual]) / (devicePixelRatio || 1), z.width * 1.5));
+      img.sizes = `${ancho}px`;
+      img.style.width = `${ancho}px`;
+      visor.classList.add('real');
+      const alto = ancho * z.height / z.width;
+      marco.scrollLeft = fx * ancho - marco.clientWidth / 2;
+      marco.scrollTop = fy * alto - marco.clientHeight / 2;
+    };
+    const precargar = i => {
+      if (ahorro) return;
+      const p = new Image();
+      p.sizes = '100vw';
+      p.srcset = fotos[i].dataset.srcset;
+    };
+    const mostrar = i => {
+      actual = (i + fotos.length) % fotos.length;
+      const a = fotos[actual];
+      ajustar();
+      visor.classList.add('cargando');
+      // Vaciarla antes asegura un «load» aunque se vuelva a abrir la misma foto.
+      img.removeAttribute('srcset');
+      img.removeAttribute('src');
+      img.srcset = a.dataset.srcset;
+      img.src = a.href;
+      img.alt = a.querySelector('img').alt;
+      cuenta.textContent = `${actual + 1} / ${fotos.length}`;
+    };
+    img.addEventListener('load', () => {
+      if (!visor.classList.contains('cargando')) return;
+      visor.classList.remove('cargando');
+      precargar((actual + 1) % fotos.length);
+    });
+    img.addEventListener('error', () => visor.classList.remove('cargando'));
+    fotos.forEach((a, i) => a.addEventListener('click', ev => {
+      if (ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault();
+      mostrar(i);
+      visor.showModal();
+    }));
+    visor.querySelector('.visor-cerrar').addEventListener('click', () => visor.close());
+    visor.querySelector('.visor-ant').addEventListener('click', () => mostrar(actual - 1));
+    visor.querySelector('.visor-sig').addEventListener('click', () => mostrar(actual + 1));
+    visor.addEventListener('keydown', ev => {
+      if (ev.key === 'ArrowLeft' && !enReal()) mostrar(actual - 1);
+      else if (ev.key === 'ArrowRight' && !enReal()) mostrar(actual + 1);
+    });
+    // Escape con la foto ampliada vuelve a ajustarla; si no, cierra.
+    visor.addEventListener('cancel', ev => { if (enReal()) { ev.preventDefault(); ajustar(); } });
+    visor.addEventListener('close', () => { ajustar(); fotos[actual].focus(); });
+    addEventListener('resize', () => { if (visor.open && enReal()) ajustar(); });
+
+    // Arrastrar con el ratón recorre la foto ampliada; deslizar con el dedo cambia de foto.
+    // Un arrastre no cuenta como pulsación.
+    let inicio = null, arrastrado = false;
+    marco.addEventListener('pointerdown', ev => {
+      inicio = { x: ev.clientX, y: ev.clientY, sl: marco.scrollLeft, st: marco.scrollTop, tipo: ev.pointerType };
+      arrastrado = false;
+    });
+    marco.addEventListener('pointermove', ev => {
+      if (!inicio) return;
+      const dx = ev.clientX - inicio.x, dy = ev.clientY - inicio.y;
+      if (Math.abs(dx) + Math.abs(dy) > 6) arrastrado = true;
+      if (enReal() && inicio.tipo === 'mouse' && arrastrado) {
+        marco.classList.add('arrastrando');
+        marco.scrollLeft = inicio.sl - dx;
+        marco.scrollTop = inicio.st - dy;
+      }
+    });
+    const soltar = ev => {
+      if (!inicio) return;
+      const dx = ev.clientX - inicio.x, dy = ev.clientY - inicio.y;
+      if (ev.type === 'pointerup' && inicio.tipo !== 'mouse' && !enReal() && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        mostrar(actual + (dx < 0 ? 1 : -1));
+      }
+      marco.classList.remove('arrastrando');
+      inicio = null;
+    };
+    marco.addEventListener('pointerup', soltar);
+    marco.addEventListener('pointercancel', soltar);
+    marco.addEventListener('click', ev => {
+      if (arrastrado) { arrastrado = false; return; }
+      if (enReal()) { ajustar(); return; }
+      const z = zonaFoto();
+      const dentro = ev.clientX >= z.left && ev.clientX <= z.left + z.width && ev.clientY >= z.top && ev.clientY <= z.top + z.height;
+      if (dentro) ampliar(ev.clientX, ev.clientY); else visor.close();
+    });
+  }
+
   if (sinMovimiento.matches) return;
 
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer

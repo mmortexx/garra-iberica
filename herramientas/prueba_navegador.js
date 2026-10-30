@@ -1,6 +1,7 @@
 // Prueba la web en un navegador real: contenido visible con y sin JavaScript y con «reducir
 // movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
-// sin solapes, página nunca más ancha que la pantalla y marca alineada con los títulos.
+// sin solapes, página nunca más ancha que la pantalla, marca alineada con los títulos, visor de la
+// galería y fuentes sin saltos al llegar tarde.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -187,6 +188,103 @@ const BASE = 'http://127.0.0.1:8765/';
     console.log(('/' + ruta).padEnd(5), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
     console.log(('/' + ruta).padEnd(5), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
     console.log(('/' + ruta).padEnd(5), 'menú 320–1440px cortado:', cortados.length ? `${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'nunca');
+    await ctx.close();
+  }
+  // Visor de la galería, con ratón y con el dedo: abre, cambia de foto, amplía y vuelve, cierra
+  // devolviendo el foco a la foto. Las grandes no se descargan hasta abrir el visor.
+  for (const ruta of ['', 'en/']) {
+    for (const [tipo, opts] of [['ratón', { viewport: { width: 1366, height: 850 } }],
+      ['dedo', { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true }]]) {
+      const ctx = await navegador.newContext(opts);
+      const p = await ctx.newPage();
+      const grandes = [];
+      p.on('request', r => { if (r.url().includes('-ampliada-')) grandes.push(r.url()); });
+      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      await p.locator('.galeria').scrollIntoViewIfNeeded();
+      await p.waitForTimeout(600);
+      const fallos = [];
+      if (grandes.length) fallos.push(`descarga ${grandes.length} grandes sin abrir el visor`);
+      const estado = () => p.evaluate(() => {
+        const v = document.querySelector('.visor'), m = v && v.querySelector('.visor-marco'), i = v && v.querySelector('.visor-img');
+        return v && { abierto: v.open, real: v.classList.contains('real'), cuenta: v.querySelector('.visor-cuenta').textContent,
+          cargada: i.complete && i.naturalWidth > 0 && !v.classList.contains('cargando'), fuente: i.currentSrc.split('/').pop(),
+          recorre: m.scrollWidth > m.clientWidth + 10, foco: document.activeElement.className };
+      });
+      const esperar = cond => p.waitForFunction(cond, null, { timeout: 8000 }).then(() => true, () => false);
+      const cargada = '(() => { const v = document.querySelector(".visor"); const i = v.querySelector(".visor-img"); return i.complete && i.naturalWidth > 0 && !v.classList.contains("cargando"); })()';
+      const pulsar = sel => tipo === 'dedo' ? p.tap(sel) : p.click(sel);
+      await pulsar('.foto-ampliar >> nth=0');
+      if (!(await esperar(cargada))) fallos.push('la primera foto no carga');
+      let e = await estado();
+      if (!e || !e.abierto || e.cuenta !== '1 / 5' || !e.fuente.includes('-ampliada-')) fallos.push(`al abrir: ${JSON.stringify(e)}`);
+      if (tipo === 'ratón') await p.keyboard.press('ArrowRight'); else await pulsar('.visor-sig');
+      await esperar(cargada);
+      e = await estado();
+      if (e.cuenta !== '2 / 5' || !e.fuente.includes('roca-ampliada')) fallos.push(`siguiente: ${JSON.stringify(e)}`);
+      const caja = await p.locator('.visor-img').boundingBox();
+      const centro = [caja.x + caja.width / 2, caja.y + caja.height / 2];
+      if (tipo === 'dedo') await p.touchscreen.tap(...centro); else await p.mouse.click(...centro);
+      await p.waitForTimeout(400);
+      e = await estado();
+      if (!e.real || !e.recorre) fallos.push(`ampliar: ${JSON.stringify(e)}`);
+      if (tipo === 'ratón') {
+        if (!(await esperar('document.querySelector(".visor-img").currentSrc.includes("-3080.")'))) fallos.push('ampliada sin la resolución original');
+        await p.keyboard.press('Escape');
+        e = await estado();
+        if (e.real || !e.abierto) fallos.push(`Escape con la foto ampliada: ${JSON.stringify(e)}`);
+        await p.keyboard.press('Escape');
+      } else {
+        await p.touchscreen.tap(...centro);
+        await p.waitForTimeout(300);
+        e = await estado();
+        if (e.real) fallos.push('volver a ajustar no funciona');
+        await pulsar('.visor-cerrar');
+      }
+      await p.waitForTimeout(300);
+      e = await estado();
+      const foco = await p.evaluate(() => document.activeElement === document.querySelectorAll('.foto-ampliar')[1]);
+      if (e.abierto || !foco) fallos.push(`al cerrar: ${JSON.stringify(e)}, foco en la foto: ${foco}`);
+      if (fallos.length) malos++;
+      console.log(('/' + ruta).padEnd(5), `visor de la galería (${tipo}):`, fallos.length ? fallos.join('; ') : 'bien');
+      await ctx.close();
+    }
+  }
+  // Con conexión lenta las fuentes llegan después del primer pintado: el texto no debe empujar
+  // la página al cambiar de la fuente de reserva a la buena.
+  for (const ruta of ['', 'en/']) {
+    const saltos = [];
+    for (const ancho of [320, 375, 412, 768, 1100, 1440]) {
+      const ctx = await navegador.newContext({ viewport: { width: ancho, height: 800 } });
+      await ctx.addInitScript(() => {
+        window.__saltos = 0;
+        new PerformanceObserver(l => l.getEntries().forEach(e => { if (!e.hadRecentInput) window.__saltos += e.value; }))
+          .observe({ type: 'layout-shift', buffered: true });
+      });
+      const p = await ctx.newPage();
+      await p.route(/\.woff2$/, async r => { await new Promise(z => setTimeout(z, 1500)); await r.continue(); });
+      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      await p.waitForTimeout(800);
+      const s = await p.evaluate(() => window.__saltos);
+      if (s > 0.02) saltos.push(`${ancho}px: ${s.toFixed(3)}`);
+      await ctx.close();
+    }
+    if (saltos.length) malos++;
+    console.log(('/' + ruta).padEnd(5), 'saltos al llegar tarde las fuentes:', saltos.length ? saltos.join(', ') : 'ninguno');
+    // Y con conexión normal se pinta con las fuentes propias, no con las de reserva.
+    const ctx = await navegador.newContext({ viewport: { width: 412, height: 800 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + ruta, { waitUntil: 'load' });
+    const cdp = await ctx.newCDPSession(p);
+    const { root } = await cdp.send('DOM.getDocument');
+    await cdp.send('CSS.enable');
+    const faltan = [];
+    for (const [sel, esperada] of [['.menu a', 'Barlow Condensed'], ['.marca', 'Anton']]) {
+      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: sel });
+      const familias = (await cdp.send('CSS.getPlatformFontsForNode', { nodeId })).fonts.map(f => f.familyName);
+      if (!familias.length || !familias.every(f => f.startsWith(esperada))) faltan.push(`${sel} ${esperada} (se pinta ${familias.join('/') || 'nada'})`);
+    }
+    if (faltan.length) malos++;
+    console.log(('/' + ruta).padEnd(5), 'fuentes propias en pantalla:', faltan.length ? `faltan ${faltan.join(', ')}` : 'sí');
     await ctx.close();
   }
   await navegador.close();

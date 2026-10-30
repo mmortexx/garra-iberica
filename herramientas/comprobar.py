@@ -26,6 +26,9 @@ PAGINAS = {
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
 MAX_KB_IMAGEN = 120
+# Las fotos de la galería a tamaño grande solo se descargan si alguien abre una.
+AMPLIADA = '-ampliada-'
+MAX_KB_AMPLIADA = 1200
 # IDs de Discord: no deben salir en la web pública. Los apodos de miembros a vigilar están en
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'
@@ -241,10 +244,12 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
             v = a.get(attr)
             if v and not re.match(r'(https?:|#|mailto:)', v):
                 locales.add(v)
-        for attr in ('srcset', 'imagesrcset'):
+        for attr in ('srcset', 'imagesrcset', 'data-srcset'):
             for parte in (a.get(attr) or '').split(','):
                 if parte.strip():
                     locales.add(parte.split()[0])
+        if t in ('img', 'link', 'source') and AMPLIADA in ' '.join(a.get(x) or '' for x in ('src', 'srcset', 'href', 'imagesrcset')):
+            falla(f'{nombre}: <{t}> carga una foto ampliada al abrir la página; solo se enlazan')
         if t == 'img':
             if 'alt' not in a:
                 falla(f'{nombre}: <img src="{a.get("src")}"> sin atributo alt')
@@ -428,8 +433,9 @@ def main(raiz, sin_apodos=False, avisa=print):
         if img.resolve() not in usados:
             falla(f'img/{img.name} no se usa en ninguna página: sobra')
         kb = img.stat().st_size / 1024
-        if kb > MAX_KB_IMAGEN:
-            falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {MAX_KB_IMAGEN} KB)')
+        maximo = MAX_KB_AMPLIADA if AMPLIADA in img.name else MAX_KB_IMAGEN
+        if kb > maximo:
+            falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {maximo} KB)')
 
     for fichero in sorted(raiz.rglob('*')):
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
