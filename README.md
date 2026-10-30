@@ -12,7 +12,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, galería, únete), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
 | `docs/**/index.html` | Las 12 páginas publicadas (6 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
-| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
+| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
 | `docs/404.html` | Página de «no encontrada». |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
@@ -84,7 +84,9 @@ node herramientas/prueba_caceria.js
   que la pantalla y la marca de la cabecera en la misma vertical que los títulos de las secciones.
   En el móvil abre el menú, lo cierra con Escape y con la X y recorre todas las páginas desde él;
   prueba los enlaces viejos de la portada, usa el visor de la galería con ratón y con el dedo,
-  comprueba que la escalera de rangos sube en títulos y líneas, que el ambiente se para en reposo y
+  comprueba que la escalera de rangos sube en títulos y líneas, que el ambiente se para en reposo
+  (y con el menú o el visor encima), que el botón de volver arriba sale al subir, lleva arriba y
+  no tapa el pie y
   comprueba que, si las fuentes llegan tarde, la página no da saltos y que, si llegan a tiempo, se
   pintan las fuentes propias.
 

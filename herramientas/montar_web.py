@@ -69,7 +69,7 @@ T = {
         'nueva': ' (se abre en una pestaña nueva)',
         'pie_texto': 'Clan español de The Isle Evrima, abierto a jugadores de España y Latinoamérica.',
         'pie_menu': 'Pie de página', 'pie_discord': 'Discord del clan', 'pie_steam': 'The Isle en Steam',
-        'arriba': 'Volver arriba ↑',
+        'arriba': 'Volver arriba ↑', 'subir': 'Volver arriba',
         'legal': 'Web de fans hecha por el clan. No estamos afiliados a los creadores de The Isle ni a Discord. Las marcas pertenecen a sus dueños.',
         'og_alt': 'Cartel del clan GARRA IBÉRICA de The Isle Evrima: tres arañazos de garra al rojo vivo sobre una roca en la selva',
         'org': {
@@ -89,7 +89,7 @@ T = {
         'nueva': ' (opens in a new tab)',
         'pie_texto': 'Spanish-speaking The Isle Evrima clan, open to players from Spain and Latin America.',
         'pie_menu': 'Footer', 'pie_discord': 'Clan Discord', 'pie_steam': 'The Isle on Steam',
-        'arriba': 'Back to top ↑',
+        'arriba': 'Back to top ↑', 'subir': 'Back to top',
         'legal': 'Fan site made by the clan. We are not affiliated with the creators of The Isle or with Discord. All trademarks belong to their owners.',
         'og_alt': 'Banner of the GARRA IBÉRICA clan for The Isle Evrima: three red-hot claw marks on a rock in the jungle',
         'org': {
@@ -285,6 +285,8 @@ def pie(pagina, lang):
         f'    <p class="pie-legal">{t["legal"]}</p>',
         '  </div>',
         '</footer>',
+        # Atajo flotante (lo enseña efectos.js al subir en una página larga); el del pie es el de siempre.
+        f'<a class="subir" href="#contenido"><span class="oculto">{t["subir"]}</span></a>',
     ]
 
 

@@ -811,6 +811,24 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pie-enlaces a:last-child { margin-left: auto; }
 .pie-legal { margin: 0; font-size: .9rem; opacity: .8; }
 
+/* Los enlaces a #contenido (saltar, volver arriba) llevan arriba del todo: con la barra fija
+   encima, parar en el borde de <main> dejaría la cabecera metida bajo ella. */
+#contenido { scroll-margin-top: 100vh; }
+/* Volver arriba flotante, de cristal. Escondido sale del orden del tabulador (el pie tiene el suyo). */
+.subir {
+  position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 15;
+  display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
+  border: 1px solid var(--cristal-borde); background: rgba(16, 11, 8, .82); color: var(--hueso);
+  box-shadow: var(--cristal-brillo), 0 12px 30px -12px rgba(0, 0, 0, .9);
+  opacity: 0; visibility: hidden; translate: 0 14px;
+  transition: opacity .3s, translate .35s var(--suave-salida), visibility 0s .35s, border-color .25s, color .25s;
+}
+.subir::before { content: ""; width: .7rem; height: .7rem; border: solid currentColor; border-width: 2px 0 0 2px; rotate: 45deg; translate: 0 2px; }
+.ver-subir .subir { opacity: 1; visibility: visible; translate: none; transition: opacity .3s, translate .35s var(--suave-salida), visibility 0s, border-color .25s, color .25s; }
+.subir:hover { border-color: var(--ascua); color: var(--ascua-viva); }
+@supports (backdrop-filter: blur(1px)) { .subir { background: rgba(16, 11, 8, .5); backdrop-filter: var(--cristal-desenfoque); } }
+@media print { .subir { display: none; } }
+
 /* Cifras del clan, bajo la portada */
 .cifras { list-style: none; max-width: calc(var(--ancho) + 32px); margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.6rem 1rem; }
 @media (min-width: 760px) { .cifras { grid-template-columns: repeat(4, 1fr); } }
@@ -904,10 +922,10 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 
 /* Quien pide menos transparencias en su sistema ve el cristal opaco y sin desenfoque. */
 @media (prefers-reduced-transparency: reduce) {
-  .barra, .barra.compacta, .menu[popover]:popover-open, .visor-cuenta, .visor-boton, .cuenta-grande { backdrop-filter: none !important; }
+  .barra, .barra.compacta, .menu[popover]:popover-open, .visor-cuenta, .visor-boton, .cuenta-grande, .subir { backdrop-filter: none !important; }
   .barra, .barra.compacta { background: #110b08; }
   .menu[popover]:popover-open { background: radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 110, 25, .22), transparent 70%), var(--fondo) !important; }
-  .visor-cuenta, .visor-boton, .cuenta-grande, .saltos a, .indice-grupo li a { background: #160e09; }
+  .visor-cuenta, .visor-boton, .cuenta-grande, .saltos a, .indice-grupo li a, .subir { background: #160e09; }
 }
 
 /* Cabecera de las páginas interiores: foto a sangre, ascuas y el título encima. */

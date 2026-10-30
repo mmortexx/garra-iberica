@@ -412,6 +412,38 @@ const ruta = r => ('/' + r).padEnd(15);
     if (fallos.length) malos++;
     console.log(ruta(''), 'ambiente en reposo:', fallos.length ? fallos.join('; ') : 'se para y vuelve');
   }
+  // Volver arriba flotante: no sale al bajar leyendo, sí al subir en una página larga; lleva arriba
+  // y se aparta con el pie a la vista.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + 'dinosaurios/', { waitUntil: 'load' });
+    await p.mouse.move(600, 400);
+    const visto = () => p.evaluate(() => { const b = document.querySelector('.subir'); return !!b && getComputedStyle(b).visibility === 'visible'; });
+    const rueda = async dy => { await p.mouse.wheel(0, dy); await p.waitForTimeout(700); };
+    const fallos = [];
+    if (!await p.locator('.subir').count()) fallos.push('no hay botón');
+    else {
+      await rueda(3000);
+      if (await visto()) fallos.push('se ve al bajar');
+      await rueda(-300);
+      if (!await visto()) fallos.push('no se ve al subir');
+      await rueda(300);
+      if (await visto()) fallos.push('no se aparta al volver a bajar');
+      await rueda(-300);
+      await p.click('.subir', { timeout: 3000 }).catch(() => fallos.push('no se puede pulsar'));
+      await p.waitForFunction(() => scrollY < 10, null, { timeout: 5000 }).catch(() => fallos.push('no lleva arriba del todo'));
+      await p.waitForTimeout(500);
+      if (await visto()) fallos.push('sigue a la vista arriba del todo');
+      await p.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+      await p.waitForTimeout(400);
+      await rueda(-120);
+      if (await visto()) fallos.push('tapa el pie');
+    }
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta('dinosaurios/'), 'volver arriba flotante:', fallos.length ? fallos.join('; ') : 'bien');
+  }
   // Volver con «Atrás» a una página que se dejó con el menú abierto (la recupera de la memoria,
   // tal cual): el menú debe estar cerrado. Playwright apaga esa memoria por defecto; aquí no. Hace
   // falta el Chromium completo: el reducido para modo sin ventana (el de por defecto) no la tiene.
