@@ -121,9 +121,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .barra-acciones { display: flex; align-items: center; gap: .9rem; }
 .idioma { font: 600 .95rem/1 var(--etiquetas); letter-spacing: .12em; color: var(--suave); text-decoration: none; padding: .55rem .2rem; }
 .idioma:hover { color: var(--hueso); }
-/* El menú en una fila necesita ~1175 px en español; por debajo pasa a su propia fila deslizable.
-   Si cambia el menú, la prueba de navegador recorre los anchos y avisa del solape. */
-@media (max-width: 1199px) {
+/* El menú en una fila necesita ~780 px en español; por debajo de 900 pasa a su propia fila
+   deslizable. Si cambia el menú, la prueba de navegador recorre los anchos y avisa del solape. */
+@media (max-width: 899px) {
   .barra-in { grid-template-columns: 1fr auto; row-gap: 0; }
   .menu {
     grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; gap: 1.2rem;

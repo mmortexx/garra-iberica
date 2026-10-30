@@ -27,7 +27,8 @@
   addEventListener('scroll', unaVezPorFotograma(alDesplazar), { passive: true });
   alDesplazar();
 
-  // Menú: marca la sección que se está leyendo; en la portada no marca ninguna.
+  // Menú: marca la sección que se está leyendo; en la portada y en las que no están en el menú,
+  // ninguna (si solo se vigilaran las del menú, la anterior seguiría marcada al pasar por ellas).
   const menu = document.querySelector('.menu');
   const enlaces = new Map([...menu.querySelectorAll('a')].map(a => [a.hash.slice(1), a]));
   const vigia = new IntersectionObserver(entradas => {
@@ -45,8 +46,7 @@
       }
     }
   }, { rootMargin: '-45% 0px -50% 0px' });
-  [document.querySelector('.portada'), ...[...enlaces.keys()].map(id => document.getElementById(id))]
-    .forEach(s => { if (s) vigia.observe(s); });
+  document.querySelectorAll('main section[id]').forEach(s => vigia.observe(s));
 
   // Punto exacto de los arañazos en la portada, sea cual sea el recorte de la imagen.
   const portada = document.querySelector('.portada');

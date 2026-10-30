@@ -60,6 +60,26 @@ const BASE = 'http://127.0.0.1:8765/';
       console.log(('/' + ruta).padEnd(5), nombre.padEnd(20), JSON.stringify(r), 'errores:', JSON.stringify(errores));
       await ctx.close();
     }
+    // Menú: con cada sección en la franja de lectura se marca su enlace, o ninguno si no está en él.
+    {
+      const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, reducedMotion: 'reduce' });
+      const p = await ctx.newPage();
+      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      const ids = await p.evaluate(() => [...document.querySelectorAll('main section[id]')].map(s => s.id));
+      const mal = [];
+      for (const id of ids) {
+        await p.evaluate(id => scrollTo(0, document.getElementById(id).getBoundingClientRect().top + scrollY - innerHeight * 0.47), id);
+        await p.waitForTimeout(250);
+        const r = await p.evaluate(id => ({
+          marcado: [...document.querySelectorAll('.menu a[aria-current]')].map(a => a.hash.slice(1)).join(','),
+          esperado: document.querySelector(`.menu a[href="#${id}"]`) ? id : '',
+        }), id);
+        if (r.marcado !== r.esperado) mal.push(`#${id}: marcado «${r.marcado}», esperado «${r.esperado}»`);
+      }
+      if (mal.length) malos++;
+      console.log(('/' + ruta).padEnd(5), 'menú marca la sección:', mal.length ? JSON.stringify(mal) : `bien en ${ids.length} secciones`);
+      await ctx.close();
+    }
     // Texto que se sale de la pantalla en móviles estrechos (overflow:hidden lo esconde sin avisar).
     for (const ancho of [320, 360, 412]) {
       const ctx = await navegador.newContext({ viewport: { width: ancho, height: 760 }, isMobile: true, hasTouch: true });
@@ -88,8 +108,8 @@ const BASE = 'http://127.0.0.1:8765/';
     const p = await ctx.newPage();
     await p.goto(BASE + ruta, { waitUntil: 'load' });
     await p.evaluate(() => document.fonts.ready);
-    const anchos = [1100, 1170];
-    for (let w = 1000; w <= 1440; w += 5) anchos.push(w);
+    const anchos = [];
+    for (let w = 760; w <= 1440; w += 5) anchos.push(w);
     const solapes = [];
     for (const ancho of anchos) {
       await p.setViewportSize({ width: ancho, height: 850 });
@@ -114,7 +134,7 @@ const BASE = 'http://127.0.0.1:8765/';
       if (s.length) solapes.push(`${ancho}px: ${s[0]}`);
     }
     if (solapes.length) malos++;
-    console.log(('/' + ruta).padEnd(5), 'cabecera 1000–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    console.log(('/' + ruta).padEnd(5), 'cabecera 760–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
     await ctx.close();
   }
   await navegador.close();

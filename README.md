@@ -59,7 +59,7 @@ node herramientas/prueba_caceria.js
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las dos
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
-  cortado en móviles estrechos y la cabecera sin solapes de 1000 a 1440 px.
+  cortado en móviles estrechos y la cabecera sin solapes de 760 a 1440 px.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
