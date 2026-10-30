@@ -37,6 +37,52 @@ TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Downloads' / 
 FRANJA = {'es': r'entre las (\d{2}):00 y las (\d{2}):00', 'en': r'between (\d{2}):00 and (\d{2}):00'}
 
 
+def tablas_woff2(datos):
+    """Etiquetas de las tablas de un WOFF2, leídas de su directorio (que no va comprimido)."""
+    conocidas = ('cmap head hhea hmtx maxp name OS/2 post cvt  fpgm glyf loca prep CFF  VORG EBDT '
+                 'EBLC gasp hdmx kern LTSH PCLT VDMX vhea vmtx BASE GDEF GPOS GSUB EBSC JSTF MATH '
+                 'CBDT CBLC COLR CPAL SVG  sbix acnt avar bdat bloc bsln cvar fdsc feat fmtx fvar '
+                 'gvar hsty just lcar mort morx opbd prop trak Zapf Silf Glat Gloc Feat Sill')
+    conocidas = [conocidas[i:i + 4] for i in range(0, len(conocidas), 5)]
+    if datos[:4] != b'wOF2':
+        raise ValueError('no es WOFF2')
+    pos, tablas = 48, []
+
+    def base128():
+        nonlocal pos
+        valor = 0
+        for _ in range(5):
+            b = datos[pos]
+            pos += 1
+            valor = (valor << 7) | (b & 0x7f)
+            if not b & 0x80:
+                return valor
+        raise ValueError('UIntBase128 mal formado')
+
+    for _ in range(int.from_bytes(datos[12:14], 'big')):
+        marcas = datos[pos]
+        pos += 1
+        if marcas & 0x3f == 63:
+            etiqueta = datos[pos:pos + 4].decode('latin-1')
+            pos += 4
+        else:
+            etiqueta = conocidas[marcas & 0x3f]
+        base128()
+        transformada = marcas >> 6
+        if (transformada == 0) == (etiqueta in ('glyf', 'loca')):
+            base128()
+        tablas.append(etiqueta)
+    return tablas
+
+
+# Cabecera WOFF2 y directorio de 9 tablas: etiquetas conocidas, hmtx transformada (lleva
+# transformLength), glyf/loca sin transformar a la manera de WOFF2 (también lo llevan), un
+# UIntBase128 de dos bytes y una etiqueta escrita a mano.
+MUESTRA_WOFF2 = (b'wOF2' + bytes(8) + (9).to_bytes(2, 'big') + bytes(34)
+                 + bytes([0, 0x10, 1, 0x36, 0x43, 0x20, 0x10, 8, 4, 9, 0x20,
+                          10, 0x81, 0x00, 0x40, 11, 8, 0, 12, 2, 63]) + b'Zzzz' + bytes([1]))
+
+
 def huella(ruta):
     return hashlib.sha256(ruta.read_bytes()).hexdigest()[:10]
 
@@ -357,6 +403,26 @@ def main(raiz, sin_apodos=False, avisa=print):
         if not (raiz / u).is_file():
             falla(f'estilos.css: referencia a un fichero que no existe: {u}')
         usados.add((raiz / u).resolve())
+    # Fuentes sin hinting: con él, a 1× la «i» y la «j» de Barlow pierden el punto y parecen «l».
+    # El lector se prueba antes con un directorio hecho a mano: si deja de ver el hinting, falla aquí.
+    if tablas_woff2(MUESTRA_WOFF2) != ['cmap', 'head', 'hmtx', 'cvt ', 'fpgm', 'glyf', 'loca', 'prep', 'Zzzz']:
+        falla('tablas_woff2 no lee bien el directorio de un WOFF2 de muestra: revisa la función')
+    fuentes = re.findall(r'url\("?([^")]+\.woff2)"?\)', css)
+    if not fuentes:
+        falla('estilos.css no declara ninguna fuente .woff2: revisa esta comprobación')
+    for u in fuentes:
+        if not (raiz / u).is_file():
+            continue
+        try:
+            tablas = set(tablas_woff2((raiz / u).read_bytes()))
+        except (ValueError, IndexError) as e:
+            falla(f'{u}: no se puede leer como WOFF2 ({e})')
+            continue
+        if not {'cmap', 'glyf', 'head'} <= tablas:
+            falla(f'{u}: no se encuentran sus tablas básicas; revisa tablas_woff2')
+        con_hinting = sorted(t.strip() for t in {'fpgm', 'prep', 'cvt '} & tablas)
+        if con_hinting:
+            falla(f'{u} lleva hinting ({", ".join(con_hinting)}): regenérala con herramientas/preparar_imagenes.py')
     usados.add((raiz / 'img' / 'og-garra-iberica.jpg').resolve())
     for img in sorted((raiz / 'img').glob('*')):
         if img.resolve() not in usados:

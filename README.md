@@ -45,7 +45,8 @@ node herramientas/prueba_caceria.js
 - `versionar.py` pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
 - `comprobar.py` revisa las dos páginas: título, encabezado, metadatos, idiomas, datos estructurados
-  (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes y
+  (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
+  fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
   `herramientas/vigilar.local.txt`, uno por línea; ese fichero no se sube a GitHub. Sin él, el
   comprobador se niega a dar el visto bueno.
@@ -59,7 +60,9 @@ node herramientas/prueba_caceria.js
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las dos
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
-  cortado en móviles estrechos y la cabecera sin solapes ni enlaces del menú cortados de 320 a 1440 px.
+  cortado en móviles estrechos, la cabecera sin solapes ni enlaces del menú cortados de 320 a 1440 px
+  y, de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha que la pantalla y la marca de
+  la cabecera en la misma vertical que los títulos de todas las secciones.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con

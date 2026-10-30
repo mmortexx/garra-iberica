@@ -71,6 +71,9 @@ def main(origen):
         opts = subset.Options()
         opts.flavor = 'woff2'
         opts.layout_features = ['kern', 'liga']
+        # Sin hinting: en pantallas normales (1×) pega el punto de la «i» y la «j» al palo y se
+        # leen como «l». Además pesan un 40 % menos. comprobar.py lo vigila.
+        opts.hinting = False
         f = subset.load_font(str(origen / 'fonts' / ttf), opts)
         s = subset.Subsetter(opts)
         s.populate(text=CARACTERES)

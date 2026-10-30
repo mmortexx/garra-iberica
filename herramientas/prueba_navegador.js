@@ -1,5 +1,6 @@
 // Prueba la web en un navegador real: contenido visible con y sin JavaScript y con «reducir
-// movimiento», sin errores en consola, y ningún texto cortado en móviles de 320 a 412 px.
+// movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
+// sin solapes, página nunca más ancha que la pantalla y marca alineada con los títulos.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -122,16 +123,36 @@ const BASE = 'http://127.0.0.1:8765/';
     // Se mide lo que se pinta (el contenido), no la caja: con white-space:nowrap el texto puede
     // salirse de una caja que la rejilla ha encogido. Los enlaces cuentan solo en la parte que
     // deja ver el menú (en móvil se desliza).
-    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    // bypassCSP: para medir el ancho se quita un momento, con una hoja en línea, el recorte de las
+    // secciones (si no, escondería lo que se salga).
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, bypassCSP: true });
     const p = await ctx.newPage();
     await p.goto(BASE + ruta, { waitUntil: 'load' });
     await p.evaluate(() => document.fonts.ready);
     // Además, ningún enlace del menú fuera de la pantalla y, desde 360 px, todos en una línea.
     const anchos = [];
     for (let w = 320; w <= 1440; w += 5) anchos.push(w);
-    const solapes = [], cortados = [];
-    for (const ancho of anchos) {
+    const solapes = [], cortados = [], anchas = [], desalineados = [];
+    for (const ancho of [...anchos, 1920]) {
       await p.setViewportSize({ width: ancho, height: 850 });
+      // Nada más ancho que la pantalla: en móvil deja arrastrar la página de lado o la aleja. Se
+      // mide sin el recorte de las secciones y sin la luz de los paneles, que se sale a propósito.
+      // La marca de la cabecera y los títulos de todas las secciones, en la misma vertical.
+      const a = await p.evaluate(() => {
+        const hoja = document.createElement('style');
+        hoja.textContent = '.seccion { overflow-x: visible !important } .luz::before { display: none !important }';
+        document.head.append(hoja);
+        const sobra = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+        hoja.remove();
+        const izq = sel => Math.round(document.querySelector(sel).getBoundingClientRect().left);
+        const titulos = [...document.querySelectorAll('main .seccion h2')].map(h => [h.id, Math.round(h.getBoundingClientRect().left)]);
+        return { sobra, marca: izq('.marca'), titulos };
+      });
+      if (a.sobra > 0) anchas.push(`${ancho}px: ${a.sobra} px de más`);
+      const fuera = a.titulos.filter(([, x]) => Math.abs(x - a.marca) > 1).map(([id, x]) => `${id} en ${x}`);
+      if (a.titulos.length < 8) fuera.push(`solo ${a.titulos.length} títulos de sección`);
+      if (fuera.length) desalineados.push(`${ancho}px: marca en ${a.marca}, ${fuera.join(', ')}`);
+      if (ancho > 1440) continue;
       const m = await p.evaluate(() => {
         const W = document.documentElement.clientWidth;
         const rs = [...document.querySelectorAll('.menu a')].map(a => a.getBoundingClientRect());
@@ -160,6 +181,10 @@ const BASE = 'http://127.0.0.1:8765/';
     }
     if (solapes.length) malos++;
     if (cortados.length) malos++;
+    if (anchas.length) malos++;
+    if (desalineados.length) malos++;
+    console.log(('/' + ruta).padEnd(5), 'página más ancha que la pantalla 320–1440px y 1920px:', anchas.length ? `${anchas.length} anchos, p. ej. ${JSON.stringify(anchas.slice(0, 3))}` : 'nunca');
+    console.log(('/' + ruta).padEnd(5), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
     console.log(('/' + ruta).padEnd(5), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
     console.log(('/' + ruta).padEnd(5), 'menú 320–1440px cortado:', cortados.length ? `${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'nunca');
     await ctx.close();

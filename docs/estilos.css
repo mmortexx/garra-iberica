@@ -97,8 +97,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   box-shadow: 0 0 10px var(--ascua);
   transform: scaleX(0); transform-origin: left;
 }
+/* Mismo ancho que el contenido: la marca queda en la vertical de los títulos. */
 .barra-in {
-  max-width: 1240px; margin: 0 auto; padding: .7rem 16px;
+  max-width: calc(var(--ancho) + 32px); margin: 0 auto; padding: .7rem 16px;
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem;
 }
 .marca { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--hueso); font: 1.35rem/1 var(--titulos); letter-spacing: .04em; white-space: nowrap; }
@@ -194,7 +195,11 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   position: relative; isolation: isolate; overflow: hidden;
   min-height: min(90vh, 780px);
   display: flex; align-items: center;
-  padding: 4rem 16px 4.5rem;
+  padding: 4rem 16px 6rem;
+  /* Se funde con el fondo de la página por abajo, sin corte con la sección siguiente. El fundido
+     (3rem) queda por debajo de .bajar, que así no se apaga. */
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent);
 }
 .portada-fondo {
   position: absolute; inset: 0; z-index: -3;
@@ -252,14 +257,18 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .datos li { display: flex; align-items: center; gap: .65rem; font-size: .98rem; color: var(--suave); }
 .datos img { width: 40px; height: 40px; filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .6)); }
 .bajar {
-  position: absolute; left: 50%; bottom: 1.4rem; translate: -50% 0;
+  position: absolute; left: 50%; bottom: 3.2rem; translate: -50% 0;
   width: 26px; height: 42px; border: 2px solid rgba(240, 178, 122, .5); border-radius: 14px;
 }
 .bajar::before { content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: var(--ascua); box-shadow: 0 0 8px var(--ascua); animation: rueda 2s var(--suave-salida) infinite; }
 .bajar:hover { border-color: var(--ascua-viva); }
 @keyframes rueda { 0% { opacity: 0; transform: translateY(-4px); } 30% { opacity: 1; } 80%, 100% { opacity: 0; transform: translateY(14px); } }
 @media (max-width: 700px) {
-  .portada { min-height: 0; padding-top: 17rem; padding-bottom: 3rem; align-items: flex-start; }
+  .portada {
+    min-height: 0; padding-top: 17rem; padding-bottom: 3rem; align-items: flex-start;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent);
+    mask-image: linear-gradient(180deg, #000 calc(100% - 3rem), transparent);
+  }
   .portada-fondo { height: 23rem; object-position: 86% 50%; }
   .portada::before { background: linear-gradient(180deg, rgba(11, 8, 6, .15) 0, rgba(11, 8, 6, 0) 10rem, rgba(11, 8, 6, .85) 17rem, var(--fondo) 23rem); }
   .acciones .boton { flex: 1 1 100%; }
@@ -303,7 +312,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .progreso { animation: progreso linear both; animation-timeline: scroll(root); }
   @keyframes progreso { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
-.seccion { position: relative; padding: clamp(3rem, 6vw, 5rem) 16px; scroll-margin-top: 4.5rem; }
+/* overflow-x: clip: la luz de los paneles sobresale del margen y ensancharía la página. */
+.seccion { position: relative; padding: clamp(3rem, 6vw, 5rem) 16px; scroll-margin-top: 4.5rem; overflow-x: clip; }
 .seccion + .seccion::before {
   content: ""; position: absolute; top: 0; left: 50%; translate: -50% 0;
   width: min(var(--ancho), calc(100% - 32px)); height: 1px;
@@ -314,7 +324,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   width: 7px; height: 7px; rotate: 45deg; background: var(--ascua); box-shadow: 0 0 12px 2px rgba(255, 122, 31, .7);
 }
 .envoltura { max-width: var(--ancho); margin: 0 auto; }
-.estrecha { max-width: 820px; }
+.estrecha { max-width: 820px; margin-left: max(0px, (100% - var(--ancho)) / 2); }
 .dos { display: grid; gap: 2.5rem; align-items: start; }
 @media (min-width: 860px) { .dos { grid-template-columns: 1.5fr 1fr; } }
 .intro { max-width: 46rem; color: var(--suave); font-size: 1.1rem; }
@@ -432,6 +442,10 @@ h2::after {
 .ficha dl div:first-child { border-top: 0; }
 .ficha dt { font: 600 .95rem/1.5 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
 .ficha dd { margin: 0; color: var(--hueso); }
+/* Móviles estrechos: la etiqueta encima del dato, para que el dato no se parta en tres líneas. */
+@media (max-width: 419px) {
+  .ficha dl div { grid-template-columns: 1fr; gap: .1rem; }
+}
 
 .encaja { list-style: none; margin: 0; display: grid; gap: .9rem; }
 .encaja li { position: relative; padding-left: 1.9rem; }
