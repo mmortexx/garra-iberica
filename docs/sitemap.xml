@@ -14,4 +14,18 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/"/>
   </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/dinosaurios/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/dinosaurs/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/dinosaurs/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/dinosaurs/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
+  </url>
 </urlset>

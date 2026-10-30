@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from comprobar import PAGINAS, VERSIONADOS, huella  # noqa: E402
+from comprobar import GUIAS, PAGINAS, VERSIONADOS, huella  # noqa: E402
 
 WEB = Path(__file__).resolve().parent.parent / 'docs'
 
@@ -16,7 +16,7 @@ WEB = Path(__file__).resolve().parent.parent / 'docs'
 def main():
     huellas = {n: huella(WEB / n) for n in VERSIONADOS}
     patron = re.compile(r'(["/])(' + '|'.join(re.escape(n) for n in VERSIONADOS) + r')(\?v=[0-9a-f]*)?"')
-    for nombre in [*PAGINAS, '404.html']:
+    for nombre in [*PAGINAS, *GUIAS, '404.html']:
         p = WEB / nombre
         texto = p.read_bytes().decode('utf-8')
         nuevo, veces = patron.subn(lambda m: f'{m.group(1)}{m.group(2)}?v={huellas[m.group(2)]}"', texto)

@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
 import calendario
+import guia_dinos
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -23,6 +24,13 @@ PAGINAS = {
     'index.html': ('es', '', 'GARRA IBÉRICA – Clan español de The Isle Evrima'),
     'en/index.html': ('en', 'en/', 'GARRA IBÉRICA – Spanish-Speaking The Isle Evrima Clan'),
 }
+# Guía de dinosaurios: la genera herramientas/guia_dinos.py.
+GUIAS = {nombre: (lang, guia_dinos.RUTAS[lang], guia_dinos.T[lang]['titulo'], guia_dinos.T[lang]['h1'])
+         for lang, nombre in guia_dinos.FICHEROS.items()}
+PAREJAS = [('', 'en/'), (guia_dinos.RUTAS['es'], guia_dinos.RUTAS['en'])]
+FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
+# Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
+POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
 MAX_KB_IMAGEN = 120
@@ -163,8 +171,9 @@ def leer(raiz, nombre):
     return (raiz / nombre).read_text(encoding='utf-8')
 
 
-def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
+def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1=None, pareja=PAREJAS[0], con_faq=True):
     html = leer(raiz, nombre)
+    h1 = h1 or titulo
     doc = Lector()
     doc.feed(html)
     metas = {a.get('name') or a.get('property'): a.get('content') for t, a in doc.etiquetas if t == 'meta'}
@@ -179,18 +188,20 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
         falla(f'{nombre}: <title> es «{doc.textos["title"].strip()}» y debe ser «{titulo}»')
     if doc.h1 != 1:
         falla(f'{nombre}: tiene {doc.h1} <h1> y debe tener 1')
-    if ' '.join(doc.textos['h1'].split()) != titulo:
-        falla(f'{nombre}: <h1> es «{" ".join(doc.textos["h1"].split())}» y debe ser «{titulo}»')
+    if ' '.join(doc.textos['h1'].split()) != h1:
+        falla(f'{nombre}: <h1> es «{" ".join(doc.textos["h1"].split())}» y debe ser «{h1}»')
     desc = metas.get('description') or ''
     if not 70 <= len(desc) <= 160:
         falla(f'{nombre}: meta description mide {len(desc)} caracteres (70–160)')
     if canon != [base + sufijo]:
         falla(f'{nombre}: canonical {canon} y debe ser {base + sufijo}')
-    if alternas != {'es': base, 'en': base + 'en/', 'x-default': base}:
+    if alternas != {'es': base + pareja[0], 'en': base + pareja[1], 'x-default': base + pareja[0]}:
         falla(f'{nombre}: hreflang {alternas} no enlaza bien las versiones es/en')
     for clave, valor in {'og:url': base + sufijo, 'og:image': base + 'img/og-garra-iberica.jpg'}.items():
         if metas.get(clave) != valor:
             falla(f'{nombre}: {clave} es «{metas.get(clave)}» y debe ser «{valor}»')
+    if 'max-image-preview:large' not in (metas.get('robots') or ''):
+        falla(f'{nombre}: falta <meta name="robots" content="max-image-preview:large, …"> (foto grande en Google)')
     for clave in ('og:title', 'og:description', 'og:image:alt', 'twitter:card'):
         if not metas.get(clave):
             falla(f'{nombre}: falta la meta {clave}')
@@ -218,7 +229,10 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
                 falla(f'{nombre}: JSON-LD Organization.sameAs no lleva la invitación de Discord')
             faq = tipos.get('FAQPage')
             visibles = doc.preguntas
-            if not faq or not visibles:
+            if not con_faq:
+                if faq or visibles:
+                    falla(f'{nombre}: tiene preguntas frecuentes y no debería')
+            elif not faq or not visibles:
                 falla(f'{nombre}: faltan las preguntas frecuentes visibles o su FAQPage en JSON-LD')
             else:
                 datos = [(q['name'], plano(q['acceptedAnswer']['text'])) for q in faq['mainEntity']]
@@ -258,13 +272,19 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla):
     usados = set()
     for ruta in sorted(locales):
         limpia, _, version = ruta.partition('?v=')
+        limpia, _, fragmento = limpia.partition('#')
         destino = (carpeta / (limpia + 'index.html' if limpia.endswith('/') else limpia)).resolve()
         if not destino.is_file():
             falla(f'{nombre}: referencia a un fichero que no existe: {ruta}')
             continue
+        if fragmento and f'id="{fragmento}"' not in destino.read_text(encoding='utf-8'):
+            falla(f'{nombre}: enlace {ruta} a una sección que no existe en esa página')
         usados.add(destino)
         if destino.name in VERSIONADOS and version != huella(destino):
             falla(f'{nombre}: {limpia} lleva ?v={version or "(nada)"} y debe llevar ?v={huella(destino)}; ejecuta herramientas/versionar.py')
+    ids = re.findall(r'\sid="([^"]+)"', html)
+    for repetido in sorted({i for i in ids if ids.count(i) > 1}):
+        falla(f'{nombre}: id="{repetido}" repetido')
     for ancla in sorted(set(re.findall(r'href="#([^"]+)"', html))):
         if f'id="{ancla}"' not in html:
             falla(f'{nombre}: enlace interno #{ancla} sin destino')
@@ -342,6 +362,41 @@ def revisar_datos(raiz, falla, avisa):
             falla(f'{DATOS.name} cita «{cita}» y tarjetas.json ya no lo dice: actualiza el extracto y la web')
 
 
+def revisar_guia(raiz, base, falla, avisa):
+    """Guía de dinosaurios: páginas y lista de la portada tal como las genera guia_dinos.py, y el
+    número de fichas que dice la portada igual al de fichas."""
+    try:
+        d = guia_dinos.datos()
+        for nombre, (lang, *_) in GUIAS.items():
+            if leer(raiz, nombre) != guia_dinos.pagina(lang, base, d, docs=raiz):
+                falla(f'{nombre} no coincide con {guia_dinos.FICHAS.name}, estilos.css o efectos.js: ejecuta herramientas/guia_dinos.py')
+        for lang, nombre in guia_dinos.PORTADAS.items():
+            html = leer(raiz, nombre)
+            if guia_dinos.portada(lang, html, d) != html:
+                falla(f'{nombre}: la lista de especies no coincide con {guia_dinos.FICHAS.name}: ejecuta herramientas/guia_dinos.py')
+            cuentas = re.findall(r'\b(\d+) (?:fichas|dinosaur cards|cards)\b', plano(html))
+            if len(cuentas) < 2 or set(cuentas) != {str(len(d['fichas']))}:
+                falla(f'{nombre}: dice {cuentas} fichas y hay {len(d["fichas"])}')
+    except SystemExit as e:
+        falla(f'guia_dinos.py: {e}')
+        return
+    if not POSTS_ORIGINAL.is_file():
+        avisa(f'sin {POSTS_ORIGINAL}: no se comprueba que «Cómo leer las fichas» siga diciendo lo mismo que el Discord')
+    else:
+        guia = json.loads(POSTS_ORIGINAL.read_text(encoding='utf-8'))['guia']
+        for lang, campo in (('es', 'texto'), ('en', 'ingles')):
+            original = ' '.join(guia[campo].replace('**', '').split())
+            for _, del_discord, _ in guia_dinos.T[lang]['bloques']:
+                for frase in del_discord:
+                    frase = re.sub(r'<[^>]+>', '', frase)
+                    if frase not in original:
+                        falla(f'guia_dinos.py ({lang}) dice «{frase}» y la guía del Discord ya no: copia el texto nuevo')
+    if not FICHAS_ORIGINAL.is_file():
+        avisa(f'sin {FICHAS_ORIGINAL}: no se comprueba que {guia_dinos.FICHAS.name} siga al día con las fichas del Discord')
+    elif FICHAS_ORIGINAL.read_bytes() != guia_dinos.FICHAS.read_bytes():
+        falla(f'{guia_dinos.FICHAS.name} no es igual que {FICHAS_ORIGINAL}: cópialo encima y ejecuta herramientas/guia_dinos.py')
+
+
 def main(raiz, sin_apodos=False, avisa=print):
     fallos = []
     falla = fallos.append
@@ -356,7 +411,7 @@ def main(raiz, sin_apodos=False, avisa=print):
         return [f'Falta herramientas/{VIGILAR.name} (o la variable VIGILAR_APODOS): los apodos de miembros que no deben aparecer, uno por línea']
     prohibidos = [ID_DISCORD] + [r'(?i)\b' + re.escape(a) + r'\b' for a in apodos]
 
-    for nombre in [*PAGINAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
+    for nombre in [*PAGINAS, *GUIAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
         if not (raiz / nombre).is_file():
             falla(f'Falta {nombre}')
     if fallos:
@@ -370,7 +425,10 @@ def main(raiz, sin_apodos=False, avisa=print):
     usados = set()
     for nombre, (lang, sufijo, titulo) in PAGINAS.items():
         usados |= revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla)
+    for nombre, (lang, sufijo, titulo, h1) in GUIAS.items():
+        usados |= revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1=h1, pareja=PAREJAS[1], con_faq=False)
     revisar_datos(raiz, falla, avisa)
+    revisar_guia(raiz, base, falla, avisa)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
@@ -378,12 +436,15 @@ def main(raiz, sin_apodos=False, avisa=print):
         ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml'}
         urls = ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', ns)
         locs = [u.find('s:loc', ns).text for u in urls]
-        if locs != [base, base + 'en/']:
-            falla(f'sitemap.xml lista {locs} y debe listar {[base, base + "en/"]}')
+        esperadas = [base + ruta for pareja in PAREJAS for ruta in pareja]
+        if locs != esperadas:
+            falla(f'sitemap.xml lista {locs} y debe listar {esperadas}')
         for u in urls:
+            loc = u.find('s:loc', ns).text
+            es, en = next((p for p in PAREJAS if loc in (base + p[0], base + p[1])), ('', 'en/'))
             alt = {l.get('hreflang'): l.get('href') for l in u.findall('x:link', ns)}
-            if alt != {'es': base, 'en': base + 'en/', 'x-default': base}:
-                falla(f'sitemap.xml: {u.find("s:loc", ns).text} sin las alternativas de idioma correctas')
+            if alt != {'es': base + es, 'en': base + en, 'x-default': base + es}:
+                falla(f'sitemap.xml: {loc} sin las alternativas de idioma correctas')
     except (ET.ParseError, AttributeError) as e:
         falla(f'sitemap.xml no es válido: {e}')
 

@@ -11,6 +11,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 |---|---|
 | `docs/index.html` | La página en español (la principal). |
 | `docs/en/index.html` | La versión en inglés. Si cambias un texto, cámbialo en las dos. |
+| `docs/dinosaurios/`, `docs/en/dinosaurs/` | Guía de dinosaurios. Generadas por `herramientas/guia_dinos.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, menú activo, visor de la galería. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
@@ -32,9 +33,18 @@ y abrir http://127.0.0.1:8765/
 ```
 python herramientas/calendario.py
 python herramientas/versionar.py
+python herramientas/guia_dinos.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 ```
+
+- `guia_dinos.py` genera la guía de dinosaurios (español e inglés) y la lista de especies de la
+  portada (entre las marcas `<!-- guia:especies -->`) a partir de `herramientas/fichas_dinos.json`,
+  copia exacta de `wiki/fichas.json` del proyecto del Discord. Si cambian las fichas: copiar ese
+  fichero encima de `fichas_dinos.json` y ejecutar el script. `comprobar.py` falla si las páginas
+  no coinciden con lo que genera, si la portada dice otro número de fichas o, cuando encuentra el
+  original (variable `GARRA_FICHAS` o `~/Downloads/garra-iberica/wiki/fichas.json`), si la copia
+  se ha quedado atrás.
 
 - `calendario.py` genera `docs/caceria.ics` y `docs/en/caceria.ics` (la Cacería semanal, para
   añadirla al calendario con aviso 30 minutos antes) y escribe el enlace de Google Calendar que va
@@ -44,7 +54,7 @@ node herramientas/prueba_caceria.js
 
 - `versionar.py` pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
-- `comprobar.py` revisa las dos páginas: título, encabezado, metadatos, idiomas, datos estructurados
+- `comprobar.py` revisa las páginas (portada y guía, en los dos idiomas): título, encabezado, metadatos, idiomas, datos estructurados
   (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
   fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
@@ -58,8 +68,8 @@ node herramientas/prueba_caceria.js
   comprueba además que el extracto siga al día; si no, lo avisa. Si cambian los textos del
   Discord: actualizar el extracto y la web a la vez.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
-- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las dos
-  páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
+- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las
+  páginas en un navegador real (la portada y la guía, en los dos idiomas): todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes ni enlaces del menú cortados de 320 a 1440 px
   y, de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha que la pantalla y la marca de
   la cabecera en la misma vertical que los títulos de todas las secciones. También usa el visor de

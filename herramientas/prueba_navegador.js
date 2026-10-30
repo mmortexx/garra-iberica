@@ -7,6 +7,9 @@
 // CHROME_PATH opcional, para usar un Chromium concreto.
 const { chromium } = require('playwright');
 const BASE = 'http://127.0.0.1:8765/';
+const PORTADAS = ['', 'en/'];
+// La guía de dinosaurios: sin cuenta atrás, compartir, cartel ni galería.
+const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   const casos = [
@@ -15,7 +18,8 @@ const BASE = 'http://127.0.0.1:8765/';
     ['sin JavaScript', { javaScriptEnabled: false }],
   ];
   let malos = 0;
-  for (const ruta of ['', 'en/']) {
+  for (const ruta of [...PORTADAS, ...GUIAS]) {
+    const portada = PORTADAS.includes(ruta);
     for (const [nombre, opts] of casos) {
       const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
       const p = await ctx.newPage();
@@ -24,26 +28,28 @@ const BASE = 'http://127.0.0.1:8765/';
       p.on('console', m => { if (m.type() === 'error') errores.push(m.text()); });
       await p.goto(BASE + ruta, { waitUntil: 'load' });
       if (nombre === 'normal tras scroll') {
-        for (let y = 0; y < 9500; y += 300) { await p.mouse.wheel(0, 300); await p.waitForTimeout(40); }
+        const alto = await p.evaluate(() => document.documentElement.scrollHeight);
+        for (let y = 0; y < alto; y += 300) { await p.mouse.wheel(0, 300); await p.waitForTimeout(40); }
         await p.waitForTimeout(2500);
       } else {
         await p.waitForTimeout(800);
       }
       const r = await p.evaluate(() => {
         const ocultos = [...document.querySelectorAll('.revelar, .entra')].filter(el => parseFloat(getComputedStyle(el).opacity) < 0.99);
+        const cuenta = document.querySelector('[data-cuenta]');
         return {
           claseAnim: document.documentElement.classList.contains('anim'),
           ascuas: document.querySelectorAll('canvas.ascuas').length,
           ocultos: ocultos.length,
           ejemplo: ocultos.slice(0, 3).map(e => e.className),
-          cuentaVisible: !document.querySelector('[data-cuenta]').hidden,
+          cuentaVisible: !!cuenta && !cuenta.hidden,
           bloques: [...document.querySelectorAll('.cuenta-falta .t')].filter(e => !e.hidden && e.querySelector('.n').textContent && e.querySelector('.u').textContent).length,
           compartir: !!document.querySelector('[data-compartir]:not([hidden])'),
         };
       });
       // Con JavaScript: cuenta atrás en bloques (3 o 4, según queden días) y botón de compartir.
-      // Sin él, ninguna de las dos cosas, que no funcionarían.
-      const conJs = nombre !== 'sin JavaScript';
+      // Sin él, ninguna de las dos cosas, que no funcionarían. La guía no tiene ninguna.
+      const conJs = portada && nombre !== 'sin JavaScript';
       if (conJs !== r.cuentaVisible || conJs !== r.compartir || (conJs && r.bloques < 3)) malos++;
       if (r.ocultos || errores.length) malos++;
       // «Compartir» sin menú del sistema: copia la dirección canónica y lo dice.
@@ -107,14 +113,14 @@ const BASE = 'http://127.0.0.1:8765/';
       console.log(('/' + ruta).padEnd(5), `${ancho}px desbordes:`, fuera.length ? JSON.stringify(fuera.slice(0, 5)) : 'ninguno');
       // Cartel de la Cacería: en móvil, a todo el ancho y recortado (a su proporción original,
       // 2,5:1, el rótulo queda ilegible).
-      const cartel = await p.evaluate(async () => {
+      const cartel = portada && await p.evaluate(async () => {
         const img = document.querySelector('.marco-ancho img');
         img.loading = 'eager';
         await img.decode();
         const r = img.getBoundingClientRect();
         return { ancho: Math.round(r.width), proporcion: +(r.width / r.height).toFixed(2), pantalla: document.documentElement.clientWidth };
       });
-      if (cartel.ancho < cartel.pantalla || cartel.proporcion > 1.7) {
+      if (cartel && (cartel.ancho < cartel.pantalla || cartel.proporcion > 1.7)) {
         malos++;
         console.log(('/' + ruta).padEnd(5), `${ancho}px cartel de la Cacería pequeño:`, JSON.stringify(cartel));
       }
@@ -151,7 +157,7 @@ const BASE = 'http://127.0.0.1:8765/';
       });
       if (a.sobra > 0) anchas.push(`${ancho}px: ${a.sobra} px de más`);
       const fuera = a.titulos.filter(([, x]) => Math.abs(x - a.marca) > 1).map(([id, x]) => `${id} en ${x}`);
-      if (a.titulos.length < 8) fuera.push(`solo ${a.titulos.length} títulos de sección`);
+      if (a.titulos.length < (portada ? 8 : 5)) fuera.push(`solo ${a.titulos.length} títulos de sección`);
       if (fuera.length) desalineados.push(`${ancho}px: marca en ${a.marca}, ${fuera.join(', ')}`);
       if (ancho > 1440) continue;
       const m = await p.evaluate(() => {
@@ -192,7 +198,7 @@ const BASE = 'http://127.0.0.1:8765/';
   }
   // Visor de la galería, con ratón y con el dedo: abre, cambia de foto, amplía y vuelve, cierra
   // devolviendo el foco a la foto. Las grandes no se descargan hasta abrir el visor.
-  for (const ruta of ['', 'en/']) {
+  for (const ruta of PORTADAS) {
     for (const [tipo, opts] of [['ratón', { viewport: { width: 1366, height: 850 } }],
       ['dedo', { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true }]]) {
       const ctx = await navegador.newContext(opts);
@@ -260,7 +266,7 @@ const BASE = 'http://127.0.0.1:8765/';
   }
   // Con conexión lenta las fuentes llegan después del primer pintado: el texto no debe empujar
   // la página al cambiar de la fuente de reserva a la buena.
-  for (const ruta of ['', 'en/']) {
+  for (const ruta of [...PORTADAS, ...GUIAS]) {
     const saltos = [];
     for (const ancho of [320, 375, 412, 768, 1100, 1440]) {
       const ctx = await navegador.newContext({ viewport: { width: ancho, height: 800 } });

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent.parent / 'docs'
-FICHEROS = ['index.html', 'en/index.html', '404.html', 'robots.txt', 'sitemap.xml']
+FICHEROS = ['index.html', 'en/index.html', 'dinosaurios/index.html', 'en/dinosaurs/index.html', '404.html', 'robots.txt', 'sitemap.xml']
 
 
 def base_actual():
