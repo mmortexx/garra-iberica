@@ -200,7 +200,12 @@ const BASE = 'http://127.0.0.1:8765/';
       const grandes = [];
       p.on('request', r => { if (r.url().includes('-ampliada-')) grandes.push(r.url()); });
       await p.goto(BASE + ruta, { waitUntil: 'load' });
-      await p.locator('.galeria').scrollIntoViewIfNeeded();
+      // Sin desplazamiento suave: en una máquina lenta la página seguía moviéndose y el toque caía
+      // entre dos fotos.
+      await p.evaluate(async () => {
+        document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' });
+        for (let y = -1; y !== scrollY;) { y = scrollY; await new Promise(r => setTimeout(r, 200)); }
+      });
       await p.waitForTimeout(600);
       const fallos = [];
       if (grandes.length) fallos.push(`descarga ${grandes.length} grandes sin abrir el visor`);
@@ -210,13 +215,14 @@ const BASE = 'http://127.0.0.1:8765/';
           cargada: i.complete && i.naturalWidth > 0 && !v.classList.contains('cargando'), fuente: i.currentSrc.split('/').pop(),
           recorre: m.scrollWidth > m.clientWidth + 10, foco: document.activeElement.className };
       });
-      const esperar = cond => p.waitForFunction(cond, null, { timeout: 8000 }).then(() => true, () => false);
-      const cargada = '(() => { const v = document.querySelector(".visor"); const i = v.querySelector(".visor-img"); return i.complete && i.naturalWidth > 0 && !v.classList.contains("cargando"); })()';
+      let motivo = '';
+      const esperar = cond => p.waitForFunction(cond, null, { timeout: 8000 }).then(() => true, err => { motivo = err.message.split('\n')[0]; return false; });
+      const cargada = '(() => { const v = document.querySelector(".visor"); const i = v && v.querySelector(".visor-img"); return !!i && i.complete && i.naturalWidth > 0 && !v.classList.contains("cargando"); })()';
       const pulsar = sel => tipo === 'dedo' ? p.tap(sel) : p.click(sel);
       await pulsar('.foto-ampliar >> nth=0');
       const cargo = await esperar(cargada);
       let e = await estado();
-      if (!cargo) fallos.push(`la primera foto no carga: ${JSON.stringify(e)}`);
+      if (!cargo) fallos.push(`la primera foto no carga (${motivo}): ${JSON.stringify(e)}`);
       if (!e || !e.abierto || e.cuenta !== '1 / 5' || !e.fuente.includes('-ampliada-')) fallos.push(`al abrir: ${JSON.stringify(e)}`);
       if (tipo === 'ratón') await p.keyboard.press('ArrowRight'); else await pulsar('.visor-sig');
       await esperar(cargada);
