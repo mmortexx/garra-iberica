@@ -330,9 +330,10 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
   }
   // Volver con «Atrás» a una página que se dejó con el menú abierto (la recupera de la memoria,
-  // tal cual): el menú debe estar cerrado. Playwright apaga esa memoria por defecto; aquí no.
+  // tal cual): el menú debe estar cerrado. Playwright apaga esa memoria por defecto; aquí no. Hace
+  // falta el Chromium completo: el reducido para modo sin ventana (el de por defecto) no la tiene.
   {
-    const conMemoria = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), ignoreDefaultArgs: ['--disable-back-forward-cache'] });
+    const conMemoria = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chromium' }), ignoreDefaultArgs: ['--disable-back-forward-cache'] });
     const ctx = await conMemoria.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
     await ctx.addInitScript(() => addEventListener('pageshow', e => { window.__memoria = e.persisted; }));
     const p = await ctx.newPage();
