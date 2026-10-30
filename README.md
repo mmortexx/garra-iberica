@@ -89,4 +89,8 @@ Necesita Python con Pillow y fontTools.
 Al estar en una subcarpeta (`/garra-iberica/`), Google no lee nuestro `robots.txt`: el mapa del sitio
 hay que enviarlo a mano en Google Search Console y en Bing Webmaster Tools (`sitemap.xml`).
 
+Después de publicar un cambio de contenido, `python herramientas/indexnow.py` avisa a Bing (y a
+DuckDuckGo, Yahoo, Ecosia, Yandex y demás buscadores de IndexNow) para que vuelvan a pasar. Usa la
+clave pública `docs/<clave>.txt`; no se borra ni se renombra. Google no usa IndexNow.
+
 Las fuentes Anton y Barlow Condensed se distribuyen con su licencia OFL (`docs/fonts/LICENCIA-OFL.txt`).
