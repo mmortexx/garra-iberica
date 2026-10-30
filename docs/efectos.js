@@ -149,12 +149,16 @@
       img.src = a.href;
       img.alt = a.querySelector('img').alt;
       cuenta.textContent = `${actual + 1} / ${fotos.length}`;
+      // Además del «load», por si el navegador no lo da (foto ya en caché, por ejemplo).
+      const pedida = img.src;
+      img.decode().then(() => { if (img.src === pedida) lista(); }, () => {});
     };
-    img.addEventListener('load', () => {
+    const lista = () => {
       if (!visor.classList.contains('cargando')) return;
       visor.classList.remove('cargando');
       precargar((actual + 1) % fotos.length);
-    });
+    };
+    img.addEventListener('load', lista);
     img.addEventListener('error', () => visor.classList.remove('cargando'));
     fotos.forEach((a, i) => a.addEventListener('click', ev => {
       if (ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;

@@ -2,14 +2,15 @@
   font-family: "Anton";
   src: url("fonts/anton.woff2") format("woff2");
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
 }
 @font-face {
   font-family: "Barlow Condensed";
   src: url("fonts/barlow-600.woff2") format("woff2");
   font-weight: 600;
-  /* La de reserva es más ancha: con «swap», si esta llega tarde, el menú del móvil pasa a dos
-     líneas y luego vuelve a una, y empuja toda la página. Llega con la precarga casi siempre. */
+  /* Las dos «optional»: las de reserva miden distinto y, con «swap», si estas llegan tarde, el
+     menú del móvil o un título cambian de líneas y empujan la página. Llegan con la precarga casi
+     siempre; si no, esa visita se queda con la de reserva y la siguiente ya las tiene. */
   font-display: optional;
 }
 
