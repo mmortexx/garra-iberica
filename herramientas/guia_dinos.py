@@ -1,10 +1,9 @@
-"""Genera la guía de dinosaurios de la web (docs/dinosaurios/ y docs/en/dinosaurs/) a partir de
+"""Contenido de la guía de dinosaurios de la web (dinosaurios/ y en/dinosaurs/) a partir de
 herramientas/fichas_dinos.json, copia exacta de las fichas de la wiki del Discord del clan
-(garra-iberica/wiki/fichas.json).
+(garra-iberica/wiki/fichas.json). La página entera (cabecera, menú, pie) la monta montar_web.py.
 
-Uso: python herramientas/guia_dinos.py
-Hay que ejecutarlo si cambian las fichas (copiar antes wiki/fichas.json encima de fichas_dinos.json),
-estilos.css o efectos.js. comprobar.py falla si las páginas no coinciden con lo que genera esto.
+Si cambian las fichas: copiar wiki/fichas.json encima de fichas_dinos.json y ejecutar
+python herramientas/montar_web.py. comprobar.py falla si la copia se queda atrás.
 """
 import json
 import re
@@ -19,25 +18,17 @@ FICHAS = HERRAMIENTAS / 'fichas_dinos.json'
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
 STEAM = 'https://store.steampowered.com/app/376210/'
 RUTAS = {'es': 'dinosaurios/', 'en': 'en/dinosaurs/'}
-FICHEROS = {lang: ruta + 'index.html' for lang, ruta in RUTAS.items()}
 GRUPO = {'Carnívoro': 'carnivoros', 'Carnívoro (pescador)': 'carnivoros', 'Herbívoro': 'herbivoros', 'Omnívoro': 'omnivoros'}
 
 T = {
     'es': {
         'titulo': 'Guía de dinosaurios de The Isle Evrima en español – GARRA IBÉRICA',
-        'og': 'Guía de dinosaurios de The Isle Evrima – GARRA IBÉRICA',
         'h1': 'Guía de dinosaurios de The Isle Evrima',
         'desc': 'Las {n} especies jugables de The Isle Evrima en español: peso, crecimiento, grupo máximo, '
                 'controles, consejos y mutaciones recomendadas por la comunidad.',
-        'og_alt': 'Cartel del clan GARRA IBÉRICA de The Isle Evrima: tres arañazos de garra al rojo vivo sobre una roca en la selva',
-        'locale': ('es_ES', 'en_GB'), 'saltar': 'Saltar al contenido', 'secciones': 'Secciones',
-        'marca': 'GARRA IBÉRICA, volver a la web del clan', 'otra': ('en', 'English version', 'EN'),
-        'unete': 'Únete<span class="oculto"> en Discord (se abre en una pestaña nueva)</span>',
         'nueva': ' (se abre en una pestaña nueva)',
         'grupos': {'carnivoros': 'Carnívoros', 'herbivoros': 'Herbívoros', 'omnivoros': 'Omnívoros'},
         'especies': lambda n: f'{n} especies' if n != 1 else '1 especie',
-        'menu_mut': 'Mutaciones',
-        'antetitulo': 'Guía del clan',
         'intro': 'Las {n} fichas que usamos en el Discord del clan, para que nadie empiece a ciegas: peso, crecimiento, '
                  'tamaño máximo de grupo, controles, un consejo y las mutaciones que recomienda la comunidad.',
         'revisado': 'Revisado el {fecha} · parche {parche}',
@@ -72,31 +63,17 @@ T = {
         'mut_intro': 'Las que recomiendan las fichas y lo que hace cada una. Son orientativas: salen de guías de la comunidad.',
         'cta_h2': '¿Con qué especie te unes?',
         'cta_p': 'En el Discord tienes estas fichas, una manada con la que jugarlas y una cacería cada sábado.',
-        'cta_boton': 'Únete a GARRA IBÉRICA en Discord', 'volver': 'Volver a la web del clan',
-        'pie_texto': 'Clan español de The Isle Evrima, abierto a jugadores de España y Latinoamérica.',
-        'pie_menu_label': 'Pie de página',
-        'pie_menu': [('quienes', 'Quiénes somos'), ('buscas-clan', 'Reclutamiento'), ('ofrecemos', 'Qué ofrecemos'),
-                     ('galeria', 'Galería'), ('entrar', 'Cómo entrar'), ('caceria', 'Cacería'), ('normas', 'Normas'),
-                     ('rangos', 'Rangos'), ('preguntas', 'Preguntas')],
-        'pie_discord': 'Discord del clan', 'pie_steam': 'The Isle en Steam', 'arriba': 'Volver arriba ↑',
-        'legal': 'Web de fans hecha por el clan. No estamos afiliados a los creadores de The Isle ni a Discord. Las marcas pertenecen a sus dueños.',
-        'inicio': 'inicio',
+        'cta_boton': 'Únete a GARRA IBÉRICA en Discord', 'volver': 'Volver al inicio',
+        'inicio': 'inicio', 'ids': ['carnivoros', 'herbivoros', 'omnivoros'], 'mut_id': 'mutaciones', 'leer_id': 'como-leer',
     },
     'en': {
         'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
-        'og': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
         'h1': 'The Isle Evrima dinosaur guide',
         'desc': 'All {n} playable species in The Isle Evrima: weight, growth, max group, controls, tips and '
                 'community-recommended mutations. A guide by clan GARRA IBÉRICA.',
-        'og_alt': 'Poster of the GARRA IBÉRICA The Isle Evrima clan: three red-hot claw marks on a rock in the jungle',
-        'locale': ('en_GB', 'es_ES'), 'saltar': 'Skip to content', 'secciones': 'Sections',
-        'marca': 'GARRA IBÉRICA, back to the clan website', 'otra': ('es', 'Versión en español', 'ES'),
-        'unete': 'Join<span class="oculto"> on Discord (opens in a new tab)</span>',
         'nueva': ' (opens in a new tab)',
         'grupos': {'carnivoros': 'Carnivores', 'herbivoros': 'Herbivores', 'omnivoros': 'Omnivores'},
         'especies': lambda n: f'{n} species',
-        'menu_mut': 'Mutations',
-        'antetitulo': 'Clan guide',
         'intro': 'The {n} cards we use on the clan Discord, so nobody starts blind: weight, growth, max group size, '
                  'controls, a tip and the mutations the community recommends.',
         'revisado': 'Reviewed {fecha} · patch {parche}',
@@ -130,17 +107,10 @@ T = {
         'mut_intro': 'The ones the cards recommend and what each one does. They are only a rough guide: they come from community guides.',
         'cta_h2': 'Which species will you join with?',
         'cta_p': 'On Discord you get these cards, a pack to play them with and a hunt every Saturday. The clan speaks Spanish.',
-        'cta_boton': 'Join GARRA IBÉRICA on Discord', 'volver': 'Back to the clan website',
-        'pie_texto': 'Spanish-speaking The Isle Evrima clan, open to players from Spain and Latin America.',
-        'pie_menu_label': 'Footer',
-        'pie_menu': [('about', 'About'), ('recruiting', 'Recruitment'), ('offer', 'What we offer'), ('gallery', 'Gallery'),
-                     ('join', 'How to join'), ('hunt', 'Clan hunt'), ('rules', 'Rules'), ('ranks', 'Ranks'), ('faq', 'FAQ')],
-        'pie_discord': 'Clan Discord', 'pie_steam': 'The Isle on Steam', 'arriba': 'Back to top ↑',
-        'legal': 'Fan site made by the clan. We are not affiliated with the creators of The Isle or with Discord. All trademarks belong to their owners.',
-        'inicio': 'top',
+        'cta_boton': 'Join GARRA IBÉRICA on Discord', 'volver': 'Back to the home page',
+        'inicio': 'top', 'ids': ['carnivores', 'herbivores', 'omnivores'], 'mut_id': 'mutations', 'leer_id': 'how-to-read',
     },
 }
-MENU_GRUPOS = {'es': ['carnivoros', 'herbivoros', 'omnivoros'], 'en': ['carnivores', 'herbivores', 'omnivores']}
 
 
 def datos():
@@ -221,50 +191,20 @@ def ficha(f, d, lang):
     return '\n'.join('        ' + p for p in partes)
 
 
-def pagina(lang, base=None, d=None, docs=DOCS):
-    base = base or base_web(docs)
+def contenido(lang, d=None):
+    """(datos de la página, contenido de <main> con los marcadores de montar_web.py, fecha ISO)."""
     d = d or datos()
     t = T[lang]
-    otro = 'en' if lang == 'es' else 'es'
-    sube = '../' * RUTAS[lang].count('/')
-    inicio_web = '../' if lang == 'en' else sube
-    otra_guia = sube + RUTAS[otro]
-    url = base + RUTAS[lang]
-    portada = base + ('en/' if lang == 'en' else '')
-    from comprobar import huella
-    v = {n: huella(docs / n) for n in ('estilos.css', 'efectos.js')}
     fechas, fecha_iso, parche = revision(d)
     revisado = t['revisado'].format(fecha=fechas[lang], parche=parche)
     n = len(d['fichas'])
-    desc = t['desc'].format(n=n)
-    if not 70 <= len(desc) <= 160:
-        sys.exit(f'Descripción en {lang} de {len(desc)} caracteres (70–160)')
-    ids = dict(zip(['carnivoros', 'herbivoros', 'omnivoros'], MENU_GRUPOS[lang]))
+    ids = dict(zip(['carnivoros', 'herbivoros', 'omnivoros'], t['ids']))
     grupos = {g: [f for f in d['fichas'] if GRUPO[f['dieta']] == g] for g in ids}
-    otra_lang, otra_titulo, otra_corto = t['otra']
-    nueva = t['nueva']
-
-    jsonld = {
-        '@context': 'https://schema.org',
-        '@graph': [
-            {'@type': 'Organization', '@id': base + '#clan', 'name': 'GARRA IBÉRICA', 'url': base,
-             'logo': base + 'apple-touch-icon.png', 'image': base + 'img/og-garra-iberica.jpg', 'sameAs': [INVITACION]},
-            {'@type': 'VideoGame', '@id': base + '#juego', 'name': 'The Isle', 'alternateName': 'The Isle Evrima',
-             'gamePlatform': 'PC', 'sameAs': [STEAM, 'https://www.theisle-game.com/']},
-            {'@type': 'WebPage', '@id': url + '#pagina', 'url': url, 'name': t['titulo'], 'description': desc,
-             'inLanguage': lang, 'dateModified': fecha_iso, 'isPartOf': {'@id': base + '#web'},
-             'about': {'@id': base + '#juego'}, 'publisher': {'@id': base + '#clan'},
-             'breadcrumb': {'@id': url + '#migas'}},
-            {'@type': 'BreadcrumbList', '@id': url + '#migas', 'itemListElement': [
-                {'@type': 'ListItem', 'position': 1, 'name': 'GARRA IBÉRICA', 'item': portada},
-                {'@type': 'ListItem', 'position': 2, 'name': t['h1'], 'item': url}]},
-        ],
-    }
-    ld = json.dumps(jsonld, ensure_ascii=False, indent=2)
+    inicio_web = '@/' + ('en/' if lang == 'en' else '')
 
     indice = []
     for g, id_ in ids.items():
-        indice += [f'          <div class="indice-grupo">',
+        indice += ['          <div class="indice-grupo">',
                    f'            <p><a href="#{id_}">{t["grupos"][g]}</a></p>',
                    '            <ul role="list">',
                    *[f'              <li><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a></li>' for f in grupos[g]],
@@ -273,11 +213,10 @@ def pagina(lang, base=None, d=None, docs=DOCS):
 
     bloques = []
     for titulo, del_discord, propias in t['bloques']:
-        items = del_discord + propias
         bloques += [f'        <section class="bloque panel luz revelar" aria-labelledby="b-{ancla(titulo)}">',
                     f'          <h3 id="b-{ancla(titulo)}">{titulo}</h3>',
                     '          <ul role="list">',
-                    *[f'            <li>{i.format(revisado=revisado)}</li>' for i in items],
+                    *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
                     '          </ul>',
                     '        </section>']
 
@@ -303,87 +242,23 @@ def pagina(lang, base=None, d=None, docs=DOCS):
         nombre, _, efecto = muts[k].partition(': ')
         glosario.append(f'        <div><dt>{escape(nombre)}</dt><dd>{escape(efecto[:1].upper() + efecto[1:])}</dd></div>')
 
-    mut_id = 'mutaciones' if lang == 'es' else 'mutations'
     lineas = [
-        '<!doctype html>',
-        f'<html lang="{lang}">',
-        '<head>',
-        '<meta charset="utf-8">',
-        '<meta name="viewport" content="width=device-width, initial-scale=1">',
-        f'<title>{t["titulo"]}</title>',
-        f'<meta name="description" content="{escape(desc)}">',
-        '<meta name="robots" content="max-image-preview:large, max-snippet:-1">',
-        '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'self\'; connect-src \'self\'; style-src \'self\'; font-src \'self\'; img-src \'self\' data:; base-uri \'none\'; form-action \'none\'">',
-        '<meta name="referrer" content="strict-origin-when-cross-origin">',
-        '<meta name="theme-color" content="#0b0806">',
-        f'<link rel="canonical" href="{url}">',
-        f'<link rel="alternate" hreflang="es" href="{base + RUTAS["es"]}">',
-        f'<link rel="alternate" hreflang="en" href="{base + RUTAS["en"]}">',
-        f'<link rel="alternate" hreflang="x-default" href="{base + RUTAS["es"]}">',
-        f'<link rel="preload" href="{sube}fonts/anton.woff2" as="font" type="font/woff2" crossorigin>',
-        f'<link rel="preload" href="{sube}fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>',
-        f'<link rel="stylesheet" href="{sube}estilos.css?v={v["estilos.css"]}">',
-        f'<script src="{sube}efectos.js?v={v["efectos.js"]}" defer></script>',
-        f'<link rel="icon" href="{sube}favicon.ico" sizes="16x16 32x32 48x48">',
-        f'<link rel="apple-touch-icon" href="{sube}apple-touch-icon.png">',
-        '',
-        '<meta property="og:type" content="article">',
-        f'<meta property="og:locale" content="{t["locale"][0]}">',
-        f'<meta property="og:locale:alternate" content="{t["locale"][1]}">',
-        '<meta property="og:site_name" content="GARRA IBÉRICA">',
-        f'<meta property="og:title" content="{t["og"]}">',
-        f'<meta property="og:description" content="{escape(desc)}">',
-        f'<meta property="og:url" content="{url}">',
-        f'<meta property="og:image" content="{base}img/og-garra-iberica.jpg">',
-        '<meta property="og:image:width" content="1200">',
-        '<meta property="og:image:height" content="630">',
-        f'<meta property="og:image:alt" content="{t["og_alt"]}">',
-        '<meta name="twitter:card" content="summary_large_image">',
-        '',
-        '<script type="application/ld+json">',
-        ld,
-        '</script>',
-        '</head>',
-        '<body>',
-        f'<a class="saltar" href="#contenido">{t["saltar"]}</a>',
-        '',
-        '<header class="barra">',
-        '  <div class="barra-in">',
-        f'    <a class="marca" href="{inicio_web}" aria-label="{t["marca"]}">',
-        f'      <img src="{sube}img/emoji-garra.webp" alt="" width="36" height="36">',
-        '      <span>GARRA IBÉRICA</span>',
-        '    </a>',
-        f'    <nav class="menu" aria-label="{t["secciones"]}">',
-        *[f'      <a href="#{id_}">{t["grupos"][g]}</a>' for g, id_ in ids.items()],
-        f'      <a href="#{mut_id}">{t["menu_mut"]}</a>',
-        '    </nav>',
-        '    <div class="barra-acciones">',
-        f'      <a class="idioma" href="{otra_guia}" hreflang="{otra_lang}" lang="{otra_lang}" title="{otra_titulo}">{otra_corto}</a>',
-        f'      <a class="boton boton-mini" href="{INVITACION}" rel="noopener" target="_blank">{t["unete"]}</a>',
-        '    </div>',
-        '  </div>',
-        '  <span class="progreso" aria-hidden="true"></span>',
-        '</header>',
-        '',
-        '<main id="contenido">',
-        f'  <section class="seccion guia-cabeza" id="{t["inicio"]}" aria-labelledby="titulo">',
-        f'    <img class="guia-fondo" src="{sube}img/galeria-noche-1200.webp" srcset="{sube}img/galeria-noche-800.webp 800w, '
-        f'{sube}img/galeria-noche-1200.webp 1200w, {sube}img/galeria-noche-1600.webp 1600w" sizes="100vw" alt="" '
+        f'  <section class="cabecera" id="{t["inicio"]}" aria-labelledby="titulo" data-ascuas>',
+        '    <img class="cabecera-fondo" src="@/img/galeria-noche-1200.webp" srcset="@/img/galeria-noche-800.webp 800w, '
+        '@/img/galeria-noche-1200.webp 1200w, @/img/galeria-noche-1600.webp 1600w" sizes="100vw" alt="" '
         'width="1600" height="670" fetchpriority="high">',
-        '    <div class="envoltura">',
-        '      <div class="revelar">',
-        f'        <p class="antetitulo">{t["antetitulo"]}</p>',
-        f'        <h1 id="titulo">{t["h1"]}</h1>',
-        f'        <p class="intro">{t["intro"].format(n=n)}</p>',
-        f'        <p class="guia-revisado">{revisado}</p>',
-        '      </div>',
-        f'      <nav class="indice revelar" aria-label="{t["indice"]}">',
+        '    <div class="envoltura cabecera-in">',
+        '      {{migas}}',
+        f'      <h1 id="titulo" class="entra">{t["h1"]}</h1>',
+        f'      <p class="entrada entra entra-2">{t["intro"].format(n=n)}</p>',
+        f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
+        f'      <nav class="indice entra entra-4" aria-label="{t["indice"]}">',
         *indice,
         '      </nav>',
         '    </div>',
         '  </section>',
         '',
-        f'  <section class="seccion" id="{"como-leer" if lang == "es" else "how-to-read"}" aria-labelledby="t-leer">',
+        f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
         '    <div class="envoltura">',
         '      <div class="revelar">',
         f'        <p class="antetitulo">{t["leer_ante"]}</p>',
@@ -396,11 +271,11 @@ def pagina(lang, base=None, d=None, docs=DOCS):
         '  </section>',
         '',
         *secciones,
-        f'  <section class="seccion" id="{mut_id}" aria-labelledby="t-{mut_id}">',
+        f'  <section class="seccion" id="{t["mut_id"]}" aria-labelledby="t-{t["mut_id"]}">',
         '    <div class="envoltura">',
         '      <div class="revelar">',
         f'        <p class="antetitulo">{t["mut_ante"]}</p>',
-        f'        <h2 id="t-{mut_id}">{t["mut_h2"]}</h2>',
+        f'        <h2 id="t-{t["mut_id"]}">{t["mut_h2"]}</h2>',
         f'        <p class="intro">{t["mut_intro"]}</p>',
         '      </div>',
         '      <dl class="glosario revelar">',
@@ -413,77 +288,10 @@ def pagina(lang, base=None, d=None, docs=DOCS):
         '    <div class="envoltura centro revelar">',
         f'      <h2 id="t-llamada">{t["cta_h2"]}</h2>',
         f'      <p>{t["cta_p"]}</p>',
-        f'      <a class="boton boton-grande latido" href="{INVITACION}" rel="noopener" target="_blank">{t["cta_boton"]}<span class="oculto">{nueva}</span></a>',
+        f'      <a class="boton boton-grande latido" href="{{{{discord}}}}" rel="noopener" target="_blank">{t["cta_boton"]}<span class="oculto">{t["nueva"]}</span></a>',
         f'      <p class="volver"><a class="boton boton-sec boton-mini" href="{inicio_web}">{t["volver"]}</a></p>',
         '    </div>',
         '  </section>',
-        '</main>',
-        '',
-        '<footer class="pie">',
-        '  <div class="envoltura pie-in">',
-        '    <div class="pie-marca">',
-        f'      <img src="{sube}img/emoji-garra.webp" alt="" width="48" height="48" loading="lazy">',
-        f'      <p><b>GARRA IBÉRICA</b><br>{t["pie_texto"]}</p>',
-        '    </div>',
-        f'    <nav class="pie-menu" aria-label="{t["pie_menu_label"]}">',
-        *[f'      <a href="{inicio_web}#{id_}">{texto}</a>' for id_, texto in t['pie_menu']],
-        '    </nav>',
-        '    <p class="pie-enlaces">',
-        f'      <a href="{INVITACION}" rel="noopener" target="_blank">{t["pie_discord"]}<span class="oculto">{nueva}</span></a>',
-        f'      <a href="{STEAM}" rel="noopener" target="_blank">{t["pie_steam"]}<span class="oculto">{nueva}</span></a>',
-        f'      <a href="{otra_guia}" hreflang="{otra_lang}" lang="{otra_lang}">{otra_titulo}</a>',
-        f'      <a href="#{t["inicio"]}">{t["arriba"]}</a>',
-        '    </p>',
-        f'    <p class="pie-legal">{t["legal"]}</p>',
-        '  </div>',
-        '</footer>',
-        '</body>',
-        '</html>',
-        '',
     ]
-    return '\n'.join(lineas)
-
-
-PORTADAS = {'es': 'index.html', 'en': 'en/index.html'}
-MARCAS = ('        <!-- guia:especies -->\n', '        <!-- /guia:especies -->')
-
-
-def especies_portada(lang, d=None):
-    """Lista de especies, con enlace a su ficha, que va en la portada entre las dos marcas."""
-    d = d or datos()
-    t = T[lang]
-    ruta = RUTAS[lang].removeprefix('en/')
-    filas = []
-    for g in ('carnivoros', 'herbivoros', 'omnivoros'):
-        enlaces = ', '.join(f'<a href="{ruta}#{ancla(f["nombre"])}">{escape(f["nombre"])}</a>'
-                            for f in d['fichas'] if GRUPO[f['dieta']] == g)
-        filas.append(f'          <div><dt>{t["grupos"][g]}</dt><dd>{enlaces}</dd></div>\n')
-    return '        <dl>\n' + ''.join(filas) + '        </dl>\n'
-
-
-def portada(lang, html, d=None):
-    """La portada con la lista de especies al día. Sale si no encuentra las marcas una sola vez."""
-    if html.count(MARCAS[0]) != 1 or html.count(MARCAS[1]) != 1:
-        sys.exit(f'{PORTADAS[lang]}: las marcas de la lista de especies deben estar una vez cada una')
-    antes, resto = html.split(MARCAS[0])
-    _, despues = resto.split(MARCAS[1])
-    return antes + MARCAS[0] + especies_portada(lang, d) + MARCAS[1] + despues
-
-
-def main():
-    sys.path.insert(0, str(HERRAMIENTAS))
-    base, d = base_web(), datos()
-    for lang, nombre in FICHEROS.items():
-        destino = DOCS / nombre
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        destino.write_bytes(pagina(lang, base, d).encode('utf-8'))
-        print(f'{nombre}: {len(d["fichas"])} fichas')
-    for lang, nombre in PORTADAS.items():
-        p = DOCS / nombre
-        p.write_bytes(portada(lang, p.read_bytes().decode('utf-8'), d).encode('utf-8'))
-        print(f'{nombre}: lista de especies al día')
-
-
-if __name__ == '__main__':
-    sys.stdout.reconfigure(encoding='utf-8')
-    main()
+    pagina = {'titulo': t['titulo'], 'descripcion': t['desc'].format(n=n), 'h1': t['h1']}
+    return pagina, '\n'.join(lineas), fecha_iso

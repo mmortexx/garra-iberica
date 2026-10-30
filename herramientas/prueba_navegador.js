@@ -1,15 +1,26 @@
 // Prueba la web en un navegador real: contenido visible con y sin JavaScript y con «reducir
 // movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
-// sin solapes, página nunca más ancha que la pantalla, marca alineada con los títulos, visor de la
-// galería y fuentes sin saltos al llegar tarde.
+// sin solapes, menú (en fila o a pantalla completa) que lleva a cada página, enlaces viejos de la
+// portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
+// visor de la galería y fuentes sin saltos al llegar tarde.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
 const { chromium } = require('playwright');
 const BASE = 'http://127.0.0.1:8765/';
-const PORTADAS = ['', 'en/'];
-// La guía de dinosaurios: sin cuenta atrás, compartir, cartel ni galería.
-const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
+// Las 12 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
+const PAGINAS = [
+  ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
+  ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
+  ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
+];
+const CON_CUENTA = ['inicio', 'caceria'];
+const CON_COMPARTIR = ['inicio'];
+const CON_CARTEL = ['caceria'];
+const CON_GALERIA = ['galeria'];
+// Enlaces de cuando todo estaba en la portada: deben llevar a su página nueva.
+const MOVIDAS = [['#normas', 'clan/#normas'], ['#guia', 'dinosaurios/'], ['en/#faq', 'en/join/#faq'], ['en/#hunt', 'en/hunt/']];
+const ruta = r => ('/' + r).padEnd(15);
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   const casos = [
@@ -18,15 +29,15 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
     ['sin JavaScript', { javaScriptEnabled: false }],
   ];
   let malos = 0;
-  for (const ruta of [...PORTADAS, ...GUIAS]) {
-    const portada = PORTADAS.includes(ruta);
+  for (const [r, tipo] of PAGINAS) {
     for (const [nombre, opts] of casos) {
       const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
       const p = await ctx.newPage();
       const errores = [];
       p.on('pageerror', e => errores.push(e.message));
       p.on('console', m => { if (m.type() === 'error') errores.push(m.text()); });
-      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      p.on('response', x => { if (x.status() >= 400) errores.push(`${x.status()} ${x.url()}`); });
+      await p.goto(BASE + r, { waitUntil: 'load' });
       if (nombre === 'normal tras scroll') {
         const alto = await p.evaluate(() => document.documentElement.scrollHeight);
         for (let y = 0; y < alto; y += 300) { await p.mouse.wheel(0, 300); await p.waitForTimeout(40); }
@@ -34,12 +45,10 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
       } else {
         await p.waitForTimeout(800);
       }
-      const r = await p.evaluate(() => {
+      const res = await p.evaluate(() => {
         const ocultos = [...document.querySelectorAll('.revelar, .entra')].filter(el => parseFloat(getComputedStyle(el).opacity) < 0.99);
         const cuenta = document.querySelector('[data-cuenta]');
         return {
-          claseAnim: document.documentElement.classList.contains('anim'),
-          ascuas: document.querySelectorAll('canvas.ascuas').length,
           ocultos: ocultos.length,
           ejemplo: ocultos.slice(0, 3).map(e => e.className),
           cuentaVisible: !!cuenta && !cuenta.hidden,
@@ -47,62 +56,38 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
           compartir: !!document.querySelector('[data-compartir]:not([hidden])'),
         };
       });
-      // Con JavaScript: cuenta atrás en bloques (3 o 4, según queden días) y botón de compartir.
-      // Sin él, ninguna de las dos cosas, que no funcionarían. La guía no tiene ninguna.
-      const conJs = portada && nombre !== 'sin JavaScript';
-      if (conJs !== r.cuentaVisible || conJs !== r.compartir || (conJs && r.bloques < 3)) malos++;
-      if (r.ocultos || errores.length) malos++;
+      // Con JavaScript: cuenta atrás en bloques (3 o 4, según queden días) y botón de compartir
+      // donde los hay. Sin él, ninguna de las dos cosas, que no funcionarían.
+      const js = nombre !== 'sin JavaScript';
+      const cuenta = js && CON_CUENTA.includes(tipo), compartir = js && CON_COMPARTIR.includes(tipo);
+      if (cuenta !== res.cuentaVisible || compartir !== res.compartir || (cuenta && res.bloques < 3)) malos++;
+      if (res.ocultos || errores.length) malos++;
       // «Compartir» sin menú del sistema: copia la dirección canónica y lo dice.
-      if (nombre === 'normal tras scroll' && r.compartir) {
+      if (nombre === 'normal tras scroll' && res.compartir) {
         await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE.slice(0, -1) });
         await p.evaluate(() => { Object.defineProperty(navigator, 'share', { value: undefined }); });
         await p.click('[data-compartir] button');
         await p.waitForTimeout(300);
-        r.copiado = await p.evaluate(async () => {
+        res.copiado = await p.evaluate(async () => {
           const c = document.querySelector('[data-compartir]');
           return c.querySelector('[role="status"]').textContent === c.dataset.copiado
             && await navigator.clipboard.readText() === document.querySelector('link[rel="canonical"]').href;
         });
-        if (!r.copiado) malos++;
+        if (!res.copiado) malos++;
       }
-      console.log(('/' + ruta).padEnd(5), nombre.padEnd(20), JSON.stringify(r), 'errores:', JSON.stringify(errores));
-      await ctx.close();
-    }
-    // Menú: con cada sección en la franja de lectura se marca su enlace, o ninguno si no está en él.
-    {
-      const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, reducedMotion: 'reduce' });
-      const p = await ctx.newPage();
-      await p.goto(BASE + ruta, { waitUntil: 'load' });
-      await p.evaluate(() => document.fonts.ready);
-      const ids = await p.evaluate(() => [...document.querySelectorAll('main section[id]')].map(s => s.id));
-      const estado = id => ({
-        marcado: [...document.querySelectorAll('.menu a[aria-current]')].map(a => a.hash.slice(1)).join(','),
-        esperado: document.querySelector(`.menu a[href="#${id}"]`) ? id : '',
-      });
-      const mal = [];
-      for (const id of ids) {
-        // El borde de la sección al 40 % de la altura: la franja de lectura (45–50 %) queda dentro.
-        await p.evaluate(id => scrollTo(0, document.getElementById(id).getBoundingClientRect().top + scrollY - innerHeight * 0.40), id);
-        // Se espera a que el menú llegue a lo esperado; si no llega en 2 s, se informa de lo que hay.
-        await p.waitForFunction(`(e => e.marcado === e.esperado)((${estado})(${JSON.stringify(id)}))`, null, { timeout: 2000 })
-          .catch(() => {});
-        const r = await p.evaluate(estado, id);
-        if (r.marcado !== r.esperado) mal.push(`#${id}: marcado «${r.marcado}», esperado «${r.esperado}»`);
-      }
-      if (mal.length) malos++;
-      console.log(('/' + ruta).padEnd(5), 'menú marca la sección:', mal.length ? JSON.stringify(mal) : `bien en ${ids.length} secciones`);
+      console.log(ruta(r), nombre.padEnd(20), JSON.stringify(res), 'errores:', JSON.stringify(errores));
       await ctx.close();
     }
     // Texto que se sale de la pantalla en móviles estrechos (overflow:hidden lo esconde sin avisar).
     for (const ancho of [320, 360, 412]) {
       const ctx = await navegador.newContext({ viewport: { width: ancho, height: 760 }, isMobile: true, hasTouch: true });
       const p = await ctx.newPage();
-      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      await p.goto(BASE + r, { waitUntil: 'load' });
       await p.evaluate(() => document.fonts.ready);
       const fuera = await p.evaluate(() => {
         const W = document.documentElement.clientWidth;
         return [...document.querySelectorAll('body *')].filter(el => {
-          if (el.closest('.menu, .oculto, canvas, svg') || !el.childNodes.length) return false;
+          if (el.closest('.menu, .oculto, canvas, svg, .tira-marco') || !el.childNodes.length) return false;
           const conTexto = [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
           if (!conTexto) return false;
           const rc = el.getBoundingClientRect();
@@ -110,33 +95,53 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
         }).map(el => el.tagName + '.' + [...el.classList].join('.') + ' «' + el.textContent.trim().slice(0, 40) + '»');
       });
       if (fuera.length) malos++;
-      console.log(('/' + ruta).padEnd(5), `${ancho}px desbordes:`, fuera.length ? JSON.stringify(fuera.slice(0, 5)) : 'ninguno');
+      console.log(ruta(r), `${ancho}px desbordes:`, fuera.length ? JSON.stringify(fuera.slice(0, 5)) : 'ninguno');
       // Cartel de la Cacería: en móvil, a todo el ancho y recortado (a su proporción original,
       // 2,5:1, el rótulo queda ilegible).
-      const cartel = portada && await p.evaluate(async () => {
+      const cartel = CON_CARTEL.includes(tipo) && await p.evaluate(async () => {
         const img = document.querySelector('.marco-ancho img');
         img.loading = 'eager';
         await img.decode();
-        const r = img.getBoundingClientRect();
-        return { ancho: Math.round(r.width), proporcion: +(r.width / r.height).toFixed(2), pantalla: document.documentElement.clientWidth };
+        const rc = img.getBoundingClientRect();
+        return { ancho: Math.round(rc.width), proporcion: +(rc.width / rc.height).toFixed(2), pantalla: document.documentElement.clientWidth };
       });
       if (cartel && (cartel.ancho < cartel.pantalla || cartel.proporcion > 1.7)) {
         malos++;
-        console.log(('/' + ruta).padEnd(5), `${ancho}px cartel de la Cacería pequeño:`, JSON.stringify(cartel));
+        console.log(ruta(r), `${ancho}px cartel de la Cacería pequeño:`, JSON.stringify(cartel));
       }
       await ctx.close();
     }
-    // Cabecera: marca, enlaces del menú, idioma y botón no se pisan a ningún ancho de escritorio.
+    // Menú en escritorio: en una fila, marcando la página en la que se está (el inicio no está en él).
+    {
+      const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const m = await p.evaluate(() => {
+        const enlaces = [...document.querySelectorAll('.menu a')].filter(a => a.getBoundingClientRect().width);
+        return {
+          visibles: enlaces.length, boton: !!document.querySelector('.menu-boton').getBoundingClientRect().width,
+          marcados: enlaces.filter(a => a.getAttribute('aria-current') === 'page').map(a => a.href),
+          aqui: location.href,
+        };
+      });
+      const fallos = [];
+      if (m.visibles !== 5 || m.boton) fallos.push(`${m.visibles} enlaces a la vista y botón ${m.boton ? 'visible' : 'oculto'}`);
+      const esperado = tipo === 'inicio' ? [] : [m.aqui];
+      if (JSON.stringify(m.marcados) !== JSON.stringify(esperado)) fallos.push(`marca ${JSON.stringify(m.marcados)} y debe marcar ${JSON.stringify(esperado)}`);
+      if (fallos.length) malos++;
+      console.log(ruta(r), 'menú en escritorio:', fallos.length ? fallos.join('; ') : 'bien');
+      await ctx.close();
+    }
+    // Cabecera: marca, enlaces del menú, idioma y botones no se pisan a ningún ancho.
     // Se mide lo que se pinta (el contenido), no la caja: con white-space:nowrap el texto puede
-    // salirse de una caja que la rejilla ha encogido. Los enlaces cuentan solo en la parte que
-    // deja ver el menú (en móvil se desliza).
+    // salirse de una caja que la rejilla ha encogido. Por debajo de 1020 px el menú se esconde
+    // tras su botón y no cuenta.
     // bypassCSP: para medir el ancho se quita un momento, con una hoja en línea, el recorte de las
     // secciones (si no, escondería lo que se salga).
     const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, bypassCSP: true });
     const p = await ctx.newPage();
-    await p.goto(BASE + ruta, { waitUntil: 'load' });
+    await p.goto(BASE + r, { waitUntil: 'load' });
     await p.evaluate(() => document.fonts.ready);
-    // Además, ningún enlace del menú fuera de la pantalla y, desde 360 px, todos en una línea.
     const anchos = [];
     for (let w = 320; w <= 1440; w += 5) anchos.push(w);
     const solapes = [], cortados = [], anchas = [], desalineados = [];
@@ -157,29 +162,34 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
       });
       if (a.sobra > 0) anchas.push(`${ancho}px: ${a.sobra} px de más`);
       const fuera = a.titulos.filter(([, x]) => Math.abs(x - a.marca) > 1).map(([id, x]) => `${id} en ${x}`);
-      if (a.titulos.length < (portada ? 8 : 5)) fuera.push(`solo ${a.titulos.length} títulos de sección`);
+      if (!a.titulos.length) fuera.push('ningún título de sección');
       if (fuera.length) desalineados.push(`${ancho}px: marca en ${a.marca}, ${fuera.join(', ')}`);
       if (ancho > 1440) continue;
       const m = await p.evaluate(() => {
         const W = document.documentElement.clientWidth;
-        const rs = [...document.querySelectorAll('.menu a')].map(a => a.getBoundingClientRect());
-        return { fuera: rs.filter(r => r.left < -0.5 || r.right > W + 0.5).length, lineas: new Set(rs.map(r => Math.round(r.top))).size };
+        const rs = [...document.querySelectorAll('.menu a')].map(a => a.getBoundingClientRect()).filter(rc => rc.width);
+        const boton = !!document.querySelector('.menu-boton').getBoundingClientRect().width;
+        return { visibles: rs.length, boton, fuera: rs.filter(rc => rc.left < -0.5 || rc.right > W + 0.5).length, lineas: new Set(rs.map(rc => Math.round(rc.top))).size };
       });
-      if (m.fuera || (ancho >= 360 && m.lineas > 1)) cortados.push(`${ancho}px: ${m.fuera} fuera, ${m.lineas} líneas`);
+      // O el menú entero en una fila, o su botón: nunca a medias ni sin forma de llegar a él.
+      const bien = ancho >= 1020 ? m.visibles === 5 && !m.boton && m.lineas === 1 && !m.fuera : m.visibles === 0 && m.boton;
+      if (!bien) cortados.push(`${ancho}px: ${m.visibles} enlaces en ${m.lineas} líneas, ${m.fuera} fuera, botón ${m.boton ? 'sí' : 'no'}`);
       const s = await p.evaluate(() => {
-        const menu = document.querySelector('.menu').getBoundingClientRect();
-        const cajas = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton')].map(el => {
+        const cajas = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton, .menu-boton')].map(el => {
           const caja = el.getBoundingClientRect(), rango = document.createRange();
           rango.selectNodeContents(el);
+          // El texto para lectores de pantalla («se abre en una pestaña nueva») va en una caja de
+          // 1 px recortada: se sale de ella sin verse y no cuenta.
+          const oculto = el.querySelector('.oculto');
+          if (oculto) rango.setEndBefore(oculto);
           const c = rango.getBoundingClientRect();
-          let r = { left: Math.min(caja.left, c.left), right: Math.max(caja.right, c.right), top: caja.top, bottom: caja.bottom };
-          if (el.closest('.menu')) r = { left: Math.max(r.left, menu.left), right: Math.min(r.right, menu.right), top: r.top, bottom: r.bottom };
-          return { r, nombre: el.textContent.trim().slice(0, 20) };
+          const rc = caja.width ? { left: Math.min(caja.left, c.left), right: Math.max(caja.right, c.right), top: caja.top, bottom: caja.bottom } : caja;
+          return { r: rc, nombre: el.textContent.trim().slice(0, 20) || el.className };
         }).filter(c => c.r.right - c.r.left > 0.5);
         const res = [];
         for (let i = 0; i < cajas.length; i++) for (let j = i + 1; j < cajas.length; j++) {
-          const a = cajas[i].r, b = cajas[j].r;
-          const x = Math.min(a.right, b.right) - Math.max(a.left, b.left), y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          const x1 = cajas[i].r, x2 = cajas[j].r;
+          const x = Math.min(x1.right, x2.right) - Math.max(x1.left, x2.left), y = Math.min(x1.bottom, x2.bottom) - Math.max(x1.top, x2.top);
           if (x > 0.5 && y > 0.5) res.push(`«${cajas[i].nombre}» y «${cajas[j].nombre}» ${x.toFixed(0)} px`);
         }
         return res;
@@ -190,27 +200,92 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
     if (cortados.length) malos++;
     if (anchas.length) malos++;
     if (desalineados.length) malos++;
-    console.log(('/' + ruta).padEnd(5), 'página más ancha que la pantalla 320–1440px y 1920px:', anchas.length ? `${anchas.length} anchos, p. ej. ${JSON.stringify(anchas.slice(0, 3))}` : 'nunca');
-    console.log(('/' + ruta).padEnd(5), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
-    console.log(('/' + ruta).padEnd(5), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
-    console.log(('/' + ruta).padEnd(5), 'menú 320–1440px cortado:', cortados.length ? `${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'nunca');
+    console.log(ruta(r), 'página más ancha que la pantalla 320–1440px y 1920px:', anchas.length ? `${anchas.length} anchos, p. ej. ${JSON.stringify(anchas.slice(0, 3))}` : 'nunca');
+    console.log(ruta(r), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
+    console.log(ruta(r), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    console.log(ruta(r), 'menú 320–1440px, en fila o tras su botón:', cortados.length ? `fallan ${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'siempre');
+    await ctx.close();
+  }
+  // Menú en el móvil, con el dedo y con el teclado: el botón lo abre a pantalla completa con todos
+  // los enlaces a la vista, Escape y la X lo cierran devolviendo el foco al botón, y cada enlace
+  // lleva a su página. Se recorren las páginas de una en una desde el menú, como haría alguien.
+  for (const lang of ['', 'en/']) {
+    const ctx = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(e.message));
+    await p.goto(BASE + lang, { waitUntil: 'load' });
+    const fallos = [];
+    const abierto = () => p.evaluate(() => document.querySelector('.menu').matches(':popover-open'));
+    const destinos = await p.evaluate(() => [...document.querySelectorAll('.menu a:not(.menu-idioma)')].map(a => a.href));
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(700);
+    const vista = await p.evaluate(() => {
+      const W = innerWidth, H = innerHeight;
+      const m = document.querySelector('.menu').getBoundingClientRect();
+      const fuera = [...document.querySelectorAll('.menu a, .menu-cerrar')].filter(el => {
+        const rc = el.getBoundingClientRect();
+        return !rc.width || rc.left < 0 || rc.right > W || rc.top < 0 || rc.bottom > H;
+      }).map(el => el.textContent.trim() || el.className);
+      return { cubre: m.left <= 0 && m.top <= 0 && m.right >= W && m.bottom >= H, fuera, rueda: getComputedStyle(document.documentElement).overflow };
+    });
+    if (!(await abierto()) || !vista.cubre || vista.fuera.length) fallos.push(`al abrir: ${JSON.stringify(vista)}`);
+    if (vista.rueda !== 'hidden') fallos.push('con el menú abierto la página de detrás se mueve');
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(200);
+    const foco = await p.evaluate(() => document.activeElement.className);
+    if (await abierto()) fallos.push('Escape no lo cierra');
+    if (foco !== 'menu-boton') fallos.push(`tras cerrar, el foco está en «${foco}»`);
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    await p.tap('.menu-cerrar');
+    await p.waitForTimeout(200);
+    if (await abierto()) fallos.push('la X no lo cierra');
+    for (const destino of destinos) {
+      await p.tap('.menu-boton');
+      await p.waitForTimeout(400);
+      await p.tap(`.menu a[href="${await p.evaluate(d => [...document.querySelectorAll('.menu a')].find(a => a.href === d).getAttribute('href'), destino)}"]`);
+      await p.waitForURL(destino, { timeout: 5000 }).catch(() => fallos.push(`no llega a ${destino} (está en ${p.url()})`));
+      await p.waitForLoadState('load');
+      if (await abierto()) fallos.push(`${destino} se abre con el menú abierto`);
+    }
+    if (errores.length) fallos.push(`errores: ${JSON.stringify(errores)}`);
+    if (fallos.length) malos++;
+    console.log(ruta(lang), `menú en el móvil (${destinos.length} páginas):`, fallos.length ? fallos.join('; ') : 'bien');
+    await ctx.close();
+  }
+  // Enlaces viejos a secciones de la portada, con JavaScript: a su página nueva. Sin él, se queda
+  // en la portada sin romperse.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    const fallos = [];
+    for (const [viejo, nuevo] of MOVIDAS) {
+      await p.goto(BASE + viejo, { waitUntil: 'load' });
+      await p.waitForURL(BASE + nuevo, { timeout: 5000 }).catch(() => fallos.push(`${viejo} acaba en ${p.url()} y debe ir a ${nuevo}`));
+    }
+    await p.goto(BASE + '#quienes', { waitUntil: 'load' });
+    await p.waitForTimeout(500);
+    if (p.url() !== BASE + '#quienes') fallos.push(`#quienes, que sigue en la portada, se va a ${p.url()}`);
+    if (fallos.length) malos++;
+    console.log(ruta(''), `enlaces viejos de la portada (${MOVIDAS.length}):`, fallos.length ? fallos.join('; ') : 'bien');
     await ctx.close();
   }
   // Visor de la galería, con ratón y con el dedo: abre, cambia de foto, amplía y vuelve, cierra
   // devolviendo el foco a la foto. Las grandes no se descargan hasta abrir el visor.
-  for (const ruta of PORTADAS) {
+  for (const [r] of PAGINAS.filter(([, tipo]) => CON_GALERIA.includes(tipo))) {
     for (const [tipo, opts] of [['ratón', { viewport: { width: 1366, height: 850 } }],
       ['dedo', { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true }]]) {
       const ctx = await navegador.newContext(opts);
       const p = await ctx.newPage();
       const grandes = [];
-      p.on('request', r => { if (r.url().includes('-ampliada-')) grandes.push(r.url()); });
-      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      p.on('request', x => { if (x.url().includes('-ampliada-')) grandes.push(x.url()); });
+      await p.goto(BASE + r, { waitUntil: 'load' });
       // Sin desplazamiento suave: en una máquina lenta la página seguía moviéndose y el toque caía
       // entre dos fotos.
       await p.evaluate(async () => {
         document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' });
-        for (let y = -1; y !== scrollY;) { y = scrollY; await new Promise(r => setTimeout(r, 200)); }
+        for (let y = -1; y !== scrollY;) { y = scrollY; await new Promise(z => setTimeout(z, 200)); }
       });
       await p.waitForTimeout(600);
       const fallos = [];
@@ -260,13 +335,13 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
       const foco = await p.evaluate(() => document.activeElement === document.querySelectorAll('.foto-ampliar')[1]);
       if (e.abierto || !foco) fallos.push(`al cerrar: ${JSON.stringify(e)}, foco en la foto: ${foco}`);
       if (fallos.length) malos++;
-      console.log(('/' + ruta).padEnd(5), `visor de la galería (${tipo}):`, fallos.length ? fallos.join('; ') : 'bien');
+      console.log(ruta(r), `visor de la galería (${tipo}):`, fallos.length ? fallos.join('; ') : 'bien');
       await ctx.close();
     }
   }
   // Con conexión lenta las fuentes llegan después del primer pintado: el texto no debe empujar
   // la página al cambiar de la fuente de reserva a la buena.
-  for (const ruta of [...PORTADAS, ...GUIAS]) {
+  for (const [r] of PAGINAS) {
     const saltos = [];
     for (const ancho of [320, 375, 412, 768, 1100, 1440]) {
       const ctx = await navegador.newContext({ viewport: { width: ancho, height: 800 } });
@@ -276,30 +351,30 @@ const GUIAS = ['dinosaurios/', 'en/dinosaurs/'];
           .observe({ type: 'layout-shift', buffered: true });
       });
       const p = await ctx.newPage();
-      await p.route(/\.woff2$/, async r => { await new Promise(z => setTimeout(z, 1500)); await r.continue(); });
-      await p.goto(BASE + ruta, { waitUntil: 'load' });
+      await p.route(/\.woff2$/, async x => { await new Promise(z => setTimeout(z, 1500)); await x.continue(); });
+      await p.goto(BASE + r, { waitUntil: 'load' });
       await p.waitForTimeout(800);
       const s = await p.evaluate(() => window.__saltos);
       if (s > 0.02) saltos.push(`${ancho}px: ${s.toFixed(3)}`);
       await ctx.close();
     }
     if (saltos.length) malos++;
-    console.log(('/' + ruta).padEnd(5), 'saltos al llegar tarde las fuentes:', saltos.length ? saltos.join(', ') : 'ninguno');
+    console.log(ruta(r), 'saltos al llegar tarde las fuentes:', saltos.length ? saltos.join(', ') : 'ninguno');
     // Y con conexión normal se pinta con las fuentes propias, no con las de reserva.
     const ctx = await navegador.newContext({ viewport: { width: 412, height: 800 } });
     const p = await ctx.newPage();
-    await p.goto(BASE + ruta, { waitUntil: 'load' });
+    await p.goto(BASE + r, { waitUntil: 'load' });
     const cdp = await ctx.newCDPSession(p);
     const { root } = await cdp.send('DOM.getDocument');
     await cdp.send('CSS.enable');
     const faltan = [];
-    for (const [sel, esperada] of [['.menu a', 'Barlow Condensed'], ['.marca', 'Anton']]) {
+    for (const [sel, esperada] of [['.pie-menu a', 'Barlow Condensed'], ['.marca', 'Anton']]) {
       const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: sel });
       const familias = (await cdp.send('CSS.getPlatformFontsForNode', { nodeId })).fonts.map(f => f.familyName);
       if (!familias.length || !familias.every(f => f.startsWith(esperada))) faltan.push(`${sel} ${esperada} (se pinta ${familias.join('/') || 'nada'})`);
     }
     if (faltan.length) malos++;
-    console.log(('/' + ruta).padEnd(5), 'fuentes propias en pantalla:', faltan.length ? `faltan ${faltan.join(', ')}` : 'sí');
+    console.log(ruta(r), 'fuentes propias en pantalla:', faltan.length ? `faltan ${faltan.join(', ')}` : 'sí');
     await ctx.close();
   }
   await navegador.close();

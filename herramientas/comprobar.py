@@ -7,7 +7,6 @@ VIGILAR_APODOS (uno por línea; así los recibe la integración continua desde u
 --sin-apodos se salta solo esa parte, y lo dice.
 """
 import datetime as dt
-import hashlib
 import json
 import os
 import re
@@ -17,17 +16,13 @@ from zoneinfo import ZoneInfo
 
 import calendario
 import guia_dinos
+import montar_web
 from html.parser import HTMLParser
+from montar_web import RUTA, huella
 from pathlib import Path
 
-PAGINAS = {
-    'index.html': ('es', '', 'GARRA IBÉRICA – Clan español de The Isle Evrima'),
-    'en/index.html': ('en', 'en/', 'GARRA IBÉRICA – Spanish-Speaking The Isle Evrima Clan'),
-}
-# Guía de dinosaurios: la genera herramientas/guia_dinos.py.
-GUIAS = {nombre: (lang, guia_dinos.RUTAS[lang], guia_dinos.T[lang]['titulo'], guia_dinos.T[lang]['h1'])
-         for lang, nombre in guia_dinos.FICHEROS.items()}
-PAREJAS = [('', 'en/'), (guia_dinos.RUTAS['es'], guia_dinos.RUTAS['en'])]
+# Todas las páginas las genera herramientas/montar_web.py: {fichero: (página, idioma)}.
+PAGINAS = montar_web.FICHEROS
 FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
@@ -92,10 +87,6 @@ def tablas_woff2(datos):
 MUESTRA_WOFF2 = (b'wOF2' + bytes(8) + (9).to_bytes(2, 'big') + bytes(34)
                  + bytes([0, 0x10, 1, 0x36, 0x43, 0x20, 0x10, 8, 4, 9, 0x20,
                           10, 0x81, 0x00, 0x40, 11, 8, 0, 12, 2, 63]) + b'Zzzz' + bytes([1]))
-
-
-def huella(ruta):
-    return hashlib.sha256(ruta.read_bytes()).hexdigest()[:10]
 
 
 def plano(texto):
@@ -171,9 +162,8 @@ def leer(raiz, nombre):
     return (raiz / nombre).read_text(encoding='utf-8')
 
 
-def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1=None, pareja=PAREJAS[0], con_faq=True):
+def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, con_faq):
     html = leer(raiz, nombre)
-    h1 = h1 or titulo
     doc = Lector()
     doc.feed(html)
     metas = {a.get('name') or a.get('property'): a.get('content') for t, a in doc.etiquetas if t == 'meta'}
@@ -281,7 +271,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1=None, par
             falla(f'{nombre}: enlace {ruta} a una sección que no existe en esa página')
         usados.add(destino)
         if destino.name in VERSIONADOS and version != huella(destino):
-            falla(f'{nombre}: {limpia} lleva ?v={version or "(nada)"} y debe llevar ?v={huella(destino)}; ejecuta herramientas/versionar.py')
+            falla(f'{nombre}: {limpia} lleva ?v={version or "(nada)"} y debe llevar ?v={huella(destino)}; ejecuta herramientas/montar_web.py')
     ids = re.findall(r'\sid="([^"]+)"', html)
     for repetido in sorted({i for i in ids if ids.count(i) > 1}):
         falla(f'{nombre}: id="{repetido}" repetido')
@@ -323,26 +313,27 @@ def revisar_datos(raiz, falla, avisa):
         fichero = raiz / nombre
         if not fichero.is_file() or fichero.read_bytes() != calendario.ics(lang, base).encode('utf-8'):
             falla(f'{nombre} no coincide con {DATOS.name}: ejecuta herramientas/calendario.py')
-    for nombre, (lang, _, _) in PAGINAS.items():
-        html = leer(raiz, nombre)
-        if 'href="caceria.ics"' not in html:
-            falla(f'{nombre}: falta el enlace para añadir la Cacería al calendario (caceria.ics)')
-        if f'href="{calendario.enlace_google(lang, base)}"' not in html:
-            falla(f'{nombre}: el enlace a Google Calendar no coincide con {DATOS.name}: copia el que imprime herramientas/calendario.py')
-
     hoy = dt.date.today()
     primera, ultima = franja_latinoamerica(datos, [hoy.year, hoy.year + 1])
     if primera % 1 or ultima % 1:
         falla(f'La Cacería no cae en hora en punto en Latinoamérica ({primera}–{ultima}): revisa el texto de la franja')
     esperada = (f'{int(primera):02d}', f'{int(ultima):02d}')
-    for nombre, (lang, _, _) in PAGINAS.items():
+    for nombre, (pagina, lang) in PAGINAS.items():
         html = leer(raiz, nombre)
         franjas = re.findall(FRANJA[lang], html)
-        if not franjas:
-            falla(f'{nombre}: no dice a qué hora cae la Cacería en Latinoamérica')
         for f in set(franjas):
             if f != esperada:
                 falla(f'{nombre}: dice {f[0]}:00–{f[1]}:00 en Latinoamérica y, con {DATOS.name}, es {esperada[0]}:00–{esperada[1]}:00')
+        if pagina == 'caceria':
+            if not franjas:
+                falla(f'{nombre}: no dice a qué hora cae la Cacería en Latinoamérica')
+            ics = montar_web.enlace(RUTA[pagina, lang], calendario.FICHEROS[lang])
+            if f'href="{ics}"' not in html:
+                falla(f'{nombre}: falta el enlace para añadir la Cacería al calendario ({ics})')
+            if f'href="{calendario.enlace_google(lang, base)}"' not in html:
+                falla(f'{nombre}: el enlace a Google Calendar no coincide con {DATOS.name}: ejecuta herramientas/montar_web.py')
+        if pagina != 'clan':
+            continue
         for a in datos['ascensos']:
             m = re.search(rf'<h4>{re.escape(a["rango"])}(?: \([^)<]*\))?</h4><p>([^<]*)</p>', html)
             if not m:
@@ -362,24 +353,47 @@ def revisar_datos(raiz, falla, avisa):
             falla(f'{DATOS.name} cita «{cita}» y tarjetas.json ya no lo dice: actualiza el extracto y la web')
 
 
-def revisar_guia(raiz, base, falla, avisa):
-    """Guía de dinosaurios: páginas y lista de la portada tal como las genera guia_dinos.py, y el
-    número de fichas que dice la portada igual al de fichas."""
+def revisar_montaje(raiz, d, falla):
+    """docs/ debe ser exactamente lo que genera montar_web.py: páginas, guía, mapa del sitio y 404.
+    Cualquier retoque a mano en docs/ o fuente sin volver a montar aparece aquí."""
     try:
-        d = guia_dinos.datos()
-        for nombre, (lang, *_) in GUIAS.items():
-            if leer(raiz, nombre) != guia_dinos.pagina(lang, base, d, docs=raiz):
-                falla(f'{nombre} no coincide con {guia_dinos.FICHAS.name}, estilos.css o efectos.js: ejecuta herramientas/guia_dinos.py')
-        for lang, nombre in guia_dinos.PORTADAS.items():
-            html = leer(raiz, nombre)
-            if guia_dinos.portada(lang, html, d) != html:
-                falla(f'{nombre}: la lista de especies no coincide con {guia_dinos.FICHAS.name}: ejecuta herramientas/guia_dinos.py')
-            cuentas = re.findall(r'\b(\d+) (?:fichas|dinosaur cards|cards)\b', plano(html))
-            if len(cuentas) < 2 or set(cuentas) != {str(len(d['fichas']))}:
-                falla(f'{nombre}: dice {cuentas} fichas y hay {len(d["fichas"])}')
+        salida = montar_web.montar(raiz)
     except SystemExit as e:
-        falla(f'guia_dinos.py: {e}')
+        falla(f'montar_web.py no puede montar la web: {e}')
         return
+    for nombre, texto in salida.items():
+        fichero = raiz / nombre
+        if not fichero.is_file() or fichero.read_bytes() != texto.encode('utf-8'):
+            falla(f'{nombre} no es lo que genera montar_web.py (paginas/, fichas, estilos o scripts cambiados): ejecuta herramientas/montar_web.py')
+    sobrantes = {f.relative_to(raiz).as_posix() for f in raiz.rglob('index.html')} - set(salida)
+    for nombre in sorted(sobrantes):
+        falla(f'{nombre} no lo genera montar_web.py: sobra (o falta su página en montar_web.PAGINAS)')
+    n = str(len(d['fichas']))
+    for nombre, (pagina, lang) in PAGINAS.items():
+        cuentas = re.findall(r'\b(\d+) (?:fichas|dinosaur cards|cards)\b', plano(leer(raiz, nombre)))
+        if set(cuentas) - {n} or (pagina == 'inicio' and not cuentas):
+            falla(f'{nombre}: dice {cuentas} fichas y hay {n}')
+
+
+def revisar_movidas(raiz, falla):
+    """Enlaces viejos a secciones de la portada (/#normas): cada uno lleva a una página y sección
+    que existen, y ninguno tapa una sección que siga en la portada."""
+    for lang, movidas in montar_web.MOVIDAS.items():
+        inicio = RUTA['inicio', lang]
+        portada = leer(raiz, inicio + 'index.html')
+        for viejo, nuevo in movidas.items():
+            if f'id="{viejo}"' in portada:
+                falla(f'{inicio}index.html: #{viejo} sigue en la portada y efectos.js lo mandaría a {nuevo}')
+            ruta, _, seccion = nuevo.partition('#')
+            destino = raiz / inicio / ruta / 'index.html'
+            if not destino.is_file():
+                falla(f'MOVIDAS[{lang}]: #{viejo} lleva a {inicio}{nuevo}, que no existe')
+            elif seccion and f'id="{seccion}"' not in destino.read_text(encoding='utf-8'):
+                falla(f'MOVIDAS[{lang}]: #{viejo} lleva a la sección #{seccion}, que no está en {inicio}{ruta}')
+
+
+def revisar_guia(falla, avisa):
+    """Los textos de la guía que vienen del Discord y las fichas siguen al día con el original."""
     if not POSTS_ORIGINAL.is_file():
         avisa(f'sin {POSTS_ORIGINAL}: no se comprueba que «Cómo leer las fichas» siga diciendo lo mismo que el Discord')
     else:
@@ -394,7 +408,7 @@ def revisar_guia(raiz, base, falla, avisa):
     if not FICHAS_ORIGINAL.is_file():
         avisa(f'sin {FICHAS_ORIGINAL}: no se comprueba que {guia_dinos.FICHAS.name} siga al día con las fichas del Discord')
     elif FICHAS_ORIGINAL.read_bytes() != guia_dinos.FICHAS.read_bytes():
-        falla(f'{guia_dinos.FICHAS.name} no es igual que {FICHAS_ORIGINAL}: cópialo encima y ejecuta herramientas/guia_dinos.py')
+        falla(f'{guia_dinos.FICHAS.name} no es igual que {FICHAS_ORIGINAL}: cópialo encima y ejecuta herramientas/montar_web.py')
 
 
 def main(raiz, sin_apodos=False, avisa=print):
@@ -411,7 +425,7 @@ def main(raiz, sin_apodos=False, avisa=print):
         return [f'Falta herramientas/{VIGILAR.name} (o la variable VIGILAR_APODOS): los apodos de miembros que no deben aparecer, uno por línea']
     prohibidos = [ID_DISCORD] + [r'(?i)\b' + re.escape(a) + r'\b' for a in apodos]
 
-    for nombre in [*PAGINAS, *GUIAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
+    for nombre in [*PAGINAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
         if not (raiz / nombre).is_file():
             falla(f'Falta {nombre}')
     if fallos:
@@ -421,14 +435,21 @@ def main(raiz, sin_apodos=False, avisa=print):
     base = canon.group(1) if canon else ''
     if not re.fullmatch(r'https://[^/]+/(.+/)?', base):
         return [f'canonical de index.html «{base}» no es una dirección https que acabe en /']
+    try:
+        d = guia_dinos.datos()
+    except SystemExit as e:
+        return [f'{guia_dinos.FICHAS.name}: {e}']
 
     usados = set()
-    for nombre, (lang, sufijo, titulo) in PAGINAS.items():
-        usados |= revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla)
-    for nombre, (lang, sufijo, titulo, h1) in GUIAS.items():
-        usados |= revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1=h1, pareja=PAREJAS[1], con_faq=False)
+    for nombre, (pagina, lang) in PAGINAS.items():
+        datos = montar_web.contenido(pagina, lang, d)[0]
+        pareja = (RUTA[pagina, 'es'], RUTA[pagina, 'en'])
+        usados |= revisar_pagina(raiz, nombre, lang, RUTA[pagina, lang], datos['titulo'], base, falla,
+                                 h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete')
+    revisar_montaje(raiz, d, falla)
+    revisar_movidas(raiz, falla)
     revisar_datos(raiz, falla, avisa)
-    revisar_guia(raiz, base, falla, avisa)
+    revisar_guia(falla, avisa)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
@@ -436,14 +457,14 @@ def main(raiz, sin_apodos=False, avisa=print):
         ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml'}
         urls = ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', ns)
         locs = [u.find('s:loc', ns).text for u in urls]
-        esperadas = [base + ruta for pareja in PAREJAS for ruta in pareja]
+        esperadas = [base + RUTA[p, lang] for p, _, _ in montar_web.PAGINAS for lang in montar_web.LANGS]
         if locs != esperadas:
             falla(f'sitemap.xml lista {locs} y debe listar {esperadas}')
         for u in urls:
             loc = u.find('s:loc', ns).text
-            es, en = next((p for p in PAREJAS if loc in (base + p[0], base + p[1])), ('', 'en/'))
+            p = next((p for p, _, _ in montar_web.PAGINAS if loc in (base + RUTA[p, 'es'], base + RUTA[p, 'en'])), 'inicio')
             alt = {l.get('hreflang'): l.get('href') for l in u.findall('x:link', ns)}
-            if alt != {'es': base + es, 'en': base + en, 'x-default': base + es}:
+            if alt != {'es': base + RUTA[p, 'es'], 'en': base + RUTA[p, 'en'], 'x-default': base + RUTA[p, 'es']}:
                 falla(f'sitemap.xml: {loc} sin las alternativas de idioma correctas')
     except (ET.ParseError, AttributeError) as e:
         falla(f'sitemap.xml no es válido: {e}')
@@ -460,7 +481,7 @@ def main(raiz, sin_apodos=False, avisa=print):
         else:
             usados.add(destino.resolve())
             if destino.name in VERSIONADOS and version != huella(destino):
-                falla(f'404.html: {destino.name} con versión desfasada; ejecuta herramientas/versionar.py')
+                falla(f'404.html: {destino.name} con versión desfasada; ejecuta herramientas/montar_web.py')
 
     css = leer(raiz, 'estilos.css')
     for u in re.findall(r'url\("?([^")]+)"?\)', css):

@@ -1,0 +1,161 @@
+titulo: GARRA IBÉRICA – Clan español de The Isle Evrima
+descripcion: GARRA IBÉRICA, clan español de The Isle Evrima abierto a España y Latinoamérica. Caza en manada, nidos y cacería cada sábado. Únete en Discord.
+og_descripcion: Clan de The Isle Evrima en español, abierto a España y Latinoamérica. Caza en manada, nidos y cacería del clan cada sábado. Reclutamiento abierto en Discord.
+h1: GARRA IBÉRICA – Clan español de The Isle Evrima
+---
+  <section class="portada" id="inicio" aria-labelledby="titulo" data-ascuas>
+    <img class="portada-fondo" src="@/img/portada-1600.webp" srcset="@/img/portada-800.webp 800w, @/img/portada-1600.webp 1600w" sizes="100vw" alt="" width="1600" height="679" fetchpriority="high">
+    <div class="portada-in">
+      <p class="antetitulo entra">Clan · The Isle Evrima</p>
+      <h1 id="titulo"><span class="h1-marca">GARRA IBÉRICA</span><span class="oculto"> – </span><span class="h1-sub">Clan español de The Isle Evrima</span></h1>
+      <p class="entrada entra entra-2">Clan en español para jugar <strong>The Isle Evrima</strong> en grupo, con jugadores de España y Latinoamérica. Cazamos, anidamos y sobrevivimos en manada, con voz en Discord y una cacería del clan cada sábado. <strong>Reclutamiento abierto.</strong></p>
+      <div class="acciones entra entra-3">
+        <a class="boton latido" href="{{discord}}" rel="noopener" target="_blank">Únete en Discord<span class="oculto"> (se abre en una pestaña nueva)</span></a>
+        <a class="boton boton-sec" href="@/unete/">Cómo entrar</a>
+      </div>
+      <ul class="datos entra entra-4" role="list">
+        <li><img src="@/img/emoji-caza.webp" alt="" width="40" height="40" fetchpriority="low"><span><b>Sábados 22:00</b> cacería del clan</span></li>
+        <li><img src="@/img/emoji-voz.webp" alt="" width="40" height="40" fetchpriority="low"><span><b>Voz</b> con o sin micro</span></li>
+        <li><img src="@/img/emoji-trofeo.webp" alt="" width="40" height="40" fetchpriority="low"><span><b>Rangos</b> por cómo juegas</span></li>
+      </ul>
+    </div>
+    <a class="bajar" href="#quienes" aria-label="Bajar a Quiénes somos"></a>
+  </section>
+
+  <ul class="cifras escalonado" role="list" aria-label="El clan en cifras">
+    <li class="revelar"><b>{{n_fichas}}</b><span>fichas de dinosaurios</span></li>
+    <li class="revelar"><b>3</b><span>Alfas al mando</span></li>
+    <li class="revelar"><b>1</b><span>cacería cada sábado</span></li>
+    <li class="revelar"><b>0 €</b><span>por entrar en el clan</span></li>
+  </ul>
+
+  <section class="seccion" id="quienes" aria-labelledby="t-quienes">
+    <div class="envoltura dos">
+      <div class="revelar">
+        <p class="antetitulo">La manada</p>
+        <h2 id="t-quienes">Quiénes somos</h2>
+        <p><strong>GARRA IBÉRICA</strong> es un <strong>clan español de The Isle Evrima</strong>, el juego de supervivencia de dinosaurios para PC. No somos un servidor de juego: somos una comunidad de jugadores que se organiza en Discord para jugar juntos en un servidor no oficial de Evrima.</p>
+        <p>Nacimos en España y jugamos con gente de toda Latinoamérica: el idioma del clan es el español. Nos gusta jugar en grupo: salir de caza, defender nidos, criar y movernos por el mapa como una manada de verdad. Hay sitio para carnívoros y herbívoros, y para quien empieza igual que para quien lleva años en la isla.</p>
+        <p>El clan lo dirigen tres <strong>Alfas</strong> al mismo nivel, con oficiales que revisan las solicitudes y líderes que guían los grupos en partida. Lo tienes todo en <a href="@/clan/">rangos y normas del clan</a>.</p>
+      </div>
+      <aside class="ficha luz revelar escalon-1" aria-label="El clan de un vistazo">
+        <h3>De un vistazo</h3>
+        <dl>
+          <div><dt>Juego</dt><dd>The Isle Evrima (PC, Steam)</dd></div>
+          <div><dt>Idioma</dt><dd>Español</dd></div>
+          <div><dt>Jugadores</dt><dd>España y Latinoamérica</dd></div>
+          <div><dt>Dónde</dt><dd>Discord y servidor no oficial</dd></div>
+          <div><dt>Evento fijo</dt><dd>Cacería, sábados a las 22:00 (España)</dd></div>
+          <div><dt>Entrada</dt><dd>Solicitud revisada por el staff</dd></div>
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="seccion" id="explora" aria-labelledby="t-explora">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">La web del clan</p>
+        <h2 id="t-explora">Explora la manada</h2>
+      </div>
+      <div class="mosaico escalonado">
+        <article class="baldosa baldosa-dinos revelar">
+          <img class="baldosa-fondo" src="@/img/galeria-espesura-1000.webp" srcset="@/img/galeria-espesura-600.webp 600w, @/img/galeria-espesura-1000.webp 1000w" sizes="(min-width: 960px) 560px, calc(100vw - 32px)" alt="" width="1000" height="500" loading="lazy" decoding="async">
+          <div class="baldosa-in">
+            <h3><a class="baldosa-enlace" href="@/dinosaurios/">Guía de dinosaurios</a></h3>
+            <p>Las {{n_fichas}} fichas del clan: peso, crecimiento, grupo máximo, controles y las mutaciones que recomienda la comunidad para cada especie.</p>
+            {{especies}}
+          </div>
+        </article>
+        <article class="baldosa baldosa-caceria revelar">
+          <div class="baldosa-in">
+            <h3><a class="baldosa-enlace" href="@/caceria/">Cacería del sábado</a></h3>
+            <p>Cada sábado a las 22:00 (hora peninsular española), todo el clan sale de caza en la voz del Discord.</p>
+            <div class="cuenta cuenta-mini" data-cuenta hidden>
+              <p class="cuenta-titulo">Próxima cacería</p>
+              <p class="cuenta-fecha"><time></time></p>
+              <p class="cuenta-falta" data-falta></p>
+              <p class="cuenta-local" data-local hidden></p>
+            </div>
+          </div>
+        </article>
+        <article class="baldosa revelar">
+          <img class="baldosa-fondo" src="@/img/galeria-charca-600.webp" srcset="@/img/galeria-charca-600.webp 600w, @/img/galeria-charca-1000.webp 1000w" sizes="(min-width: 960px) 360px, calc(100vw - 32px)" alt="" width="600" height="300" loading="lazy" decoding="async">
+          <div class="baldosa-in">
+            <h3><a class="baldosa-enlace" href="@/clan/">Rangos y normas</a></h3>
+            <p>De Recluta a Alfa: cómo se sube y qué espera la manada de ti.</p>
+          </div>
+        </article>
+        <article class="baldosa revelar">
+          <img class="baldosa-fondo" src="@/img/galeria-cielo-600.webp" srcset="@/img/galeria-cielo-600.webp 600w, @/img/galeria-cielo-1000.webp 1000w" sizes="(min-width: 960px) 180px, calc(100vw - 32px)" alt="" width="600" height="300" loading="lazy" decoding="async">
+          <div class="baldosa-in">
+            <h3><a class="baldosa-enlace" href="@/unete/">Cómo entrar</a></h3>
+            <p>Tres pasos dentro del Discord.</p>
+          </div>
+        </article>
+        <article class="baldosa baldosa-galeria revelar">
+          <div class="baldosa-in">
+            <h3><a class="baldosa-enlace" href="@/galeria/">Galería</a></h3>
+            <p>La manada en la isla, con la skin del clan.</p>
+          </div>
+          <div class="tira-marco">
+            <ul class="tira" role="list">
+              <li><img src="@/img/galeria-roca-400.webp" alt="" width="400" height="400" loading="lazy" decoding="async"></li>
+              <li><img src="@/img/galeria-bosque-400.webp" alt="" width="400" height="300" loading="lazy" decoding="async"></li>
+              <li><img src="@/img/galeria-rugido-400.webp" alt="" width="400" height="300" loading="lazy" decoding="async"></li>
+              <li><img src="@/img/galeria-valle-400.webp" alt="" width="400" height="300" loading="lazy" decoding="async"></li>
+              <li><img src="@/img/galeria-secuoyas-600.webp" alt="" width="600" height="300" loading="lazy" decoding="async"></li>
+              <li><img src="@/img/galeria-pareja-600.webp" alt="" width="600" height="300" loading="lazy" decoding="async"></li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="buscas-clan" aria-labelledby="t-buscas">
+    <div class="envoltura dos">
+      <div class="revelar">
+        <p class="antetitulo">Reclutamiento abierto</p>
+        <h2 id="t-buscas">¿Buscas clan en The Isle Evrima?</h2>
+        <p>Si buscas un <strong>clan de The Isle en español</strong> y una comunidad hispana con la que dejar de jugar solo, este es tu sitio. En la isla, ir en manada lo cambia todo: cazas presas que solo no podrías, proteges tu nido y creces con alguien cubriéndote las espaldas.</p>
+        <p>En GARRA IBÉRICA buscamos jugadores constantes y buenos compañeros, más que expertos. Si acabas de empezar en Evrima, los veteranos del clan te enseñan; si ya llevas tiempo, aquí tienes grupo fijo, voz en nuestro Discord de The Isle en español y una cacería cada semana.</p>
+      </div>
+      <ul class="encaja ficha luz revelar escalon-1" role="list" aria-label="Para quién es el clan">
+        <li>Jugadores <b>nuevos</b> que quieren aprender en grupo</li>
+        <li>Veteranos que buscan una <b>manada estable</b></li>
+        <li>Mains de <b>carnívoro</b> y de <b>herbívoro</b></li>
+        <li>Jugadores de <b>España y Latinoamérica</b></li>
+        <li>Quien juega <b>sin micro</b>: un bot lee el chat en voz alta</li>
+        <li>Gente que quiere jugar <b>sin toxicidad</b> y con normas claras</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="seccion" id="ofrecemos" aria-labelledby="t-ofrecemos">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Dentro del clan</p>
+        <h2 id="t-ofrecemos">Qué ofrecemos</h2>
+      </div>
+      <ul class="tarjetas escalonado" role="list">
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-garra.webp" alt="" width="64" height="64" loading="lazy"><h3>Manada organizada</h3><p>Jugamos en grupo con un líder que coordina la caza, la defensa y los desplazamientos.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-caza.webp" alt="" width="64" height="64" loading="lazy"><h3>Cacería semanal</h3><p>Cada sábado a las 22:00 salimos todos juntos. En Discord puedes pedir que te avise.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-nido.webp" alt="" width="64" height="64" loading="lazy"><h3>Nidos y crías</h3><p>Organizamos turnos para defender los nidos y sacar adelante a las crías del clan.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-sinmicro.webp" alt="" width="64" height="64" loading="lazy"><h3>Voz, también sin micro</h3><p>Canales de voz para cazar y charlar. Sin micro, escribes en el chat de voz y un bot lo lee en alto.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-carnivoro.webp" alt="" width="64" height="64" loading="lazy"><h3>Fichas de dinos</h3><p>Una ficha por especie con las mutaciones recomendadas, para que nadie empiece a ciegas.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-votacion.webp" alt="" width="64" height="64" loading="lazy"><h3>Tu voz cuenta</h3><p>Propón ideas para el clan y vota las propuestas del staff con reacciones.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-clips.webp" alt="" width="64" height="64" loading="lazy"><h3>Clips y capturas</h3><p>Un canal para compartir las mejores cacerías, huidas y momentos de la isla.</p></li>
+        <li class="tarjeta panel luz revelar"><img src="@/img/emoji-trofeo.webp" alt="" width="64" height="64" loading="lazy"><h3>Rangos con sentido</h3><p>Se sube por cómo juegas y cómo tratas a la manada, no por pedirlo.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="llamada" aria-labelledby="t-llamada" data-ascuas>
+    <div class="envoltura centro revelar">
+      <h2 id="t-llamada">¿Te unes a la manada?</h2>
+      <p>Entra en el Discord, lee las normas y manda tu solicitud. Nos vemos en la isla.</p>
+      <a class="boton boton-grande latido" href="{{discord}}" rel="noopener" target="_blank">Únete a GARRA IBÉRICA en Discord<span class="oculto"> (se abre en una pestaña nueva)</span></a>
+      <p class="compartir" data-compartir data-copiado="Enlace copiado: pégalo donde quieras." data-fallo="No se pudo copiar. La dirección es la de esta página." hidden><button class="boton boton-sec boton-mini" type="button">Compartir la web</button><span class="compartir-estado" role="status"></span></p>
+    </div>
+  </section>

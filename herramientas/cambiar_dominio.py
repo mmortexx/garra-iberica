@@ -2,14 +2,17 @@
 
 Uso: python herramientas/cambiar_dominio.py https://usuario.github.io/
      python herramientas/cambiar_dominio.py https://usuario.github.io/nombre-repo/
-La dirección actual se lee del <link rel="canonical"> de index.html.
+La dirección actual se lee del <link rel="canonical"> de index.html. Después hay que ejecutar
+herramientas/calendario.py y herramientas/montar_web.py, que la toman de ahí.
 """
 import re
 import sys
 from pathlib import Path
 
-WEB = Path(__file__).resolve().parent.parent / 'docs'
-FICHEROS = ['index.html', 'en/index.html', 'dinosaurios/index.html', 'en/dinosaurs/index.html', '404.html', 'robots.txt', 'sitemap.xml']
+import montar_web
+
+WEB = montar_web.DOCS
+FICHEROS = [*montar_web.FICHEROS, '404.html', 'robots.txt', 'sitemap.xml']
 
 
 def base_actual():
@@ -26,21 +29,25 @@ def main(nueva):
     vieja = base_actual()
     if vieja == nueva:
         sys.exit(f'Ya es {nueva}')
+    # Todo se prepara antes de escribir: si un fichero no lleva la dirección, no se toca ninguno.
+    cambios = {}
     for nombre in FICHEROS:
-        p = WEB / nombre
-        datos = p.read_bytes().decode('utf-8')
+        datos = (WEB / nombre).read_bytes().decode('utf-8')
         veces = datos.count(vieja)
         if veces == 0:
-            sys.exit(f'{nombre}: no contiene {vieja}; no se ha cambiado nada en este ni en los siguientes')
-        p.write_bytes(datos.replace(vieja, nueva).encode('utf-8'))
-        quedan = p.read_bytes().decode('utf-8').count(vieja)
+            sys.exit(f'{nombre}: no contiene {vieja}; no se ha cambiado nada')
+        cambios[nombre] = (datos.replace(vieja, nueva), veces)
+    for nombre, (datos, veces) in cambios.items():
+        (WEB / nombre).write_bytes(datos.encode('utf-8'))
+        quedan = (WEB / nombre).read_bytes().decode('utf-8').count(vieja)
         if quedan:
             sys.exit(f'{nombre}: siguen quedando {quedan} apariciones de {vieja}')
         print(f'{nombre}: {veces} cambios')
-    print(f'Hecho: {vieja} -> {nueva}. Ejecuta ahora python herramientas/comprobar.py')
+    print(f'Hecho: {vieja} -> {nueva}. Ejecuta ahora calendario.py, montar_web.py y comprobar.py')
 
 
 if __name__ == '__main__':
+    sys.stdout.reconfigure(encoding='utf-8')
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     main(sys.argv[1])

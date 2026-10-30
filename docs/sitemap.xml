@@ -15,6 +15,20 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/"/>
   </url>
   <url>
+    <loc>https://mmortexx.github.io/garra-iberica/clan/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/clan/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/clan/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/clan/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/clan/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/clan/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/clan/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/clan/"/>
+  </url>
+  <url>
     <loc>https://mmortexx.github.io/garra-iberica/dinosaurios/</loc>
     <lastmod>2026-10-30</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
@@ -27,5 +41,47 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/dinosaurs/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/dinosaurios/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/caceria/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/caceria/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/hunt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/caceria/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/hunt/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/caceria/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/hunt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/caceria/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/galeria/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/gallery/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/gallery/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/gallery/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/unete/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/unete/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/join/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/unete/"/>
+  </url>
+  <url>
+    <loc>https://mmortexx.github.io/garra-iberica/en/join/</loc>
+    <lastmod>2026-10-30</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/unete/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/join/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/unete/"/>
   </url>
 </urlset>
