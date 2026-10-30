@@ -180,18 +180,17 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   }
 }
 @keyframes menu-entra { from { opacity: 0; translate: -24px 0; } }
-/* Escritorio: el menú en una cápsula de cristal; la página actual, con su ficha encendida. */
+/* Escritorio: pestañas de esquinas rectas; la página actual, con un velo de ascua y su trazo. */
 @media (min-width: 1020px) {
-  .menu, .menu[popover] { justify-self: center; gap: .1rem; padding: .25rem; border: 1px solid var(--cristal-borde); border-radius: 99px; background: rgba(255, 236, 214, .035); box-shadow: var(--cristal-brillo); }
-  .menu a { padding: .55rem .8rem; border-radius: 99px; transition: color .25s, background-color .25s, box-shadow .25s; }
-  .menu a::after { left: .8rem; right: .8rem; bottom: .2rem; }
-  .menu a:hover { background: rgba(255, 236, 214, .06); }
-  .menu a[aria-current] { background: rgba(255, 122, 31, .12); box-shadow: inset 0 0 0 1px rgba(255, 122, 31, .28), inset 0 1px 0 rgba(255, 228, 196, .12); }
-  .menu a[aria-current]::after { transform: scaleX(0); }
+  .menu, .menu[popover] { gap: .15rem; }
+  .menu a { padding: .6rem .85rem; border-radius: 3px; transition: color .25s, background-color .25s; }
+  .menu a::after { left: .85rem; right: .85rem; bottom: 0; }
+  .menu a:hover { background: rgba(255, 236, 214, .05); }
+  .menu a[aria-current] { background: linear-gradient(180deg, rgba(255, 122, 31, 0), rgba(255, 122, 31, .13)); }
 }
 .menu-boton, .menu-cerrar {
   place-items: center; width: 44px; height: 44px; padding: 0; flex: none;
-  border: 1px solid var(--borde); border-radius: 50%; background: rgba(11, 8, 6, .5); color: var(--hueso); cursor: pointer;
+  border: 1px solid var(--borde); border-radius: 4px; background: rgba(11, 8, 6, .5); color: var(--hueso); cursor: pointer;
   transition: border-color .25s, background-color .25s;
 }
 .menu-boton:hover, .menu-cerrar:hover { border-color: var(--ascua); background: rgba(40, 22, 10, .85); }
@@ -250,13 +249,6 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   60% { box-shadow: 0 0 0 1px #4a2108, 0 8px 24px -6px rgba(255, 110, 20, .6), 0 0 0 14px rgba(255, 122, 31, 0), inset 0 1px 0 rgba(255, 255, 255, .5); }
 }
 
-.cursor-luz {
-  position: fixed; left: 0; top: 0; z-index: -1; pointer-events: none;
-  width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 120, 35, .075), rgba(255, 120, 35, .03) 40%, transparent 68%);
-  opacity: 0; transition: opacity .6s; will-change: transform;
-}
-.cursor-luz.activa { opacity: 1; }
 .magnetico { translate: var(--bx, 0px) var(--by, 0px); transition: transform .3s var(--suave-salida), box-shadow .3s, translate .45s var(--suave-salida); }
 
 /* Portada */

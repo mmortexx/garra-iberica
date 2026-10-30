@@ -318,25 +318,6 @@
       }));
       bt.addEventListener('pointerleave', () => { bt.style.removeProperty('--bx'); bt.style.removeProperty('--by'); });
     });
-    // Brillo tenue que sigue al cursor por toda la página, con algo de inercia. Solo anima
-    // mientras le queda camino; quieto no gasta nada.
-    const luz = document.createElement('div');
-    luz.className = 'cursor-luz';
-    luz.setAttribute('aria-hidden', 'true');
-    document.body.append(luz);
-    let lx = -1, ly = -1, tx = 0, ty = 0, siguiendo = 0;
-    const seguir = () => {
-      lx += (tx - lx) * 0.14; ly += (ty - ly) * 0.14;
-      luz.style.transform = `translate3d(${lx.toFixed(1)}px, ${ly.toFixed(1)}px, 0)`;
-      siguiendo = Math.abs(tx - lx) + Math.abs(ty - ly) > 0.5 ? requestAnimationFrame(seguir) : 0;
-    };
-    addEventListener('pointermove', ev => {
-      tx = ev.clientX; ty = ev.clientY;
-      if (lx < 0) { lx = tx; ly = ty; }
-      luz.classList.add('activa');
-      if (!siguiendo) siguiendo = requestAnimationFrame(seguir);
-    }, { passive: true });
-    raiz.addEventListener('pointerleave', () => luz.classList.remove('activa'));
   }
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean
