@@ -226,6 +226,33 @@
 
   if (sinMovimiento.matches) return;
 
+  // Reposo: tras 20 s sin ratón, dedo, rueda ni teclado, o con otra ventana delante, los efectos
+  // de ambiente (ascuas, niebla, pulsos, tira de fotos) se quedan quietos y vuelven en cuanto hay
+  // actividad. Así la web abierta y sin usar no gasta procesador ni batería.
+  const REPOSO_MS = 20000;
+  const alCambiarReposo = [];
+  let enReposo = false, ultima = 0, reloj = 0;
+  const ponerReposo = quieto => {
+    if (quieto === enReposo) return;
+    enReposo = quieto;
+    raiz.classList.toggle('reposo', quieto);
+    alCambiarReposo.forEach(fn => fn());
+  };
+  const vigilar = () => {
+    const falta = ultima + REPOSO_MS - performance.now();
+    if (falta > 0) reloj = setTimeout(vigilar, falta);
+    else { reloj = 0; ponerReposo(true); }
+  };
+  const actividad = () => {
+    ultima = performance.now();
+    ponerReposo(false);
+    if (!reloj) reloj = setTimeout(vigilar, REPOSO_MS);
+  };
+  for (const tipo of ['pointermove', 'pointerdown', 'wheel', 'scroll', 'keydown', 'touchstart']) addEventListener(tipo, actividad, { passive: true });
+  addEventListener('focus', actividad);
+  addEventListener('blur', () => { clearTimeout(reloj); reloj = 0; ponerReposo(true); });
+  actividad();
+
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer
   // fotograma para que no parpadee.
   const revelables = [...document.querySelectorAll('.revelar')];
@@ -295,7 +322,7 @@
   }
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean
-  // tras la carga y se paran fuera de pantalla o con la pestaña oculta.
+  // tras la carga y se paran fuera de pantalla, con la pestaña oculta o en reposo.
   const dpr = Math.min(devicePixelRatio || 1, 1.5);
   const brillo = (() => {
     const tam = 64, c = document.createElement('canvas');
@@ -358,7 +385,7 @@
       id = requestAnimationFrame(pintar);
     };
     const arrancar = () => {
-      if (activo || document.hidden) return;
+      if (activo || document.hidden || enReposo) return;
       activo = true; ultimo = 0; id = requestAnimationFrame(pintar);
     };
     const parar = () => { activo = false; cancelAnimationFrame(id); };
@@ -367,6 +394,7 @@
     let visible = false;
     new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? arrancar() : parar(); }).observe(contenedor);
     document.addEventListener('visibilitychange', () => (document.hidden ? parar() : visible && arrancar()));
+    alCambiarReposo.push(() => (enReposo ? parar() : visible && arrancar()));
     requestAnimationFrame(() => lienzo.classList.add('encendido'));
   };
   const iniciarAscuas = () => document.querySelectorAll('[data-ascuas]').forEach(ascuas);

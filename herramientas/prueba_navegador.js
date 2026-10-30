@@ -2,7 +2,8 @@
 // movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
 // sin solapes, menú (en fila o a pantalla completa) que lleva a cada página, enlaces viejos de la
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
-// visor de la galería y fuentes sin saltos al llegar tarde.
+// rangos en escalera, ambiente que se para en reposo, visor de la galería y fuentes sin saltos al
+// llegar tarde.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -145,12 +146,15 @@ const ruta = r => ('/' + r).padEnd(15);
     await p.evaluate(() => document.fonts.ready);
     const anchos = [];
     for (let w = 320; w <= 1440; w += 5) anchos.push(w);
-    const solapes = [], cortados = [], anchas = [], desalineados = [];
+    const solapes = [], cortados = [], anchas = [], desalineados = [], escalones = [];
+    let conEscalera = 0;
     for (const ancho of [...anchos, 1920]) {
       await p.setViewportSize({ width: ancho, height: 850 });
       // Nada más ancho que la pantalla: en móvil deja arrastrar la página de lado o la aleja. Se
       // mide sin el recorte de las secciones y sin la luz de los paneles, que se sale a propósito.
       // La marca de la cabecera y los títulos de todas las secciones, en la misma vertical.
+      // La escalera de rangos (en columnas desde 900 px): cada peldaño, título y línea de abajo,
+      // más alto que el anterior, tenga el texto que tenga. Se mide sin las animaciones de entrada.
       const a = await p.evaluate(() => {
         const hoja = document.createElement('style');
         hoja.textContent = '.seccion { overflow-x: visible !important } .luz::before { display: none !important }';
@@ -159,8 +163,14 @@ const ruta = r => ('/' + r).padEnd(15);
         hoja.remove();
         const izq = sel => Math.round(document.querySelector(sel).getBoundingClientRect().left);
         const titulos = [...document.querySelectorAll('main .seccion h2')].map(h => [h.id, Math.round(h.getBoundingClientRect().left)]);
-        return { sobra, marca: izq('.marca'), titulos };
+        const peldanos = [...document.querySelectorAll('.escalera > .peldano')];
+        const columnas = peldanos.length > 1 && new Set(peldanos.map(el => el.offsetLeft)).size === peldanos.length;
+        const escalera = columnas ? peldanos.map(el => ({ titulo: el.offsetTop + el.querySelector('.nivel-titulo').offsetTop, linea: el.offsetTop + el.offsetHeight })) : [];
+        return { sobra, marca: izq('.marca'), titulos, escalera };
       });
+      const torcidos = a.escalera.slice(1).filter((e, i) => e.titulo >= a.escalera[i].titulo - 8 || e.linea >= a.escalera[i].linea - 8);
+      if (torcidos.length) escalones.push(`${ancho}px: ${JSON.stringify(a.escalera)}`);
+      if (a.escalera.length) conEscalera++;
       if (a.sobra > 0) anchas.push(`${ancho}px: ${a.sobra} px de más`);
       const fuera = a.titulos.filter(([, x]) => Math.abs(x - a.marca) > 1).map(([id, x]) => `${id} en ${x}`);
       if (!a.titulos.length) fuera.push('ningún título de sección');
@@ -201,8 +211,11 @@ const ruta = r => ('/' + r).padEnd(15);
     if (cortados.length) malos++;
     if (anchas.length) malos++;
     if (desalineados.length) malos++;
+    if (escalones.length) malos++;
+    if (tipo === 'clan' && !conEscalera) { malos++; escalones.push('la escalera de rangos no sale en columnas en ningún ancho'); }
     console.log(ruta(r), 'página más ancha que la pantalla 320–1440px y 1920px:', anchas.length ? `${anchas.length} anchos, p. ej. ${JSON.stringify(anchas.slice(0, 3))}` : 'nunca');
     console.log(ruta(r), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
+    if (tipo === 'clan') console.log(ruta(r), `rangos en escalera (${conEscalera} anchos en columnas):`, escalones.length ? `fallan ${escalones.length}, p. ej. ${escalones[0]}` : 'siempre');
     console.log(ruta(r), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
     console.log(ruta(r), 'menú 320–1440px, en fila o tras su botón:', cortados.length ? `fallan ${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'siempre');
     await ctx.close();
@@ -328,6 +341,53 @@ const ruta = r => ('/' + r).padEnd(15);
     if (hay !== esperada) malos++;
     console.log(ruta(''), `transición entre páginas (${nombre}):`, hay === esperada ? 'bien' : `${hay ? 'la hay' : 'no la hay'} y ${esperada ? 'debe haberla' : 'no debe'}`);
     await ctx.close();
+  }
+  // Reposo: con otra ventana delante, o tras 20 s sin actividad, el ambiente se para (las ascuas
+  // dejan de pintarse y las animaciones de ambiente quedan en pausa) y vuelve al mover el ratón.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForSelector('canvas.ascuas');
+    await p.waitForTimeout(500);
+    const estado = () => p.evaluate(async () => {
+      const lienzo = document.querySelector('.portada canvas.ascuas');
+      const foto = () => { const d = lienzo.getContext('2d').getImageData(0, 0, lienzo.width, lienzo.height).data; let h = 0; for (let i = 0; i < d.length; i += 97) h = (h * 31 + d[i]) | 0; return h; };
+      const antes = foto();
+      await new Promise(r => setTimeout(r, 400));
+      return {
+        reposo: document.documentElement.classList.contains('reposo'),
+        ascuas: foto() !== antes,
+        pulso: getComputedStyle(document.querySelector('.portada'), '::after').animationPlayState,
+        niebla: getComputedStyle(document.querySelector('.niebla'), '::before').animationPlayState,
+      };
+    });
+    const fallos = [];
+    const esperar = (cuando, e, quieto) => {
+      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso !== (quieto ? 'paused' : 'running') || e.niebla !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
+    };
+    esperar('al cargar', await estado(), false);
+    await p.evaluate(() => dispatchEvent(new Event('blur')));
+    esperar('con otra ventana delante', await estado(), true);
+    await p.mouse.move(300, 300);
+    await p.mouse.move(320, 310);
+    esperar('al volver con el ratón', await estado(), false);
+    await ctx.close();
+    // Los 20 s, con el reloj de la página adelantado.
+    const ctx2 = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p2 = await ctx2.newPage();
+    await p2.clock.install();
+    await p2.goto(BASE, { waitUntil: 'load' });
+    const enReposo = () => p2.evaluate(() => document.documentElement.classList.contains('reposo'));
+    await p2.clock.runFor(19000);
+    if (await enReposo()) fallos.push('en reposo antes de 20 s');
+    await p2.clock.runFor(2000);
+    if (!await enReposo()) fallos.push('sin reposo tras 21 s quieta');
+    await p2.mouse.move(200, 200);
+    if (await enReposo()) fallos.push('sigue en reposo tras mover el ratón');
+    await ctx2.close();
+    if (fallos.length) malos++;
+    console.log(ruta(''), 'ambiente en reposo:', fallos.length ? fallos.join('; ') : 'se para y vuelve');
   }
   // Volver con «Atrás» a una página que se dejó con el menú abierto (la recupera de la memoria,
   // tal cual): el menú debe estar cerrado. Playwright apaga esa memoria por defecto; aquí no. Hace
