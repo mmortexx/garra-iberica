@@ -14,7 +14,7 @@ IMG = WEB / 'img'
 FONTS = WEB / 'fonts'
 
 BANNERS = ['evento_caceria']
-EMOJIS = ['garra', 'caza', 'nido', 'voz', 'sinmicro', 'carnivoro', 'votacion', 'clips',
+EMOJIS = ['garra', 'caza', 'voz', 'sinmicro',
           'alfa', 'beta', 'lider', 'veterano', 'miembro', 'recluta', 'aliado', 'normas', 'trofeo']
 # Los rangos llevan el color de su rol en Discord y el trofeo es de oro: no pasan a la paleta.
 SIN_PALETA = {'alfa', 'beta', 'lider', 'veterano', 'miembro', 'recluta', 'aliado', 'trofeo'}

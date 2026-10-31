@@ -46,8 +46,58 @@
     return { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 };
   };
 
-  const api = { proximaCaceria, restante, ZONA };
+  // ¿Llego adulto a la cacería? Con el crecimiento de la ficha (minutos de juego a 1×) y el
+  // multiplicador del servidor: cuándo sería adulto jugando sin parar desde ahora y cuánto sobra
+  // (o falta, en negativo) hasta la próxima cacería que aún no ha empezado.
+  const planCrecer = (ahora, minutos, multiplicador = 1) => {
+    let { inicio, enCurso } = proximaCaceria(ahora);
+    if (enCurso) inicio = proximaCaceria(inicio + DURACION_MIN * 60000).inicio;
+    const adulto = ahora + Math.ceil(minutos / multiplicador) * 60000;
+    return { inicio, adulto, llega: adulto <= inicio, margen: inicio - adulto };
+  };
+
+  const api = { proximaCaceria, restante, planCrecer, ZONA };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
+
+  // Planificador de la guía de dinosaurios. Los textos vienen en la página, en su idioma.
+  const plan = document.querySelector('[data-plan]');
+  if (plan) {
+    const [especie, ritmo] = plan.querySelectorAll('select');
+    const salida = plan.querySelector('[data-resultado]');
+    const u = JSON.parse(plan.dataset.unidades);
+    const cuando = new Intl.DateTimeFormat(plan.dataset.locale, { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const duracion = ms => {
+      const r = restante(ms);
+      const partes = [];
+      if (r.d) partes.push(`${r.d} ${u.d[r.d === 1 ? 0 : 1]}`);
+      if (r.h) partes.push(`${r.h} ${u.h}`);
+      if (r.m || !partes.length) partes.push(`${r.m} ${u.m}`);
+      return partes.join(' ');
+    };
+    const calcular = () => {
+      const op = especie.selectedOptions[0];
+      const p = planCrecer(Date.now(), +op.value, +ritmo.value);
+      const datos = { dino: op.dataset.nombre, adulto: cuando.format(p.adulto), caceria: cuando.format(p.inicio), tiempo: duracion(Math.abs(p.margen)) };
+      const titulo = document.createElement('b');
+      titulo.textContent = p.llega ? plan.dataset.siTitulo : plan.dataset.noTitulo;
+      const texto = (p.llega ? plan.dataset.si : plan.dataset.no).replace(/\{(\w+)\}/g, (_, k) => datos[k]);
+      const partes = [titulo, texto];
+      if (op.dataset.nota) {
+        const nota = document.createElement('span');
+        nota.className = 'plan-nota';
+        nota.textContent = op.dataset.nota;
+        partes.push(nota);
+      }
+      salida.replaceChildren(...partes);
+      salida.className = 'plan-resultado ' + (p.llega ? 'si' : 'no');
+    };
+    especie.addEventListener('change', calcular);
+    ritmo.addEventListener('change', calcular);
+    // La cuenta cambia con la hora: se rehace al volver a la pestaña.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
+    calcular();
+    plan.hidden = false;
+  }
 
   const caja = document.querySelector('[data-cuenta]');
   if (!caja) return;

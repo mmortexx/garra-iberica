@@ -1,0 +1,7 @@
+{
+ "nota": "Una entrada por batalla, en orden. resultado: victoria, derrota, empate o null (en curso). fecha (AAAA-MM-DD) y nota_es/nota_en son opcionales.",
+ "batallas": [
+  {"clave": "smoke-1", "rival": "Smoke", "nosotros": 3, "ellos": 6, "resultado": "victoria"},
+  {"clave": "delta-1", "rival": "Delta", "nosotros": 3, "ellos": 8, "resultado": "victoria"}
+ ]
+}

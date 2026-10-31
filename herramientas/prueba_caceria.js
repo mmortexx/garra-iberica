@@ -1,7 +1,7 @@
 // Uso: node herramientas/prueba_caceria.js [ruta a caceria.js]
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { proximaCaceria, restante } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
+const { proximaCaceria, restante, planCrecer } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
 
 const casos = [
   ['jueves, horario de invierno', '2026-10-29T12:00:00Z', '2026-10-31T21:00:00Z', false],
@@ -47,6 +47,29 @@ for (const [nombre, ms, esperado] of tiempos) {
   }
 }
 
-const total = casos.length + tiempos.length;
+// Planificador de la guía: ¿llega adulto a la próxima cacería que no haya empezado?
+const planes = [
+  // [nombre, ahora, minutos a 1×, multiplicador, cacería esperada, llega, margen en minutos]
+  ['T. rex el viernes a mediodía: no llega', '2026-10-30T12:00:00Z', 2133, 1, '2026-10-31T21:00:00Z', false, 33 * 60 - 2133],
+  ['Hypsilophodon el sábado por la tarde: llega', '2026-10-31T15:00:00Z', 110, 1, '2026-10-31T21:00:00Z', true, 360 - 110],
+  ['justo a la hora: llega', '2026-10-31T19:00:00Z', 120, 1, '2026-10-31T21:00:00Z', true, 0],
+  ['un minuto tarde: no llega', '2026-10-31T19:01:00Z', 120, 1, '2026-10-31T21:00:00Z', false, -1],
+  ['con 2× tarda la mitad y llega', '2026-10-30T12:00:00Z', 2133, 2, '2026-10-31T21:00:00Z', true, 33 * 60 - 1067],
+  ['durante la cacería, apunta a la del sábado siguiente', '2026-10-31T21:30:00Z', 600, 1, '2026-11-07T21:00:00Z', true, 7 * 24 * 60 - 30 - 600],
+];
+for (const [nombre, ahora, minutos, mult, inicio, llega, margen] of planes) {
+  try {
+    const r = planCrecer(Date.parse(ahora), minutos, mult);
+    assert.equal(new Date(r.inicio).toISOString(), new Date(inicio).toISOString());
+    assert.equal(r.llega, llega);
+    assert.equal(r.margen, margen * 60000);
+    console.log('ok   ', nombre);
+  } catch (e) {
+    fallos++;
+    console.log('FALLO', nombre, '→', e.message.split('\n')[0]);
+  }
+}
+
+const total = casos.length + tiempos.length + planes.length;
 console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);

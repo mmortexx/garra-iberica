@@ -16,8 +16,9 @@
 <link rel="preload" href="../../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../../img/galeria-noche-1200.webp" imagesrcset="../../img/galeria-noche-800.webp 800w, ../../img/galeria-noche-1200.webp 1200w, ../../img/galeria-noche-1600.webp 1600w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../../estilos.css?v=6a44690933">
+<link rel="stylesheet" href="../../estilos.css?v=df5388dfe1">
 <script src="../../efectos.js?v=88604d7638" defer></script>
+<script src="../../caceria.js?v=22b9152de1" defer></script>
 <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
 
@@ -250,6 +251,53 @@
             <li>Spotted something wrong or outdated? Tell us on Discord and we will fix it.</li>
           </ul>
         </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="planner" aria-labelledby="t-planner">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Before the hunt</p>
+        <h2 id="t-planner">Will you be adult for the hunt?</h2>
+        <p class="intro">Pick a species and the server's growth rate (if you don't know it, leave 1×, the game's own). It uses each card's growth time, playing non-stop from now.</p>
+      </div>
+      <div class="plan" data-plan hidden data-si="With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time)." data-no="With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time)." data-si-titulo="You make it" data-no-titulo="You don&#x27;t make it" data-locale="en-GB" data-unidades="{&quot;d&quot;: [&quot;day&quot;, &quot;days&quot;], &quot;h&quot;: &quot;h&quot;, &quot;m&quot;: &quot;min&quot;}">
+        <label>Species
+          <select>
+            <option value="2133" data-nombre="Tyrannosaurus">Tyrannosaurus · 35 h 33 min</option>
+            <option value="600" data-nombre="Allosaurus">Allosaurus · 10 h</option>
+            <option value="480" data-nombre="Austroraptor" data-nota="Approximate">Austroraptor · about 8 h</option>
+            <option value="460" data-nombre="Carnotaurus">Carnotaurus · 7 h 40 min</option>
+            <option value="360" data-nombre="Ceratosaurus">Ceratosaurus · 6 h</option>
+            <option value="1383" data-nombre="Deinosuchus">Deinosuchus · 23 h 3 min</option>
+            <option value="360" data-nombre="Dilophosaurus">Dilophosaurus · 6 h</option>
+            <option value="325" data-nombre="Herrerasaurus">Herrerasaurus · 5 h 25 min</option>
+            <option value="355" data-nombre="Omniraptor">Omniraptor · 5 h 55 min</option>
+            <option value="270" data-nombre="Pteranodon">Pteranodon · 4 h 30 min</option>
+            <option value="190" data-nombre="Troodon">Troodon · 3 h 10 min</option>
+            <option value="465" data-nombre="Diabloceratops">Diabloceratops · 7 h 45 min</option>
+            <option value="265" data-nombre="Dryosaurus">Dryosaurus · 4 h 25 min</option>
+            <option value="110" data-nombre="Hypsilophodon">Hypsilophodon · 1 h 50 min</option>
+            <option value="665" data-nombre="Kentrosaurus">Kentrosaurus · 11 h 5 min</option>
+            <option value="420" data-nombre="Maiasaura">Maiasaura · 7 h</option>
+            <option value="375" data-nombre="Pachycephalosaurus">Pachycephalosaurus · 6 h 15 min</option>
+            <option value="1075" data-nombre="Stegosaurus">Stegosaurus · 17 h 55 min</option>
+            <option value="340" data-nombre="Tenontosaurus">Tenontosaurus · 5 h 40 min</option>
+            <option value="1750" data-nombre="Triceratops" data-nota="Another source says about 12 h">Triceratops · 29 h 10 min</option>
+            <option value="220" data-nombre="Beipiaosaurus">Beipiaosaurus · 3 h 40 min</option>
+            <option value="325" data-nombre="Gallimimus">Gallimimus · 5 h 25 min</option>
+          </select>
+        </label>
+        <label>Server growth rate
+          <select>
+            <option value="1">1× (base)</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+          </select>
+        </label>
+        <p class="plan-resultado" data-resultado role="status"></p>
       </div>
     </div>
   </section>

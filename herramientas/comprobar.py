@@ -15,6 +15,7 @@ import sys
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
+import batallas_web
 import calendario
 import guia_dinos
 import montar_web
@@ -468,6 +469,11 @@ def revisar_guia(falla, avisa):
         avisa(f'sin {FICHAS_ORIGINAL}: no se comprueba que {guia_dinos.FICHAS.name} siga al día con las fichas del Discord')
     elif FICHAS_ORIGINAL.read_bytes() != guia_dinos.FICHAS.read_bytes():
         falla(f'{guia_dinos.FICHAS.name} no es igual que {FICHAS_ORIGINAL}: cópialo encima y ejecuta herramientas/montar_web.py')
+    # Batallas: la fuente es el proyecto del Discord; montar_web.py copia el original al montar.
+    if not batallas_web.ORIGINAL.is_file():
+        avisa(f'sin {batallas_web.ORIGINAL}: no se comprueba que {batallas_web.COPIA.name} siga al día con las batallas del Discord')
+    elif not batallas_web.COPIA.is_file() or batallas_web.ORIGINAL.read_bytes() != batallas_web.COPIA.read_bytes():
+        falla(f'{batallas_web.COPIA.name} no es igual que {batallas_web.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
 
 
 def main(raiz, sin_apodos=False, avisa=print):
@@ -602,7 +608,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {maximo} KB)')
 
     # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS]:
+    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')

@@ -65,6 +65,14 @@ T = {
         'cta_p': 'En el Discord tienes estas fichas, una manada con la que jugarlas y una cacería cada sábado.',
         'cta_boton': 'Únete a GARRA IBÉRICA en Discord', 'volver': 'Volver al inicio',
         'inicio': 'inicio', 'ids': ['carnivoros', 'herbivoros', 'omnivoros'], 'mut_id': 'mutaciones', 'leer_id': 'como-leer',
+        'plan_id': 'planificador', 'plan_ante': 'Antes de la cacería', 'plan_h2': '¿Llegas adulto a la cacería?',
+        'plan_intro': 'Elige especie y el ritmo de crecimiento del servidor (si no lo sabes, deja 1×, el del juego). '
+                      'Se calcula con el crecimiento de cada ficha, jugando sin parar desde ahora.',
+        'plan_especie': 'Especie', 'plan_ritmo': 'Crecimiento del servidor', 'plan_base': 'base', 'plan_coma': ',',
+        'plan_si_t': 'Llegas', 'plan_no_t': 'No llegas',
+        'plan_si': 'Con {dino} serías adulto el {adulto}: {tiempo} antes de la cacería del {caceria} (hora de España).',
+        'plan_no': 'Con {dino} serías adulto el {adulto}: {tiempo} después de que empiece la cacería del {caceria} (hora de España).',
+        'plan_locale': 'es-ES', 'plan_unidades': {'d': ['día', 'días'], 'h': 'h', 'm': 'min'},
     },
     'en': {
         'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
@@ -109,6 +117,14 @@ T = {
         'cta_p': 'On Discord you get these cards, a pack to play them with and a hunt every Saturday. The clan speaks Spanish.',
         'cta_boton': 'Join GARRA IBÉRICA on Discord', 'volver': 'Back to the home page',
         'inicio': 'top', 'ids': ['carnivores', 'herbivores', 'omnivores'], 'mut_id': 'mutations', 'leer_id': 'how-to-read',
+        'plan_id': 'planner', 'plan_ante': 'Before the hunt', 'plan_h2': 'Will you be adult for the hunt?',
+        'plan_intro': "Pick a species and the server's growth rate (if you don't know it, leave 1×, the game's own). "
+                      "It uses each card's growth time, playing non-stop from now.",
+        'plan_especie': 'Species', 'plan_ritmo': 'Server growth rate', 'plan_base': 'base', 'plan_coma': '.',
+        'plan_si_t': 'You make it', 'plan_no_t': "You don't make it",
+        'plan_si': 'With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time).',
+        'plan_no': 'With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time).',
+        'plan_locale': 'en-GB', 'plan_unidades': {'d': ['day', 'days'], 'h': 'h', 'm': 'min'},
     },
 }
 
@@ -194,6 +210,60 @@ def ficha(f, d, lang):
     return '\n'.join('        ' + p for p in partes)
 
 
+CRECE = re.compile(r'(\d+)\s*h(?:\s*(\d+)\s*min)?')
+RITMOS = (1, 1.5, 2, 3)
+
+
+def minutos_crecer(texto):
+    """Minutos de juego hasta adulto (1×) según la ficha: «35 h 33 min» → 2133. Manda la primera cifra."""
+    m = CRECE.search(texto)
+    if not m:
+        sys.exit(f'{FICHAS.name}: no entiendo el crecimiento «{texto}» (se espera «N h» o «N h M min»)')
+    return int(m.group(1)) * 60 + int(m.group(2) or 0)
+
+
+def planificador(d, lang):
+    """¿Llego adulto a la cacería? Lo calcula caceria.js; sin JavaScript no se enseña."""
+    t = T[lang]
+    opciones = []
+    for f in d['fichas']:
+        crece = (f['en'] if lang == 'en' else {}).get('crece', f['crece'])
+        # Lo que la ficha matiza entre paréntesis (aproximado, otra fuente) sale con el resultado.
+        matiz = re.search(r'\(([^)]*)\)', crece)
+        nota = f' data-nota="{escape(matiz.group(1)[:1].upper() + matiz.group(1)[1:])}"' if matiz else ''
+        opciones.append(f'            <option value="{minutos_crecer(f["crece"])}" data-nombre="{escape(f["nombre"])}"{nota}>'
+                        f'{escape(f["nombre"])} · {escape(crece.split(" (")[0])}</option>')
+    ritmos = [f'            <option value="{r}">{str(r).replace(".", t["plan_coma"])}×{" (" + t["plan_base"] + ")" if r == 1 else ""}</option>'
+              for r in RITMOS]
+    datos = {'si': t['plan_si'], 'no': t['plan_no'], 'si-titulo': t['plan_si_t'], 'no-titulo': t['plan_no_t'],
+             'locale': t['plan_locale'], 'unidades': json.dumps(t['plan_unidades'], ensure_ascii=False)}
+    return [
+        f'  <section class="seccion" id="{t["plan_id"]}" aria-labelledby="t-{t["plan_id"]}">',
+        '    <div class="envoltura">',
+        '      <div class="revelar">',
+        f'        <p class="antetitulo">{t["plan_ante"]}</p>',
+        f'        <h2 id="t-{t["plan_id"]}">{t["plan_h2"]}</h2>',
+        f'        <p class="intro">{t["plan_intro"]}</p>',
+        '      </div>',
+        '      <div class="plan" data-plan hidden ' + ' '.join(f'data-{k}="{escape(v)}"' for k, v in datos.items()) + '>',
+        f'        <label>{t["plan_especie"]}',
+        '          <select>',
+        *opciones,
+        '          </select>',
+        '        </label>',
+        f'        <label>{t["plan_ritmo"]}',
+        '          <select>',
+        *ritmos,
+        '          </select>',
+        '        </label>',
+        '        <p class="plan-resultado" data-resultado role="status"></p>',
+        '      </div>',
+        '    </div>',
+        '  </section>',
+        '',
+    ]
+
+
 def contenido(lang, d=None):
     """(datos de la página, contenido de <main> con los marcadores de montar_web.py, fecha ISO)."""
     d = d or datos()
@@ -273,6 +343,7 @@ def contenido(lang, d=None):
         '    </div>',
         '  </section>',
         '',
+        *planificador(d, lang),
         *secciones,
         f'  <section class="seccion" id="{t["mut_id"]}" aria-labelledby="t-{t["mut_id"]}">',
         '    <div class="envoltura">',

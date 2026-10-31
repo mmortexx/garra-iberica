@@ -2,8 +2,9 @@
 // movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
 // sin solapes, menú (en fila o a pantalla completa) que lleva a cada página, enlaces viejos de la
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
-// rangos en escalera, ambiente que se para en reposo, visor de la galería y fuentes sin saltos al
-// llegar tarde.
+// rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
+// llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento
+// y batallas de la portada enlazadas a El clan.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -627,6 +628,49 @@ const ruta = r => ('/' + r).padEnd(15);
     const sin = await p.evaluate(() => [...document.querySelectorAll('.tira img')].filter(i => !(i.complete && i.naturalWidth)).map(i => i.getAttribute('src').split('/').pop()));
     if (sin.length) malos++;
     console.log(ruta(r), 'tira de la galería cargada al llegar:', sin.length ? `faltan ${sin.join(', ')}` : 'sí');
+    await ctx.close();
+  }
+  // Planificador de la guía: con JavaScript se ve, responde y cambia al elegir otra especie o
+  // ritmo; sin JavaScript no aparece (no sabría calcular nada).
+  for (const r of ['dinosaurios/', 'en/dinosaurs/']) {
+    const fallos = [];
+    for (const js of [true, false]) {
+      const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: js });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const caja = p.locator('[data-plan]');
+      if (!(await caja.count())) { fallos.push('no está'); await ctx.close(); break; }
+      const visible = await caja.isVisible();
+      if (!js) { if (visible) fallos.push('se ve sin JavaScript'); await ctx.close(); continue; }
+      if (!visible) { fallos.push('no se ve con JavaScript'); await ctx.close(); continue; }
+      const leer = () => p.evaluate(() => { const s = document.querySelector('[data-resultado]'); return { t: s.textContent.trim(), c: s.className }; });
+      const antes = await leer();
+      if (!antes.t || !/\b(si|no)\b/.test(antes.c)) fallos.push(`sin resultado (${antes.c})`);
+      const [especie, ritmo] = await caja.locator('select').all();
+      const opciones = await especie.locator('option').count();
+      await especie.selectOption({ index: opciones - 1 });
+      const otra = await leer();
+      await ritmo.selectOption({ index: (await ritmo.locator('option').count()) - 1 });
+      const rapido = await leer();
+      if (otra.t === antes.t) fallos.push('no cambia con la especie');
+      if (rapido.t === otra.t) fallos.push('no cambia con el ritmo');
+      await ctx.close();
+    }
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'planificador de crecimiento:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Batallas: la portada enlaza a la lista de El clan, y la lista tiene alguna batalla.
+  for (const [inicio, clan] of [['', 'clan/'], ['en/', 'en/clan/']]) {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + inicio, { waitUntil: 'load' });
+    const destino = await p.evaluate(() => document.querySelector('.cifras-enlace a')?.getAttribute('href') || '');
+    await p.goto(new URL(destino || '#', BASE + inicio).href, { waitUntil: 'load' });
+    const ancla = destino.split('#')[1] || '-';
+    const n = await p.evaluate(a => document.getElementById(a)?.querySelectorAll('.batalla').length || 0, ancla);
+    const mal = !destino || !p.url().startsWith(BASE + clan) || !n;
+    if (mal) malos++;
+    console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
   }
   await navegador.close();

@@ -53,7 +53,14 @@ node herramientas/prueba_caceria.js
   fichas: copiar ese fichero encima de `fichas_dinos.json` y ejecutar `montar_web.py`.
   `comprobar.py` falla si alguna página dice otro número de fichas o, cuando encuentra el original
   (variable `GARRA_FICHAS` o `~/Downloads/garra-iberica/wiki/fichas.json`), si la copia se ha
-  quedado atrás.
+  quedado atrás. El planificador de cada ficha («¿Llegas adulto a la cacería?») usa los tiempos de
+  crecimiento de esas mismas fichas; `guia_dinos.py` se para si no entiende alguno.
+- Las batallas del clan (portada y El clan, marcadores `{{batallas_cifras}}` y `{{batallas}}`) salen
+  de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
+  Discord. `montar_web.py` la pone al día sola si encuentra el original (variable
+  `GARRA_BATALLAS` o `~/Downloads/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
+  falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
+  web hay que volver a montar y publicar: no aparece sola.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
   dónde lleva cada enlace viejo (`/#normas` → `normas/`) y `comprobar.py` vigila que el destino
   exista.

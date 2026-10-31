@@ -15,6 +15,8 @@ En los textos de paginas/:
   {{google_calendar}}  enlace para añadir la Cacería a Google Calendar (de datos_clan.json)
   {{migas}}            «Inicio / página», con enlace al inicio
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
+  {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
+  {{batallas}}         todas las batallas del clan, de la última a la primera
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
@@ -28,6 +30,7 @@ from pathlib import Path
 
 HERRAMIENTAS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERRAMIENTAS))
+import batallas_web  # noqa: E402
 import calendario  # noqa: E402
 import guia_dinos  # noqa: E402
 
@@ -202,6 +205,8 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'google_calendar': lambda: calendario.enlace_google(lang, base),
         'migas': lambda: migas(pagina, lang),
         'normas': lambda: normas(lang),
+        'batallas_cifras': lambda: batallas_web.marcador(lang, RUTA['clan', lang]),
+        'batallas': lambda: batallas_web.lista(lang),
     }
 
     def poner(m):
@@ -344,7 +349,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
     v = {n: huella(docs / n) for n in VERSIONADOS}
     url = base + desde
     scripts = [f'<script src="{pre}efectos.js?v={v["efectos.js"]}" defer></script>']
-    if 'data-cuenta' in cuerpo:
+    if 'data-cuenta' in cuerpo or 'data-plan' in cuerpo:
         scripts.append(f'<script src="{pre}caceria.js?v={v["caceria.js"]}" defer></script>')
     cuerpo_attrs = ''
     if pagina == 'inicio':
@@ -443,6 +448,9 @@ def montar(docs=DOCS):
 
 
 def main():
+    # Las batallas salen del proyecto del Discord: primero, la copia al día.
+    if batallas_web.al_dia():
+        print(f'{batallas_web.COPIA.name} puesto al día desde {batallas_web.ORIGINAL}')
     # Se monta todo antes de escribir: si algo falla, no queda nada a medias.
     salida = montar()
     for nombre, texto in salida.items():

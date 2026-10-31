@@ -1,14 +1,25 @@
-titulo: Rangos y normas del clan – GARRA IBÉRICA, The Isle Evrima
-descripcion: Cómo se organiza GARRA IBÉRICA, clan español de The Isle Evrima: los rangos de Recluta a Alfa, cómo se sube y las normas de la manada.
-h1: Rangos y normas del clan
+titulo: El clan GARRA IBÉRICA: Alfas, batallas y rangos – The Isle Evrima
+descripcion: Cómo es GARRA IBÉRICA, clan español de The Isle Evrima: tres Alfas al mismo nivel, sus batallas contra otros clanes y los rangos de Recluta a Alfa.
+h1: Alfas, batallas y rangos
 ---
   <section class="cabecera" id="inicio" aria-labelledby="titulo" data-ascuas>
     <img class="cabecera-fondo" src="@/img/galeria-charca-1000.webp" srcset="@/img/galeria-charca-600.webp 600w, @/img/galeria-charca-1000.webp 1000w, @/img/galeria-charca-1500.webp 1500w" sizes="100vw" alt="" width="1500" height="750" fetchpriority="high">
     <div class="envoltura cabecera-in">
       {{migas}}
-      <h1 id="titulo" class="entra">Rangos y normas del clan</h1>
+      <h1 id="titulo" class="entra">Alfas, batallas y rangos</h1>
       <p class="entrada entra entra-2">El clan lo dirigen tres <strong>Alfas</strong> al mismo nivel, con oficiales que revisan las solicitudes y líderes que guían los grupos en partida.</p>
-      <p class="saltos entra entra-3"><a href="#rangos">Rangos</a><a href="#normas">Normas</a></p>
+      <p class="saltos entra entra-3"><a href="#batallas">Batallas</a><a href="#rangos">Rangos</a><a href="@/normas/">Normas</a></p>
+    </div>
+  </section>
+
+  <section class="seccion" id="batallas" aria-labelledby="t-batallas">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Contra otros clanes</p>
+        <h2 id="t-batallas">Batallas del clan</h2>
+        <p class="intro">Cada batalla contra otro clan, con cuántos éramos en cada bando. Salen del registro del canal #batallas del Discord.</p>
+      </div>
+      {{batallas}}
     </div>
   </section>
 
@@ -48,17 +59,7 @@ h1: Rangos y normas del clan
           <li class="panel luz"><img src="@/img/emoji-aliado.webp" alt="" width="56" height="56" loading="lazy"><div><h4>Aliado</h4><p>Miembros de clanes amigos. No son de la manada, pero en partida se les trata como tal.</p></div></li>
         </ul>
       </section>
-    </div>
-  </section>
-
-  <section class="seccion" id="normas" aria-labelledby="t-normas">
-    <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">Reglas de la manada</p>
-        <h2 id="t-normas">Normas del clan</h2>
-        <p class="intro">Las normas y las sanciones del clan, tal cual están en el Discord, tienen su propia página.</p>
-        <p class="volver"><a class="boton boton-sec" href="@/normas/">Leer las normas completas</a></p>
-      </div>
+      <p class="volver revelar"><a class="boton boton-sec" href="@/normas/">Normas y sanciones del clan</a></p>
     </div>
   </section>
 
