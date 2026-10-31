@@ -26,7 +26,7 @@
     }
     lista.append(...ordenadas);
     estado.textContent = vistas
-      ? caja.dataset.cuenta.replace('{n}', vistas).replace('{total}', filas.length)
+      ? caja.dataset.recuento.replace('{n}', vistas).replace('{total}', filas.length)
       : caja.dataset.ninguna;
   };
   caja.addEventListener('change', poner);

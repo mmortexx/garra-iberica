@@ -253,6 +253,12 @@ def peso_max(texto):
     return float(m.group(1).replace(',', '.')) * (1000 if m.group(2) == 't' else 1), m.group(0).split(' (')[0]
 
 
+def dato_fila(v):
+    """«29 h 10 min (otra fuente…)» → la cifra en negrita y sin cortes; el matiz, aparte."""
+    cifra, parentesis, matiz = v.partition(' (')
+    return f'<b>{escape(cifra).replace(" ", "&nbsp;")}</b>' + (f' ({escape(matiz)}' if parentesis else '')
+
+
 def comparativa(d, lang):
     """Todas las especies en una lista; guia.js la ordena y la filtra. Sin JavaScript, en el orden de las fichas."""
     t = T[lang]
@@ -267,11 +273,8 @@ def comparativa(d, lang):
         grupos.add(int(f['grupo']))
         g = GRUPO[f['dieta']]
         # Cada dato en negrita y sin partirse (la línea se corta entre datos o en su matiz entre paréntesis).
-        def dato(v):
-            cifra, parentesis, matiz = v.partition(' (')
-            return f'<b>{escape(cifra).replace(" ", "&nbsp;")}</b>' + (f' ({escape(matiz)}' if parentesis else '')
         fila = t['comp_fila'].replace(' · ', '|').replace(' ', '&nbsp;').replace('|', ' · ')
-        texto = fila.format(peso=dato(peso), crece=dato(en.get('crece', f['crece'])), grupo=dato(f['grupo']))
+        texto = fila.format(peso=dato_fila(peso), crece=dato_fila(en.get('crece', f['crece'])), grupo=dato_fila(f['grupo']))
         filas.append(f'        <div data-nombre="{escape(f["nombre"])}" data-dieta="{g}" data-peso="{kg:g}" '
                      f'data-crece="{minutos_crecer(f["crece"])}" data-grupo="{f["grupo"]}">'
                      f'<dt><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a> '
@@ -291,7 +294,7 @@ def comparativa(d, lang):
         f'        <h2 id="t-{t["comp_id"]}">{t["comp_h2"]}</h2>',
         f'        <p class="intro">{t["comp_intro"].format(n=len(d["fichas"]))}</p>',
         '      </div>',
-        f'      <div class="plan" data-comparar hidden data-cuenta="{escape(t["comp_cuenta"])}" data-ninguna="{escape(t["comp_ninguna"])}">',
+        f'      <div class="plan" data-comparar hidden data-recuento="{escape(t["comp_cuenta"])}" data-ninguna="{escape(t["comp_ninguna"])}">',
         *selector(t['comp_orden'], t['comp_ordenes']),
         *selector(t['comp_dieta'], dietas),
         *selector(t['comp_somos'], somos),
