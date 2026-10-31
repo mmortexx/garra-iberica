@@ -56,7 +56,7 @@ T = {
             ]),
         ],
         'peso': 'Peso adulto', 'crece': 'Crecimiento', 'grupo': 'Grupo máx.', 'hab': 'Habilidades',
-        'consejo': 'Consejo', 'mut': 'Mutaciones recomendadas',
+        'consejo': 'Consejo', 'mut': 'Mutaciones recomendadas', 'mut_ver': 'Qué hace cada una',
         'fuente': 'Orientativas: {fuente}.', 'sin': 'Aún no hay una recomendación fiable para esta especie.',
         'dieta': {'Carnívoro': 'Carnívoro', 'Carnívoro (pescador)': 'Carnívoro (pescador)', 'Herbívoro': 'Herbívoro', 'Omnívoro': 'Omnívoro'},
         'mut_ante': 'Glosario', 'mut_h2': 'Mutaciones',
@@ -100,7 +100,7 @@ T = {
             ]),
         ],
         'peso': 'Adult weight', 'crece': 'Growth', 'grupo': 'Max group', 'hab': 'Abilities',
-        'consejo': 'Tip', 'mut': 'Recommended mutations',
+        'consejo': 'Tip', 'mut': 'Recommended mutations', 'mut_ver': 'What each one does',
         'fuente': 'A rough guide: {fuente}.', 'sin': 'No reliable recommendation for this species yet.',
         'dieta': {'Carnívoro': 'Carnivore', 'Carnívoro (pescador)': 'Carnivore (fish-eater)', 'Herbívoro': 'Herbivore', 'Omnívoro': 'Omnivore'},
         'mut_ante': 'Glossary', 'mut_h2': 'Mutations',
@@ -180,15 +180,16 @@ def ficha(f, d, lang):
         *[f'    <li>{escape(h)}</li>' for h in v['hab']],
         '  </ul>',
         f'  <p class="dino-consejo"><b>{t["consejo"]}:</b> {escape(v["consejo"])}</p>',
-        f'  <h4>{t["mut"]}</h4>',
     ]
     if f['mut']:
-        partes += ['  <ul class="dino-lista dino-mut" role="list">',
+        # El glosario, al final de la página, explica cada mutación: enlace para no perder el hilo.
+        partes += [f'  <h4 class="dino-h4">{t["mut"]} <a class="dino-glosario" href="#{t["mut_id"]}">{t["mut_ver"]}</a></h4>',
+                   '  <ul class="dino-lista dino-mut" role="list">',
                    *[f'    <li>{mutacion(muts[k])}</li>' for k in f['mut']],
                    '  </ul>',
                    f'  <p class="dino-fuente">{escape(t["fuente"].format(fuente=v["mutfuente"]))}</p>']
     else:
-        partes.append(f'  <p class="dino-fuente">{t["sin"]}</p>')
+        partes += [f'  <h4>{t["mut"]}</h4>', f'  <p class="dino-fuente">{t["sin"]}</p>']
     partes.append('</article>')
     return '\n'.join('        ' + p for p in partes)
 

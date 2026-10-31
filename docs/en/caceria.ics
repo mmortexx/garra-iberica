@@ -31,7 +31,7 @@ DESCRIPTION:Every Saturday at 22:00 Spanish mainland time\, in the hunt voi
  ce channel of the clan Discord. You need at least the Recluta (Recruit) ra
  nk. https://mmortexx.github.io/garra-iberica/en/
 LOCATION:Discord · hunt voice channel
-URL:https://mmortexx.github.io/garra-iberica/en/#hunt
+URL:https://mmortexx.github.io/garra-iberica/en/hunt/
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT30M

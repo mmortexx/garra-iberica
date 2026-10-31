@@ -233,6 +233,18 @@
     });
   }
 
+  // Tira de fotos de la portada: las del final empiezan fuera de su marco y el navegador no las
+  // pediría hasta que la tira las desliza dentro (llegarían en blanco). Se piden todas al acercarse.
+  const tira = document.querySelector('.tira-marco');
+  if (tira) {
+    const pedir = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      tira.querySelectorAll('img[loading="lazy"]').forEach(img => { img.loading = 'eager'; });
+      pedir.disconnect();
+    }, { rootMargin: '600px 0px' });
+    pedir.observe(tira);
+  }
+
   if (sinMovimiento.matches) return;
 
   // Reposo: tras 20 s sin ratón, dedo, rueda ni teclado, con otra ventana delante o con el menú o

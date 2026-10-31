@@ -149,7 +149,7 @@ const ruta = r => ('/' + r).padEnd(15);
     await p.evaluate(() => document.fonts.ready);
     const anchos = [];
     for (let w = 320; w <= 1440; w += 5) anchos.push(w);
-    const solapes = [], cortados = [], anchas = [], desalineados = [], escalones = [];
+    const solapes = [], cortados = [], anchas = [], desalineados = [], escalones = [], sinIdioma = [];
     let conEscalera = 0;
     for (const ancho of [...anchos, 1920]) {
       await p.setViewportSize({ width: ancho, height: 850 });
@@ -188,6 +188,8 @@ const ruta = r => ('/' + r).padEnd(15);
       // O el menú entero en una fila, o su botón: nunca a medias ni sin forma de llegar a él.
       const bien = ancho >= 1020 ? m.visibles === 5 && !m.boton && m.lineas === 1 && !m.fuera : m.visibles === 0 && m.boton;
       if (!bien) cortados.push(`${ancho}px: ${m.visibles} enlaces en ${m.lineas} líneas, ${m.fuera} fuera, botón ${m.boton ? 'sí' : 'no'}`);
+      // EN/ES siempre en la barra, también en el móvil: antes había que abrir el menú para cambiar de idioma.
+      if (!(await p.evaluate(() => document.querySelector('.barra-acciones .idioma').getBoundingClientRect().width > 0))) sinIdioma.push(ancho);
       const s = await p.evaluate(() => {
         const cajas = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton, .menu-boton')].map(el => {
           const caja = el.getBoundingClientRect(), rango = document.createRange();
@@ -212,6 +214,7 @@ const ruta = r => ('/' + r).padEnd(15);
     }
     if (solapes.length) malos++;
     if (cortados.length) malos++;
+    if (sinIdioma.length) malos++;
     if (anchas.length) malos++;
     if (desalineados.length) malos++;
     if (escalones.length) malos++;
@@ -220,6 +223,7 @@ const ruta = r => ('/' + r).padEnd(15);
     console.log(ruta(r), 'marca y títulos alineados 320–1440px y 1920px:', desalineados.length ? `fallan ${desalineados.length} anchos, p. ej. ${JSON.stringify(desalineados.slice(0, 2))}` : 'siempre');
     if (tipo === 'clan') console.log(ruta(r), `rangos en escalera (${conEscalera} anchos en columnas):`, escalones.length ? `fallan ${escalones.length}, p. ej. ${escalones[0]}` : 'siempre');
     console.log(ruta(r), 'cabecera 320–1440px solapes:', solapes.length ? `${solapes.length} anchos, p. ej. ${JSON.stringify(solapes.slice(0, 3))}` : 'ninguno');
+    console.log(ruta(r), 'idioma en la barra 320–1440px:', sinIdioma.length ? `falta en ${sinIdioma.length} anchos, de ${sinIdioma[0]} a ${sinIdioma[sinIdioma.length - 1]} px` : 'siempre');
     console.log(ruta(r), 'menú 320–1440px, en fila o tras su botón:', cortados.length ? `fallan ${cortados.length} anchos, p. ej. ${JSON.stringify(cortados.slice(0, 3))}` : 'siempre');
     await ctx.close();
   }
@@ -576,6 +580,53 @@ const ruta = r => ('/' + r).padEnd(15);
     }
     if (faltan.length) malos++;
     console.log(ruta(r), 'fuentes propias en pantalla:', faltan.length ? `faltan ${faltan.join(', ')}` : 'sí');
+    await ctx.close();
+  }
+  // Escalera de sanciones (Normas): cada sanción en su línea y un peldaño más adentro que la
+  // anterior. En fila se partía y la flecha se quedaba colgando al final de la línea de arriba.
+  for (const r of ['normas/', 'en/rules/']) {
+    const fallos = [];
+    for (const w of [1440, 1024, 390, 320]) {
+      const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const pasos = await p.evaluate(() => [...document.querySelectorAll('.pasos-sancion li span')].map(s => {
+        const rc = s.getBoundingClientRect();
+        return { top: Math.round(rc.top), left: Math.round(rc.left), right: Math.round(rc.right), W: innerWidth };
+      }));
+      const mal = pasos.length < 2 || pasos.some((x, i) => x.right > x.W || (i && (x.top <= pasos[i - 1].top || x.left <= pasos[i - 1].left)));
+      if (mal) fallos.push(`${w}px: ${JSON.stringify(pasos.map(x => [x.top, x.left]))}`);
+      await ctx.close();
+    }
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'sanciones en escalera a 1440, 1024, 390 y 320 px:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Mosaico de la portada: a cada ancho, el tamaño que declara cada foto (sizes, que es lo que da
+  // naturalWidth con srcset) no es menor que el que se pinta; si lo es, el navegador elige una
+  // versión pequeña y sale borrosa. Y la tira de la galería tiene todas sus fotos al llegar.
+  for (const r of ['', 'en/']) {
+    const borrosas = [];
+    for (const w of [400, 760, 900, 960, 999, 1000, 1200, 1440]) {
+      const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
+      await p.waitForFunction(() => [...document.querySelectorAll('.baldosa-fondo')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 });
+      const fotos = await p.evaluate(() => [...document.querySelectorAll('.baldosa-fondo')].map(i => ({
+        foto: i.currentSrc.split('/').pop(), pinta: i.getBoundingClientRect().width, trae: i.naturalWidth })));
+      for (const f of fotos) if (f.trae < f.pinta * 0.98) borrosas.push(`${w}px: ${f.foto} de ${f.trae} px pintada a ${Math.round(f.pinta)}`);
+      await ctx.close();
+    }
+    if (borrosas.length) malos++;
+    console.log(ruta(r), 'fotos del mosaico a su tamaño:', borrosas.length ? borrosas.join('; ') : 'sí');
+    const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(2500);
+    const sin = await p.evaluate(() => [...document.querySelectorAll('.tira img')].filter(i => !(i.complete && i.naturalWidth)).map(i => i.getAttribute('src').split('/').pop()));
+    if (sin.length) malos++;
+    console.log(ruta(r), 'tira de la galería cargada al llegar:', sin.length ? `faltan ${sin.join(', ')}` : 'sí');
     await ctx.close();
   }
   await navegador.close();

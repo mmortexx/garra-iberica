@@ -39,7 +39,7 @@ INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
 # Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
-REVISADA = '2026-10-30'
+REVISADA = '2026-10-31'
 LANGS = ('es', 'en')
 
 # id, ruta (es, en), nombre en el pie y en las migas (es, en). Arriba solo van las de MENU; en el
@@ -48,7 +48,7 @@ PAGINAS = [
     ('inicio', ('', 'en/'), ('Inicio', 'Home')),
     ('clan', ('clan/', 'en/clan/'), ('El clan', 'The clan')),
     ('dinosaurios', (guia_dinos.RUTAS['es'], guia_dinos.RUTAS['en']), ('Dinosaurios', 'Dinosaurs')),
-    ('caceria', ('caceria/', 'en/hunt/'), ('Cacería', 'Clan hunt')),
+    ('caceria', (calendario.RUTAS['es'], calendario.RUTAS['en']), ('Cacería', 'Clan hunt')),
     ('galeria', ('galeria/', 'en/gallery/'), ('Galería', 'Gallery')),
     ('unete', ('unete/', 'en/join/'), ('Cómo entrar', 'How to join')),
     ('normas', ('normas/', 'en/rules/'), ('Normas', 'Rules')),

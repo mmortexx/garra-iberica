@@ -14,6 +14,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 DOCS = RAIZ / 'docs'
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 FICHEROS = {'es': 'caceria.ics', 'en': 'en/caceria.ics'}
+# Página de la Cacería en cada idioma (montar_web.PAGINAS la toma de aquí).
+RUTAS = {'es': 'caceria/', 'en': 'en/hunt/'}
 DIAS_ICS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 TEXTOS = {
     'es': {
@@ -106,7 +108,7 @@ def ics(lang, base=None):
         f'SUMMARY:{escapar(t["titulo"])}',
         f'DESCRIPTION:{escapar(descripcion(lang, cac, base))}',
         f'LOCATION:{escapar(t["lugar"])}',
-        f'URL:{base}{"en/" if lang == "en" else ""}#{"hunt" if lang == "en" else "caceria"}',
+        f'URL:{base}{RUTAS[lang]}',
         'BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:-PT30M', f'DESCRIPTION:{escapar(t["aviso"])}', 'END:VALARM',
         'END:VEVENT', 'END:VCALENDAR',
     ]

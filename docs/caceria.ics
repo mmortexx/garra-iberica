@@ -31,7 +31,7 @@ DESCRIPTION:Cada sábado a las 22:00 (hora peninsular española)\, en el ca
  nal de voz de caza del Discord del clan. Necesitas ser al menos Recluta. h
  ttps://mmortexx.github.io/garra-iberica/
 LOCATION:Discord · voz de caza
-URL:https://mmortexx.github.io/garra-iberica/#caceria
+URL:https://mmortexx.github.io/garra-iberica/caceria/
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT30M

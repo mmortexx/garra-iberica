@@ -30,9 +30,10 @@ POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
 VERSIONADOS = montar_web.VERSIONADOS
 MAX_KB_IMAGEN = 120
-# Las fotos de la galería a tamaño grande solo se descargan si alguien abre una.
+# Las fotos de la galería a tamaño grande solo se descargan si alguien abre una; aun así, en el
+# móvil cada KB cuenta al ampliar (preparar_galeria.py baja la calidad hasta caber).
 AMPLIADA = '-ampliada-'
-MAX_KB_AMPLIADA = 1200
+MAX_KB_AMPLIADA = 750
 # IDs de Discord: no deben salir en la web pública. Los apodos de miembros a vigilar están en
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'
@@ -321,6 +322,9 @@ def revisar_datos(raiz, falla, avisa):
         fichero = raiz / nombre
         if not fichero.is_file() or fichero.read_bytes() != calendario.ics(lang, base).encode('utf-8'):
             falla(f'{nombre} no coincide con {DATOS.name}: ejecuta herramientas/calendario.py')
+        # El enlace del evento abre la página de la Cacería, no la portada (sin el salto de los /#viejos).
+        if fichero.is_file() and f'\r\nURL:{base}{RUTA["caceria", lang]}\r\n' not in fichero.read_bytes().decode('utf-8'):
+            falla(f'{nombre}: la URL del evento no es la página de la Cacería ({base}{RUTA["caceria", lang]})')
     hoy = dt.date.today()
     primera, ultima = franja_latinoamerica(datos, [hoy.year, hoy.year + 1])
     if primera % 1 or ultima % 1:
@@ -420,6 +424,14 @@ def revisar_montaje(raiz, d, falla):
         cuentas = re.findall(r'\b(\d+) (?:fichas|dinosaur cards|cards)\b', plano(leer(raiz, nombre)))
         if set(cuentas) - {n} or (pagina == 'inicio' and not cuentas):
             falla(f'{nombre}: dice {cuentas} fichas y hay {n}')
+        if pagina == 'dinosaurios':
+            # Cada ficha con mutaciones enlaza al glosario que las explica, y el glosario existe.
+            html = leer(raiz, nombre)
+            mut_id = guia_dinos.T[lang]['mut_id']
+            con_mut = html.count('class="dino-lista dino-mut"')
+            enlaces = len(re.findall(rf'<h4 class="dino-h4">[^<]*<a class="dino-glosario" href="#{mut_id}">', html))
+            if not con_mut or enlaces != con_mut or f'id="{mut_id}"' not in html:
+                falla(f'{nombre}: {con_mut} fichas con mutaciones y {enlaces} enlaces a su glosario (#{mut_id})')
 
 
 def revisar_movidas(raiz, falla):

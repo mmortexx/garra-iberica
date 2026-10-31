@@ -210,7 +210,13 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .barra-acciones { gap: .45rem; }
   .barra-acciones .boton-mini { padding: .5rem .75rem; }
   .barra-acciones .boton-mini::after { content: none; }
-  @supports selector(:popover-open) { .barra-acciones .idioma { display: none; } }
+}
+/* Por debajo de 360 px, con EN/ES también en la barra, la marca no cabe a 1.12rem. */
+@media (max-width: 359px) {
+  .marca { font-size: 1rem; gap: .35rem; }
+  .marca img { width: 26px; height: 26px; }
+  .barra-acciones { gap: .35rem; }
+  .barra-acciones .boton-mini { padding: .5rem .6rem; }
 }
 
 /* Botones */
@@ -709,10 +715,16 @@ html:has(.visor[open]) { overflow: hidden; }
 .bloque .reglas li { padding: 0 0 .9rem .35rem; }
 .bloque .reglas li::before { content: none; }
 .reglas li::marker { font-family: var(--titulos); font-size: 1.15rem; color: var(--ascua-viva); }
-.pasos-sancion { list-style: none; margin: .2rem 0 1.1rem; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
-.bloque .pasos-sancion li { display: flex; align-items: center; gap: .55rem; padding: 0; }
+/* En escalera: cada sanción un peldaño más adentro y más roja. En fila se partía y la flecha
+   quedaba colgando al final de la línea de arriba. */
+.pasos-sancion { list-style: none; margin: .2rem 0 1.1rem; padding: 0; display: grid; justify-items: start; gap: .5rem; }
+.bloque .pasos-sancion li { display: flex; align-items: center; gap: .6rem; padding: 0; }
 .bloque .pasos-sancion li::before { content: none; }
-.pasos-sancion li:not(:last-child)::after { content: "➜"; content: "➜" / ""; color: var(--ascua); }
+.pasos-sancion li:not(:first-child)::after { content: "➜"; content: "➜" / ""; order: -1; color: var(--ascua); }
+.bloque .pasos-sancion li:nth-child(3) { padding-left: 1.6rem; }
+.bloque .pasos-sancion li:nth-child(4) { padding-left: 3.2rem; }
+.pasos-sancion li:nth-child(2) span { border-color: rgba(255, 53, 31, .25); }
+.pasos-sancion li:nth-child(3) span { border-color: rgba(255, 53, 31, .42); }
 .pasos-sancion span { padding: .35rem .75rem; border: 1px solid var(--borde); border-radius: 3px; background: rgba(15, 15, 15, .55); font-family: var(--etiquetas); font-weight: 600; font-size: .95rem; letter-spacing: .04em; text-transform: uppercase; color: var(--hueso); }
 .pasos-sancion li:last-child span { border-color: rgba(255, 53, 31, .6); color: var(--ascua-viva); }
 .bloque > p { margin: 0 0 .8rem; }
@@ -722,6 +734,8 @@ html:has(.visor[open]) { overflow: hidden; }
 /* Aviso legal: texto corrido, a una columna. */
 .texto-legal > * { max-width: 48rem; }
 .texto-legal h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
+/* Cada apartado ya lleva su línea encima: sin los arañazos debajo, que lo encerraban entre dos adornos. */
+.texto-legal h2::after { content: none; }
 
 /* Rangos: una escalera. Cada peldaño, más alto que el anterior, con su escalón encendido. */
 .escalera { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; gap: 2.4rem; }
@@ -888,6 +902,11 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .dino-datos dd { margin: 0; color: var(--hueso); }
 @media (max-width: 419px) { .dino-datos div { grid-template-columns: 1fr; gap: 0; } }
 .dino h4 { margin: 1.3rem 0 .65rem; font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .16em; text-transform: uppercase; color: var(--ascua); }
+.dino-h4 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1rem; }
+.dino-glosario { position: relative; font-size: .85rem; letter-spacing: .08em; color: var(--suave); text-decoration: none; white-space: nowrap; }
+.dino-glosario::after { content: " ↓"; content: " ↓" / ""; color: var(--ascua); }
+.dino-glosario:hover { color: var(--ascua-viva); }
+.dino-glosario::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
 .dino-lista { margin: 0; padding: 0; list-style: none; }
 .dino-lista li { position: relative; padding: 0 0 .55rem 1.35rem; font-size: 1rem; }
 .dino-mut li::before { background: var(--rojo-claro); box-shadow: 0 0 8px rgba(240, 134, 122, .6); }
@@ -953,6 +972,11 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   mask-image: linear-gradient(180deg, #000000 calc(100% - 3rem), transparent);
 }
 .cabecera-baja { min-height: min(56vh, 480px); }
+/* En el móvil, más baja: con 74vh el título empezaba a media pantalla y la página no asomaba. */
+@media (max-width: 700px) {
+  .cabecera { min-height: min(56vh, 460px); }
+  .cabecera-baja { min-height: min(46vh, 380px); }
+}
 .cabecera-fondo {
   position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: 60% 45%;
   animation: acercar 22s var(--suave-salida) both;
@@ -965,7 +989,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 }
 @media (max-width: 700px) { .cabecera::before { background: linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .45) 100%); } }
 .cabecera-in { width: 100%; }
-.cabecera h1 { font-size: clamp(2.5rem, 7.4vw, 5.2rem); line-height: 1.02; text-transform: uppercase; max-width: 16ch; margin-bottom: 1.1rem; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
+.cabecera h1 { font-size: clamp(2.5rem, 7.4vw, 5.2rem); line-height: 1.1; text-transform: uppercase; max-width: 16ch; margin-bottom: 1.1rem; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
 .cabecera .entrada { max-width: 40rem; }
 .cabecera .acciones { margin-bottom: 0; }
 .cabecera .indice { margin-top: 2rem; }

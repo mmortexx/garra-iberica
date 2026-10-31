@@ -24,6 +24,8 @@ MARCA = (3080, 0, 3439, 330)
 AMPLIADA = (0, 0, 3080, 1439)
 ANCHOS_AMPLIADA = (1600, 2400, 3080)
 CALIDAD_AMPLIADA = 78
+# Las de mucho follaje pesan más: bajan de calidad hasta caber (máximo de comprobar.py: 750 KB).
+PESO_AMPLIADA = 740 * 1024
 # Por debajo del máximo de comprobar.py (120 KB) con algo de margen.
 PESO_GALERIA = 115 * 1024
 CALIDADES = range(90, 59, -2)
@@ -94,9 +96,16 @@ def main(origen, nombres):
             print(f'{salida.name}: {len(datos) / 1024:.0f} KB (calidad {calidad})')
         ampliada = im.crop(AMPLIADA)
         for w in ANCHOS_AMPLIADA:
+            reducida = a_ancho(ampliada, w)
+            for calidad in range(CALIDAD_AMPLIADA, 39, -2):
+                datos = webp(reducida, calidad)
+                if len(datos) <= PESO_AMPLIADA:
+                    break
+            else:
+                sys.exit(f'{nombre}-ampliada-{w}: ni con calidad {calidad} baja de {PESO_AMPLIADA // 1024} KB')
             salida = IMG / f'{nombre}-ampliada-{w}.webp'
-            salida.write_bytes(webp(a_ancho(ampliada, w), CALIDAD_AMPLIADA))
-            print(f'{salida.name}: {salida.stat().st_size / 1024:.0f} KB')
+            salida.write_bytes(datos)
+            print(f'{salida.name}: {len(datos) / 1024:.0f} KB (calidad {calidad})')
 
 
 if __name__ == '__main__':
