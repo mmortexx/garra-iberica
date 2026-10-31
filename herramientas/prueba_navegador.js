@@ -11,17 +11,18 @@
 const { chromium } = require('playwright');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
-// Las 16 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
+// Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
   ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
+  ['combate/', 'combate'], ['en/combat/', 'combate'],
   ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
   ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
 // Páginas que solo se enlazan desde el pie y desde las páginas de su tema, no desde el menú.
 const FUERA_MENU = ['normas', 'legal'];
 // Enlaces del menú (montar_web.MENU), Inicio incluido.
-const EN_MENU = 6;
+const EN_MENU = 7;
 const CON_CUENTA = ['inicio', 'caceria'];
 const CON_COMPARTIR = ['inicio'];
 const CON_CARTEL = ['caceria'];

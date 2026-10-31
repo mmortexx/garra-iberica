@@ -19,6 +19,7 @@ import batallas_web
 import calendario
 import guia_dinos
 import montar_web
+from html import unescape
 from html.parser import HTMLParser
 from montar_web import RUTA, huella
 from pathlib import Path
@@ -28,6 +29,8 @@ PAGINAS = montar_web.FICHEROS
 FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
+GUIA_WIKI = 'Cómo usar la wiki'
+GUIA_COMBATE = 'Guía de combate'
 INVITACION = 'https://discord.com/invite/txpBJzXvtK'
 VERSIONADOS = montar_web.VERSIONADOS
 MAX_KB_IMAGEN = 120
@@ -47,6 +50,10 @@ DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
 TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'tarjetas.json')
 FRANJA = {'es': r'entre las (\d{2}):00 y las (\d{2}):00', 'en': r'between (\d{2}):00 and (\d{2}):00'}
+# La encuesta y el recordatorio de la Cacería los publican scripts del proyecto del Discord.
+DISCORD = Path(os.environ.get('GARRA_DISCORD') or TARJETAS.parent)
+DIAS = {'es': ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+        'en': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']}
 
 
 def tablas_woff2(datos):
@@ -349,8 +356,15 @@ def revisar_datos(raiz, falla, avisa):
             if f != esperada:
                 falla(f'{nombre}: dice {f[0]}:00–{f[1]}:00 en Latinoamérica y, con {DATOS.name}, es {esperada[0]}:00–{esperada[1]}:00')
         # Cualquier otra hora en punto que diga la página es la de la Cacería (o la del Reino Unido,
-        # una menos todo el año): si cambia en datos_clan.json, ningún texto se queda en la vieja.
+        # una menos todo el año, o la de un aviso en la página de la Cacería): si cambia en
+        # datos_clan.json, ningún texto se queda en la vieja.
         resto = re.sub(FRANJA[lang], '', plano(html))
+        if pagina == 'caceria':
+            for a in cac['avisos']:
+                cita = f'{DIAS[lang][a["dia_semana"] - 1]}, {a["hora"]:02d}:00'
+                if cita not in resto:
+                    falla(f'{nombre}: no dice «{cita}» ({a["que"]} de la Cacería, {DATOS.name})')
+                resto = resto.replace(cita, '')
         for h in re.findall(r'\b(\d{2}):00 in the UK\b', resto):
             if int(h) != (cac['hora'] - 1) % 24:
                 falla(f'{nombre}: dice {h}:00 en el Reino Unido y, con {DATOS.name}, son las {(cac["hora"] - 1) % 24:02d}:00')
@@ -374,6 +388,15 @@ def revisar_datos(raiz, falla, avisa):
                 falla(f'{nombre}: no encuentro la tarjeta del rango {a["rango"]}')
             elif a[f'web_{lang}'] not in m.group(1):
                 falla(f'{nombre}: el rango {a["rango"]} no dice «{a[f"web_{lang}"]}» ({DATOS.name}); dice «{m.group(1)}»')
+
+    for a in cac['avisos']:
+        script = DISCORD / a['script']
+        if not script.is_file():
+            avisa(f'sin {script}: no se comprueba que el {a["que"]} de la Cacería siga a la hora de {DATOS.name}')
+            continue
+        horas = re.findall(r'^[A-Z]+DAY, HOUR = (\d), (\d+)$', script.read_text(encoding='utf-8'), re.M)
+        if horas != [(str(a['dia_semana'] - 1), str(a['hora']))]:
+            falla(f'{script.name} publica el {a["que"]} en (día, hora) {horas} y {DATOS.name} dice día {a["dia_semana"]} a las {a["hora"]}:00: actualiza el extracto y la web')
 
     if not TARJETAS.is_file():
         avisa(f'sin {TARJETAS}: no se comprueba que {DATOS.name} siga al día con el original')
@@ -463,12 +486,88 @@ def revisar_movidas(raiz, falla):
                 falla(f'MOVIDAS[{lang}]: #{viejo} lleva a la sección #{seccion}, que no está en {inicio}{ruta}')
 
 
+def guia_del_discord(posts, titulo):
+    """La guía de posts.json (lista «guias») cuyo título contiene `titulo`, o None si no está."""
+    try:
+        guias = json.loads(posts.read_text(encoding='utf-8'))['guias']
+        return next((g for g in guias if titulo in g['titulo'] and g.get('texto') and g.get('ingles')), None)
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
+def sin_etiquetas(texto):
+    return unescape(' '.join(re.sub(r'<[^>]+>', '', texto).split()))
+
+
+def grupos_citados(texto, especies):
+    """[(especie, número)] de los «Especie N» que dice el texto."""
+    return re.findall(rf'\b({"|".join(map(re.escape, especies))})(?:</a>)? (\d+)\b', texto)
+
+
+def con_grupo_n(texto, especies):
+    # El grupo de cada especie se compara aparte, contra su ficha.
+    return re.sub(rf'\b({"|".join(map(re.escape, especies))}) \d+\b', r'\1 N', texto)
+
+
+def combate_discord(texto, especies):
+    """Títulos y trozos de la guía de combate del Discord, en orden: cada viñeta, partida por « · »,
+    con los canales como «#canal»."""
+    titulos, trozos = [], []
+    for linea in texto.splitlines():
+        if m := re.fullmatch(r'\*\*\d+\. (.+?)\*\*.*', linea.strip()):
+            titulos.append(m.group(1))
+        elif linea.startswith('• '):
+            linea = re.sub(r'<#\d+>', '#canal', linea[2:].replace('**', ''))
+            trozos += [con_grupo_n(' '.join(t.split()), especies) for t in linea.split(' · ')]
+    return titulos, trozos
+
+
+def combate_web(html, especies):
+    """Lo mismo, de la página: elementos data-guia-titulo y data-guia, con <span data-canal> como «#canal»."""
+    html = re.sub(r'<span data-canal>.*?</span>', '#canal', html, flags=re.S)
+    titulos = [sin_etiquetas(t) for _, t in re.findall(r'<(\w+)[^>]* data-guia-titulo>(.*?)</\1>', html, re.S)]
+    trozos = [con_grupo_n(sin_etiquetas(t), especies) for _, t in re.findall(r'<(\w+)[^>]* data-guia>(.*?)</\1>', html, re.S)]
+    return titulos, trozos
+
+
+def revisar_combate(raiz, d, falla, avisa):
+    """La guía de combate de la web dice lo mismo que la del Discord, en el mismo orden, ni más ni menos;
+    los tamaños de grupo salen de las fichas (si el Discord dice otro, se avisa)."""
+    especies = [f['nombre'] for f in d['fichas']]
+    grupo = {f['nombre']: f['grupo'] for f in d['fichas']}
+    paginas = {lang: leer(raiz, RUTA['combate', lang] + 'index.html') for lang in montar_web.LANGS}
+    for lang, html in paginas.items():
+        titulos, trozos = combate_web(html, especies)
+        if not titulos or not trozos:
+            falla(f'{RUTA["combate", lang]}: no encuentro los apartados (data-guia-titulo) o las viñetas (data-guia) de la guía')
+        for especie, n in grupos_citados(html, especies):
+            if grupo[especie] != n:
+                falla(f'{RUTA["combate", lang]}: dice {especie} {n} y su ficha, {grupo[especie]}')
+    if not POSTS_ORIGINAL.is_file():
+        avisa(f'sin {POSTS_ORIGINAL}: no se comprueba que la guía de combate siga diciendo lo mismo que el Discord')
+        return
+    original = guia_del_discord(POSTS_ORIGINAL, GUIA_COMBATE)
+    if not original:
+        falla(f'{POSTS_ORIGINAL.name}: no encuentro la guía «{GUIA_COMBATE}» (¿ha cambiado su formato?)')
+        return
+    for lang, campo in (('es', 'texto'), ('en', 'ingles')):
+        esperado, web = combate_discord(original[campo], especies), combate_web(paginas[lang], especies)
+        for que, a, b in (('apartados', esperado[0], web[0]), ('viñetas', esperado[1], web[1])):
+            if a != b:
+                distinto = next((f'«{x}» / «{y}»' for x, y in zip(a, b) if x != y), f'{len(a)} en el Discord y {len(b)} en la web')
+                falla(f'{RUTA["combate", lang]}: las {que} de la guía de combate no son las del Discord (Discord / web): {distinto}')
+        for especie, n in grupos_citados(original[campo], especies):
+            if grupo[especie] != n:
+                avisa(f'la guía de combate del Discord ({lang}) dice {especie} {n} y su ficha, {grupo[especie]}: la web pone el de la ficha; corrígelo en el Discord')
+
+
 def revisar_guia(falla, avisa):
     """Los textos de la guía que vienen del Discord y las fichas siguen al día con el original."""
     if not POSTS_ORIGINAL.is_file():
         avisa(f'sin {POSTS_ORIGINAL}: no se comprueba que «Cómo leer las fichas» siga diciendo lo mismo que el Discord')
+    elif not (guia := guia_del_discord(POSTS_ORIGINAL, GUIA_WIKI)):
+        falla(f'{POSTS_ORIGINAL.name}: no encuentro la guía «{GUIA_WIKI}» (¿ha cambiado su formato?)')
     else:
-        guia = json.loads(POSTS_ORIGINAL.read_text(encoding='utf-8'))['guia']
         for lang, campo in (('es', 'texto'), ('en', 'ingles')):
             original = ' '.join(guia[campo].replace('**', '').split())
             for _, del_discord, _ in guia_dinos.T[lang]['bloques']:
@@ -532,6 +631,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_movidas(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
+    revisar_combate(raiz, d, falla, avisa)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')

@@ -17,6 +17,7 @@ En los textos de paginas/:
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
   {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
+  {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a la ficha
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
@@ -52,13 +53,14 @@ PAGINAS = [
     ('clan', ('clan/', 'en/clan/'), ('El clan', 'The clan')),
     ('dinosaurios', (guia_dinos.RUTAS['es'], guia_dinos.RUTAS['en']), ('Dinosaurios', 'Dinosaurs')),
     ('caceria', (calendario.RUTAS['es'], calendario.RUTAS['en']), ('Cacería', 'Clan hunt')),
+    ('combate', ('combate/', 'en/combat/'), ('Combate', 'Combat')),
     ('galeria', ('galeria/', 'en/gallery/'), ('Galería', 'Gallery')),
     ('unete', ('unete/', 'en/join/'), ('Cómo entrar', 'How to join')),
     ('normas', ('normas/', 'en/rules/'), ('Normas', 'Rules')),
     ('legal', ('legal/', 'en/legal/'), ('Aviso legal y privacidad', 'Legal notice and privacy')),
 ]
 # Inicio, además de en la marca: no todo el mundo sabe que la marca lleva a la portada.
-MENU = ('inicio', 'clan', 'dinosaurios', 'caceria', 'galeria', 'unete')
+MENU = ('inicio', 'clan', 'dinosaurios', 'caceria', 'combate', 'galeria', 'unete')
 PIE = [p for p, _, _ in PAGINAS if p != 'legal']
 RUTA = {(p, lang): rutas[i] for p, rutas, _ in PAGINAS for i, lang in enumerate(LANGS)}
 NOMBRE = {(p, lang): nombres[i] for p, _, nombres in PAGINAS for i, lang in enumerate(LANGS)}
@@ -191,6 +193,14 @@ def normas(lang):
             f'<p class="cierre-normas revelar"><em>{escape(n["cierre"])}</em></p>')
 
 
+def grupo(nombre, lang, d):
+    """«Especie N»: el grupo máximo de su ficha, con enlace a ella (una sola fuente para la web)."""
+    f = next((f for f in d['fichas'] if f['nombre'] == nombre), None)
+    if not f or not f['grupo'].isdigit():
+        sys.exit(f'{{{{grupo:{nombre}}}}}: no hay ficha de {nombre} con un grupo máximo en número')
+    return f'<a href="@/{guia_dinos.RUTAS[lang]}#{guia_dinos.ancla(nombre)}">{escape(nombre)}</a> {f["grupo"]}'
+
+
 def migas(pagina, lang):
     inicio = NOMBRE['inicio', lang]
     return (f'<nav class="migas" aria-label="{T[lang]["migas"]}"><a href="@/{RUTA["inicio", lang]}">{inicio}</a>'
@@ -211,10 +221,12 @@ def rellenar(cuerpo, pagina, lang, base, d):
     }
 
     def poner(m):
-        if m.group(1) not in valores:
+        if m.group(1) == 'grupo' and m.group(2):
+            return grupo(m.group(2), lang, d)
+        if m.group(1) not in valores or m.group(2):
             sys.exit(f'paginas/{lang}/{pagina}.html: marcador desconocido {m.group(0)}')
         return valores[m.group(1)]()
-    cuerpo = re.sub(r'\{\{(\w+)\}\}', poner, cuerpo)
+    cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, cuerpo)
     pre = prefijo(RUTA[pagina, lang])
     cuerpo = cuerpo.replace('@/', pre)
     return re.sub(r'(href|src)=""', r'\1="./"', cuerpo)

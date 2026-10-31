@@ -137,7 +137,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
    cambiar cómo se ven. Solo donde no hay otro enlace encima o debajo a menos de esa distancia. */
 .idioma, .migas a, .enlace-cal, .menu-idioma { position: relative; }
 .idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
-/* El menú en una fila necesita ~960 px. Por debajo, un botón lo abre a pantalla completa. Sin
+/* El menú en una fila (siete enlaces) necesita ~1000 px. Por debajo, un botón lo abre a pantalla completa. Sin
    popover (navegadores antiguos) baja a su propia fila y se parte en líneas si no cabe: nunca queda
    cortado. La prueba de navegador recorre los anchos y avisa de solapes y de enlaces fuera. */
 @media (max-width: 1019px) {
@@ -187,6 +187,11 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .menu a::after { left: .85rem; right: .85rem; bottom: 0; }
   .menu a:hover { background: rgba(239, 239, 239, .05); }
   .menu a[aria-current] { background: linear-gradient(180deg, rgba(255, 53, 31, 0), rgba(255, 53, 31, .13)); }
+}
+/* Con los siete enlaces, hasta 1200 px las pestañas se estrechan para no pegarse a la marca. */
+@media (min-width: 1020px) and (max-width: 1199px) {
+  .menu a { padding-inline: .6rem; }
+  .menu a::after { left: .6rem; right: .6rem; }
 }
 .menu-boton, .menu-cerrar {
   place-items: center; width: 44px; height: 44px; padding: 0; flex: none;
@@ -741,6 +746,29 @@ html:has(.visor[open]) { overflow: hidden; }
 .bloque > p { margin: 0 0 .8rem; }
 .cierre-normas { margin: 2rem 0 0; color: var(--suave); font-size: 1.05rem; }
 .seccion .volver { margin: 2rem 0 0; }
+
+/* Guía de combate: apartados numerados como en el Discord; teclas y señales, en tarjetas. */
+.bloque-num {
+  flex: none; display: inline-grid; place-items: center; width: 2rem; height: 2rem;
+  border: 1px solid var(--borde-fuerte); border-radius: 3px; background: rgba(255, 53, 31, .08);
+  font: 1.1rem/1 var(--titulos); letter-spacing: 0; color: var(--ascua-viva);
+}
+.bloque-aviso { border-top-color: rgba(255, 53, 31, .55); }
+.bloque-aviso h3 { color: var(--rojo-claro); }
+.senales { list-style: none; margin: 1.1rem 0 2.8rem; padding: 0; display: grid; gap: 1rem; }
+@media (min-width: 560px) { .senales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .senales { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.senales:last-child { margin-bottom: 0; }
+.senales li {
+  padding: 1.1rem 1.2rem; color: var(--texto);
+  background: var(--cristal); border: 1px solid var(--cristal-borde); border-radius: 4px; box-shadow: var(--cristal-brillo);
+}
+kbd { padding: .05rem .4rem; border: 1px solid var(--borde); border-bottom-width: 2px; border-radius: 4px; background: #161616; font: 600 .95em var(--etiquetas); color: var(--hueso); }
+/* La luz, dentro de la tarjeta: fuera de su caja ensancharía la tarjeta en el móvil. */
+.senales li.luz::before { inset: 0; border-radius: 4px; }
+.senales:not(.senales-voz) li { display: flex; align-items: center; gap: .9rem; }
+.tecla { flex: none; display: inline-grid; place-items: center; min-width: 2.4rem; height: 2.4rem; border-bottom-width: 3px; font: 1.25rem/1 var(--titulos); }
+.senal { display: block; margin-bottom: .35rem; font: 1.6rem/1.15 var(--titulos); letter-spacing: .02em; text-transform: uppercase; color: var(--ascua-viva); }
 
 /* Aviso legal: texto corrido, a una columna. */
 .texto-legal > * { max-width: 48rem; }

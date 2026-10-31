@@ -6,7 +6,12 @@
     "duracion_min": 60,
     "primera": "2026-10-31",
     "zona": "Europe/Madrid",
-    "fuente": "cada sábado a las 22:00"
+    "fuente": "cada sábado a las 22:00",
+    "_avisos": "La encuesta y el recordatorio de la semana (dia_semana: 1 = lunes). comprobar.py exige que la página de la Cacería los diga como «Miércoles, 20:00» / «Wednesday, 20:00» y, si encuentra el proyecto del Discord, que sus scripts sigan publicando a esa hora.",
+    "avisos": [
+      {"que": "encuesta", "dia_semana": 3, "hora": 20, "script": "encuesta.py"},
+      {"que": "recordatorio", "dia_semana": 6, "hora": 20, "script": "recordatorio.py"}
+    ]
   },
   "zonas_latinoamerica": [
     "America/Tijuana", "America/Hermosillo", "America/Mazatlan", "America/Chihuahua", "America/Ciudad_Juarez",

@@ -9,8 +9,8 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 
 | Fichero | Para qué |
 |---|---|
-| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
-| `docs/**/index.html` | Las 16 páginas publicadas (8 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
+| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
+| `docs/**/index.html` | Las 18 páginas publicadas (9 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
@@ -36,15 +36,15 @@ python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 ```
 
-- `montar_web.py` genera las 16 páginas, el mapa del sitio y la versión de los estilos en
+- `montar_web.py` genera las 18 páginas, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
   `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
-  `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}` y `{{normas}}` se
-  rellenan solos. El menú de arriba lleva solo las seis páginas de `MENU` (Inicio incluida); Normas y el aviso legal
+  `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}` y `{{grupo:Especie}}` se
+  rellenan solos. El menú de arriba lleva solo las siete páginas de `MENU` (Inicio incluida); Normas y el aviso legal
   van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
   `comprobar.py` falla si `docs/` no es exactamente lo que sale del script.
@@ -61,6 +61,13 @@ node herramientas/prueba_caceria.js
   `GARRA_BATALLAS` o `~/Downloads/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
   falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
   web hay que volver a montar y publicar: no aparece sola.
+- La guía de combate (`paginas/<idioma>/combate.html`) es la del canal #wiki del Discord, con otra
+  presentación: cada apartado lleva `data-guia-titulo` y cada viñeta (o trozo de viñeta separado
+  por « · ») `data-guia`; los canales del Discord van en `<span data-canal>` y el grupo máximo de
+  cada especie sale de su ficha con `{{grupo:Especie}}`. Si `comprobar.py` encuentra el original
+  (`posts.json`, junto a `fichas.json`), falla si la web no dice exactamente lo mismo, en el mismo
+  orden, y avisa si la guía del Discord da un grupo distinto del de la ficha. Si el staff cambia la
+  guía en Discord: copiar el texto nuevo a las dos páginas.
 - Vídeos de las batallas: `python herramientas/preparar_videos.py` los genera desde los vídeos
   exportados (lista `VIDEOS`, clave de `batallas.json` → fichero dentro de `~/Videos`) en
   `docs/video/batalla-<clave>.mp4`, con su portada en `docs/img/`. La lista de El clan pone el
@@ -76,7 +83,7 @@ node herramientas/prueba_caceria.js
   que ejecutarlo si cambia la hora de la Cacería o la dirección. Los `.ics` llevan finales de línea
   CRLF, como pide el formato; `.gitattributes` evita que git los cambie.
 
-- `comprobar.py` revisa las 16 páginas: título, encabezado, metadatos, idiomas, datos estructurados
+- `comprobar.py` revisa las 18 páginas: título, encabezado, metadatos, idiomas, datos estructurados
   (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
   fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
@@ -94,7 +101,7 @@ node herramientas/prueba_caceria.js
   más. Si el staff cambia o añade una norma en Discord, el comprobador falla hasta copiarla aquí.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
-- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 16
+- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 18
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde 1020 px
   o, por debajo, tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha

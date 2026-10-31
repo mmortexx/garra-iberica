@@ -16,7 +16,7 @@
 <link rel="preload" href="../../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../../img/galeria-pareja-1000.webp" imagesrcset="../../img/galeria-pareja-600.webp 600w, ../../img/galeria-pareja-1000.webp 1000w, ../../img/galeria-pareja-1300.webp 1300w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../../estilos.css?v=5c6a511552">
+<link rel="stylesheet" href="../../estilos.css?v=65de57a95f">
 <script src="../../efectos.js?v=88604d7638" defer></script>
 <script src="../../caceria.js?v=2db101625a" defer></script>
 <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
@@ -141,6 +141,7 @@
 </head>
 <body>
 <a class="saltar" href="#contenido">Skip to content</a>
+<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dadada"/><stop offset=".35" stop-color="#929292"/><stop offset=".6" stop-color="#474747"/><stop offset="1" stop-color="#aeaeae"/></linearGradient></defs></svg>
 <div class="niebla" aria-hidden="true"></div>
 
 <header class="barra">
@@ -154,6 +155,7 @@
       <a href="../../en/clan/">The clan</a>
       <a href="../../en/dinosaurs/">Dinosaurs</a>
       <a href="../../en/hunt/" aria-current="page">Clan hunt</a>
+      <a href="../../en/combat/">Combat</a>
       <a href="../../en/gallery/">Gallery</a>
       <a href="../../en/join/">How to join</a>
       <a class="menu-idioma" href="../../caceria/" hreflang="es" lang="es">Versión en español</a>
@@ -175,7 +177,7 @@
       <div>
         <nav class="migas" aria-label="You are in"><a href="../../en/">Home</a><span aria-current="page">Clan hunt</span></nav>
         <h1 id="titulo" class="entra">Weekly clan hunt: Saturdays at 22:00</h1>
-        <p class="entrada entra entra-2">Every <strong>Saturday at 22:00 Spanish mainland time</strong> (21:00 in the UK) the clan goes hunting together. We meet in the hunt voice channel, form a pack and a leader sets the course.</p>
+        <p class="entrada entra entra-2">Every <strong>Saturday at 22:00 Spanish mainland time</strong> (21:00 in the UK) the clan goes hunting together. We meet in the <b>Cacería 1</b> voice channel, form a pack and a leader sets the course.</p>
       </div>
       <div class="cuenta cuenta-grande entra entra-3" data-cuenta hidden>
         <p class="cuenta-titulo">Next hunt</p>
@@ -209,6 +211,21 @@
     </div>
   </section>
 
+  <section class="seccion" id="week" aria-labelledby="t-week">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Spain time</p>
+        <h2 id="t-week">How each week goes</h2>
+      </div>
+      <ol class="pasos escalonado" role="list">
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3>Wednesday, 20:00</h3><p>Poll in <b>#general</b>: “Coming to the clan hunt on Saturday?”. Answer <i>I’m in</i>, <i>I’ll be late</i> or <i>Can’t make it</i>. It closes when the hunt starts.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3>Saturday, 20:00</h3><p>Two hours before, a reminder in <b>#general</b> for everyone with the <b>🔔 Cacerías</b> role, with the voice channel and the event.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3>Saturday, 22:00</h3><p>Everyone into the <b>Cacería 1</b> voice channel. We form packs by species and a leader sets the course. Before heading out, read the <a href="../../en/combat/">combat guide</a>.</p></div></li>
+      </ol>
+      <p class="nota revelar"><img src="../../img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy"> <span><b>Weekly ranking.</b> Every week <b>#ranking</b> gets the clan’s table with Asura Nexus data, and the <b>hunter of the week</b>: whoever has the most kills.</span></p>
+    </div>
+  </section>
+
   <section class="llamada" aria-labelledby="t-cta" data-ascuas>
     <div class="envoltura centro revelar">
       <h2 id="t-cta">See you on Saturday</h2>
@@ -229,6 +246,7 @@
       <a href="../../en/clan/">The clan</a>
       <a href="../../en/dinosaurs/">Dinosaurs</a>
       <a href="../../en/hunt/">Clan hunt</a>
+      <a href="../../en/combat/">Combat</a>
       <a href="../../en/gallery/">Gallery</a>
       <a href="../../en/join/">How to join</a>
       <a href="../../en/rules/">Rules</a>

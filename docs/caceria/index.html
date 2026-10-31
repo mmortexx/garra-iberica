@@ -16,7 +16,7 @@
 <link rel="preload" href="../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../img/galeria-pareja-1000.webp" imagesrcset="../img/galeria-pareja-600.webp 600w, ../img/galeria-pareja-1000.webp 1000w, ../img/galeria-pareja-1300.webp 1300w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../estilos.css?v=5c6a511552">
+<link rel="stylesheet" href="../estilos.css?v=65de57a95f">
 <script src="../efectos.js?v=88604d7638" defer></script>
 <script src="../caceria.js?v=2db101625a" defer></script>
 <link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
@@ -142,6 +142,7 @@
 </head>
 <body>
 <a class="saltar" href="#contenido">Saltar al contenido</a>
+<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dadada"/><stop offset=".35" stop-color="#929292"/><stop offset=".6" stop-color="#474747"/><stop offset="1" stop-color="#aeaeae"/></linearGradient></defs></svg>
 <div class="niebla" aria-hidden="true"></div>
 
 <header class="barra">
@@ -155,6 +156,7 @@
       <a href="../clan/">El clan</a>
       <a href="../dinosaurios/">Dinosaurios</a>
       <a href="../caceria/" aria-current="page">Cacería</a>
+      <a href="../combate/">Combate</a>
       <a href="../galeria/">Galería</a>
       <a href="../unete/">Cómo entrar</a>
       <a class="menu-idioma" href="../en/hunt/" hreflang="en" lang="en">English version</a>
@@ -176,7 +178,7 @@
       <div>
         <nav class="migas" aria-label="Estás en"><a href="../">Inicio</a><span aria-current="page">Cacería</span></nav>
         <h1 id="titulo" class="entra">Cacería semanal: sábados a las 22:00</h1>
-        <p class="entrada entra entra-2">Cada <strong>sábado a las 22:00 (hora peninsular española)</strong> el clan sale de caza en grupo. Nos juntamos en el canal de voz de caza, formamos manada y un líder marca el rumbo.</p>
+        <p class="entrada entra entra-2">Cada <strong>sábado a las 22:00 (hora peninsular española)</strong> el clan sale de caza en grupo. Nos juntamos en el canal de voz <b>Cacería 1</b>, formamos manada y un líder marca el rumbo.</p>
       </div>
       <div class="cuenta cuenta-grande entra entra-3" data-cuenta hidden>
         <p class="cuenta-titulo">Próxima cacería</p>
@@ -210,6 +212,21 @@
     </div>
   </section>
 
+  <section class="seccion" id="semana" aria-labelledby="t-semana">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Hora de España</p>
+        <h2 id="t-semana">Así va cada semana</h2>
+      </div>
+      <ol class="pasos escalonado" role="list">
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3>Miércoles, 20:00</h3><p>Encuesta en <b>#general</b>: «¿Vienes a la cacería del sábado?». Contesta <i>Voy</i>, <i>Voy, pero llego tarde</i> o <i>No puedo</i>. Se cierra al empezar la cacería.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3>Sábado, 20:00</h3><p>Dos horas antes, aviso en <b>#general</b> para quien tiene el rol <b>🔔 Cacerías</b>, con el canal de voz y el evento.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3>Sábado, 22:00</h3><p>Todos a la voz en <b>Cacería 1</b>. Formamos manada por especie y un líder marca el rumbo. Antes de salir, repasa la <a href="../combate/">guía de combate</a>.</p></div></li>
+      </ol>
+      <p class="nota revelar"><img src="../img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy"> <span><b>Ranking semanal.</b> Cada semana sale en <b>#ranking</b> la tabla del clan con los datos de Asura Nexus, y el <b>cazador de la semana</b>: quien más bajas suma.</span></p>
+    </div>
+  </section>
+
   <section class="llamada" aria-labelledby="t-llamada" data-ascuas>
     <div class="envoltura centro revelar">
       <h2 id="t-llamada">Nos vemos el sábado</h2>
@@ -230,6 +247,7 @@
       <a href="../clan/">El clan</a>
       <a href="../dinosaurios/">Dinosaurios</a>
       <a href="../caceria/">Cacería</a>
+      <a href="../combate/">Combate</a>
       <a href="../galeria/">Galería</a>
       <a href="../unete/">Cómo entrar</a>
       <a href="../normas/">Normas</a>
