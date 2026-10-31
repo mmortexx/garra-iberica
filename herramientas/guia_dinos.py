@@ -75,7 +75,8 @@ T = {
         'plan_locale': 'es-ES', 'plan_unidades': {'d': ['día', 'días'], 'h': 'h', 'm': 'min'},
         'comp_id': 'comparar', 'comp_ante': 'De un vistazo', 'comp_h2': 'Comparar especies',
         'comp_intro': 'Las {n} especies con su peso máximo, lo que tardan en ser adultas (1×) y su grupo máximo. '
-                      'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ir a su ficha.',
+                      'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ir a su ficha. '
+                      'El enlace de la página guarda lo que elijas: pásalo a tu grupo.',
         'comp_fila': 'hasta {peso} · adulto en {crece} · grupo máx. {grupo}',
         'comp_orden': 'Ordenar', 'comp_dieta': 'Dieta', 'comp_somos': '¿Cuántos jugáis juntos?',
         'comp_ordenes': [('fichas', 'Como las fichas'), ('peso', 'Más pesado primero'), ('crece', 'Crece antes'),
@@ -137,7 +138,8 @@ T = {
         'plan_locale': 'en-GB', 'plan_unidades': {'d': ['day', 'days'], 'h': 'h', 'm': 'min'},
         'comp_id': 'compare', 'comp_ante': 'At a glance', 'comp_h2': 'Compare species',
         'comp_intro': 'All {n} species with their top weight, how long they take to grow up (1×) and their max group. '
-                      'Sort them, filter by how many of you will play together and tap one to open its card.',
+                      'Sort them, filter by how many of you will play together and tap one to open its card. '
+                      'The page link keeps your choice: share it with your group.',
         'comp_fila': 'up to {peso} · adult in {crece} · max group {grupo}',
         'comp_orden': 'Sort by', 'comp_dieta': 'Diet', 'comp_somos': 'How many of you play together?',
         'comp_ordenes': [('fichas', 'Card order'), ('peso', 'Heaviest first'), ('crece', 'Fastest to grow'),

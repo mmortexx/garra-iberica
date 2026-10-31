@@ -1,10 +1,12 @@
 // Guía de dinosaurios: ordenar y filtrar la comparativa de especies. Sin JavaScript la lista se ve
-// entera, en el orden de las fichas, y los selectores no salen.
+// entera, en el orden de las fichas, y los selectores no salen. Lo elegido va en la dirección
+// (?orden=peso&dieta=herbivoros&grupo=5#comparar) para poder pasar el enlace ya filtrado.
 (() => {
   const caja = document.querySelector('[data-comparar]');
   const lista = document.querySelector('[data-comparar-lista]');
   if (!caja || !lista) return;
   const [orden, dieta, somos] = caja.querySelectorAll('select');
+  const campos = { orden, dieta, grupo: somos };
   const estado = caja.querySelector('[role="status"]');
   const filas = [...lista.children];
   const abc = new Intl.Collator(document.documentElement.lang);
@@ -29,7 +31,21 @@
       ? caja.dataset.recuento.replace('{n}', vistas).replace('{total}', filas.length)
       : caja.dataset.ninguna;
   };
-  caja.addEventListener('change', poner);
+  // De la dirección, solo valores que existen en su selector; lo demás se ignora.
+  const pedidos = new URLSearchParams(location.search);
+  for (const [nombre, sel] of Object.entries(campos)) {
+    const v = pedidos.get(nombre);
+    if (v !== null && [...sel.options].some(o => o.value === v)) sel.value = v;
+  }
+  caja.addEventListener('change', () => {
+    poner();
+    const url = new URL(location.href);
+    for (const [nombre, sel] of Object.entries(campos)) {
+      if (sel.selectedIndex) url.searchParams.set(nombre, sel.value); else url.searchParams.delete(nombre);
+    }
+    url.hash = caja.closest('section').id;
+    history.replaceState(history.state, '', url);
+  });
   poner();
   caja.hidden = false;
 })();

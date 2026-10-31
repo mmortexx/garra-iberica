@@ -702,7 +702,15 @@ const ruta = r => ('/' + r).padEnd(15);
       await dieta.selectOption('herbivoros');
       const herbivoros = await filas();
       if (!herbivoros.length || herbivoros.some(f => f.dieta !== 'herbivoros')) fallos.push('filtro de dieta');
-      else {
+      // Lo elegido queda en la dirección y, al abrirla, la lista sale igual; un valor que no existe se ignora.
+      const enlace = await p.evaluate(() => location.href);
+      if (!/[?&]dieta=herbivoros\b/.test(enlace) || /[?&]grupo=/.test(enlace)) fallos.push(`dirección «${enlace}»`);
+      const otra = await ctx.newPage();
+      await otra.goto(`${BASE}${r}?orden=peso&grupo=${n}&dieta=nada`, { waitUntil: 'load' });
+      const abierta = await otra.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')].filter(f => f.offsetParent).map(f => +f.dataset.grupo));
+      if (abierta.length !== grandes.length || abierta.some(g => g < n)) fallos.push(`al abrir ?grupo=${n}: ${abierta.length} especies y deberían ser ${grandes.length}`);
+      await otra.close();
+      if (herbivoros.length) {
         await p.locator(`[data-comparar-lista] a[href="${herbivoros[0].ancla}"]`).click();
         if (await p.evaluate(() => location.hash) !== herbivoros[0].ancla) fallos.push('pulsar una especie no lleva a su ficha');
       }
