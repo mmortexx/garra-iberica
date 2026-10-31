@@ -45,6 +45,10 @@ MAX_MB_VIDEO = 40
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'
 VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
+# Única excepción a los apodos: los tres jefes del clan, por decisión del clan (1/11/2026), y solo
+# donde los pone montar_web.alfas() con los nombres de la cita de la tarjeta #rangos. Un nombre
+# más, o estos mismos en cualquier otro sitio, sigue fallando.
+JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
@@ -461,6 +465,9 @@ def revisar_datos(raiz, falla, avisa):
         if cita not in texto:
             falla(f'{DATOS.name} cita «{cita}» y tarjetas.json ya no lo dice: actualiza el extracto y la web')
     revisar_normas(datos['normas'], tarjetas, falla)
+    for lang, clave in (('es', 'texto'), ('en', 'ingles')):
+        if datos['alfas'][f'fuente_{lang}'] not in tarjetas['rangos'][clave]:
+            falla(f'{DATOS.name} cita «{datos["alfas"][f"fuente_{lang}"]}» y la tarjeta de rangos ya no lo dice: actualiza el extracto')
 
 
 def sin_formato(texto):
@@ -489,6 +496,24 @@ def revisar_normas(normas, tarjetas, falla):
                 falla(f'{DATOS.name} ({lang}): «{frase}» no está en la tarjeta de normas')
         if n['rango'] not in sin_formato(tarjetas['rangos'][clave]):
             falla(f'{DATOS.name} ({lang}): «{n["rango"]}» no está en la tarjeta de rangos')
+
+
+def revisar_alfas(raiz, falla):
+    """Los jefes de El clan son los de la cita de la tarjeta #rangos y justo los de JEFES. Devuelve,
+    por fichero, el único texto en el que pueden salir sus nombres sin que salte «sin apodos»."""
+    permitidos = {}
+    for lang in montar_web.LANGS:
+        nombres = montar_web.nombres_alfas(lang)
+        if nombres != sorted(JEFES):
+            falla(f'{DATOS.name}: la cita de la tarjeta de rangos ({lang}) nombra a {nombres} y la excepción de apodos es para {list(JEFES)}')
+            continue
+        pagina = raiz / RUTA['clan', lang] / 'index.html'
+        fragmento = montar_web.alfas(lang)
+        if leer(raiz, RUTA['clan', lang] + 'index.html').count(fragmento) != 1:
+            falla(f'{RUTA["clan", lang]}index.html: los tres jefes no salen una vez, tal como los pone montar_web.alfas()')
+        permitidos.setdefault(pagina.resolve(), []).append(fragmento)
+        permitidos.setdefault(DATOS.resolve(), []).append(json.loads(DATOS.read_text(encoding='utf-8'))['alfas'][f'fuente_{lang}'])
+    return permitidos
 
 
 def revisar_montaje(raiz, d, falla):
@@ -719,6 +744,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla)
+    permitidos = revisar_alfas(raiz, falla)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
@@ -822,6 +848,8 @@ def main(raiz, sin_apodos=False, avisa=print):
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')
+        for fragmento in permitidos.get(fichero.resolve(), ()):
+            texto = texto.replace(fragmento, '')
         nombre = fichero.relative_to(raiz).as_posix() if fichero.is_relative_to(raiz) else f'herramientas/{fichero.name}'
         for patron in prohibidos:
             for m in re.finditer(patron, texto):

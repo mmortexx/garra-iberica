@@ -96,14 +96,18 @@ node herramientas/prueba_caceria.js
   comprobador se niega a dar el visto bueno.
   También exige que la web diga lo mismo que `herramientas/datos_clan.json`: los plazos de ascenso
   y la franja horaria de la Cacería en Latinoamérica (calculada con las zonas horarias de cada país
-  para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni
-  apodos, de `tarjetas.json` (los textos del Discord, fuera de este repositorio). Si el comprobador
+  para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni más
+  apodos que los de los tres jefes, de `tarjetas.json` (los textos del Discord, fuera de este repositorio). Si el comprobador
   encuentra `tarjetas.json` (variable `GARRA_TARJETAS` o `~/Downloads/garra-iberica/tarjetas.json`),
   comprueba además que el extracto siga al día; si no, lo avisa. Si cambian los textos del
   Discord: actualizar el extracto y la web a la vez.
   La página de normas sale entera de ese extracto (`normas` en `datos_clan.json`): cada norma, con
   su número, tiene que estar tal cual en la tarjeta `#normas`, y la tarjeta no puede tener ni una
   más. Si el staff cambia o añade una norma en Discord, el comprobador falla hasta copiarla aquí.
+  Los tres jefes (Alfa) de El clan salen de la frase de la tarjeta de rangos copiada en `alfas`
+  (`{{alfas}}` en la página, en orden alfabético y con el mismo estilo). Son la única excepción a
+  los apodos vigilados: solo esos tres (`JEFES` en `comprobar.py`), solo dentro de ese fragmento y
+  de esa cita, y el comprobador falla si la tarjeta cambia de jefes o si un apodo sale en otro sitio.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 18

@@ -15,6 +15,7 @@ En los textos de paginas/:
   {{google_calendar}}  enlace para añadir la Cacería a Google Calendar (de datos_clan.json)
   {{migas}}            «Inicio / página», con enlace al inicio
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
+  {{alfas}}            los tres jefes, de la cita de la tarjeta #rangos en datos_clan.json
   {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
   {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a la ficha
@@ -173,6 +174,18 @@ def especies(lang, d):
     return '<dl class="especies">' + ''.join(filas) + '</dl>'
 
 
+def nombres_alfas(lang):
+    """Los jefes que nombra la cita de la tarjeta de rangos, en orden alfabético: van por igual."""
+    fuente = json.loads(DATOS_CLAN.read_text(encoding='utf-8'))['alfas'][f'fuente_{lang}']
+    return sorted(n for n in re.findall(r'\*\*([^*]+)\*\*', fuente) if n != 'Alfa')
+
+
+def alfas(lang):
+    nombres = [f'<b>{escape(n)}</b>' for n in nombres_alfas(lang)]
+    y = {'es': ' y ', 'en': ' and '}[lang]
+    return '<span data-alfas>' + ', '.join(nombres[:-1]) + y + nombres[-1] + '</span>'
+
+
 def normas(lang):
     n = json.loads(DATOS_CLAN.read_text(encoding='utf-8'))['normas'][lang]
     bloques, numero = [], 1
@@ -218,6 +231,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'google_calendar': lambda: calendario.enlace_google(lang, base),
         'migas': lambda: migas(pagina, lang),
         'normas': lambda: normas(lang),
+        'alfas': lambda: alfas(lang),
         'batallas_cifras': lambda: batallas_web.marcador(lang, RUTA['clan', lang]),
         'batallas': lambda: batallas_web.lista(lang),
     }

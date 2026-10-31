@@ -23,6 +23,11 @@
     "America/Santiago", "America/Punta_Arenas", "America/Asuncion", "America/Argentina/Buenos_Aires",
     "America/Montevideo"
   ],
+  "_alfas": "Los tres jefes del clan, por igual: la única excepción a «sin apodos» (comprobar.py, JEFES). Los nombres salen de la cita de la tarjeta #rangos; la web los pone en orden alfabético y con el mismo formato.",
+  "alfas": {
+    "fuente_es": "**Alfa**: los tres jefes del clan, al mismo nivel: **Ray**, **Imaginary** y **Quilez**.",
+    "fuente_en": "**Alfa**: the three clan leaders, all equal: **Ray**, **Imaginary** and **Quilez**."
+  },
   "ascensos": [
     {
       "rango": "Miembro",
