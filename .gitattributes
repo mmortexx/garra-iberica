@@ -4,6 +4,7 @@
 *.png binary
 *.ico binary
 *.woff2 binary
+*.mp4 binary
 # iCalendar exige CRLF (RFC 5545): git no debe tocar sus finales de línea.
 *.ics -text
 # Copia exacta de las batallas del Discord: comprobar.py la compara byte a byte con el original.
