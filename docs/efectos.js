@@ -328,9 +328,9 @@
     c.width = c.height = tam;
     const g = c.getContext('2d'), m = tam / 2;
     const d = g.createRadialGradient(m, m, 0, m, m, m);
-    d.addColorStop(0, 'rgba(255, 196, 120, 1)');
-    d.addColorStop(0.35, 'rgba(255, 110, 30, .55)');
-    d.addColorStop(1, 'rgba(255, 80, 10, 0)');
+    d.addColorStop(0, 'rgba(255, 134, 120, 1)');
+    d.addColorStop(0.35, 'rgba(255, 53, 30, .55)');
+    d.addColorStop(1, 'rgba(255, 35, 10, 0)');
     g.fillStyle = d;
     g.fillRect(0, 0, tam, tam);
     return c;

@@ -114,9 +114,9 @@ VERIFICACION = [('google-site-verification', 'TjZ3UO9z_tfPs5RZnAKtSvgGJ08vOeuVpI
                 ('msvalidate.01', '06F63226A2F1AE3F8270F972B3FCA4D2')]
 CSP = ("default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self'; font-src 'self'; "
        "img-src 'self' data:; base-uri 'none'; form-action 'none'")
-COBRE = ('<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="cobre" x1="0" y1="0" x2="1" y2="1">'
-         '<stop offset="0" stop-color="#ffd3a1"/><stop offset=".35" stop-color="#c9824b"/><stop offset=".6" stop-color="#6f3818"/>'
-         '<stop offset="1" stop-color="#e0a06c"/></linearGradient></defs></svg>')
+ACERO = ('<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1">'
+         '<stop offset="0" stop-color="#dadada"/><stop offset=".35" stop-color="#929292"/><stop offset=".6" stop-color="#474747"/>'
+         '<stop offset="1" stop-color="#aeaeae"/></linearGradient></defs></svg>')
 
 
 def huella(ruta):
@@ -215,7 +215,9 @@ def rellenar(cuerpo, pagina, lang, base, d):
 
 
 def preguntas(cuerpo):
-    return [(plano(q), plano(a)) for q, a in re.findall(r'<summary>(.*?)</summary>\s*<p>(.*?)</p>', cuerpo, re.S)]
+    # El aviso de «se abre en una pestaña nueva» es para lectores de pantalla, no parte de la respuesta.
+    sin_aviso = re.sub(r'<span class="oculto">.*?</span>', '', cuerpo)
+    return [(plano(q), plano(a)) for q, a in re.findall(r'<summary>(.*?)</summary>\s*<p>(.*?)</p>', sin_aviso, re.S)]
 
 
 def grafo(pagina, lang, base, datos, cuerpo, fecha):
@@ -359,7 +361,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         *[f'<meta name="{n}" content="{c}">' for n, c in VERIFICACION if (pagina, lang) == ('inicio', 'es')],
         f'<meta http-equiv="Content-Security-Policy" content="{CSP}">',
         '<meta name="referrer" content="strict-origin-when-cross-origin">',
-        '<meta name="theme-color" content="#0b0806">',
+        '<meta name="theme-color" content="#080808">',
         f'<link rel="canonical" href="{url}">',
         f'<link rel="alternate" hreflang="es" href="{base + RUTA[pagina, "es"]}">',
         f'<link rel="alternate" hreflang="en" href="{base + RUTA[pagina, "en"]}">',
@@ -391,7 +393,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         '</head>',
         f'<body{cuerpo_attrs}>',
         f'<a class="saltar" href="#contenido">{t["saltar"]}</a>',
-        *([COBRE] if 'class="hex"' in cuerpo else []),
+        *([ACERO] if 'class="hex"' in cuerpo else []),
         '<div class="niebla" aria-hidden="true"></div>',
         '',
         *cabecera(pagina, lang),

@@ -6,6 +6,7 @@ Los apodos a vigilar salen de herramientas/vigilar.local.txt o, si no existe, de
 VIGILAR_APODOS (uno por línea; así los recibe la integración continua desde un secreto).
 --sin-apodos se salta solo esa parte, y lo dice.
 """
+import colorsys
 import datetime as dt
 import json
 import os
@@ -39,6 +40,7 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
+PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
 TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'tarjetas.json')
 FRANJA = {'es': r'entre las (\d{2}):00 y las (\d{2}):00', 'en': r'between (\d{2}):00 and (\d{2}):00'}
 
@@ -108,10 +110,13 @@ class Lector(HTMLParser):
         self._details = None
         self._campo = None
         self._a_nueva = False
+        self._oculto = False
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         self.etiquetas.append((tag, a))
+        if tag == 'span' and 'oculto' in (a.get('class') or '').split():
+            self._oculto = True
         if tag == 'html':
             self.lang = a.get('lang')
         if tag == 'h1':
@@ -139,6 +144,8 @@ class Lector(HTMLParser):
             self._campo = None
         if tag == 'a':
             self._a_nueva = False
+        if tag == 'span':
+            self._oculto = False
         if tag == 'details' and self._details is not None:
             self.preguntas.append(tuple(' '.join(t.split()) for t in self._details))
             self._details = None
@@ -149,7 +156,8 @@ class Lector(HTMLParser):
     def handle_data(self, data):
         if self._jsonld:
             self.jsonld[-1] += data
-        if self._details is not None and self._campo is not None:
+        # El aviso oculto de pestaña nueva no forma parte de la respuesta (montar_web.preguntas lo quita).
+        if self._details is not None and self._campo is not None and not self._oculto:
             self._details[self._campo] += data
         if self._a_nueva:
             self.nuevas[-1][2] += data
@@ -563,6 +571,15 @@ def main(raiz, sin_apodos=False, avisa=print):
         con_hinting = sorted(t.strip() for t in {'fpgm', 'prep', 'cvt '} & tablas)
         if con_hinting:
             falla(f'{u} lleva hinting ({", ".join(con_hinting)}): regenérala con herramientas/preparar_imagenes.py')
+    # Las imágenes del clan pasan al rojo de --ascua en preparar_imagenes.py: los dos tonos van a la par.
+    ascua = re.search(r'--ascua:\s*#([0-9a-fA-F]{6});', css)
+    lava = re.search(r'^ROJO_LAVA = (\d+)', PREPARAR_IMAGENES.read_text(encoding='utf-8'), re.M)
+    if not ascua or not lava:
+        falla(f'no encuentro --ascua en estilos.css o ROJO_LAVA en {PREPARAR_IMAGENES.name}: revisa esta comprobación')
+    else:
+        tono = colorsys.rgb_to_hls(*(int(ascua.group(1)[i:i + 2], 16) / 255 for i in (0, 2, 4)))[0] * 360
+        if abs((tono - int(lava.group(1)) + 180) % 360 - 180) > 2:
+            falla(f'--ascua tiene tono {tono:.0f}° y ROJO_LAVA es {lava.group(1)}°: iguálalos y ejecuta {PREPARAR_IMAGENES.name}')
     usados.add((raiz / 'img' / 'og-garra-iberica.jpg').resolve())
     for img in sorted((raiz / 'img').glob('*')):
         if img.resolve() not in usados:

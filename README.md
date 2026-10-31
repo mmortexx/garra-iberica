@@ -121,6 +121,11 @@ Desde la carpeta original del material del clan (solo se lee, no se modifica):
 python herramientas/preparar_imagenes.py RUTA/A/garra-iberica
 ```
 
+El material del clan es cobre y naranja; la web es negra, gris y roja lava. El script pasa la
+portada, el cartel de la Cacería, la imagen para compartir, el favicon y los iconos a esa paleta
+(lo cálido y apagado a gris, lo vivo a rojo). Los iconos de rango y el trofeo conservan su color
+(`SIN_PALETA`). Si cambia el rojo de `--ascua` en `estilos.css`, cambia también `ROJO_LAVA`.
+
 Las fotos de la galería salen de capturas del juego a 3439x1439 (los originales no se tocan):
 
 ```
