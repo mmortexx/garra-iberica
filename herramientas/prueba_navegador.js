@@ -673,6 +673,34 @@ const ruta = r => ('/' + r).padEnd(15);
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
   }
+  // Botones: en un móvil táctil, tocar no los deja levantados (el hover se quedaba pegado), y con
+  // teclado el botón rojo lleva un anillo que se distingue del rojo del botón.
+  {
+    const fallos = [];
+    const movil = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await movil.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.hover('.acciones .boton:not(.boton-sec)');
+    await p.waitForTimeout(500);
+    const movido = await p.evaluate(() => getComputedStyle(document.querySelector('.acciones .boton:not(.boton-sec)')).transform);
+    if (movido !== 'none') fallos.push(`en táctil se queda movido (${movido})`);
+    await movil.close();
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const q = await ctx.newPage();
+    await q.goto(BASE, { waitUntil: 'load' });
+    let anillo = '';
+    for (let i = 0; i < 40 && !anillo; i++) {
+      await q.keyboard.press('Tab');
+      anillo = await q.evaluate(() => {
+        const a = document.activeElement;
+        return a.matches('.boton:not(.boton-sec)') ? getComputedStyle(a).outlineColor : '';
+      });
+    }
+    if (anillo !== 'rgb(231, 231, 231)') fallos.push(`anillo de foco del botón rojo: ${anillo || 'no se llega con Tab'}`);
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta(''), 'botones en táctil y con teclado:', fallos.length ? fallos.join('; ') : 'bien');
+  }
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);

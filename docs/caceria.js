@@ -65,6 +65,8 @@
     const [especie, ritmo] = plan.querySelectorAll('select');
     const salida = plan.querySelector('[data-resultado]');
     const u = JSON.parse(plan.dataset.unidades);
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+    let primera = true;
     const cuando = new Intl.DateTimeFormat(plan.dataset.locale, { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
     const duracion = ms => {
       const r = restante(ms);
@@ -90,6 +92,9 @@
       }
       salida.replaceChildren(...partes);
       salida.className = 'plan-resultado ' + (p.llega ? 'si' : 'no');
+      // Al cambiar la elección, el resultado entra de nuevo para que se note que ha cambiado.
+      if (!primera && !quieto.matches && salida.animate) salida.animate([{ opacity: 0.25, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+      primera = false;
     };
     especie.addEventListener('change', calcular);
     ritmo.addEventListener('change', calcular);
