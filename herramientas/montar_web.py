@@ -116,7 +116,7 @@ T = {
 VERIFICACION = [('google-site-verification', 'TjZ3UO9z_tfPs5RZnAKtSvgGJ08vOeuVpI8ob2YMVbQ'),
                 ('msvalidate.01', '06F63226A2F1AE3F8270F972B3FCA4D2')]
 CSP = ("default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self'; font-src 'self'; "
-       "img-src 'self' data:; base-uri 'none'; form-action 'none'")
+       "img-src 'self' data:; media-src 'self'; base-uri 'none'; form-action 'none'")
 ACERO = ('<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1">'
          '<stop offset="0" stop-color="#dadada"/><stop offset=".35" stop-color="#929292"/><stop offset=".6" stop-color="#474747"/>'
          '<stop offset="1" stop-color="#aeaeae"/></linearGradient></defs></svg>')

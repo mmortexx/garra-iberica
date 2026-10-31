@@ -35,6 +35,8 @@ MAX_KB_IMAGEN = 120
 # móvil cada KB cuenta al ampliar (preparar_galeria.py baja la calidad hasta caber).
 AMPLIADA = '-ampliada-'
 MAX_KB_AMPLIADA = 750
+# Vídeos de las batallas (preparar_videos.py): solo se bajan al darle al play, pero en el móvil pesan.
+MAX_MB_VIDEO = 40
 # IDs de Discord: no deben salir en la web pública. Los apodos de miembros a vigilar están en
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'
@@ -254,7 +256,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
     carpeta = (raiz / nombre).parent
     locales = set()
     for t, a in doc.etiquetas:
-        for attr in ('src', 'href'):
+        for attr in ('src', 'href', 'poster'):
             v = a.get(attr)
             if v and not re.match(r'(https?:|#|mailto:)', v):
                 locales.add(v)
@@ -264,6 +266,11 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
                     locales.add(parte.split()[0])
         if t in ('img', 'link', 'source') and AMPLIADA in ' '.join(a.get(x) or '' for x in ('src', 'srcset', 'href', 'imagesrcset')):
             falla(f'{nombre}: <{t}> carga una foto ampliada al abrir la página; solo se enlazan')
+        if t == 'video':
+            if a.get('preload') != 'none' or not a.get('poster'):
+                falla(f'{nombre}: <video> sin preload="none" y portada: bajaría el vídeo al abrir la página')
+            if "media-src 'self'" not in csp:
+                falla(f'{nombre}: <video> y la política de seguridad no deja cargar vídeos (media-src)')
         if t == 'img':
             if 'alt' not in a:
                 falla(f'{nombre}: <img src="{a.get("src")}"> sin atributo alt')
@@ -606,6 +613,11 @@ def main(raiz, sin_apodos=False, avisa=print):
         maximo = MAX_KB_AMPLIADA if AMPLIADA in img.name else MAX_KB_IMAGEN
         if kb > maximo:
             falla(f'img/{img.name} pesa {kb:.0f} KB (máximo {maximo} KB)')
+    for video in sorted((raiz / 'video').glob('*')):
+        if video.resolve() not in usados:
+            falla(f'video/{video.name} no se usa en ninguna página: sobra')
+        if video.stat().st_size > MAX_MB_VIDEO * 2**20:
+            falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
     # También el extracto de herramientas/: el repositorio es público.
     for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA]:

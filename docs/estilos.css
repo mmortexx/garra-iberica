@@ -1156,6 +1156,13 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .batalla-derrota, .batalla-curso { color: var(--suave); }
 .batalla-empate { color: var(--hueso); }
 .batalla-nota { grid-column: 1 / -1; color: var(--suave); font-size: .98rem; }
+/* El vídeo, a lo ancho de la fila. Hasta darle al play solo se baja la portada. */
+.batalla-video { grid-column: 1 / -1; margin-top: .6rem; }
+.batalla-video video {
+  display: block; width: 100%; height: auto; aspect-ratio: 1280 / 536; background: #000000;
+  border: 1px solid var(--cristal-borde); border-radius: 4px; box-shadow: 0 18px 40px -22px rgba(255, 44, 20, .45), var(--cristal-brillo);
+}
+.batalla-video a { color: var(--rojo-claro); }
 .anim .batalla.revelar .bando i { scale: 0; transition: scale .3s cubic-bezier(.34, 1.56, .64, 1); }
 .anim .batalla.revelar.visible .bando i { scale: 1; }
 .anim .batalla.revelar.visible .bando i:nth-child(2) { transition-delay: .05s; }

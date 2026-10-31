@@ -673,6 +673,46 @@ const ruta = r => ('/' + r).padEnd(15);
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
   }
+  // Vídeos de las batallas: al abrir la página solo se bajan las portadas, no los vídeos; cada vídeo
+  // se sirve como vídeo y, al darle al play, arranca (si este Chromium sabe leer H.264).
+  for (const r of ['clan/', 'en/clan/']) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    const pedidos = [];
+    p.on('request', q => pedidos.push(q.url()));
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('.batallas')?.scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(1500);
+    const videos = await p.evaluate(() => [...document.querySelectorAll('.batalla video')].map(v => ({
+      src: v.querySelector('source').src, poster: v.poster, ancho: v.getBoundingClientRect().width,
+      h264: v.canPlayType('video/mp4; codecs="avc1.640020, mp4a.40.2"') })));
+    if (!videos.length) fallos.push('sin vídeos');
+    const bajados = pedidos.filter(u => u.endsWith('.mp4'));
+    if (bajados.length) fallos.push(`bajados al abrir: ${bajados.map(u => u.split('/').pop()).join(', ')}`);
+    for (const v of videos) {
+      const nombre = v.src.split('/').pop();
+      const [rv, rp] = [await ctx.request.head(v.src), await ctx.request.get(v.poster)];
+      if (!rv.ok() || !rv.headers()['content-type']?.startsWith('video/mp4')) fallos.push(`${nombre}: ${rv.status()} ${rv.headers()['content-type']}`);
+      if (!rp.ok()) fallos.push(`portada de ${nombre}: ${rp.status()}`);
+      if (v.ancho < 300) fallos.push(`${nombre} de solo ${Math.round(v.ancho)} px de ancho`);
+    }
+    let reproduce = 'sin H.264 en este Chromium';
+    if (videos[0]?.h264) {
+      const ok = await p.evaluate(async () => {
+        const v = document.querySelector('.batalla video');
+        v.muted = true;
+        try { await v.play(); } catch (e) { return e.message; }
+        await new Promise(z => setTimeout(z, 1500));
+        return v.currentTime > 0 ? '' : `parado en ${v.currentTime}`;
+      });
+      if (ok) fallos.push(`no arranca: ${ok}`);
+      reproduce = 'arranca';
+    }
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'vídeos de las batallas:', fallos.length ? fallos.join('; ') : `${videos.length}, sin bajar al abrir; ${reproduce}`);
+  }
   // Botones: en un móvil táctil, tocar no los deja levantados (el hover se quedaba pegado), y con
   // teclado el botón rojo lleva un anillo que se distingue del rojo del botón.
   {

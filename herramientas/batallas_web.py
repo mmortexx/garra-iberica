@@ -5,6 +5,8 @@ La fuente es batallas/batallas.json del proyecto del Discord (el mismo que publi
 montar_web.py la pone al día sola cada vez que encuentra el original (variable GARRA_BATALLAS o
 ~/Downloads/garra-iberica/batallas/batallas.json), y comprobar.py falla si la copia y el original
 difieren. Una batalla nueva se apunta solo en el Discord; aquí no se escribe nada a mano.
+El vídeo de cada batalla (si lo hay) lo genera preparar_videos.py en docs/video/batalla-<clave>.mp4,
+con su portada en docs/img/batalla-<clave>.webp; la lista lo pone solo si el fichero existe.
 """
 import datetime
 import json
@@ -14,6 +16,7 @@ from html import escape
 from pathlib import Path
 
 COPIA = Path(__file__).resolve().parent / 'batallas.json'
+DOCS = Path(__file__).resolve().parent.parent / 'docs'
 ORIGINAL = Path(os.environ.get('GARRA_BATALLAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'batallas' / 'batallas.json')
 # Más puntos que estos por bando no caben en una línea del móvil: a partir de ahí, solo la cifra.
 MAX_PUNTOS = 12
@@ -26,6 +29,7 @@ T = {
         'ante': {'victoria': 'Victoria ante {r}', 'derrota': 'Derrota ante {r}', 'empate': 'Empate con {r}', None: 'En curso contra {r}'},
         'inferioridad': ', en inferioridad', 'contra': 'contra', 'de': 'de', 'ganadas': ['batalla ganada', 'batallas ganadas'],
         'aria': 'Batallas del clan', 'todas': 'Todas las batallas', 'nuestros': 'de los nuestros', 'suyos': 'de {r}',
+        'con_video': 'Batallas y vídeos', 'video': 'Vídeo de la batalla contra {r}', 'bajar': 'Descargar el vídeo de la batalla contra {r}',
         'mes': ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
     },
     'en': {
@@ -33,6 +37,7 @@ T = {
         'ante': {'victoria': 'Victory over {r}', 'derrota': 'Defeat against {r}', 'empate': 'Draw with {r}', None: 'In progress against {r}'},
         'inferioridad': ', outnumbered', 'contra': 'vs', 'de': 'of', 'ganadas': ['battle won', 'battles won'],
         'aria': 'Clan battles', 'todas': 'All battles', 'nuestros': 'of ours', 'suyos': 'from {r}',
+        'con_video': 'Battles and videos', 'video': 'Video of the battle against {r}', 'bajar': 'Download the video of the battle against {r}',
         'mes': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     },
 }
@@ -97,13 +102,27 @@ def marcador(lang, ruta_clan, batallas=None):
                      f'<span>{t["ganadas"][len(terminadas) != 1]}</span></li>')
     for b in reversed(batallas[-EN_PORTADA:]):
         filas.append(f'<li class="revelar"><b>{b["nosotros"]} vs {b["ellos"]}</b><span>{escape(frase(b, lang))}</span></li>')
-    filas.append(f'<li class="revelar cifras-enlace"><a href="@/{ruta_clan}#{ANCLA[lang]}">{t["todas"]}</a></li>')
+    enlace = t['con_video'] if any(video(b, lang) for b in batallas) else t['todas']
+    filas.append(f'<li class="revelar cifras-enlace"><a href="@/{ruta_clan}#{ANCLA[lang]}">{enlace}</a></li>')
     return f'<ul class="cifras escalonado" role="list" aria-label="{t["aria"]}">' + ''.join(filas) + '</ul>'
 
 
 def bando(n, quien, clase):
     puntos = '<i></i>' * min(n, MAX_PUNTOS)
     return f'<span class="bando {clase}" aria-hidden="true">{puntos}</span><span class="oculto">{n} {quien}</span>'
+
+
+def video(b, lang):
+    """El vídeo de la batalla, si preparar_videos.py lo ha generado. Sin precarga: hasta darle al play
+    solo se baja la portada."""
+    nombre = f'batalla-{b["clave"]}'
+    if not (DOCS / 'video' / f'{nombre}.mp4').is_file():
+        return ''
+    t, r = T[lang], escape(b['rival'])
+    return (f'<div class="batalla-video"><video controls preload="none" playsinline width="1280" height="536" '
+            f'poster="@/img/{nombre}.webp" aria-label="{t["video"].format(r=r)}">'
+            f'<source src="@/video/{nombre}.mp4" type="video/mp4">'
+            f'<a href="@/video/{nombre}.mp4">{t["bajar"].format(r=r)}</a></video></div>')
 
 
 def lista(lang, batallas=None):
@@ -126,7 +145,7 @@ def lista(lang, batallas=None):
             f'<span class="batalla-rival">{r}</span></p>'
             f'<p class="batalla-bandos">{bando(b["nosotros"], t["nuestros"], "nuestro")}'
             f'<b>{b["nosotros"]} {t["contra"]} {b["ellos"]}</b>{bando(b["ellos"], t["suyos"].format(r=r), "suyo")}</p>'
-            f'<p class="batalla-resultado batalla-{res or "curso"}">{t["resultado"][res]}{fecha}</p>{nota}</li>')
+            f'<p class="batalla-resultado batalla-{res or "curso"}">{t["resultado"][res]}{fecha}</p>{nota}{video(b, lang)}</li>')
     return f'<ol class="batallas escalonado" role="list">{"".join(filas)}</ol>'
 
 

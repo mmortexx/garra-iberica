@@ -61,6 +61,11 @@ node herramientas/prueba_caceria.js
   `GARRA_BATALLAS` o `~/Downloads/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
   falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
   web hay que volver a montar y publicar: no aparece sola.
+- Vídeos de las batallas: `python herramientas/preparar_videos.py` los genera desde los vídeos
+  exportados (lista `VIDEOS`, clave de `batallas.json` → fichero dentro de `~/Videos`) en
+  `docs/video/batalla-<clave>.mp4`, con su portada en `docs/img/`. La lista de El clan pone el
+  vídeo a cada batalla que lo tiene. Se oyen tal cual (con la voz, si la hay): lo decidió Quilez.
+  Para una batalla nueva: añadir su línea a `VIDEOS`, ejecutar el script y montar.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
   dónde lleva cada enlace viejo (`/#normas` → `normas/`) y `comprobar.py` vigila que el destino
   exista.
