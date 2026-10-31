@@ -2,6 +2,9 @@
 
 Uso: python herramientas/preparar_galeria.py <carpeta con las capturas> [nombre ...]
 Con nombres (p. ej. galeria-tarde), solo genera esas fotos y deja las demás como están.
+     python herramientas/preparar_galeria.py --compartir
+Solo las imágenes para compartir de OG (las que salen al pegar el enlace en Discord o WhatsApp), a
+partir de las vistas ampliadas ya generadas; no necesita las capturas.
 Solo lee las capturas; escribe docs/img/galeria-*.webp. Ningún recorte toca la marca de agua del
 juego (arriba a la derecha). Por cada captura salen dos juegos de ficheros:
 - las fotos de la galería, encuadradas en el dinosaurio, con la mejor calidad que cabe en
@@ -59,6 +62,19 @@ ACLARAR = {'galeria-brasas': 0.45}
 # Capturas cuya vista ampliada no puede ser la captura entera (chat con nombres de jugadores de otros
 # clanes, interfaz, avisos): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
 AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos')}
+# Imagen al compartir cada página (1200x630, JPEG: WhatsApp no enseña WebP). Las demás páginas usan
+# og-garra-iberica.jpg (preparar_imagenes.py). página: (fichero, foto, centro horizontal del recorte
+# de 0 a 1, texto alternativo en español e inglés). montar_web.py y comprobar.py leen OG.
+OG = {
+    'galeria': ('og-galeria.jpg', 'galeria-colina', .5,
+                'Manada del clan GARRA IBÉRICA en The Isle Evrima: un carnívoro con la skin del clan ruge al cielo en una ladera verde mientras el resto avanza detrás',
+                'GARRA IBÉRICA clan pack in The Isle Evrima: a carnivore in the clan skin roars at the sky on a green hillside while the rest move up behind it'),
+    'dinosaurios': ('og-dinosaurios.jpg', 'galeria-cuernos', .6,
+                    'Un triceratops y un carnívoro con la skin del clan GARRA IBÉRICA junto a una gran roca en The Isle Evrima',
+                    'A triceratops and a carnivore in the GARRA IBÉRICA clan skin beside a big rock in The Isle Evrima'),
+}
+OG_TAMANO = (1200, 630)
+PESO_OG = 115 * 1024
 
 
 def ampliada_de(nombre):
@@ -125,7 +141,57 @@ def main(origen, nombres):
             print(f'{salida.name}: {len(datos) / 1024:.0f} KB (calidad {calidad})')
 
 
+def fuente(nombre, tamano):
+    """Una fuente de la web (WOFF2) para Pillow, que solo lee TTF/OTF."""
+    from PIL import ImageFont
+    from fontTools.ttLib import TTFont
+    f = TTFont(IMG.parent / 'fonts' / nombre)
+    f.flavor = None
+    b = io.BytesIO()
+    f.save(b)
+    b.seek(0)
+    return ImageFont.truetype(b, tamano)
+
+
+def compartir():
+    """Las imágenes de OG: la foto recortada a 1200x630, oscurecida abajo, con la garra y el nombre del clan."""
+    from PIL import ImageDraw
+    ancho, alto = OG_TAMANO
+    logo = Image.open(IMG / 'emoji-garra.webp').convert('RGBA')
+    nombre, sub = fuente('anton.woff2', 66), fuente('barlow-600.woff2', 30)
+    for fichero, foto, centro, _, _ in OG.values():
+        caja, anchos = ampliada_de(foto)
+        im = Image.open(IMG / f'{foto}-ampliada-{anchos[-1]}.webp').convert('RGB')
+        w = round(im.height * ancho / alto)
+        if w > im.width:
+            sys.exit(f'{foto}: la ampliada es demasiado estrecha para {ancho}x{alto}')
+        x0 = min(max(0, round(im.width * centro - w / 2)), im.width - w)
+        im = im.crop((x0, 0, x0 + w, im.height)).resize(OG_TAMANO, Image.LANCZOS).convert('RGBA')
+        sombra = Image.new('L', (1, alto))
+        for y in range(alto):
+            sombra.putpixel((0, y), round(215 * max(0, (y - alto * .45) / (alto * .55)) ** 1.6))
+        im.alpha_composite(Image.merge('RGBA', [Image.new('L', OG_TAMANO, 0)] * 3 + [sombra.resize(OG_TAMANO)]))
+        im.alpha_composite(logo, (48, alto - 48 - 96))
+        d = ImageDraw.Draw(im)
+        # Alineados por la línea base, a la altura del logo: nombre arriba y juego debajo.
+        d.text((48 + 96 + 22, alto - 48 - 38), 'GARRA IBÉRICA', font=nombre, fill=(242, 242, 242), anchor='ls')
+        d.text((48 + 96 + 24, alto - 48 - 2), 'THE ISLE EVRIMA', font=sub, fill=(255, 108, 92), anchor='ls')
+        im = im.convert('RGB')
+        for calidad in range(86, 59, -2):
+            b = io.BytesIO()
+            im.save(b, 'JPEG', quality=calidad, optimize=True, progressive=True)
+            if b.tell() <= PESO_OG:
+                break
+        else:
+            sys.exit(f'{fichero}: ni con calidad {calidad} baja de {PESO_OG // 1024} KB')
+        (IMG / fichero).write_bytes(b.getvalue())
+        print(f'{fichero}: {b.tell() / 1024:.0f} KB (calidad {calidad})')
+
+
 if __name__ == '__main__':
+    if sys.argv[1:] == ['--compartir']:
+        compartir()
+        sys.exit()
     if len(sys.argv) < 2 or not Path(sys.argv[1]).is_dir():
         sys.exit(__doc__)
     main(Path(sys.argv[1]), sys.argv[2:])

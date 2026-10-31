@@ -3,8 +3,8 @@
 // sin solapes, menú (en fila o a pantalla completa) que lleva a cada página, enlaces viejos de la
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
 // rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
-// llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento
-// y batallas de la portada enlazadas a El clan.
+// llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento,
+// comparativa de especies y batallas de la portada enlazadas a El clan.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -666,6 +666,50 @@ const ruta = r => ('/' + r).padEnd(15);
     }
     if (fallos.length) malos++;
     console.log(ruta(r), 'planificador de crecimiento:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Comparativa de especies: sin JavaScript, la lista entera y sin selectores; con él, ordena por
+  // cada criterio, filtra por dieta y por tamaño de grupo y la cuenta dice cuántas quedan.
+  for (const r of ['dinosaurios/', 'en/dinosaurs/']) {
+    const fallos = [];
+    for (const js of [false, true]) {
+      const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: js });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const caja = p.locator('[data-comparar]');
+      const filas = () => p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')]
+        .filter(f => f.offsetParent).map(f => ({ ...f.dataset, ancla: f.querySelector('a').hash })));
+      const todas = await filas();
+      if (todas.length < 2) fallos.push(`${todas.length} especies en la lista`);
+      if (!(await caja.count()) || (await caja.isVisible()) !== js) {
+        fallos.push(js ? 'sin selectores con JavaScript' : 'selectores visibles sin JavaScript');
+        await ctx.close();
+        continue;
+      }
+      if (!js) { await ctx.close(); continue; }
+      const [orden, dieta, somos] = await caja.locator('select').all();
+      for (const [criterio, campo, sentido] of [['peso', 'peso', -1], ['crece', 'crece', 1], ['grupo', 'grupo', -1]]) {
+        await orden.selectOption(criterio);
+        const v = (await filas()).map(f => +f[campo]);
+        if (v.some((x, i) => i && (x - v[i - 1]) * sentido < 0)) fallos.push(`no ordena por ${criterio}: ${v.join(' ')}`);
+      }
+      const n = Math.max(...todas.map(f => +f.grupo));
+      await somos.selectOption(String(n));
+      const grandes = await filas();
+      const cuenta = await caja.locator('[role="status"]').textContent();
+      if (!grandes.length || grandes.some(f => +f.grupo < n)) fallos.push(`filtro de grupo ${n}: ${grandes.map(f => f.nombre)}`);
+      if (!cuenta.includes(`${grandes.length} `) || !cuenta.includes(` ${todas.length} `)) fallos.push(`cuenta «${cuenta}» con ${grandes.length} de ${todas.length}`);
+      await somos.selectOption('1');
+      await dieta.selectOption('herbivoros');
+      const herbivoros = await filas();
+      if (!herbivoros.length || herbivoros.some(f => f.dieta !== 'herbivoros')) fallos.push('filtro de dieta');
+      else {
+        await p.locator(`[data-comparar-lista] a[href="${herbivoros[0].ancla}"]`).click();
+        if (await p.evaluate(() => location.hash) !== herbivoros[0].ancla) fallos.push('pulsar una especie no lleva a su ficha');
+      }
+      await ctx.close();
+    }
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'comparativa de especies:', fallos.length ? fallos.join('; ') : 'sí');
   }
   // Batallas: la portada enlaza a la lista de El clan, y la lista tiene alguna batalla.
   for (const [inicio, clan] of [['', 'clan/'], ['en/', 'en/clan/']]) {

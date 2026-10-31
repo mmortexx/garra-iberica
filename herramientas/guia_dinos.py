@@ -24,8 +24,8 @@ T = {
     'es': {
         'titulo': 'Guía de dinosaurios de The Isle Evrima en español – GARRA IBÉRICA',
         'h1': 'Guía de dinosaurios de The Isle Evrima',
-        'desc': 'Las {n} especies jugables de The Isle Evrima en español: peso, crecimiento, grupo máximo, '
-                'controles, consejos y mutaciones recomendadas por la comunidad.',
+        'desc': 'Las {n} especies jugables de The Isle Evrima en español: compara peso, crecimiento y grupo máximo, '
+                'con controles, consejos y mutaciones recomendadas.',
         'nueva': ' (se abre en una pestaña nueva)',
         'grupos': {'carnivoros': 'Carnívoros', 'herbivoros': 'Herbívoros', 'omnivoros': 'Omnívoros'},
         'especies': lambda n: f'{n} especies' if n != 1 else '1 especie',
@@ -73,12 +73,22 @@ T = {
         'plan_si': 'Con {dino} serías adulto el {adulto}: {tiempo} antes de la cacería del {caceria} (hora de España).',
         'plan_no': 'Con {dino} serías adulto el {adulto}: {tiempo} después de que empiece la cacería del {caceria} (hora de España).',
         'plan_locale': 'es-ES', 'plan_unidades': {'d': ['día', 'días'], 'h': 'h', 'm': 'min'},
+        'comp_id': 'comparar', 'comp_ante': 'De un vistazo', 'comp_h2': 'Comparar especies',
+        'comp_intro': 'Las {n} especies con su peso máximo, lo que tardan en ser adultas (1×) y su grupo máximo. '
+                      'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ir a su ficha.',
+        'comp_fila': 'hasta {peso} · adulto en {crece} · grupo máx. {grupo}',
+        'comp_orden': 'Ordenar', 'comp_dieta': 'Dieta', 'comp_somos': '¿Cuántos jugáis juntos?',
+        'comp_ordenes': [('fichas', 'Como las fichas'), ('peso', 'Más pesado primero'), ('crece', 'Crece antes'),
+                         ('grupo', 'Grupo más grande'), ('nombre', 'Nombre (A–Z)')],
+        'comp_todas': 'Todas', 'comp_igual': 'Da igual', 'comp_n': '{n} o más',
+        'comp_cuenta': '{n} de {total} especies', 'comp_ninguna': 'Ninguna especie cumple las dos cosas.',
+        'plan_corto': '¿Llegas a la cacería?',
     },
     'en': {
         'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
         'h1': 'The Isle Evrima dinosaur guide',
-        'desc': 'All {n} playable species in The Isle Evrima: weight, growth, max group, controls, tips and '
-                'community-recommended mutations. A guide by clan GARRA IBÉRICA.',
+        'desc': 'All {n} playable species in The Isle Evrima: compare weight, growth and max group, plus controls, '
+                'tips and recommended mutations. By clan GARRA IBÉRICA.',
         'nueva': ' (opens in a new tab)',
         'grupos': {'carnivoros': 'Carnivores', 'herbivoros': 'Herbivores', 'omnivoros': 'Omnivores'},
         'especies': lambda n: f'{n} species',
@@ -125,6 +135,16 @@ T = {
         'plan_si': 'With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time).',
         'plan_no': 'With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time).',
         'plan_locale': 'en-GB', 'plan_unidades': {'d': ['day', 'days'], 'h': 'h', 'm': 'min'},
+        'comp_id': 'compare', 'comp_ante': 'At a glance', 'comp_h2': 'Compare species',
+        'comp_intro': 'All {n} species with their top weight, how long they take to grow up (1×) and their max group. '
+                      'Sort them, filter by how many of you will play together and tap one to open its card.',
+        'comp_fila': 'up to {peso} · adult in {crece} · max group {grupo}',
+        'comp_orden': 'Sort by', 'comp_dieta': 'Diet', 'comp_somos': 'How many of you play together?',
+        'comp_ordenes': [('fichas', 'Card order'), ('peso', 'Heaviest first'), ('crece', 'Fastest to grow'),
+                         ('grupo', 'Largest group'), ('nombre', 'Name (A–Z)')],
+        'comp_todas': 'All', 'comp_igual': 'Any', 'comp_n': '{n} or more',
+        'comp_cuenta': '{n} of {total} species', 'comp_ninguna': 'No species matches both.',
+        'plan_corto': 'Adult for the hunt?',
     },
 }
 
@@ -220,6 +240,70 @@ def minutos_crecer(texto):
     if not m:
         sys.exit(f'{FICHAS.name}: no entiendo el crecimiento «{texto}» (se espera «N h» o «N h M min»)')
     return int(m.group(1)) * 60 + int(m.group(2) or 0)
+
+
+PESO = r'(\d+(?:[.,]\d+)?) (t|kg)\b'
+
+
+def peso_max(texto):
+    """(kg, «12,3 t») del peso adulto más alto que da la ficha: el Prime o, si no lo hay, el único."""
+    m = re.search(PESO + r' \(Prime\)', texto) or (None if 'Prime' in texto else re.search(PESO, texto))
+    if not m:
+        sys.exit(f'{FICHAS.name}: no entiendo el peso «{texto}» (se espera «N t/kg (Prime)» o un solo «N t/kg»)')
+    return float(m.group(1).replace(',', '.')) * (1000 if m.group(2) == 't' else 1), m.group(0).split(' (')[0]
+
+
+def comparativa(d, lang):
+    """Todas las especies en una lista; guia.js la ordena y la filtra. Sin JavaScript, en el orden de las fichas."""
+    t = T[lang]
+    filas, grupos = [], set()
+    for f in d['fichas']:
+        en = f['en'] if lang == 'en' else {}
+        kg, peso = peso_max(en.get('peso', f['peso']))
+        if kg != peso_max(f['peso'])[0]:
+            sys.exit(f'{FICHAS.name}: {f["nombre"]} pesa distinto en español y en inglés')
+        if not f['grupo'].isdigit():
+            sys.exit(f'{FICHAS.name}: {f["nombre"]} con grupo máximo «{f["grupo"]}», que no es un número')
+        grupos.add(int(f['grupo']))
+        g = GRUPO[f['dieta']]
+        # Cada dato en negrita y sin partirse (la línea se corta entre datos o en su matiz entre paréntesis).
+        def dato(v):
+            cifra, parentesis, matiz = v.partition(' (')
+            return f'<b>{escape(cifra).replace(" ", "&nbsp;")}</b>' + (f' ({escape(matiz)}' if parentesis else '')
+        fila = t['comp_fila'].replace(' · ', '|').replace(' ', '&nbsp;').replace('|', ' · ')
+        texto = fila.format(peso=dato(peso), crece=dato(en.get('crece', f['crece'])), grupo=dato(f['grupo']))
+        filas.append(f'        <div data-nombre="{escape(f["nombre"])}" data-dieta="{g}" data-peso="{kg:g}" '
+                     f'data-crece="{minutos_crecer(f["crece"])}" data-grupo="{f["grupo"]}">'
+                     f'<dt><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a> '
+                     f'<span class="dieta dieta-{g.rstrip("s")}">{escape(t["dieta"][f["dieta"]])}</span></dt><dd>{texto}</dd></div>')
+    dietas = [('todas', t['comp_todas'])] + [(g, t['grupos'][g]) for g in ('carnivoros', 'herbivoros', 'omnivoros')]
+    somos = [('1', t['comp_igual'])] + [(str(n), t['comp_n'].format(n=n)) for n in sorted(grupos) if n > 1]
+
+    def selector(etiqueta, opciones):
+        return [f'        <label>{etiqueta}', '          <select>',
+                *[f'            <option value="{v}">{escape(texto)}</option>' for v, texto in opciones],
+                '          </select>', '        </label>']
+    return [
+        f'  <section class="seccion" id="{t["comp_id"]}" aria-labelledby="t-{t["comp_id"]}">',
+        '    <div class="envoltura">',
+        '      <div class="revelar">',
+        f'        <p class="antetitulo">{t["comp_ante"]}</p>',
+        f'        <h2 id="t-{t["comp_id"]}">{t["comp_h2"]}</h2>',
+        f'        <p class="intro">{t["comp_intro"].format(n=len(d["fichas"]))}</p>',
+        '      </div>',
+        f'      <div class="plan" data-comparar hidden data-cuenta="{escape(t["comp_cuenta"])}" data-ninguna="{escape(t["comp_ninguna"])}">',
+        *selector(t['comp_orden'], t['comp_ordenes']),
+        *selector(t['comp_dieta'], dietas),
+        *selector(t['comp_somos'], somos),
+        '        <p class="dino-fuente" role="status"></p>',
+        '      </div>',
+        '      <dl class="glosario" data-comparar-lista>',
+        *filas,
+        '      </dl>',
+        '    </div>',
+        '  </section>',
+        '',
+    ]
 
 
 def planificador(d, lang):
@@ -325,12 +409,15 @@ def contenido(lang, d=None):
         f'      <h1 id="titulo" class="entra">{t["h1"]}</h1>',
         f'      <p class="entrada entra entra-2">{t["intro"].format(n=n)}</p>',
         f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
+        '      <p class="saltos entra entra-3">' + ''.join(
+            f'<a href="#{t[i]}">{t[h]}</a>' for i, h in (('comp_id', 'comp_h2'), ('plan_id', 'plan_corto'), ('mut_id', 'mut_h2'))) + '</p>',
         f'      <nav class="indice entra entra-4" aria-label="{t["indice"]}">',
         *indice,
         '      </nav>',
         '    </div>',
         '  </section>',
         '',
+        *comparativa(d, lang),
         f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
         '    <div class="envoltura">',
         '      <div class="revelar">',

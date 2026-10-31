@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://mmortexx.github.io/garra-iberica/</loc>
     <lastmod>2026-10-31</lastmod>
@@ -76,6 +76,26 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/gallery/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-cielo-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-roca-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-bosque-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-rugido-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-valle-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-charca-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-secuoyas-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-brasas-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-pareja-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-espesura-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-descanso-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-tarde-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-cuernos-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-desfiladero-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-colina-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-manada-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-noche-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-acecho-ampliada-2110.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-lomo-ampliada-2110.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-ojos-ampliada-2110.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mmortexx.github.io/garra-iberica/en/gallery/</loc>
@@ -83,6 +103,26 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mmortexx.github.io/garra-iberica/en/gallery/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mmortexx.github.io/garra-iberica/galeria/"/>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-cielo-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-roca-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-bosque-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-rugido-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-valle-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-charca-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-secuoyas-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-brasas-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-pareja-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-espesura-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-descanso-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-tarde-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-cuernos-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-desfiladero-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-colina-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-manada-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-noche-ampliada-3080.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-acecho-ampliada-2110.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-lomo-ampliada-2110.webp</image:loc></image:image>
+    <image:image><image:loc>https://mmortexx.github.io/garra-iberica/img/galeria-deino-ojos-ampliada-2110.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mmortexx.github.io/garra-iberica/unete/</loc>

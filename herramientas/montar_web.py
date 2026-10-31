@@ -28,12 +28,14 @@ import re
 import sys
 from html import escape, unescape
 from pathlib import Path
+from urllib.parse import urljoin
 
 HERRAMIENTAS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERRAMIENTAS))
 import batallas_web  # noqa: E402
 import calendario  # noqa: E402
 import guia_dinos  # noqa: E402
+import preparar_galeria  # noqa: E402
 
 RAIZ = HERRAMIENTAS.parent
 DOCS = RAIZ / 'docs'
@@ -41,7 +43,7 @@ FUENTES = RAIZ / 'paginas'
 DATOS_CLAN = HERRAMIENTAS / 'datos_clan.json'
 INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
-VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js']
+VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js']
 # Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
 REVISADA = '2026-10-31'
 LANGS = ('es', 'en')
@@ -238,9 +240,24 @@ def preguntas(cuerpo):
     return [(plano(q), plano(a)) for q, a in re.findall(r'<summary>(.*?)</summary>\s*<p>(.*?)</p>', sin_aviso, re.S)]
 
 
+def imagen_og(pagina, lang):
+    """(fichero en img/, texto alternativo) de la imagen al compartir la página."""
+    if pagina in preparar_galeria.OG:
+        fichero, _, _, alt_es, alt_en = preparar_galeria.OG[pagina]
+        return fichero, alt_es if lang == 'es' else alt_en
+    return 'og-garra-iberica.jpg', T[lang]['og_alt']
+
+
+def fotos_galeria(cuerpo, url):
+    """[(foto ampliada, miniatura, texto alternativo)] de las fotos de la galería, con dirección completa."""
+    fotos = re.findall(r'<a class="foto-ampliar" href="([^"]+)"[^>]*><img src="([^"]+)"[^>]* alt="([^"]+)"', cuerpo)
+    return [(urljoin(url, grande), urljoin(url, mini), unescape(alt)) for grande, mini, alt in fotos]
+
+
 def grafo(pagina, lang, base, datos, cuerpo, fecha):
     t = T[lang]
     url = base + RUTA[pagina, lang]
+    og = base + 'img/' + imagen_og(pagina, lang)[0]
     nodos = [
         {'@type': 'Organization', '@id': base + '#clan', 'name': 'GARRA IBÉRICA', 'alternateName': t['org']['alternateName'],
          'description': t['org']['description'], 'disambiguatingDescription': t['org']['disambiguatingDescription'],
@@ -252,7 +269,7 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
         {'@type': 'WebPage', '@id': url + '#pagina', 'url': url, 'name': datos['titulo'], 'description': datos['descripcion'],
          'inLanguage': lang, 'isPartOf': {'@id': base + '#web'},
          'about': [{'@id': base + '#clan'}, {'@id': base + '#juego'}],
-         'primaryImageOfPage': base + 'img/og-garra-iberica.jpg'},
+         'primaryImageOfPage': og},
         {'@type': 'VideoGame', '@id': base + '#juego', 'name': 'The Isle', 'alternateName': 'The Isle Evrima',
          'gamePlatform': 'PC', 'sameAs': [STEAM, 'https://www.theisle-game.com/']},
     ]
@@ -263,6 +280,17 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
         nodos.append({'@type': 'BreadcrumbList', '@id': url + '#migas', 'itemListElement': [
             {'@type': 'ListItem', 'position': 1, 'name': NOMBRE['inicio', lang], 'item': base + RUTA['inicio', lang]},
             {'@type': 'ListItem', 'position': 2, 'name': NOMBRE[pagina, lang], 'item': url}]})
+    if pagina == 'galeria':
+        # Cada foto con su descripción y quién la hizo: así la entienden Google Imágenes y los demás.
+        nodos[2]['@type'] = 'ImageGallery'
+        nodos[2]['image'] = [{'@type': 'ImageObject', 'contentUrl': grande, 'thumbnailUrl': mini, 'caption': alt,
+                              'creditText': 'GARRA IBÉRICA', 'creator': {'@id': base + '#clan'}}
+                             for grande, mini, alt in fotos_galeria(cuerpo, url)]
+    if pagina == 'dinosaurios':
+        especies = re.findall(r'<article class="dino[^"]*" id="([^"]+)"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*>([^<]+)</h3>', cuerpo)
+        nodos[2]['mainEntity'] = {'@type': 'ItemList', 'name': datos['h1'], 'numberOfItems': len(especies), 'itemListElement': [
+            {'@type': 'ListItem', 'position': i, 'name': unescape(nombre), 'url': f'{url}#{ancla}'}
+            for i, (ancla, nombre) in enumerate(especies, 1)]}
     faq = preguntas(cuerpo)
     if faq:
         nodos.append({'@type': 'FAQPage', '@id': url + '#preguntas', 'inLanguage': lang, 'mainEntity': [
@@ -364,6 +392,9 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
     scripts = [f'<script src="{pre}efectos.js?v={v["efectos.js"]}" defer></script>']
     if 'data-cuenta' in cuerpo or 'data-plan' in cuerpo:
         scripts.append(f'<script src="{pre}caceria.js?v={v["caceria.js"]}" defer></script>')
+    if 'data-comparar' in cuerpo:
+        scripts.append(f'<script src="{pre}guia.js?v={v["guia.js"]}" defer></script>')
+    og_imagen, og_alt = imagen_og(pagina, lang)
     cuerpo_attrs = ''
     if pagina == 'inicio':
         cuerpo_attrs = f' data-movidas="{escape(json.dumps(MOVIDAS[lang], separators=(",", ":")))}"'
@@ -399,10 +430,11 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         f'<meta property="og:title" content="{escape(datos["titulo"])}">',
         f'<meta property="og:description" content="{escape(datos.get("og_descripcion", desc))}">',
         f'<meta property="og:url" content="{url}">',
-        f'<meta property="og:image" content="{base}img/og-garra-iberica.jpg">',
+        f'<meta property="og:image" content="{base}img/{og_imagen}">',
+        '<meta property="og:image:type" content="image/jpeg">',
         '<meta property="og:image:width" content="1200">',
         '<meta property="og:image:height" content="630">',
-        f'<meta property="og:image:alt" content="{t["og_alt"]}">',
+        f'<meta property="og:image:alt" content="{escape(og_alt)}">',
         '<meta name="twitter:card" content="summary_large_image">',
         '',
         '<script type="application/ld+json">',
@@ -428,10 +460,13 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
     return '\n'.join(lineas)
 
 
-def sitemap(base, d):
+def sitemap(base, d, fotos=None):
+    """fotos: {(página, idioma): [direcciones de sus fotos]}, para Google Imágenes."""
     fecha = {'dinosaurios': guia_dinos.revision(d)[1]}
+    fotos = fotos or {}
     lineas = ['<?xml version="1.0" encoding="UTF-8"?>',
-              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" '
+              'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">']
     for pagina, _, _ in PAGINAS:
         for lang in LANGS:
             lineas += ['  <url>',
@@ -439,6 +474,7 @@ def sitemap(base, d):
                        f'    <lastmod>{fecha.get(pagina, REVISADA)}</lastmod>',
                        *[f'    <xhtml:link rel="alternate" hreflang="{h}" href="{base + RUTA[pagina, l]}"/>'
                          for h, l in (('es', 'es'), ('en', 'en'), ('x-default', 'es'))],
+                       *[f'    <image:image><image:loc>{escape(f)}</image:loc></image:image>' for f in fotos.get((pagina, lang), [])],
                        '  </url>']
     return '\n'.join(lineas + ['</urlset>', ''])
 
@@ -455,7 +491,9 @@ def montar(docs=DOCS):
     """Todo lo que genera este script: {fichero: contenido}. No escribe nada."""
     base, d = guia_dinos.base_web(docs), guia_dinos.datos()
     salida = {nombre: pagina_web(p, lang, base, d, docs) for nombre, (p, lang) in FICHEROS.items()}
-    salida['sitemap.xml'] = sitemap(base, d)
+    fotos = {(p, lang): [grande for grande, _, _ in fotos_galeria(salida[nombre], base + RUTA[p, lang])]
+             for nombre, (p, lang) in FICHEROS.items() if p == 'galeria'}
+    salida['sitemap.xml'] = sitemap(base, d, fotos)
     salida['404.html'] = pagina_404((docs / '404.html').read_bytes().decode('utf-8'), docs)
     return salida
 

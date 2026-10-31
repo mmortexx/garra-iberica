@@ -182,7 +182,18 @@ def leer(raiz, nombre):
     return (raiz / nombre).read_text(encoding='utf-8')
 
 
-def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, con_faq):
+def medidas_jpeg(fichero):
+    """(ancho, alto) de un JPEG leyendo sus marcadores hasta el SOF, sin Pillow"""
+    b = fichero.read_bytes()
+    i = 2
+    while b[:2] == b'\xff\xd8' and i + 9 <= len(b) and b[i] == 0xFF:
+        if b[i + 1] in (0xC0, 0xC1, 0xC2):
+            return int.from_bytes(b[i + 7:i + 9], 'big'), int.from_bytes(b[i + 5:i + 7], 'big')
+        i += 2 + int.from_bytes(b[i + 2:i + 4], 'big')
+    return None
+
+
+def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, con_faq, og):
     html = leer(raiz, nombre)
     doc = Lector()
     doc.feed(html)
@@ -207,9 +218,14 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         falla(f'{nombre}: canonical {canon} y debe ser {base + sufijo}')
     if alternas != {'es': base + pareja[0], 'en': base + pareja[1], 'x-default': base + pareja[0]}:
         falla(f'{nombre}: hreflang {alternas} no enlaza bien las versiones es/en')
-    for clave, valor in {'og:url': base + sufijo, 'og:image': base + 'img/og-garra-iberica.jpg'}.items():
+    for clave, valor in {'og:url': base + sufijo, 'og:image': base + 'img/' + og, 'og:image:type': 'image/jpeg'}.items():
         if metas.get(clave) != valor:
             falla(f'{nombre}: {clave} es «{metas.get(clave)}» y debe ser «{valor}»')
+    # Discord, WhatsApp y compañía la recortan o no la enseñan si no mide lo que dice la página.
+    imagen_og = raiz / 'img' / og
+    medidas = (metas.get('og:image:width'), metas.get('og:image:height'))
+    if not imagen_og.is_file() or medidas_jpeg(imagen_og) != (1200, 630) or medidas != ('1200', '630'):
+        falla(f'{nombre}: la imagen al compartir img/{og} no es un JPEG de 1200x630 o la página dice {medidas}')
     if 'max-image-preview:large' not in (metas.get('robots') or ''):
         falla(f'{nombre}: falta <meta name="robots" content="max-image-preview:large, …"> (foto grande en Google)')
     for clave in ('og:title', 'og:description', 'og:image:alt', 'twitter:card'):
@@ -237,6 +253,19 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
                     falla(f'{nombre}: JSON-LD Organization.{clave} «{ruta}» no apunta a un fichero de la web')
             if INVITACION not in org.get('sameAs', []):
                 falla(f'{nombre}: JSON-LD Organization.sameAs no lleva la invitación de Discord')
+            pagina_ld = next((n for n in grafo if n.get('@id', '').endswith('#pagina')), {})
+            # Galería: una ImageObject por foto del mosaico, apuntando a su ampliada; guía: una entrada por ficha.
+            fotos = re.findall(r'<a class="foto-ampliar" href="([^"]+)"', html)
+            imagenes = [i.get('contentUrl', '') for i in pagina_ld.get('image', [])]
+            if [Path(f).name for f in fotos] != [Path(i).name for i in imagenes]:
+                falla(f'{nombre}: JSON-LD con {len(imagenes)} fotos y la galería enseña {len(fotos)}')
+            for i in imagenes:
+                if not i.startswith(base) or not (raiz / i[len(base):]).is_file():
+                    falla(f'{nombre}: JSON-LD ImageObject «{i}» no apunta a un fichero de la web')
+            fichas = re.findall(r'<article class="dino[^"]*" id="([^"]+)"', html)
+            lista = [e.get('url', '') for e in pagina_ld.get('mainEntity', {}).get('itemListElement', [])]
+            if lista != [f'{base}{sufijo}#{a}' for a in fichas]:
+                falla(f'{nombre}: JSON-LD ItemList con {len(lista)} especies y la página tiene {len(fichas)} fichas')
             faq = tipos.get('FAQPage')
             visibles = doc.preguntas
             if not con_faq:
@@ -301,6 +330,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
             falla(f'{nombre}: usa {destino.name}, con texto en español; existe {cartel[1]}-en-{cartel[2]}')
         if destino.name in VERSIONADOS and version != huella(destino):
             falla(f'{nombre}: {limpia} lleva ?v={version or "(nada)"} y debe llevar ?v={huella(destino)}; ejecuta herramientas/montar_web.py')
+    usados.add(imagen_og.resolve())
     ids = re.findall(r'\sid="([^"]+)"', html)
     for repetido in sorted({i for i in ids if ids.count(i) > 1}):
         falla(f'{nombre}: id="{repetido}" repetido')
@@ -679,7 +709,8 @@ def main(raiz, sin_apodos=False, avisa=print):
             vistos[campo, datos[campo]] = nombre
         pareja = (RUTA[pagina, 'es'], RUTA[pagina, 'en'])
         usados |= revisar_pagina(raiz, nombre, lang, RUTA[pagina, lang], datos['titulo'], base, falla,
-                                 h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete')
+                                 h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete',
+                                 og=montar_web.imagen_og(pagina, lang)[0])
     revisar_montaje(raiz, d, falla)
     revisar_movidas(raiz, falla)
     revisar_datos(raiz, falla, avisa)
@@ -690,7 +721,8 @@ def main(raiz, sin_apodos=False, avisa=print):
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
     try:
-        ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml'}
+        ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml',
+              'i': 'http://www.google.com/schemas/sitemap-image/1.1'}
         urls = ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', ns)
         locs = [u.find('s:loc', ns).text for u in urls]
         esperadas = [base + RUTA[p, lang] for p, _, _ in montar_web.PAGINAS for lang in montar_web.LANGS]
@@ -702,6 +734,12 @@ def main(raiz, sin_apodos=False, avisa=print):
             alt = {l.get('hreflang'): l.get('href') for l in u.findall('x:link', ns)}
             if alt != {'es': base + RUTA[p, 'es'], 'en': base + RUTA[p, 'en'], 'x-default': base + RUTA[p, 'es']}:
                 falla(f'sitemap.xml: {loc} sin las alternativas de idioma correctas')
+            fotos = [i.text for i in u.findall('i:image/i:loc', ns)]
+            if (p == 'galeria') != bool(fotos):
+                falla(f'sitemap.xml: {loc} con {len(fotos)} fotos (solo la galería las lista, y todas)')
+            for f in fotos:
+                if not f.startswith(base) or not (raiz / f[len(base):]).is_file():
+                    falla(f'sitemap.xml: la foto {f} no está en la web')
     except (ET.ParseError, AttributeError) as e:
         falla(f'sitemap.xml no es válido: {e}')
 
