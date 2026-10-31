@@ -336,6 +336,25 @@ def revisar_datos(raiz, falla, avisa):
                              ('HORA', str(cac['hora'])), ('DURACION_MIN', str(cac['duracion_min']))):
         if not re.search(rf'const {constante} = {re.escape(valor)};', js):
             falla(f'caceria.js: {constante} no vale {valor} como dice {DATOS.name}')
+    avisos_js = re.search(r'const AVISOS = \{([^}]*)\};', js)
+    esperados = ', '.join(f"{a['que']}: [{a['dia_semana']}, {a['hora']}]" for a in cac['avisos'])
+    if not avisos_js or avisos_js.group(1).strip() != esperados:
+        falla(f'caceria.js: AVISOS no es {{ {esperados} }} como dice {DATOS.name}')
+    # El selector «¿A qué hora es en tu país?»: zonas que existen y las mismas en los dos idiomas.
+    zonas_selector = {}
+    for nombre, (pagina, lang) in PAGINAS.items():
+        if pagina == 'caceria':
+            bloque = re.search(r'<div class="plan" data-horas.*?</select>', leer(raiz, nombre), re.S)
+            zonas_selector[lang] = re.findall(r'<option value="([^"]+)"', bloque.group(0)) if bloque else []
+            if not zonas_selector[lang]:
+                falla(f'{nombre}: falta el selector de la hora en cada país')
+            for z in zonas_selector[lang]:
+                try:
+                    ZoneInfo(z)
+                except (KeyError, ValueError):
+                    falla(f'{nombre}: la zona horaria {z} del selector no existe')
+    if len({frozenset(z) for z in zonas_selector.values()}) > 1:
+        falla('El selector de la hora en cada país no tiene las mismas zonas en español y en inglés')
 
     base = re.search(r'<link rel="canonical" href="([^"]+)"', leer(raiz, 'index.html')).group(1)
     for lang, nombre in calendario.FICHEROS.items():

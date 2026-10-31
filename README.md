@@ -13,7 +13,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `docs/**/index.html` | Las 18 páginas publicadas (9 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
-| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página. |
+| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |

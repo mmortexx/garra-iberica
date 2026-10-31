@@ -20,15 +20,15 @@ DIAS_ICS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 TEXTOS = {
     'es': {
         'titulo': 'Cacería del clan · GARRA IBÉRICA',
-        'lugar': 'Discord · voz de caza',
-        'descripcion': 'Cada sábado a las {hora} (hora peninsular española), en el canal de voz de caza '
+        'lugar': 'Discord · canal de voz Cacería 1',
+        'descripcion': 'Cada sábado a las {hora} (hora peninsular española), en el canal de voz Cacería 1 '
                        'del Discord del clan. Necesitas ser al menos Recluta. {web}',
         'aviso': 'La Cacería del clan empieza en 30 minutos',
     },
     'en': {
         'titulo': 'Clan hunt · GARRA IBÉRICA',
-        'lugar': 'Discord · hunt voice channel',
-        'descripcion': 'Every Saturday at {hora} Spanish mainland time, in the hunt voice channel of the '
+        'lugar': 'Discord · Cacería 1 voice channel',
+        'descripcion': 'Every Saturday at {hora} Spanish mainland time, in the Cacería 1 voice channel of the '
                        'clan Discord. You need at least the Recluta (Recruit) rank. {web}',
         'aviso': 'The clan hunt starts in 30 minutes',
     },

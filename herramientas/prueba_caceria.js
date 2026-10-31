@@ -1,7 +1,7 @@
 // Uso: node herramientas/prueba_caceria.js [ruta a caceria.js]
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { proximaCaceria, restante, planCrecer } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
+const { proximaCaceria, restante, planCrecer, semana, enZona } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
 
 const casos = [
   ['jueves, horario de invierno', '2026-10-29T12:00:00Z', '2026-10-31T21:00:00Z', false],
@@ -70,6 +70,55 @@ for (const [nombre, ahora, minutos, mult, inicio, llega, margen] of planes) {
   }
 }
 
-const total = casos.length + tiempos.length + planes.length;
+// La semana de cada cacería: encuesta el miércoles y aviso el sábado, a las 20:00 de Madrid.
+const semanas = [
+  // [nombre, inicio de la cacería, encuesta, aviso]
+  ['invierno', '2026-10-31T21:00:00Z', '2026-10-28T19:00:00Z', '2026-10-31T19:00:00Z'],
+  ['verano', '2026-10-24T20:00:00Z', '2026-10-21T18:00:00Z', '2026-10-24T18:00:00Z'],
+  ['última de invierno', '2026-03-28T21:00:00Z', '2026-03-25T19:00:00Z', '2026-03-28T19:00:00Z'],
+  ['primera de verano', '2026-04-04T20:00:00Z', '2026-04-01T18:00:00Z', '2026-04-04T18:00:00Z'],
+  ['encuesta en el mes anterior', '2027-01-02T21:00:00Z', '2026-12-30T19:00:00Z', '2027-01-02T19:00:00Z'],
+];
+for (const [nombre, inicio, encuesta, aviso] of semanas) {
+  try {
+    const s = semana(Date.parse(inicio));
+    assert.equal(new Date(s.caceria).toISOString(), new Date(inicio).toISOString());
+    assert.equal(new Date(s.encuesta).toISOString(), new Date(encuesta).toISOString());
+    assert.equal(new Date(s.recordatorio).toISOString(), new Date(aviso).toISOString());
+    console.log('ok   ', 'semana:', nombre);
+  } catch (e) {
+    fallos++;
+    console.log('FALLO', 'semana:', nombre, '→', e.message.split('\n')[0]);
+  }
+}
+
+// La hora de la cacería del 31 de octubre de 2026 en otros países, como sale en el selector.
+const zonas = [
+  ['España', 'Europe/Madrid', 'sábado', '22:00'],
+  ['Canarias', 'Atlantic/Canary', 'sábado', '21:00'],
+  ['Argentina', 'America/Argentina/Buenos_Aires', 'sábado', '18:00'],
+  ['Chile, en su horario de verano', 'America/Santiago', 'sábado', '18:00'],
+  ['Colombia', 'America/Bogota', 'sábado', '16:00'],
+  ['México (centro), sin cambio de hora', 'America/Mexico_City', 'sábado', '15:00'],
+  ['Tijuana, aún en horario de verano', 'America/Tijuana', 'sábado', '14:00'],
+];
+for (const [nombre, zona, dia, hora] of zonas) {
+  try {
+    assert.deepEqual(enZona(Date.parse('2026-10-31T21:00:00Z'), zona, 'es-ES'), { dia, hora });
+    console.log('ok   ', 'hora en', nombre);
+  } catch (e) {
+    fallos++;
+    console.log('FALLO', 'hora en', nombre, '→', e.message.split('\n')[0]);
+  }
+}
+try {
+  assert.equal(enZona(0, 'Marte/Olympus', 'es-ES'), null);
+  console.log('ok   ', 'una zona desconocida no rompe la página');
+} catch (e) {
+  fallos++;
+  console.log('FALLO', 'una zona desconocida no rompe la página', '→', e.message.split('\n')[0]);
+}
+
+const total = casos.length + tiempos.length + planes.length + semanas.length + zonas.length + 1;
 console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);

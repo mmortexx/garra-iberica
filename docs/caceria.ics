@@ -28,9 +28,9 @@ DURATION:PT60M
 RRULE:FREQ=WEEKLY;BYDAY=SA
 SUMMARY:Cacería del clan · GARRA IBÉRICA
 DESCRIPTION:Cada sábado a las 22:00 (hora peninsular española)\, en el ca
- nal de voz de caza del Discord del clan. Necesitas ser al menos Recluta. h
- ttps://mmortexx.github.io/garra-iberica/
-LOCATION:Discord · voz de caza
+ nal de voz Cacería 1 del Discord del clan. Necesitas ser al menos Recluta
+ . https://mmortexx.github.io/garra-iberica/
+LOCATION:Discord · canal de voz Cacería 1
 URL:https://mmortexx.github.io/garra-iberica/caceria/
 BEGIN:VALARM
 ACTION:DISPLAY

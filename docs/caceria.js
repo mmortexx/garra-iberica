@@ -5,6 +5,8 @@
   const SABADO = 6;
   const HORA = 22;
   const DURACION_MIN = 60;
+  // Encuesta y aviso de cada semana: [día (1 = lunes), hora], en Madrid.
+  const AVISOS = { encuesta: [3, 20], recordatorio: [6, 20] };
   const DIAS = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
   const formato = new Intl.DateTimeFormat('en-GB', {
@@ -56,8 +58,62 @@
     return { inicio, adulto, llega: adulto <= inicio, margen: inicio - adulto };
   };
 
-  const api = { proximaCaceria, restante, planCrecer, ZONA };
+  // La encuesta y el aviso de la misma semana que la cacería que empieza en «inicio».
+  const semana = inicio => {
+    const p = partes(inicio);
+    const avisos = {};
+    for (const [que, [dia, hora]] of Object.entries(AVISOS)) {
+      const fecha = new Date(Date.UTC(p.y, p.m - 1, p.d - (SABADO - dia + 7) % 7));
+      avisos[que] = instante(fecha.getUTCFullYear(), fecha.getUTCMonth() + 1, fecha.getUTCDate(), hora);
+    }
+    return { caceria: inicio, ...avisos };
+  };
+
+  // Día y hora de un instante en otra zona («» = la del dispositivo). Una zona que el navegador
+  // no conoce da null en vez de romper la página.
+  const enZona = (ms, zona, locale) => {
+    try {
+      const f = new Intl.DateTimeFormat(locale, { timeZone: zona || undefined, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const p = Object.fromEntries(f.formatToParts(ms).map(x => [x.type, x.value]));
+      return { dia: p.weekday, hora: `${p.hour}:${p.minute}` };
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const api = { proximaCaceria, restante, planCrecer, semana, enZona, ZONA };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
+
+  // ¿A qué hora es en tu país? Los países y los textos vienen en la página, en su idioma.
+  const horas = document.querySelector('[data-horas]');
+  if (horas) {
+    const lista = horas.querySelector('select');
+    const salida = horas.querySelector('[data-resultado]');
+    const locale = horas.dataset.locale;
+    const propia = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const elegida = [...lista.options].find(o => o.value && (o.value === propia || (o.dataset.alias || '').split(' ').includes(propia)));
+    lista.value = elegida ? elegida.value : '';
+    const calcular = () => {
+      const s = semana(proximaCaceria(Date.now()).inicio);
+      const zona = lista.value;
+      const v = Object.fromEntries(Object.entries(s).map(([k, ms]) => [k, enZona(ms, zona, locale)]));
+      if (Object.values(v).includes(null)) { horas.hidden = true; return; }
+      const titulo = document.createElement('b');
+      titulo.textContent = `${v.caceria.dia}, ${v.caceria.hora}`;
+      // Una línea por aviso: en el móvil, todo seguido se corta por donde cae.
+      const notas = horas.dataset.nota.split(' · ').map(linea => {
+        const nota = document.createElement('span');
+        nota.className = 'plan-nota';
+        nota.textContent = linea.replace(/\{(\w+)\}/g, (_, k) => `${v[k].dia}, ${v[k].hora}`);
+        return nota;
+      });
+      salida.replaceChildren(titulo, horas.dataset.texto, ...notas);
+    };
+    lista.addEventListener('change', calcular);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
+    calcular();
+    if (salida.firstChild) horas.hidden = false;
+  }
 
   // Planificador de la guía de dinosaurios. Los textos vienen en la página, en su idioma.
   const plan = document.querySelector('[data-plan]');
@@ -111,11 +167,11 @@
   const nodoLocal = caja.querySelector('[data-local]');
   const TEXTOS = {
     es: {
-      locale: 'es-ES', enCurso: 'Empezó a las 22:00: entra en la voz de caza.', faltan: 'Faltan ', local: 'En tu hora: ',
+      locale: 'es-ES', enCurso: 'Empezó a las 22:00: entra en Cacería 1.', faltan: 'Faltan ', local: 'En tu hora: ',
       unidades: { d: ['día', 'días'], h: ['hora', 'horas'], m: ['min', 'min'], s: ['seg', 'seg'] },
     },
     en: {
-      locale: 'en-GB', enCurso: 'Started at 22:00: join the hunt voice channel.', faltan: 'Starts in ', local: 'Your time: ',
+      locale: 'en-GB', enCurso: 'Started at 22:00: join the Cacería 1 voice channel.', faltan: 'Starts in ', local: 'Your time: ',
       unidades: { d: ['day', 'days'], h: ['hour', 'hours'], m: ['min', 'min'], s: ['sec', 'sec'] },
     },
   };
