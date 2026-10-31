@@ -27,6 +27,8 @@ jobs:
         run: python herramientas/comprobar.py --sin-apodos
       - name: Prueba de la cuenta atrás
         run: node herramientas/prueba_caceria.js
+      - name: Prueba de los recortes de la galería
+        run: python herramientas/prueba_galeria.py
       - name: Instalar Playwright y Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.60.0

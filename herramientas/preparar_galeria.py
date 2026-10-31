@@ -1,4 +1,5 @@
-"""Genera las fotos de la galería a partir de las capturas del juego (3439x1439).
+"""Genera las fotos de la galería a partir de las capturas del juego (3439 de ancho; 1439 de alto,
+salvo las de ALTO).
 
 Uso: python herramientas/preparar_galeria.py <carpeta con las capturas> [nombre ...]
 Con nombres (p. ej. galeria-tarde), solo genera esas fotos y deja las demás como están.
@@ -24,7 +25,9 @@ except ImportError:  # comprobar.py solo lee FOTOS y AMPLIADA_PROPIA, sin Pillow
     Image = None
 
 IMG = Path(__file__).resolve().parent.parent / 'docs' / 'img'
-TAMANO = (3439, 1439)
+ANCHO = 3439
+# Alto de las capturas que no miden 1439 (el juego a veces guarda alguna más baja).
+ALTO = {'galeria-deino-fila': 1391}
 # Zona de la marca de agua «THE ISLE» en las capturas originales: ningún recorte la toca.
 MARCA = (3080, 0, 3439, 330)
 AMPLIADA = (0, 0, 3080, 1439)
@@ -57,8 +60,10 @@ FOTOS = {
     'galeria-deino-acecho': ('Captura de pantalla 2026-10-31 161713.png', (870, 330, 2980, 1220), (800, 1200, 1600)),
     'galeria-deino-lomo': ('Captura de pantalla 2026-10-31 161859.png', (870, 330, 2980, 1220), (600, 1000, 1300)),
     'galeria-deino-ojos': ('Captura de pantalla 2026-10-31 161902.png', (870, 330, 2980, 1220), (600, 1000, 1300)),
+    'galeria-deino-guardia': ('Captura de pantalla 2026-10-31 235648.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
+    'galeria-deino-fila': ('Captura de pantalla 2026-10-31 235710.png', (0, 0, 3080, 1391), (800, 1200, 1600)),
 }
-ACLARAR = {'galeria-brasas': 0.45}
+ACLARAR = {'galeria-brasas': 0.45, 'galeria-deino-guardia': 0.65, 'galeria-deino-fila': 0.65}
 # Capturas cuya vista ampliada no puede ser la captura entera (chat con nombres de jugadores de otros
 # clanes, interfaz, avisos): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
 AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos')}
@@ -78,14 +83,30 @@ PESO_OG = 115 * 1024
 
 
 def ampliada_de(nombre):
-    """(caja, anchos) de la vista ampliada: hasta la resolución de la caja, sin agrandar nunca"""
-    caja = AMPLIADA_PROPIA.get(nombre, AMPLIADA)
+    """(caja, anchos) de la vista ampliada: hasta la resolución de la caja, sin agrandar nunca. En una
+    captura más baja, la caja de siempre llega hasta su alto real."""
+    caja = AMPLIADA_PROPIA.get(nombre, AMPLIADA[:3] + (min(AMPLIADA[3], ALTO.get(nombre, AMPLIADA[3])),))
     ancho = caja[2] - caja[0]
     return caja, tuple(w for w in ANCHOS_AMPLIADA if w < ancho) + (ancho,)
 
 
 def solapa(a, b):
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+def problemas(nombre, tamano, caja, caja_ampliada):
+    """Por qué no se puede sacar la foto de esa captura: medidas que no son las esperadas, recortes
+    que se salen de la imagen o que tocan la marca de agua. Lista vacía si todo va bien."""
+    esperado = (ANCHO, ALTO.get(nombre, 1439))
+    if tuple(tamano) != esperado:
+        return [f'la captura mide {tuple(tamano)}, no {esperado}: revisa los recortes (y ALTO si es más baja)']
+    fallos = []
+    for c in (caja, caja_ampliada):
+        if not (0 <= c[0] < c[2] <= tamano[0] and 0 <= c[1] < c[3] <= tamano[1]):
+            fallos.append(f'el recorte {c} se sale de la captura {tuple(tamano)}')
+        if solapa(c, MARCA):
+            fallos.append(f'el recorte {c} toca la marca de agua {MARCA}')
+    return fallos
 
 
 def a_ancho(im, w):
@@ -106,12 +127,10 @@ def main(origen, nombres):
         if nombres and nombre not in nombres:
             continue
         im = Image.open(origen / fichero)
-        if im.size != TAMANO:
-            sys.exit(f'{fichero} mide {im.size}, no {TAMANO}: revisa los recortes')
         caja_ampliada, anchos_ampliada = ampliada_de(nombre)
-        for c in (caja, caja_ampliada):
-            if solapa(c, MARCA):
-                sys.exit(f'{nombre}: el recorte {c} toca la marca de agua {MARCA}')
+        fallos = problemas(nombre, im.size, caja, caja_ampliada)
+        if fallos:
+            sys.exit(f'{nombre} ({fichero}): ' + '; '.join(fallos))
         im = im.convert('RGB')
         if nombre in ACLARAR:
             im = im.point([round(255 * (i / 255) ** ACLARAR[nombre]) for i in range(256)] * 3)
