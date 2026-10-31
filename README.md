@@ -137,6 +137,9 @@ El material del clan es cobre y naranja; la web es negra, gris y roja lava. El s
 portada, el cartel de la Cacería, la imagen para compartir, el favicon y los iconos a esa paleta
 (lo cálido y apagado a gris, lo vivo a rojo). Los iconos de rango y el trofeo conservan su color
 (`SIN_PALETA`). Si cambia el rojo de `--ascua` en `estilos.css`, cambia también `ROJO_LAVA`.
+El cartel inglés de la Cacería (`BANNERS_EN`) se dibuja con el mismo `montar.py` del material
+del clan, con el texto en inglés; `comprobar.py` falla si una página inglesa usa un cartel que
+tiene versión `-en`.
 
 Las fotos de la galería salen de capturas del juego a 3439x1439 (los originales no se tocan):
 

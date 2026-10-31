@@ -287,6 +287,10 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         if fragmento and f'id="{fragmento}"' not in destino.read_text(encoding='utf-8'):
             falla(f'{nombre}: enlace {ruta} a una sección que no existe en esa página')
         usados.add(destino)
+        # Los carteles llevan el texto dentro: si hay versión en inglés (-en), la página inglesa la usa.
+        cartel = re.fullmatch(r'(.+)-(\d+\.webp)', destino.name)
+        if lang == 'en' and cartel and destino.with_name(f'{cartel[1]}-en-{cartel[2]}').is_file():
+            falla(f'{nombre}: usa {destino.name}, con texto en español; existe {cartel[1]}-en-{cartel[2]}')
         if destino.name in VERSIONADOS and version != huella(destino):
             falla(f'{nombre}: {limpia} lleva ?v={version or "(nada)"} y debe llevar ?v={huella(destino)}; ejecuta herramientas/montar_web.py')
     ids = re.findall(r'\sid="([^"]+)"', html)

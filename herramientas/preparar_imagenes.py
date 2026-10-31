@@ -3,7 +3,9 @@
 Uso: python herramientas/preparar_imagenes.py <carpeta garra-iberica>
 Solo lee la carpeta de origen; escribe en docs/img/ y docs/fonts/ de este proyecto.
 """
+import importlib.util
 import sys
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageEnhance, ImageFilter
@@ -14,6 +16,10 @@ IMG = WEB / 'img'
 FONTS = WEB / 'fonts'
 
 BANNERS = ['evento_caceria']
+# Los carteles solo existen en español en el Discord; la versión inglesa de la web se dibuja aquí con
+# la misma función del proyecto del Discord (montar.banner), sin escribir nada en él.
+# nombre: (medalla de gemini/, título, subtítulo, alto en la rejilla de montar.banner)
+BANNERS_EN = {'evento_caceria-en': ('gi_caza', 'CLAN HUNT', 'Every Saturday · 22:00 Spain time', 960)}
 EMOJIS = ['garra', 'caza', 'voz', 'sinmicro',
           'alfa', 'beta', 'lider', 'veterano', 'miembro', 'recluta', 'aliado', 'normas', 'trofeo']
 # Los rangos llevan el color de su rol en Discord y el trofeo es de oro: no pasan a la paleta.
@@ -51,6 +57,22 @@ def jpg(im, nombre, q=80):
     im.convert('RGB').save(IMG / f'{nombre}.jpg', 'JPEG', quality=q, optimize=True, progressive=True)
 
 
+def banners_en(origen):
+    """Los carteles en inglés, dibujados con montar.banner y luego como los demás."""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location('montar_discord', origen / 'montar.py')
+    montar = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(montar)
+    fondo = Image.open(origen / 'gemini' / 'banner_fondo.jpg')
+    with tempfile.TemporaryDirectory() as tmp:
+        for nombre, (medalla, titulo, sub, alto) in BANNERS_EN.items():
+            im = montar.banner(fondo, montar.cutout(str(origen / 'gemini' / f'{medalla}.jpg')), titulo, sub,
+                               str(Path(tmp) / nombre), H=alto)
+            im = a_la_paleta(im)
+            for w in (800, 1400):
+                webp(ancho(im, w), f'{nombre}-{w}')
+
+
 def main(origen):
     if not (origen / 'gfx' / 'invitacion.jpg').is_file():
         sys.exit(f'No encuentro gfx/invitacion.jpg en {origen}')
@@ -72,6 +94,7 @@ def main(origen):
         im = a_la_paleta(Image.open(origen / 'gfx' / f'{b}.jpg').convert('RGB'))
         for w in (800, 1400):
             webp(ancho(im, w), f'{b}-{w}')
+    banners_en(origen)
 
     for e in EMOJIS:
         im = ancho(Image.open(origen / 'emoji' / f'gi_{e}.png').convert('RGBA'), 96)
@@ -101,7 +124,7 @@ def main(origen):
         subset.save_font(f, str(FONTS / f'{salida}.woff2'), opts)
     (FONTS / 'LICENCIA-OFL.txt').write_text(
         '\n'.join(avisos) + '\n\nAmbas fuentes se distribuyen bajo la SIL Open Font License 1.1:\n\n'
-        + ofl[ofl.index('This Font Software is licensed'):], encoding='utf-8')
+        + ofl[ofl.index('This Font Software is licensed'):], encoding='utf-8', newline='\n')
 
     for p in sorted(list(IMG.iterdir()) + list(FONTS.glob('*.woff2'))):
         extra = ''
