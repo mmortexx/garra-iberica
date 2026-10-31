@@ -436,6 +436,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         '<meta property="og:image:height" content="630">',
         f'<meta property="og:image:alt" content="{escape(og_alt)}">',
         '<meta name="twitter:card" content="summary_large_image">',
+        f'<meta name="twitter:image:alt" content="{escape(og_alt)}">',
         '',
         '<script type="application/ld+json">',
         grafo(pagina, lang, base, datos, cuerpo, fecha),

@@ -231,6 +231,8 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
     for clave in ('og:title', 'og:description', 'og:image:alt', 'twitter:card'):
         if not metas.get(clave):
             falla(f'{nombre}: falta la meta {clave}')
+    if metas.get('twitter:image:alt') != metas.get('og:image:alt'):
+        falla(f'{nombre}: twitter:image:alt no dice lo mismo que og:image:alt')
     # Google Search Console verifica la propiedad con esta etiqueta: si desaparece, se pierde el acceso.
     for meta, servicio in (('google-site-verification', 'Google Search Console'), ('msvalidate.01', 'Bing Webmaster Tools')):
         if nombre == 'index.html' and not metas.get(meta):
