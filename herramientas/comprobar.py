@@ -19,6 +19,7 @@ import batallas_web
 import calendario
 import guia_dinos
 import montar_web
+import preparar_galeria
 from html import unescape
 from html.parser import HTMLParser
 from montar_web import RUTA, huella
@@ -561,6 +562,39 @@ def revisar_combate(raiz, d, falla, avisa):
                 avisa(f'la guía de combate del Discord ({lang}) dice {especie} {n} y su ficha, {grupo[especie]}: la web pone el de la ficha; corrígelo en el Discord')
 
 
+def medidas_webp(fichero):
+    """(ancho, alto) de un WebP leyendo su cabecera (VP8, VP8L o VP8X), sin Pillow"""
+    b = fichero.read_bytes()[:30]
+    if b[:4] != b'RIFF' or b[8:12] != b'WEBP':
+        return None
+    if b[12:16] == b'VP8 ':
+        return int.from_bytes(b[26:28], 'little') & 0x3FFF, int.from_bytes(b[28:30], 'little') & 0x3FFF
+    if b[12:16] == b'VP8L':
+        v = int.from_bytes(b[21:25], 'little')
+        return (v & 0x3FFF) + 1, ((v >> 14) & 0x3FFF) + 1
+    if b[12:16] == b'VP8X':
+        return int.from_bytes(b[24:27], 'little') + 1, int.from_bytes(b[27:30], 'little') + 1
+    return None
+
+
+def revisar_galeria(raiz, falla):
+    """Cada foto de la galería, y su vista ampliada, mide lo que da su recorte en preparar_galeria.py:
+    si alguien regenera una ampliada con la captura entera donde no toca (chat con nombres de otros
+    clanes), cambian sus proporciones y esto falla."""
+    for nombre, (_, caja, anchos) in preparar_galeria.FOTOS.items():
+        caja_ampliada, anchos_ampliada = preparar_galeria.ampliada_de(nombre)
+        for c, ws, sufijo in ((caja, anchos, ''), (caja_ampliada, anchos_ampliada, '-ampliada')):
+            cw, ch = c[2] - c[0], c[3] - c[1]
+            for w in ws:
+                fichero = raiz / 'img' / f'{nombre}{sufijo}-{w}.webp'
+                if not fichero.exists():
+                    falla(f'falta img/{fichero.name}: ejecuta herramientas/preparar_galeria.py')
+                    continue
+                esperado, real = (w, round(ch * w / cw)), medidas_webp(fichero)
+                if real != esperado:
+                    falla(f'img/{fichero.name} mide {real} y su recorte da {esperado}: regenérala con preparar_galeria.py')
+
+
 def revisar_guia(falla, avisa):
     """Los textos de la guía que vienen del Discord y las fichas siguen al día con el original."""
     if not POSTS_ORIGINAL.is_file():
@@ -632,6 +666,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
+    revisar_galeria(raiz, falla)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')

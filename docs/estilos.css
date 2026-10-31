@@ -600,6 +600,7 @@ h2::after {
 .galeria .foto-entera { aspect-ratio: 3080 / 1439; }
 .galeria .foto-baja { aspect-ratio: 3080 / 1239; }
 .galeria .foto-media { aspect-ratio: 2600 / 1289; }
+.galeria .foto-lago { aspect-ratio: 2110 / 890; }
 @media (min-width: 860px) {
   .galeria { grid-template-columns: repeat(6, 1fr); gap: 1rem; }
   .foto { grid-column: span 2; }

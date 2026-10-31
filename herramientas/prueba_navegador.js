@@ -62,6 +62,10 @@ const ruta = r => ('/' + r).padEnd(15);
           ejemplo: ocultos.slice(0, 3).map(e => e.className),
           cuentaVisible: !!cuenta && !cuenta.hidden,
           bloques: [...document.querySelectorAll('.cuenta-falta .t')].filter(e => !e.hidden && e.querySelector('.n').textContent && e.querySelector('.u').textContent).length,
+          // El sábado de 22:00 a 23:00 (Madrid) no hay cuenta atrás: dice que ya ha empezado.
+          // Solo vale en esa hora; a cualquier otra, sin bloques es un fallo.
+          enCurso: /^(Empezó a las|Started at) 22:00/.test(document.querySelector('[data-falta]')?.textContent || '')
+            && new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).format(new Date()) === 'Sat, 22',
           compartir: !!document.querySelector('[data-compartir]:not([hidden])'),
         };
       });
@@ -69,7 +73,7 @@ const ruta = r => ('/' + r).padEnd(15);
       // donde los hay. Sin él, ninguna de las dos cosas, que no funcionarían.
       const js = nombre !== 'sin JavaScript';
       const cuenta = js && CON_CUENTA.includes(tipo), compartir = js && CON_COMPARTIR.includes(tipo);
-      if (cuenta !== res.cuentaVisible || compartir !== res.compartir || (cuenta && res.bloques < 3)) malos++;
+      if (cuenta !== res.cuentaVisible || compartir !== res.compartir || (cuenta && res.bloques < 3 && !res.enCurso)) malos++;
       if (res.ocultos || errores.length) malos++;
       // «Compartir» sin menú del sistema: copia la dirección canónica y lo dice.
       if (nombre === 'normal tras scroll' && res.compartir) {

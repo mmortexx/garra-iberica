@@ -158,7 +158,9 @@ Saca de cada una la foto de la galería (encuadrada en el dinosaurio, la mejor c
 120 KB) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
 resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp`). Qué captura y
 qué recorte va en cada foto está al principio del script. Las de noche que salen casi negras se aclaran
-en el mismo script (`ACLARAR`). Las ampliadas solo se descargan al abrir
+en el mismo script (`ACLARAR`). Si una captura lleva chat con nombres de otros jugadores, interfaz o
+avisos, su ampliada es el mismo recorte de la galería (`AMPLIADA_PROPIA`), nunca la captura entera;
+`comprobar.py` falla si alguna foto o ampliada no mide lo que da su recorte. Las ampliadas solo se descargan al abrir
 una foto en el visor; `comprobar.py` no deja que la página las cargue por su cuenta.
 
 Necesita Python con Pillow y fontTools.

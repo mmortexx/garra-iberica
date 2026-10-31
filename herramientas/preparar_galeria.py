@@ -15,7 +15,10 @@ import io
 import sys
 from pathlib import Path
 
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:  # comprobar.py solo lee FOTOS y AMPLIADA_PROPIA, sin Pillow
+    Image = None
 
 IMG = Path(__file__).resolve().parent.parent / 'docs' / 'img'
 TAMANO = (3439, 1439)
@@ -48,8 +51,21 @@ FOTOS = {
     'galeria-manada': ('Captura de pantalla 2026-10-30 210318.png', (0, 200, 3080, 1439), (600, 1000, 1300)),
     'galeria-descanso': ('Captura de pantalla 2026-10-30 190521.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
     'galeria-brasas': ('Captura de pantalla 2026-10-30 213422.png', (300, 150, 2900, 1439), (800, 1200, 1600)),
+    'galeria-deino-acecho': ('Captura de pantalla 2026-10-31 161713.png', (870, 330, 2980, 1220), (800, 1200, 1600)),
+    'galeria-deino-lomo': ('Captura de pantalla 2026-10-31 161859.png', (870, 330, 2980, 1220), (600, 1000, 1300)),
+    'galeria-deino-ojos': ('Captura de pantalla 2026-10-31 161902.png', (870, 330, 2980, 1220), (600, 1000, 1300)),
 }
 ACLARAR = {'galeria-brasas': 0.45}
+# Capturas cuya vista ampliada no puede ser la captura entera (chat con nombres de jugadores de otros
+# clanes, interfaz, avisos): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
+AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos')}
+
+
+def ampliada_de(nombre):
+    """(caja, anchos) de la vista ampliada: hasta la resolución de la caja, sin agrandar nunca"""
+    caja = AMPLIADA_PROPIA.get(nombre, AMPLIADA)
+    ancho = caja[2] - caja[0]
+    return caja, tuple(w for w in ANCHOS_AMPLIADA if w < ancho) + (ancho,)
 
 
 def solapa(a, b):
@@ -76,7 +92,8 @@ def main(origen, nombres):
         im = Image.open(origen / fichero)
         if im.size != TAMANO:
             sys.exit(f'{fichero} mide {im.size}, no {TAMANO}: revisa los recortes')
-        for c in (caja, AMPLIADA):
+        caja_ampliada, anchos_ampliada = ampliada_de(nombre)
+        for c in (caja, caja_ampliada):
             if solapa(c, MARCA):
                 sys.exit(f'{nombre}: el recorte {c} toca la marca de agua {MARCA}')
         im = im.convert('RGB')
@@ -94,8 +111,8 @@ def main(origen, nombres):
             salida = IMG / f'{nombre}-{w}.webp'
             salida.write_bytes(datos)
             print(f'{salida.name}: {len(datos) / 1024:.0f} KB (calidad {calidad})')
-        ampliada = im.crop(AMPLIADA)
-        for w in ANCHOS_AMPLIADA:
+        ampliada = im.crop(caja_ampliada)
+        for w in anchos_ampliada:
             reducida = a_ancho(ampliada, w)
             for calidad in range(CALIDAD_AMPLIADA, 39, -2):
                 datos = webp(reducida, calidad)
