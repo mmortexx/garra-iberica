@@ -19,7 +19,9 @@ const PAGINAS = [
   ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
 // Páginas que solo se enlazan desde el pie y desde las páginas de su tema, no desde el menú.
-const FUERA_MENU = ['inicio', 'normas', 'legal'];
+const FUERA_MENU = ['normas', 'legal'];
+// Enlaces del menú (montar_web.MENU), Inicio incluido.
+const EN_MENU = 6;
 const CON_CUENTA = ['inicio', 'caceria'];
 const CON_COMPARTIR = ['inicio'];
 const CON_CARTEL = ['caceria'];
@@ -131,7 +133,7 @@ const ruta = r => ('/' + r).padEnd(15);
         };
       });
       const fallos = [];
-      if (m.visibles !== 5 || m.boton) fallos.push(`${m.visibles} enlaces a la vista y botón ${m.boton ? 'visible' : 'oculto'}`);
+      if (m.visibles !== EN_MENU || m.boton) fallos.push(`${m.visibles} enlaces a la vista y botón ${m.boton ? 'visible' : 'oculto'}`);
       const esperado = FUERA_MENU.includes(tipo) ? [] : [m.aqui];
       if (JSON.stringify(m.marcados) !== JSON.stringify(esperado)) fallos.push(`marca ${JSON.stringify(m.marcados)} y debe marcar ${JSON.stringify(esperado)}`);
       if (fallos.length) malos++;
@@ -187,7 +189,7 @@ const ruta = r => ('/' + r).padEnd(15);
         return { visibles: rs.length, boton, fuera: rs.filter(rc => rc.left < -0.5 || rc.right > W + 0.5).length, lineas: new Set(rs.map(rc => Math.round(rc.top))).size };
       });
       // O el menú entero en una fila, o su botón: nunca a medias ni sin forma de llegar a él.
-      const bien = ancho >= 1020 ? m.visibles === 5 && !m.boton && m.lineas === 1 && !m.fuera : m.visibles === 0 && m.boton;
+      const bien = ancho >= 1020 ? m.visibles === EN_MENU && !m.boton && m.lineas === 1 && !m.fuera : m.visibles === 0 && m.boton;
       if (!bien) cortados.push(`${ancho}px: ${m.visibles} enlaces en ${m.lineas} líneas, ${m.fuera} fuera, botón ${m.boton ? 'sí' : 'no'}`);
       // EN/ES siempre en la barra, también en el móvil: antes había que abrir el menú para cambiar de idioma.
       if (!(await p.evaluate(() => document.querySelector('.barra-acciones .idioma').getBoundingClientRect().width > 0))) sinIdioma.push(ancho);
@@ -301,16 +303,17 @@ const ruta = r => ('/' + r).padEnd(15);
     await p.setViewportSize({ width: 1366, height: 800 });
     await p.waitForTimeout(300);
     const barra = await p.evaluate(() => [...document.querySelectorAll('.menu a')].filter(a => { const rc = a.getBoundingClientRect(); return rc.width && rc.top >= 0 && rc.bottom < 120; }).length);
-    if (await abierto(p) || barra !== 5) fallos.push(`al ensanchar con el menú abierto: ${await abierto(p) ? 'sigue abierto' : 'cerrado'}, ${barra} enlaces en la barra`);
+    if (await abierto(p) || barra !== EN_MENU) fallos.push(`al ensanchar con el menú abierto: ${await abierto(p) ? 'sigue abierto' : 'cerrado'}, ${barra} enlaces en la barra`);
     await p.setViewportSize({ width: 375, height: 667 });
     // Si algo de lo anterior lo dejó abierto (ya contado como fallo), se cierra para seguir.
     await p.evaluate(() => { const m = document.querySelector('.menu'); if (m.matches(':popover-open')) m.hidePopover(); });
     for (const destino of destinos) {
       await p.tap('.menu-boton');
       await p.waitForTimeout(400);
+      // Se espera a que cargue la página nueva, también cuando es la misma (Inicio desde la portada).
+      const cargada = p.waitForEvent('load', { timeout: 5000 }).then(() => true, () => false);
       await p.tap(`.menu a[href="${await p.evaluate(d => [...document.querySelectorAll('.menu a')].find(a => a.href === d).getAttribute('href'), destino)}"]`);
-      await p.waitForURL(destino, { timeout: 5000 }).catch(() => fallos.push(`no llega a ${destino} (está en ${p.url()})`));
-      await p.waitForLoadState('load');
+      if (!(await cargada) || p.url() !== destino) fallos.push(`no llega a ${destino} (está en ${p.url()})`);
       if (await abierto(p)) fallos.push(`${destino} se abre con el menú abierto`);
     }
     if (errores.length) fallos.push(`errores: ${JSON.stringify(errores)}`);
@@ -712,6 +715,35 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta(r), 'vídeos de las batallas:', fallos.length ? fallos.join('; ') : `${videos.length}, sin bajar al abrir; ${reproduce}`);
+  }
+  // Entrada de la portada y de las cabeceras al llegar desde otra página de la web: empieza cuando
+  // acaban los zarpazos del cambio de página. Antes se jugaba entera detrás y solo se veía al entrar
+  // de fuera («las animaciones solo salen la primera vez»).
+  {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    await ctx.addInitScript(() => {
+      addEventListener('pagereveal', e => {
+        window.__finZarpazos = e.viewTransition ? null : 0;
+        e.viewTransition?.finished.then(() => { window.__finZarpazos = performance.now(); });
+      });
+    });
+    const p = await ctx.newPage();
+    for (const [desde, pulsa, llega] of [['clan/', '.marca', ''], ['clan/', '.menu a[href*="dinosaurios"]', 'dinosaurios/'], ['en/hunt/', '.menu a:first-child', 'en/']]) {
+      await p.goto(BASE + desde, { waitUntil: 'load' });
+      await p.click(pulsa);
+      await p.waitForURL(BASE + llega);
+      await p.waitForTimeout(2500);
+      const r = await p.evaluate(() => {
+        const a = document.getAnimations().filter(x => ['subir', 'descubrir'].includes(x.animationName) && x.effect.target.closest('.portada-in, .cabecera-in'));
+        return { fin: window.__finZarpazos, empieza: Math.min(...a.map(x => x.startTime + x.effect.getTiming().delay)), n: a.length };
+      });
+      if (r.fin === null || r.fin === undefined) fallos.push(`${llega || 'portada'}: sin cambio de página animado (no se puede medir)`);
+      else if (!r.n || r.empieza < r.fin) fallos.push(`${llega || 'portada'}: la entrada empieza en ${Math.round(r.empieza)} ms y los zarpazos acaban en ${Math.round(r.fin)} ms`);
+    }
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta(''), 'entrada visible al llegar desde otra página:', fallos.length ? fallos.join('; ') : 'sí');
   }
   // Botones: en un móvil táctil, tocar no los deja levantados (el hover se quedaba pegado), y con
   // teclado el botón rojo lleva un anillo que se distingue del rojo del botón.

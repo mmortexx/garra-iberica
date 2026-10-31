@@ -171,7 +171,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
     .menu:popover-open .menu-idioma { display: block; margin-top: 1.4rem; font: 600 1.05rem/1.4 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
     .menu:popover-open .menu-cerrar { display: grid; }
     .menu a:nth-child(2) { --n: 1; } .menu a:nth-child(3) { --n: 2; } .menu a:nth-child(4) { --n: 3; }
-    .menu a:nth-child(5) { --n: 4; } .menu a:nth-child(6) { --n: 5; }
+    .menu a:nth-child(5) { --n: 4; } .menu a:nth-child(6) { --n: 5; } .menu a:nth-child(7) { --n: 6; }
     html:has(.menu:popover-open) { overflow: hidden; }
   }
   @supports not selector(:popover-open) {
@@ -1104,6 +1104,10 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   ::view-transition-new(barra) { animation: none; }
   ::view-transition-old(root) { animation: pagina-sale .4s cubic-bezier(.4, 0, .2, 1) both; }
   ::view-transition-new(root) { animation: zarpazo .45s linear both; }
+  /* La entrada de la portada y de las cabeceras espera a que acaben los zarpazos: si no, al llegar
+     desde otra página de la web se jugaba entera detrás de ellos y solo se veía al entrar de fuera.
+     «.cabecera h1.entra», para ganar a «.anim .cabecera h1.entra», que la volvería a poner en marcha. */
+  :root:active-view-transition :is(.h1-marca, .h1-sub, .entra, .cabecera h1.entra) { animation-play-state: paused; }
 }
 @keyframes pagina-sale { to { scale: .965; filter: brightness(.3); } }
 @keyframes zarpazo {

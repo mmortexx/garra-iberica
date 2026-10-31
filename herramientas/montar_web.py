@@ -57,7 +57,8 @@ PAGINAS = [
     ('normas', ('normas/', 'en/rules/'), ('Normas', 'Rules')),
     ('legal', ('legal/', 'en/legal/'), ('Aviso legal y privacidad', 'Legal notice and privacy')),
 ]
-MENU = ('clan', 'dinosaurios', 'caceria', 'galeria', 'unete')
+# Inicio, además de en la marca: no todo el mundo sabe que la marca lleva a la portada.
+MENU = ('inicio', 'clan', 'dinosaurios', 'caceria', 'galeria', 'unete')
 PIE = [p for p, _, _ in PAGINAS if p != 'legal']
 RUTA = {(p, lang): rutas[i] for p, rutas, _ in PAGINAS for i, lang in enumerate(LANGS)}
 NOMBRE = {(p, lang): nombres[i] for p, _, nombres in PAGINAS for i, lang in enumerate(LANGS)}

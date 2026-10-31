@@ -44,7 +44,7 @@ node herramientas/prueba_caceria.js
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
   `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}` y `{{normas}}` se
-  rellenan solos. El menú de arriba lleva solo las cinco páginas de `MENU`; Normas y el aviso legal
+  rellenan solos. El menú de arriba lleva solo las seis páginas de `MENU` (Inicio incluida); Normas y el aviso legal
   van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
   `comprobar.py` falla si `docs/` no es exactamente lo que sale del script.
