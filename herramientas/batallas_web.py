@@ -119,9 +119,12 @@ def video(b, lang):
     if not (DOCS / 'video' / f'{nombre}.mp4').is_file():
         return ''
     t, r = T[lang], escape(b['rival'])
+    # En pantallas pequeñas, la versión ligera (-movil) si existe; la primera que encaja es la que vale.
+    movil = (f'<source src="@/video/{nombre}-movil.mp4" type="video/mp4" media="(max-width: 700px)">'
+             if (DOCS / 'video' / f'{nombre}-movil.mp4').is_file() else '')
     return (f'<div class="batalla-video"><video controls preload="none" playsinline width="1280" height="536" '
             f'poster="@/img/{nombre}.webp" aria-label="{t["video"].format(r=r)}">'
-            f'<source src="@/video/{nombre}.mp4" type="video/mp4">'
+            f'{movil}<source src="@/video/{nombre}.mp4" type="video/mp4">'
             f'<a href="@/video/{nombre}.mp4">{t["bajar"].format(r=r)}</a></video></div>')
 
 

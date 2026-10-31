@@ -74,7 +74,8 @@ node herramientas/prueba_caceria.js
   guía en Discord: copiar el texto nuevo a las dos páginas.
 - Vídeos de las batallas: `python herramientas/preparar_videos.py` los genera desde los vídeos
   exportados (lista `VIDEOS`, clave de `batallas.json` → fichero dentro de `~/Videos`) en
-  `docs/video/batalla-<clave>.mp4`, con su portada en `docs/img/`. La lista de El clan pone el
+  `docs/video/batalla-<clave>.mp4`, más una versión ligera para móviles (`-movil.mp4`, un tercio del
+  peso, la que se reproduce en pantallas de hasta 700 px), con su portada en `docs/img/`. La lista de El clan pone el
   vídeo a cada batalla que lo tiene. Se oyen tal cual (con la voz, si la hay): lo decidió Quilez.
   Para una batalla nueva: añadir su línea a `VIDEOS`, ejecutar el script y montar.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
@@ -116,7 +117,10 @@ node herramientas/prueba_caceria.js
   (y con el menú o el visor encima), que el botón de volver arriba sale al subir, lleva arriba y
   no tapa el pie y
   comprueba que, si las fuentes llegan tarde, la página no da saltos y que, si llegan a tiempo, se
-  pintan las fuentes propias.
+  pintan las fuentes propias. En El clan, que el móvil reproduce el vídeo ligero y el escritorio el
+  normal. Accesibilidad: el texto sobre fotos (portada, cabeceras, baldosas) con contraste suficiente
+  medido sobre la foto real, nada que se pulse por debajo de 24 px y los iconos del menú y de las
+  preguntas visibles en el alto contraste de Windows.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con

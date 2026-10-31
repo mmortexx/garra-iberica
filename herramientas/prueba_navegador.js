@@ -4,7 +4,8 @@
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
 // rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
 // llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento,
-// comparativa de especies y batallas de la portada enlazadas a El clan.
+// comparativa de especies, batallas de la portada enlazadas a El clan, vídeo ligero en el móvil,
+// contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
@@ -734,10 +735,11 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
   }
   // Vídeos de las batallas: al abrir la página solo se bajan las portadas, no los vídeos; cada vídeo
-  // se sirve como vídeo y, al darle al play, arranca (si este Chromium sabe leer H.264).
-  for (const r of ['clan/', 'en/clan/']) {
+  // (y su versión ligera) se sirve como vídeo y, al darle al play, arranca (si este Chromium sabe
+  // leer H.264). En el móvil arranca la versión ligera (-movil) y en escritorio la normal.
+  for (const r of ['clan/', 'en/clan/']) for (const [ancho, alto] of [[1366, 850], [390, 844]]) {
     const fallos = [];
-    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: ancho < 800, hasTouch: ancho < 800 });
     const p = await ctx.newPage();
     const pedidos = [];
     p.on('request', q => pedidos.push(q.url()));
@@ -745,15 +747,19 @@ const ruta = r => ('/' + r).padEnd(15);
     await p.evaluate(() => document.querySelector('.batallas')?.scrollIntoView({ behavior: 'instant' }));
     await p.waitForTimeout(1500);
     const videos = await p.evaluate(() => [...document.querySelectorAll('.batalla video')].map(v => ({
-      src: v.querySelector('source').src, poster: v.poster, ancho: v.getBoundingClientRect().width,
+      fuentes: [...v.querySelectorAll('source')].map(s => s.src), poster: v.poster, ancho: v.getBoundingClientRect().width,
       h264: v.canPlayType('video/mp4; codecs="avc1.640020, mp4a.40.2"') })));
     if (!videos.length) fallos.push('sin vídeos');
     const bajados = pedidos.filter(u => u.endsWith('.mp4'));
     if (bajados.length) fallos.push(`bajados al abrir: ${bajados.map(u => u.split('/').pop()).join(', ')}`);
     for (const v of videos) {
-      const nombre = v.src.split('/').pop();
-      const [rv, rp] = [await ctx.request.head(v.src), await ctx.request.get(v.poster)];
-      if (!rv.ok() || !rv.headers()['content-type']?.startsWith('video/mp4')) fallos.push(`${nombre}: ${rv.status()} ${rv.headers()['content-type']}`);
+      for (const src of v.fuentes) {
+        const rv = await ctx.request.head(src);
+        if (!rv.ok() || !rv.headers()['content-type']?.startsWith('video/mp4')) fallos.push(`${src.split('/').pop()}: ${rv.status()} ${rv.headers()['content-type']}`);
+      }
+      const nombre = v.fuentes.at(-1).split('/').pop();
+      if (!v.fuentes.some(s => s.endsWith('-movil.mp4'))) fallos.push(`${nombre} sin versión ligera para el móvil`);
+      const rp = await ctx.request.get(v.poster);
       if (!rp.ok()) fallos.push(`portada de ${nombre}: ${rp.status()}`);
       if (v.ancho < 300) fallos.push(`${nombre} de solo ${Math.round(v.ancho)} px de ancho`);
     }
@@ -767,11 +773,13 @@ const ruta = r => ('/' + r).padEnd(15);
         return v.currentTime > 0 ? '' : `parado en ${v.currentTime}`;
       });
       if (ok) fallos.push(`no arranca: ${ok}`);
-      reproduce = 'arranca';
+      const suena = (await p.evaluate(() => document.querySelector('.batalla video').currentSrc)).split('/').pop();
+      if (suena.endsWith('-movil.mp4') !== ancho < 800) fallos.push(`a ${ancho} px arranca ${suena}`);
+      reproduce = `arranca ${suena}`;
     }
     await ctx.close();
     if (fallos.length) malos++;
-    console.log(ruta(r), 'vídeos de las batallas:', fallos.length ? fallos.join('; ') : `${videos.length}, sin bajar al abrir; ${reproduce}`);
+    console.log(ruta(r), `vídeos de las batallas a ${ancho} px:`, fallos.length ? fallos.join('; ') : `${videos.length}, sin bajar al abrir; ${reproduce}`);
   }
   // Entrada de la portada y de las cabeceras al llegar desde otra página de la web: empieza cuando
   // acaban los zarpazos del cambio de página. Antes se jugaba entera detrás y solo se veía al entrar
@@ -829,6 +837,101 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta(''), 'botones en táctil y con teclado:', fallos.length ? fallos.join('; ') : 'bien');
+  }
+  // Accesibilidad, en cada página a 375 y a 1366 px:
+  // - el texto sobre fotos (portada, cabeceras, baldosas) se lee: se pinta la página sin texto y el
+  //   píxel más claro detrás de cada línea (percentil 95) da el contraste con su color (WCAG: 4,5, o
+  //   3 en letra grande);
+  // - lo que se pulsa mide al menos 24 px (o lleva su capa invisible de 44), salvo enlaces en un párrafo.
+  for (const [ancho, alto] of [[375, 812], [1366, 800]]) for (const [r] of PAGINAS) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: ancho < 800, hasTouch: ancho < 800, reducedMotion: 'reduce', bypassCSP: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.waitForTimeout(400);
+    const { lineas, pequenos } = await p.evaluate(() => {
+      const lineas = [];
+      for (const zona of document.querySelectorAll('.portada, .cabecera, .baldosa')) {
+        const w = document.createTreeWalker(zona, NodeFilter.SHOW_TEXT);
+        while (w.nextNode()) {
+          const t = w.currentNode, el = t.parentElement;
+          if (!t.textContent.trim() || el.closest('.oculto, [aria-hidden="true"], .boton, .cuenta-grande')) continue;
+          const cs = getComputedStyle(el);
+          if (/rgba\(0, 0, 0, 0\)/.test(cs.webkitTextFillColor)) continue;
+          const rango = document.createRange();
+          rango.selectNodeContents(t);
+          for (const q of rango.getClientRects()) {
+            if (q.width > 4 && q.top >= 0 && q.bottom <= innerHeight) lineas.push({ x: q.left, y: q.top, w: q.width, h: q.height, color: cs.color, grande: parseFloat(cs.fontSize) >= 24 || (parseFloat(cs.fontSize) >= 18.66 && +cs.fontWeight >= 700), txt: t.textContent.trim().slice(0, 30) });
+          }
+        }
+      }
+      const pequenos = [];
+      for (const el of document.querySelectorAll('a[href], button, summary, select, video[controls]')) {
+        const q = el.getBoundingClientRect(), cs = getComputedStyle(el);
+        if (!q.width || cs.visibility === 'hidden' || el.closest('[inert], dialog:not([open]), [popover]:not(:popover-open)')) continue;
+        if (cs.display === 'inline' && el.closest('p, li, dd, td')) continue;
+        const capa = getComputedStyle(el, '::before');
+        if ((q.width < 24 || q.height < 24) && !(capa.content !== 'none' && parseFloat(capa.height) >= 44)) pequenos.push(`«${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 25)}» ${Math.round(q.width)}x${Math.round(q.height)}`);
+      }
+      return { lineas, pequenos };
+    });
+    if (pequenos.length) fallos.push(`pequeño para pulsar: ${pequenos.join(', ')}`);
+    if (lineas.length) {
+      // Sin la hoja de estilos de la página (la política de seguridad no deja estilos sueltos; aquí se salta).
+      await p.addStyleTag({ content: '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; } .boton, .cuenta-grande { visibility: hidden !important; }' });
+      await p.waitForTimeout(150);
+      const foto = (await p.screenshot()).toString('base64');
+      const bajos = await p.evaluate(async ({ foto, lineas }) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${foto}`;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const g = c.getContext('2d');
+        g.drawImage(img, 0, 0);
+        const esc = img.naturalWidth / innerWidth;
+        const lum = (r, gg, b) => [r, gg, b].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0);
+        const peor = {};
+        for (const l of lineas) {
+          const d = g.getImageData(Math.round(l.x * esc), Math.round(l.y * esc), Math.max(1, Math.round(l.w * esc)), Math.max(1, Math.round(l.h * esc))).data;
+          const vals = [];
+          for (let i = 0; i < d.length; i += 8) vals.push(lum(d[i], d[i + 1], d[i + 2]));
+          vals.sort((a, b) => a - b);
+          const fondo = vals[Math.floor(vals.length * .95)], [r, gg, b] = l.color.match(/[\d.]+/g).map(Number), texto = lum(r, gg, b);
+          const ratio = (Math.max(texto, fondo) + .05) / (Math.min(texto, fondo) + .05);
+          if (ratio < (l.grande ? 3 : 4.5) && !(peor[l.txt] <= ratio)) peor[l.txt] = ratio;
+        }
+        return Object.entries(peor).map(([t, v]) => `«${t}» ${v.toFixed(1)}`);
+      }, { foto, lineas });
+      if (bajos.length) fallos.push(`texto sobre foto con poco contraste: ${bajos.join(', ')}`);
+    }
+    await ctx.close();
+    if (fallos.length) { malos++; console.log(ruta(r), `accesibilidad a ${ancho} px:`, fallos.join('; ')); }
+  }
+  console.log(ruta(''), `accesibilidad (contraste sobre fotos y tamaño para pulsar) en ${PAGINAS.length} páginas a 375 y 1366 px: revisada`);
+  // Alto contraste de Windows: el sistema borra los fondos, y los iconos dibujados con fondo (menú,
+  // cerrar, abrir pregunta) se quedaban en blanco. Deben conservar un color distinto del de su botón.
+  {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true, forcedColors: 'active' });
+    const p = await ctx.newPage();
+    await p.goto(BASE + 'unete/', { waitUntil: 'load' });
+    const color = (sel, pseudo) => p.evaluate(([s, ps]) => { const el = document.querySelector(s); return el && getComputedStyle(el, ps).backgroundColor; }, [sel, pseudo]);
+    const fondo = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const iconos = [['.menu-boton span', null], ['.menu-boton span', '::before'], ['summary', '::before'], ['summary', '::after']];
+    for (const [sel, ps] of iconos) {
+      const c = await color(sel, ps);
+      if (!c || c === fondo || /rgba\(0, 0, 0, 0\)/.test(c)) fallos.push(`${sel}${ps || ''} sin color (${c})`);
+    }
+    await p.click('.menu-boton');
+    await p.waitForTimeout(400);
+    for (const ps of ['::before', '::after']) {
+      const c = await color('.menu-cerrar', ps);
+      if (!c || c === fondo || /rgba\(0, 0, 0, 0\)/.test(c)) fallos.push(`.menu-cerrar${ps} sin color (${c})`);
+    }
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');
   }
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');

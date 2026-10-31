@@ -135,8 +135,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .idioma:hover { color: var(--hueso); }
 /* Enlaces sueltos de texto pequeño: una capa invisible les da 44 px de alto para el dedo sin
    cambiar cómo se ven. Solo donde no hay otro enlace encima o debajo a menos de esa distancia. */
-.idioma, .migas a, .enlace-cal, .menu-idioma { position: relative; }
-.idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
+.idioma, .migas a, .enlace-cal, .menu-idioma, .cifras-enlace a { position: relative; }
+.idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before, .cifras-enlace a::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
 /* El menú en una fila (siete enlaces) necesita ~1000 px. Por debajo, un botón lo abre a pantalla completa. Sin
    popover (navegadores antiguos) baja a su propia fila y se parte en líneas si no cabe: nunca queda
    cortado. La prueba de navegador recorre los anchos y avisa de solapes y de enlaces fuera. */
@@ -229,7 +229,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   position: relative; overflow: hidden; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
   min-height: 50px; padding: .8rem 1.6rem;
-  font: 600 1.15rem/1 var(--etiquetas); letter-spacing: .09em; text-transform: uppercase;
+  /* Interlínea para cuando el texto no cabe y baja a dos líneas (los largos, en el móvil). */
+  font: 600 1.15rem/1.2 var(--etiquetas); letter-spacing: .09em; text-transform: uppercase; text-align: center;
   color: #121212; text-decoration: none;
   background: linear-gradient(180deg, #ff7d6e, #ff432e 45%, #f4402a);
   border: 1px solid #ff968a; border-radius: 4px;
@@ -1034,6 +1035,11 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
     linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .4) 35%, transparent 60%);
 }
 @media (max-width: 700px) { .cabecera::before { background: linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .45) 100%); } }
+/* En el móvil las migas caen sobre la parte clara de la foto (en Combate, el cielo): van en una
+   cápsula oscura para que se lean con cualquier foto. */
+@media (max-width: 700px) {
+  .cabecera .migas { width: fit-content; padding: .45rem .85rem; border: 1px solid var(--linea); border-radius: 99px; background: rgba(8, 8, 8, .62); }
+}
 .cabecera-in { width: 100%; }
 .cabecera h1 { font-size: clamp(2.5rem, 7.4vw, 5.2rem); line-height: 1.1; text-transform: uppercase; max-width: 16ch; margin-bottom: 1.1rem; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
 .cabecera .entrada { max-width: 40rem; }
@@ -1092,7 +1098,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 }
 .especies { position: relative; z-index: 2; margin: 1.3rem 0 0; display: grid; gap: .55rem; }
 .especies div { display: grid; grid-template-columns: 7rem 1fr; gap: .8rem; padding-top: .55rem; border-top: 1px solid var(--linea); }
-.especies dt { font: 600 .9rem/1.6 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--ascua); }
+/* Sobre la foto de la baldosa: el rojo vivo da margen de contraste (con --ascua quedaba en 4,6). */
+.especies dt { font: 600 .9rem/1.6 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--ascua-viva); }
 .especies dd { margin: 0; font-size: .95rem; color: var(--suave); }
 .especies a { color: var(--texto); text-decoration: none; }
 .especies a:hover { color: var(--ascua-viva); text-decoration: underline; }
@@ -1206,7 +1213,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .anim .batalla.revelar.visible .bando i:nth-child(n+7) { transition-delay: .3s; }
 .cifras-enlace { justify-content: center; }
 .cifras-enlace a { font: 600 1rem/1.3 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--rojo-claro); text-decoration: none; }
-.cifras-enlace a::after { content: " ➜"; content: " ➜" / ""; font-family: var(--cuerpo); color: var(--ascua); }
+/* Espacio duro: la flecha no baja sola a otra línea. */
+.cifras-enlace a::after { content: "\a0➜"; content: "\a0➜" / ""; font-family: var(--cuerpo); color: var(--ascua); }
 .cifras-enlace a:hover { color: var(--ascua-viva); }
 
 /* Planificador de la guía: ¿llego adulto a la cacería? Solo con JavaScript (sin él no se ve). */
@@ -1227,3 +1235,14 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .plan-resultado b { display: block; margin-bottom: .3rem; font: 1.5rem/1.1 var(--titulos); text-transform: uppercase; letter-spacing: .02em; }
 .plan-resultado.si b { color: var(--ascua-viva); text-shadow: 0 0 14px rgba(255, 53, 31, .45); }
 .plan-nota { display: block; margin-top: .45rem; font-size: .95rem; color: var(--suave); }
+
+/* Alto contraste de Windows: el sistema pone sus colores y borra los fondos. Los iconos dibujados
+   con fondo (menú, cerrar, abrir pregunta) se quedarían en blanco: llevan el color del texto del
+   sistema. El menú del móvil, opaco; la página actual, subrayada (su trazo de ascua no se ve). */
+@media (forced-colors: active) {
+  .menu-boton span, .menu-boton span::before, .menu-boton span::after,
+  .menu-cerrar::before, .menu-cerrar::after, .visor-cerrar::before, .visor-cerrar::after { forced-color-adjust: none; background: ButtonText; }
+  summary::before, summary::after { forced-color-adjust: none; background: CanvasText; }
+  .menu[popover]:popover-open, .visor { background: Canvas; backdrop-filter: none; }
+  .menu a[aria-current] { text-decoration: underline 2px; text-underline-offset: .2em; }
+}
