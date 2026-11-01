@@ -334,6 +334,10 @@
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean
   // tras la carga y se paran fuera de pantalla, con la pestaña oculta o en reposo.
+  // A 30 fotogramas por segundo, pedidos con un temporizador: cada fotograma que pide la página
+  // obliga a recalcularla entera, y a 60 se llevaba un tercio del procesador de un móvil normal
+  // (medido: 32–48 % a 60, 13–14 % a 30). Suben despacio: a 30 se ven igual de suaves.
+  const ESPERA_MS = 1000 / 30 - 8;
   const dpr = Math.min(devicePixelRatio || 1, 1.5);
   const brillo = (() => {
     const tam = 64, c = document.createElement('canvas');
@@ -353,7 +357,7 @@
     lienzo.setAttribute('aria-hidden', 'true');
     contenedor.prepend(lienzo);
     const ctx = lienzo.getContext('2d');
-    let w = 0, h = 0, particulas = [], activo = false, ultimo = 0, id = 0;
+    let w = 0, h = 0, particulas = [], activo = false, ultimo = 0, id = 0, espera = 0;
     const cuantas = () => Math.round(Math.min(70, Math.max(22, w * h / 16000)));
     const nueva = (alAzar) => ({
       x: Math.random() * w,
@@ -393,13 +397,13 @@
         ctx.drawImage(brillo, p.x - lado / 2, p.y - lado / 2, lado, lado);
       }
       ctx.globalAlpha = 1;
-      id = requestAnimationFrame(pintar);
+      espera = setTimeout(() => { id = requestAnimationFrame(pintar); }, ESPERA_MS);
     };
     const arrancar = () => {
       if (activo || document.hidden || enReposo) return;
       activo = true; ultimo = 0; id = requestAnimationFrame(pintar);
     };
-    const parar = () => { activo = false; cancelAnimationFrame(id); };
+    const parar = () => { activo = false; clearTimeout(espera); cancelAnimationFrame(id); };
     medir();
     new ResizeObserver(unaVezPorFotograma(medir)).observe(contenedor);
     let visible = false;

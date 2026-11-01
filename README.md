@@ -12,7 +12,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
 | `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
-| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
+| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). |
 | `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos). Sin él, la lista se ve entera en el orden de las fichas. |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
@@ -132,7 +132,9 @@ node herramientas/prueba_caceria.js
   pintan las fuentes propias. En El clan, que el móvil reproduce el vídeo ligero y el escritorio el
   normal. Accesibilidad: el texto sobre fotos (portada, cabeceras, baldosas) con contraste suficiente
   medido sobre la foto real, nada que se pulse por debajo de 24 px y los iconos del menú y de las
-  preguntas visibles en el alto contraste de Windows.
+  preguntas visibles en el alto contraste de Windows. Procesador en el móvil: las ascuas no piden más
+  de 30 fotogramas por segundo y ninguna animación en marcha repinta sombras, fondos o filtros (en
+  táctil el latido del botón es un anillo que solo se escala y se apaga).
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con

@@ -991,6 +991,64 @@ const ruta = r => ('/' + r).padEnd(15);
     if (fallos.length) malos++;
     console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');
   }
+  // Página 404: enlaza a la dirección pública, que aquí se sirve desde la copia local. Con red de
+  // móvil, el título sale con la letra del clan (sin precargarla, «optional» la dejaba en Impact).
+  {
+    const fallos = [];
+    const PUBLICA = 'https://mmortexx.github.io/garra-iberica/';
+    const ctx = await navegador.newContext({ viewport: { width: 375, height: 812 }, bypassCSP: true });
+    await ctx.route(PUBLICA + '**', async q => {
+      const resp = await q.fetch({ url: q.request().url().replace(PUBLICA, BASE) });
+      await q.fulfill({ response: resp, headers: { ...resp.headers(), 'access-control-allow-origin': '*' } });
+    });
+    const p = await ctx.newPage();
+    const cdp = await ctx.newCDPSession(p);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6e6 / 8, uploadThroughput: 750e3 / 8 });
+    await p.goto(BASE + '404.html', { waitUntil: 'load' });
+    await p.waitForTimeout(500);
+    await cdp.send('DOM.enable');
+    await cdp.send('CSS.enable');
+    const { root } = await cdp.send('DOM.getDocument');
+    for (const [sel, letra] of [['h1', 'Anton'], ['.antetitulo', 'Barlow Condensed']]) {
+      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: sel });
+      const { fonts } = nodeId ? await cdp.send('CSS.getPlatformFontsForNode', { nodeId }) : { fonts: [] };
+      if (!fonts.some(f => f.familyName.startsWith(letra))) fallos.push(`${sel} con ${fonts.map(f => f.familyName).join(', ') || 'nada'} en vez de ${letra}`);
+    }
+    if (!(await p.locator('.marca').isVisible())) fallos.push('sin la marca del clan');
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta('404.html'), 'letra del clan y marca:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Procesador en el móvil: cada fotograma que pide la página la recalcula entera. Las ascuas piden
+  // como mucho 30 por segundo (a 60 se llevaban un tercio del procesador de un móvil normal) y, en
+  // táctil, ninguna animación en marcha repinta sombras o fondos (el latido y el brillo de la
+  // portada lo hacían: casi la mitad del procesador durante la entrada).
+  for (const r of ['', 'clan/']) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.waitForSelector('canvas.ascuas.encendido', { timeout: 5000 }).catch(() => fallos.push('sin ascuas'));
+    await p.waitForTimeout(3000);
+    const { fps, repintan } = await p.evaluate(async () => {
+      let n = 0;
+      const raf = window.requestAnimationFrame;
+      window.requestAnimationFrame = f => raf(t => { n++; f(t); });
+      await new Promise(z => setTimeout(z, 3000));
+      window.requestAnimationFrame = raf;
+      const repintan = document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getKeyframes)
+        .filter(a => a.effect.getKeyframes().some(k => 'boxShadow' in k || 'backgroundPosition' in k || 'filter' in k))
+        .map(a => `${a.animationName} (${a.effect.target.className || a.effect.target.tagName}${a.effect.pseudoElement || ''})`);
+      return { fps: n / 3, repintan };
+    });
+    // 30 con su temporizador; sin él, una pantalla normal da 60. 45 deja margen a un servidor lento.
+    if (fps > 45) fallos.push(`las ascuas piden ${fps.toFixed(0)} fotogramas por segundo`);
+    if (repintan.length) fallos.push(`animaciones que repintan en táctil: ${repintan.join(', ')}`);
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'procesador en el móvil:', fallos.length ? fallos.join('; ') : `ascuas a ${fps.toFixed(0)} fotogramas por segundo, nada que repinte`);
+  }
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);
