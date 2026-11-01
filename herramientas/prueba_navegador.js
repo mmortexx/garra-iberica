@@ -7,6 +7,7 @@
 // comparativa de especies, página de cada especie, batallas de la portada enlazadas a El clan,
 // botón principal de la portada a la vista en móviles bajos,
 // vídeo ligero en el móvil,
+// hora de la Cacería en cada zona,
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
@@ -76,7 +77,7 @@ const ruta = r => ('/' + r).padEnd(15);
           bloques: [...document.querySelectorAll('.cuenta-falta .t')].filter(e => !e.hidden && e.querySelector('.n').textContent && e.querySelector('.u').textContent).length,
           // El sábado de 22:00 a 23:00 (Madrid) no hay cuenta atrás: dice que ya ha empezado.
           // Solo vale en esa hora; a cualquier otra, sin bloques es un fallo.
-          enCurso: /^(Empezó a las|Started at) 22:00/.test(document.querySelector('[data-falta]')?.textContent || '')
+          enCurso: /^(Ya ha empezado|It has started)/.test(document.querySelector('[data-falta]')?.textContent || '')
             && new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).format(new Date()) === 'Sat, 22',
           compartir: !!document.querySelector('[data-compartir]:not([hidden])'),
         };
@@ -1405,6 +1406,98 @@ const ruta = r => ('/' + r).padEnd(15);
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta(r), 'procesador en el móvil:', fallos.length ? fallos.join('; ') : `ascuas a ${fps.toFixed(0)} fotogramas por segundo, nada que repinte`);
+  }
+  // Cacería según dónde se mire: la cuenta atrás y la semana dan primero la hora de quien mira, el
+  // selector las cambia, en plena cacería lo dice sin hora, sin JavaScript quedan las de España y
+  // abrir la página no paga los formateadores de hora del selector (es lo que bloqueaba la carga).
+  {
+    const fallos = [];
+    const JUEVES = '2026-11-05T12:00:00Z';
+    const abrir = async (r, zona, ahora, opts = {}) => {
+      const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, timezoneId: zona, ...opts });
+      const p = await ctx.newPage();
+      await p.clock.setFixedTime(new Date(ahora));
+      return { ctx, p, ir: () => p.goto(BASE + r, { waitUntil: 'load' }) };
+    };
+    const horario = p => p.evaluate(() => ({
+      caceria: document.querySelector('[data-aviso="caceria"]').textContent,
+      encuesta: document.querySelector('[data-aviso="encuesta"]').textContent,
+      recordatorio: document.querySelector('[data-aviso="recordatorio"]').textContent,
+      rotulo: document.querySelector('[data-horas-rotulo]').textContent,
+    }));
+    const zonas = [
+      // [página, zona del dispositivo, país que queda elegido, hora en la cuenta atrás, línea de España, hora de la cacería, encuesta, aviso, rótulo]
+      ['caceria/', 'Europe/Madrid', 'Europe/Madrid', '22:00', null, 'Sábado, 22:00', 'Miércoles, 20:00', 'Sábado, 20:00', 'Horas en España'],
+      ['caceria/', 'America/Bogota', 'America/Bogota', '16:00', '22:00 en España', 'Sábado, 16:00', 'Miércoles, 14:00', 'Sábado, 14:00', 'Horas en Colombia'],
+      ['caceria/', 'Asia/Tokyo', '', '06:00', '22:00 en España', 'Domingo, 06:00', 'Jueves, 04:00', 'Domingo, 04:00', 'Tu hora'],
+      ['en/hunt/', 'Europe/London', 'Europe/London', '21:00', '22:00 in Spain', 'Saturday, 21:00', 'Wednesday, 19:00', 'Saturday, 19:00', 'Times in United Kingdom'],
+      ['en/hunt/', 'America/Argentina/Buenos_Aires', 'America/Argentina/Buenos_Aires', '18:00', '22:00 in Spain', 'Saturday, 18:00', 'Wednesday, 16:00', 'Saturday, 16:00', 'Times in Argentina'],
+    ];
+    for (const [r, zona, pais, hora, espana, caceria, encuesta, recordatorio, rotulo] of zonas) {
+      const { ctx, p, ir } = await abrir(r, zona, JUEVES);
+      await ir();
+      await p.waitForFunction(() => document.querySelector('[data-resultado] b'), null, { timeout: 5000 }).catch(() => fallos.push(`${r} ${zona}: el selector no da resultado`));
+      const v = await p.evaluate(() => ({
+        pais: document.querySelector('[data-horas] select').value,
+        fecha: document.querySelector('[data-cuenta] time').textContent,
+        espana: document.querySelector('[data-local]').hidden ? null : document.querySelector('[data-local]').textContent,
+        resultado: document.querySelector('[data-resultado] b')?.textContent,
+      }));
+      if (v.pais !== pais) fallos.push(`${r} ${zona}: elige «${v.pais}»`);
+      if (!v.fecha.includes(hora)) fallos.push(`${r} ${zona}: la cuenta atrás dice «${v.fecha}», sin ${hora}`);
+      if (v.espana !== espana) fallos.push(`${r} ${zona}: línea de España «${v.espana}»`);
+      if (v.resultado !== caceria) fallos.push(`${r} ${zona}: el selector dice «${v.resultado}»`);
+      const h = await horario(p).catch(() => null);
+      if (!h || h.caceria !== caceria || h.encuesta !== encuesta || h.recordatorio !== recordatorio || h.rotulo !== rotulo) fallos.push(`${r} ${zona}: la semana dice ${JSON.stringify(h)}`);
+      await ctx.close();
+    }
+    // Elegir otro país cambia el resultado y la semana.
+    {
+      const { ctx, p, ir } = await abrir('caceria/', 'America/Bogota', JUEVES);
+      await ir();
+      await p.waitForFunction(() => document.querySelector('[data-resultado] b'), null, { timeout: 5000 }).catch(() => {});
+      await p.locator('[data-horas] select').selectOption('Europe/Madrid');
+      const h = await horario(p).catch(() => null);
+      if (!h || h.caceria !== 'Sábado, 22:00' || h.encuesta !== 'Miércoles, 20:00' || h.rotulo !== 'Horas en España') fallos.push(`al elegir España: ${JSON.stringify(h)}`);
+      await ctx.close();
+    }
+    // En plena cacería, la cuenta atrás lo dice y no da una hora que no sería la de quien mira.
+    for (const [r, texto, titulo] of [['caceria/', 'Ya ha empezado', 'Cacería en marcha'], ['en/hunt/', 'It has started', 'Hunt under way']]) {
+      const { ctx, p, ir } = await abrir(r, 'America/Bogota', '2026-11-07T21:30:00Z');
+      await ir();
+      const dice = await p.locator('[data-falta]').textContent();
+      if (!dice.startsWith(texto)) fallos.push(`${r} en plena cacería dice «${dice}»`);
+      if (await p.locator('.cuenta-titulo').first().textContent() !== titulo) fallos.push(`${r} en plena cacería no se titula «${titulo}»`);
+      await ctx.close();
+    }
+    // Sin JavaScript: las horas de España, sin selector ni cuenta atrás.
+    {
+      const { ctx, p, ir } = await abrir('caceria/', 'America/Bogota', JUEVES, { javaScriptEnabled: false });
+      await ir();
+      const h = await horario(p).catch(() => null);
+      if (!h || h.caceria !== 'Sábado, 22:00' || h.encuesta !== 'Miércoles, 20:00' || h.rotulo !== 'Hora de España') fallos.push(`sin JavaScript: ${JSON.stringify(h)}`);
+      if (await p.locator('[data-horas]').isVisible()) fallos.push('sin JavaScript se ve el selector');
+      await ctx.close();
+    }
+    // Al abrir: ningún formateador de hora antes de que la página esté lista. La cuenta atrás y el
+    // selector los crean después, cada uno en su tarea.
+    {
+      const { ctx, p, ir } = await abrir('caceria/', 'Europe/Madrid', JUEVES);
+      await p.addInitScript(() => {
+        window.__intl = 0;
+        Intl.DateTimeFormat = new Proxy(Intl.DateTimeFormat, {
+          construct: (t, a) => { window.__intl++; return new t(...a); },
+          apply: (t, _, a) => { window.__intl++; return t(...a); },
+        });
+        document.addEventListener('DOMContentLoaded', () => { window.__intlCarga = window.__intl; });
+      });
+      await ir();
+      const n = await p.evaluate(() => window.__intlCarga);
+      if (n !== 0) fallos.push(`se crean ${n} formateadores de hora al abrir`);
+      await ctx.close();
+    }
+    if (fallos.length) malos++;
+    console.log(ruta('caceria/'), 'hora de cada zona:', fallos.length ? fallos.join('; ') : 'sí');
   }
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');

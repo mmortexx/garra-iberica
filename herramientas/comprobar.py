@@ -628,19 +628,32 @@ def revisar_movidas(raiz, falla):
                 falla(f'MOVIDAS[{lang}]: #{viejo} lleva a la sección #{seccion}, que no está en {inicio}{ruta}')
 
 
+def revisar_estilos(raiz, falla):
+    """Una llave de más en estilos.css no da error: el navegador tira en silencio la regla siguiente."""
+    css = re.sub(r'/\*.*?\*/|"[^"]*"', '', leer(raiz, 'estilos.css'), flags=re.S)
+    nivel = 0
+    for n, linea in enumerate(css.splitlines(), 1):
+        nivel += linea.count('{') - linea.count('}')
+        if nivel < 0:
+            falla(f'estilos.css: sobra una llave de cierre hacia esta línea ({n}, sin contar comentarios): «{linea.strip()[:60]}»')
+            return
+    if nivel:
+        falla(f'estilos.css: quedan {nivel} llaves sin cerrar')
+
+
 def revisar_privacidad(raiz, falla):
     """El aviso legal promete que la web no guarda ni pide nada y nombra a dónde llevan sus enlaces:
     si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
-    for js in raiz.glob('*.js'):
-        guarda = re.search(r'localStorage|sessionStorage|indexedDB|document\.cookie', js.read_text(encoding='utf-8'))
+    for nombre in sorted(set(VERSIONADOS) - {'estilos.css'}):
+        guarda = re.search(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', leer(raiz, nombre), re.I)
         if guarda:
-            falla(f'{js.name} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
+            falla(f'{nombre} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
     dominios = set()
-    for nombre in PAGINAS:
+    for nombre in [*PAGINAS, '404.html']:
         html = leer(raiz, nombre)
-        if re.search(r'<form\b', html):
+        if re.search(r'<form\b', html, re.I):
             falla(f'{nombre}: tiene un formulario y el aviso legal dice que no los hay')
-        dominios |= set(re.findall(r'href="https?://([^/"]+)', html))
+        dominios |= {d.lower() for d in re.findall(r'''href=["']?(?:https?:)?//([^/"'\s>]+)''', html, re.I)}
     dominios -= {urlparse(guia_dinos.base_web(raiz)).netloc}
     for lang in montar_web.LANGS:
         legal = plano(leer(raiz, RUTA['legal', lang] + 'index.html'))
@@ -856,6 +869,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_especies(raiz, base, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
+    revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
