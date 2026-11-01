@@ -40,7 +40,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); }
+/* El resaltado al tocar, en el rojo de la web: el del sistema es azul o gris. */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); -webkit-tap-highlight-color: rgba(255, 53, 31, .16); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -145,31 +146,49 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   @supports selector(:popover-open) {
     .menu-boton { display: grid; }
     .menu[popover]:not(:popover-open) { display: none; }
-    .menu[popover]:popover-open {
+    /* Maquetado también al irse: mientras se funde al cerrar ya no está «abierto» y, si no, se veía en fila. */
+    .menu[popover] {
       position: fixed; inset: 0; z-index: 50; width: 100%; height: 100%;
       display: flex; flex-direction: column; justify-content: safe center; align-items: flex-start; gap: .2rem;
-      padding: 5rem max(24px, 8vw) 3rem; overflow-y: auto; overscroll-behavior: contain;
+      padding: 5rem max(24px, 8vw) 3rem; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
       background:
         radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 48, 25, .22), transparent 70%),
         var(--fondo);
     }
     @supports (backdrop-filter: blur(1px)) {
-      .menu[popover]:popover-open {
+      .menu[popover] {
         background:
           radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 48, 25, .24), transparent 70%),
-          rgba(8, 8, 8, .72);
+          rgba(8, 8, 8, .82);
         backdrop-filter: blur(22px) saturate(1.4);
       }
     }
+    /* Entra y se va fundiéndose; donde el navegador no sabe, aparece sin más. */
+    .menu[popover] { opacity: 0; pointer-events: none; transition: opacity .28s ease-out, display .28s allow-discrete, overlay .28s allow-discrete; }
+    .menu[popover]:popover-open { pointer-events: auto; }
+    .menu[popover]:popover-open { opacity: 1; }
+    @starting-style { .menu[popover]:popover-open { opacity: 0; } }
     .menu[popover]::backdrop { background: transparent; }
-    .menu:popover-open a {
+    /* Tres zarpazos enormes detrás de los enlaces: se abren de arriba abajo al entrar. */
+    .menu[popover]::before {
+      content: ""; position: fixed; right: -6vw; top: 12%; bottom: 8%; z-index: -1; width: 62vw; pointer-events: none;
+      background:
+        linear-gradient(180deg, transparent, rgba(255, 53, 31, .3) 22%, rgba(255, 92, 74, .16) 70%, transparent) 8% 0 / 13% 100% no-repeat,
+        linear-gradient(180deg, transparent, rgba(255, 53, 31, .36) 26%, rgba(255, 92, 74, .2) 74%, transparent) 50% 0 / 13% 100% no-repeat,
+        linear-gradient(180deg, transparent, rgba(255, 53, 31, .26) 18%, rgba(255, 92, 74, .14) 66%, transparent) 92% 0 / 13% 100% no-repeat;
+      transform: skewX(-14deg); transform-origin: top;
+      animation: menu-zarpazo .55s var(--suave-salida) .06s both;
+    }
+    .menu[popover] a {
       font: clamp(2.3rem, 11vw, 3.6rem)/1.15 var(--titulos); letter-spacing: .02em; color: var(--hueso); padding: .25rem 0;
       animation: menu-entra .6s var(--suave-salida) both; animation-delay: calc(.05s + var(--n, 0) * 60ms);
+      transition: color .2s, translate .25s var(--suave-salida);
     }
-    .menu:popover-open a::after { bottom: .15rem; height: 3px; }
-    .menu:popover-open a[aria-current] { color: var(--ascua-viva); }
-    .menu:popover-open .menu-idioma { display: block; margin-top: 1.4rem; font: 600 1.05rem/1.4 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
-    .menu:popover-open .menu-cerrar { display: grid; }
+    .menu[popover] a:active { color: var(--ascua-viva); translate: 8px 0; transition-duration: .06s; }
+    .menu[popover] a::after { bottom: .15rem; height: 3px; }
+    .menu[popover] a[aria-current] { color: var(--ascua-viva); }
+    .menu[popover] .menu-idioma { display: block; margin-top: 1.4rem; font: 600 1.05rem/1.4 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+    .menu[popover] .menu-cerrar { display: grid; }
     .menu a:nth-child(2) { --n: 1; } .menu a:nth-child(3) { --n: 2; } .menu a:nth-child(4) { --n: 3; }
     .menu a:nth-child(5) { --n: 4; } .menu a:nth-child(6) { --n: 5; } .menu a:nth-child(7) { --n: 6; }
     html:has(.menu:popover-open) { overflow: hidden; }
@@ -180,6 +199,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   }
 }
 @keyframes menu-entra { from { opacity: 0; translate: -24px 0; } }
+@keyframes menu-zarpazo { from { opacity: 0; transform: skewX(-14deg) scaleY(.2); } }
 /* Escritorio: pestañas de esquinas rectas; la página actual, con un velo de ascua y su trazo. */
 @media (min-width: 1020px) {
   .menu, .menu[popover] { gap: .15rem; }
@@ -261,6 +281,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .saltos a:active, .indice-grupo li a:active { background: rgba(255, 53, 31, .18); }
 .boton-mini { min-height: 44px; padding: .5rem 1.05rem; font-size: 1rem; }
 .boton-grande { font-size: clamp(1.05rem, 3.2vw, 1.4rem); padding: 1.05rem 2rem; }
+/* En el móvil, el botón largo en una línea: partido, la flecha se quedaba suelta al otro lado. */
+@media (max-width: 430px) { .boton-grande { padding-inline: .9rem; gap: .4rem; letter-spacing: .05em; } }
 .latido::after { animation: empuje 2.8s ease-in-out 1.5s 4; }
 @keyframes empuje { 0%, 60%, 100% { transform: none; } 75% { transform: translateX(5px); } }
 .latido { animation: latido 2.8s ease-in-out 1.5s 4; }
@@ -609,6 +631,8 @@ h2::after {
 }
 .foto:hover { border-color: var(--borde-fuerte); box-shadow: 0 0 24px -6px rgba(255, 53, 31, .45); }
 @media (hover: hover) { .foto:hover img { transform: scale(1.04); } }
+.foto:active { border-color: var(--ascua); }
+.foto:active img { transform: scale(1.02); transition-duration: .15s; }
 .foto-grande { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
 .foto-alta img { object-position: 50% 30%; }
 .foto-bosque img { object-position: 70% 50%; }
@@ -878,6 +902,8 @@ summary {
   transition: color .25s, padding-left .45s var(--suave-salida);
 }
 @media (hover: hover) { summary:hover { color: var(--ascua-viva); padding-left: .4rem; } }
+summary:active { color: var(--ascua-viva); }
+summary:active::before, summary:active::after { background: var(--ascua-viva); }
 summary:focus-visible { outline-offset: 2px; }
 summary::-webkit-details-marker { display: none; }
 summary::after, summary::before {
@@ -926,6 +952,14 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pie-menu { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; }
 .pie-menu a, .pie-enlaces a { color: var(--suave); text-decoration: none; font: 600 1rem/1.8 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase; }
 .pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
+/* Un trazo de ascua se desliza bajo el enlace al pasar, como en el menú de arriba. */
+.pie-menu a, .pie-enlaces a {
+  background: linear-gradient(var(--ascua), var(--ascua)) 0 100% / 0 2px no-repeat;
+  transition: color .25s, background-size .35s var(--suave-salida);
+}
+.pie-menu a:hover, .pie-enlaces a:hover, .pie-menu a:active, .pie-enlaces a:active { background-size: 100% 2px; }
+.pie-menu a:active, .pie-enlaces a:active, .migas a:active { color: var(--ascua-viva); }
+@media (forced-colors: active) { .pie-menu a:hover, .pie-enlaces a:hover { text-decoration: underline; } }
 .pie-enlaces { display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; margin: 0; padding-top: 1.4rem; border-top: 1px solid rgba(138, 138, 138, .15); }
 .pie-enlaces a:last-child { margin-left: auto; }
 .pie-legal { margin: 0; font-size: .9rem; opacity: .8; }
@@ -996,11 +1030,12 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .comparar { margin-top: 1.4rem; }
 .comparar-fila, .comparar-lista > div { display: grid; gap: .35rem 1.2rem; }
 .comparar-cifras, .comparar-lista dd { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, .7fr); gap: .8rem; }
+/* Pegada bajo la barra, de cristal como ella: en negro macizo era un rectángulo sobre el fondo rojizo. */
 .comparar-cabeza {
-  position: sticky; top: 3.9rem; z-index: 2; margin: 0; padding: .55rem 0; background: var(--fondo); border-bottom: 1px solid var(--borde);
-  box-shadow: -100vw 0 var(--fondo), 100vw 0 var(--fondo);
+  position: sticky; top: 3.9rem; z-index: 2; margin: 0 -.5rem; padding: .55rem .5rem; background: rgba(10, 10, 10, .94); border-bottom: 1px solid var(--borde); border-radius: 0 0 4px 4px;
   font: 600 .9rem/1.2 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave);
 }
+@supports (backdrop-filter: blur(1px)) { .comparar-cabeza { background: rgba(10, 10, 10, .68); backdrop-filter: var(--cristal-desenfoque); } }
 .comparar-cabeza > span:first-child { display: none; }
 .comparar-lista { margin: 0; }
 .comparar-lista > div { position: relative; padding: .8rem 0; border-bottom: 1px solid var(--linea); transition: background-color .25s; }
@@ -1013,6 +1048,8 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .comparar-lista dd { margin: 0; color: var(--hueso); font-weight: 600; }
 .comparar-lista small { display: block; font-size: .85rem; font-weight: 400; line-height: 1.3; color: var(--suave); }
 @media (hover: hover) { .comparar-lista > div:hover { background: rgba(255, 53, 31, .07); } .comparar-lista > div:hover dt a { color: var(--ascua-viva); } }
+.comparar-lista > div:active { background: rgba(255, 53, 31, .16); transition-duration: .06s; }
+.comparar-lista > div:active dt a { color: var(--ascua-viva); }
 .comparar-lista dt a:focus-visible { outline: 0; }
 .comparar-lista dt a:focus-visible::before { outline: 2px solid var(--ascua-viva); outline-offset: -2px; }
 .comparar-lista > .marcada { box-shadow: inset 2px 0 0 var(--ascua); background: rgba(255, 53, 31, .1); padding-left: .7rem; }
@@ -1175,7 +1212,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem;
   border: 1px solid var(--linea); border-radius: 6px;
   background: linear-gradient(160deg, rgba(48, 18, 15, .5), rgba(11, 11, 11, .85)); box-shadow: var(--cristal-brillo);
-  transition: border-color .4s, box-shadow .5s, translate .5s var(--suave-salida);
+  transition: border-color .4s, box-shadow .5s, translate .5s var(--suave-salida), scale .25s var(--suave-salida);
 }
 .baldosa-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .72; transition: scale 1.4s var(--suave-salida), opacity .5s; }
 .baldosa::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8, 8, 8, .05) 0%, rgba(8, 8, 8, .55) 45%, rgba(8, 8, 8, .94) 100%); }
@@ -1194,6 +1231,9 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   .baldosa:hover .baldosa-fondo { scale: 1.06; opacity: .88; }
   .baldosa:hover h3::after { translate: 5px 0; }
 }
+/* Al pulsar se hunde un poco y se enciende el borde; con el dedo es la única respuesta que tiene. */
+.baldosa:active { border-color: var(--ascua); scale: .985; transition: border-color .1s, scale .1s; }
+.baldosa:active h3::after { translate: 5px 0; }
 .especies { position: relative; z-index: 2; margin: 1.3rem 0 0; display: grid; gap: .55rem; }
 .especies div { display: grid; grid-template-columns: 7rem 1fr; gap: .8rem; padding-top: .55rem; border-top: 1px solid var(--linea); }
 /* Sobre la foto de la baldosa: el rojo vivo da margen de contraste (con --ascua quedaba en 4,6). */
@@ -1354,6 +1394,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   .menu-cerrar::before, .menu-cerrar::after, .visor-cerrar::before, .visor-cerrar::after, .visor-pasar::before { forced-color-adjust: none; background: ButtonText; }
   summary::before, summary::after { forced-color-adjust: none; background: CanvasText; }
   .menu[popover]:popover-open, .visor { background: Canvas; backdrop-filter: none; }
+  .menu[popover]::before { content: none; }
   .menu a[aria-current] { text-decoration: underline 2px; text-underline-offset: .2em; }
   .comparar-lista > .marcada { outline: 2px solid Highlight; outline-offset: -2px; }
   .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { text-decoration: underline 2px; }
