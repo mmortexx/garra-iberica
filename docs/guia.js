@@ -26,6 +26,22 @@
     grupo: (a, b) => b.dataset.grupo - a.dataset.grupo,
     nombre: () => 0,
   };
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+  // Al cambiar lo elegido, cada fila viaja de donde estaba a su sitio nuevo y las que aparecen se
+  // funden: se ve qué ha pasado con la lista. Solo con transform y opacidad, y solo este momento.
+  const conMovimiento = cambio => {
+    if (quieto.matches || !lista.animate) { cambio(); return; }
+    const antes = new Map(filas.filter(f => !f.hidden).map(f => [f, f.getBoundingClientRect().top]));
+    cambio();
+    const lejos = innerHeight;
+    for (const f of filas) {
+      if (f.hidden) continue;
+      const estaba = antes.get(f);
+      if (estaba === undefined) { f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' }); continue; }
+      const salto = Math.max(-lejos, Math.min(lejos, estaba - f.getBoundingClientRect().top));
+      if (salto) f.animate([{ transform: `translateY(${salto}px)` }, { transform: 'none' }], { duration: 460, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    }
+  };
   const poner = () => {
     const criterio = criterios[orden.value] || criterios.fichas;
     const ordenadas = [...filas].sort((a, b) => criterio(a, b) || abc.compare(a.dataset.nombre, b.dataset.nombre));
@@ -49,7 +65,7 @@
   }
   const marcada = filas.find(f => f.querySelector('a').pathname.endsWith(`/${pedidos.get('marca')}/`));
   caja.addEventListener('change', () => {
-    poner();
+    conMovimiento(poner);
     const url = new URL(location.href);
     url.searchParams.delete('marca');
     for (const [nombre, sel] of Object.entries(campos)) {

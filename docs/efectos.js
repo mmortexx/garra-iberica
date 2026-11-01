@@ -46,8 +46,13 @@
   const menu = document.querySelector('.menu[popover]');
   if (menu && menu.showPopover) {
     const detras = [...document.querySelectorAll('.saltar, .marca, .barra-acciones, main, .pie')];
+    let fundido = 0;
     menu.addEventListener('beforetoggle', e => {
-      if (e.newState === 'closed') detras.forEach(el => { el.inert = false; });
+      clearTimeout(fundido);
+      menu.classList.toggle('cerrando', e.newState === 'closed');
+      if (e.newState !== 'closed') return;
+      detras.forEach(el => { el.inert = false; });
+      fundido = setTimeout(() => menu.classList.remove('cerrando'), 400);
     });
     menu.addEventListener('toggle', e => {
       if (e.newState !== 'open') return;

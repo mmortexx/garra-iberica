@@ -7,7 +7,7 @@
 // comparativa de especies, página de cada especie, batallas de la portada enlazadas a El clan,
 // botón principal de la portada a la vista en móviles bajos,
 // vídeo ligero en el móvil,
-// hora de la Cacería en cada zona,
+// hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
@@ -35,8 +35,120 @@ const CON_GALERIA = ['galeria'];
 // Enlaces de cuando todo estaba en la portada: deben llevar a su página nueva.
 const MOVIDAS = [['#normas', 'normas/'], ['en/#rules', 'en/rules/'], ['#guia', 'dinosaurios/'], ['en/#faq', 'en/join/#faq'], ['en/#hunt', 'en/hunt/']];
 const ruta = r => ('/' + r).padEnd(15);
+// Efectos: lo que, roto, no da ningún error y solo se nota mirando. SOLO=efectos prueba solo esto.
+const efectos = async navegador => {
+  const fallos = [];
+  const abrir = async (r, opts = {}) => {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    return { ctx, p };
+  };
+  // Menú del móvil: mientras se funde al cerrar sigue maquetado a pantalla completa (si no, los enlaces
+  // salen un instante en fila arriba) y al acabar no queda nada encima de la página.
+  for (const r of ['', 'en/']) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    const m = await p.evaluate(async () => {
+      const menu = document.querySelector('.menu');
+      const cs = getComputedStyle(menu);
+      menu.hidePopover();
+      await new Promise(z => setTimeout(z, 60));
+      const durante = [cs.position, cs.display];
+      await new Promise(z => setTimeout(z, 500));
+      return { durante, fin: cs.display };
+    });
+    if (m.durante[0] !== 'fixed') fallos.push(`/${r} el menú pierde su sitio al cerrarse: ${JSON.stringify(m)}`);
+    if (m.fin !== 'none') fallos.push(`/${r} el menú no acaba de irse: ${JSON.stringify(m)}`);
+    await ctx.close();
+  }
+  // Bruma de portada y cabeceras: sale, se para fuera de pantalla y en reposo; sin movimiento no existe.
+  for (const r of ['', 'en/', 'clan/', 'en/hunt/']) {
+    const { ctx, p } = await abrir(r);
+    await p.waitForSelector('.bruma.encendido', { timeout: 5000 }).catch(() => fallos.push(`/${r} sin bruma`));
+    const estado = () => p.evaluate(() => {
+      const b = document.querySelector('.bruma');
+      return b ? getComputedStyle(b, '::before').animationPlayState : 'falta';
+    });
+    if (await estado() !== 'running') fallos.push(`/${r} la bruma no se mueve: ${await estado()}`);
+    await p.evaluate(() => scrollTo({ top: document.querySelector('.bruma').parentElement.offsetHeight + 900, behavior: 'instant' }));
+    await p.waitForTimeout(300);
+    if (await estado() !== 'paused') fallos.push(`/${r} la bruma sigue en marcha fuera de pantalla: ${await estado()}`);
+    await p.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+    await p.waitForTimeout(300);
+    if (await estado() !== 'running') fallos.push(`/${r} la bruma no vuelve al subir: ${await estado()}`);
+    await p.evaluate(() => dispatchEvent(new Event('blur')));
+    await p.waitForTimeout(100);
+    if (await estado() !== 'paused') fallos.push(`/${r} la bruma sigue en marcha en reposo: ${await estado()}`);
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await abrir('', { reducedMotion: 'reduce' });
+    await p.waitForTimeout(1200);
+    if (await p.locator('.bruma').count()) fallos.push('con «reducir movimiento» hay bruma');
+    await ctx.close();
+  }
+  // Arañazos de los títulos: acaban enteros, con animación y sin JavaScript.
+  for (const [nombre, opts] of [['normal', {}], ['sin JavaScript', { javaScriptEnabled: false }], ['sin movimiento', { reducedMotion: 'reduce' }]]) {
+    const { ctx, p } = await abrir('', opts);
+    await p.locator('#t-quienes').scrollIntoViewIfNeeded();
+    await p.waitForTimeout(1300);
+    const tam = await p.evaluate(() => getComputedStyle(document.querySelector('#t-quienes'), '::after').backgroundSize);
+    if (tam !== '14% 100%, 14% 100%, 14% 100%') fallos.push(`arañazos a medias (${nombre}): ${tam}`);
+    await ctx.close();
+  }
+  // Fotos que se funden al llegar: ninguna se queda invisible, tampoco si falla al cargar.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.route('**/galeria-roca-*.webp', z => z.abort());
+    await p.goto(BASE + 'galeria/', { waitUntil: 'load' });
+    await p.evaluate(async () => {
+      for (const li of document.querySelectorAll('.foto')) { li.scrollIntoView({ behavior: 'instant', block: 'center' }); await new Promise(z => setTimeout(z, 90)); }
+    });
+    await p.waitForTimeout(1500);
+    const quedan = await p.evaluate(() => [...document.querySelectorAll('.foto img, .baldosa-fondo, .tira img')].filter(i => i.classList.contains('por-llegar')).map(i => i.getAttribute('src')));
+    if (quedan.length) fallos.push(`fotos invisibles tras cargar o fallar: ${quedan.join(', ')}`);
+    await ctx.close();
+  }
+  // Botón grande de los vídeos: uno por vídeo, en su idioma; se aparta al reproducir y vuelve al acabar.
+  for (const [r, inicio] of [['clan/', 'Reproducir: '], ['en/clan/', 'Play: ']]) {
+    const { ctx, p } = await abrir(r);
+    const v = await p.evaluate(texto => {
+      const videos = [...document.querySelectorAll('.batalla-video video')];
+      const botones = [...document.querySelectorAll('.video-play')];
+      const bien = botones.every((b, i) => b.getAttribute('aria-label') === texto + videos[i].getAttribute('aria-label'));
+      videos[0].dispatchEvent(new Event('play'));
+      const alReproducir = botones[0].hidden;
+      videos[0].dispatchEvent(new Event('ended'));
+      return { videos: videos.length, botones: botones.length, bien, alReproducir, alAcabar: botones[0].hidden };
+    }, inicio);
+    if (!v.videos || v.videos !== v.botones || !v.bien || !v.alReproducir || v.alAcabar) fallos.push(`/${r} botón de los vídeos: ${JSON.stringify(v)}`);
+    await ctx.close();
+  }
+  // Comparativa: al reordenar, las filas viajan a su sitio; sin movimiento, se colocan sin más.
+  for (const [r, opts, esperadas] of [['dinosaurios/', {}, true], ['en/dinosaurs/', {}, true], ['dinosaurios/', { reducedMotion: 'reduce' }, false]]) {
+    const { ctx, p } = await abrir(r, opts);
+    const n = await p.evaluate(() => {
+      const sel = document.querySelector('[data-comparar] select');
+      sel.value = 'peso';
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      return document.getAnimations().filter(a => a.effect.target.matches?.('.comparar-lista > div')).length;
+    });
+    if ((n > 0) !== esperadas) fallos.push(`/${r} comparativa ${esperadas ? 'sin' : 'con'} movimiento al ordenar (${n} filas, ${JSON.stringify(opts)})`);
+    await ctx.close();
+  }
+  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa):', fallos.length ? fallos.join('; ') : 'bien');
+  return fallos.length;
+};
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+  if (process.env.SOLO === 'efectos') {
+    const n = await efectos(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
   // Páginas de cada especie: iguales por dentro, así que a la batería completa van solo, en cada idioma,
   // la de nombre más largo y la de más corto. Todas pasan por la prueba de especies, más abajo.
   const mapa = await (await fetch(BASE + 'sitemap.xml')).text();
@@ -1499,6 +1611,7 @@ const ruta = r => ('/' + r).padEnd(15);
     if (fallos.length) malos++;
     console.log(ruta('caceria/'), 'hora de cada zona:', fallos.length ? fallos.join('; ') : 'sí');
   }
+  malos += await efectos(navegador);
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);

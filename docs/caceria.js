@@ -115,7 +115,13 @@
       titulo.textContent = cuando('caceria');
       salida.replaceChildren(titulo, zona ? textos.texto : textos.textoPropio);
     };
-    lista.addEventListener('change', calcular);
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+    lista.addEventListener('change', () => {
+      calcular();
+      // Las horas nuevas entran un poco para que se vea que han cambiado, también las de la semana.
+      if (quieto.matches || !salida.animate) return;
+      for (const el of [salida, ...titulos]) el.animate([{ opacity: 0.25, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
     horas.hidden = false;
     // En su propia tarea, cuando el navegador respire: la cuenta atrás ya está pintada y abrir la
@@ -211,10 +217,10 @@
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const dos = n => String(n).padStart(2, '0');
 
-  // Cada unidad es un bloque (cifra y nombre) para cambiar solo lo que cambia y animar los
-  // segundos. «Faltan» queda para los lectores de pantalla; a la vista lo dicen los bloques.
+  // Cada unidad es un bloque (cifra y nombre) para cambiar solo lo que cambia y que caiga la cifra
+  // nueva. «Faltan» queda para los lectores de pantalla; a la vista lo dicen los bloques.
   const piezas = {};
-  let montada = false, ultimoInicio = 0;
+  let montada = false, ultimoInicio = 0, yaPintada = false;
   const montar = () => {
     const previo = document.createElement('span');
     previo.className = 'oculto';
@@ -241,7 +247,7 @@
     if (nombre.textContent !== unidad) nombre.textContent = unidad;
     if (cifra.textContent === texto) return;
     cifra.textContent = texto;
-    if (k === 's' && !sinMovimiento.matches && cifra.animate) {
+    if ((k === 's' || yaPintada) && !sinMovimiento.matches && cifra.animate) {
       cifra.animate([{ opacity: 0.2, transform: 'translateY(-40%)' }, { opacity: 1, transform: 'none' }], { duration: 350, easing: 'cubic-bezier(.16, 1, .3, 1)' });
     }
   };
@@ -275,6 +281,7 @@
       caja.classList.remove('en-curso');
       nodoTitulo.textContent = tituloNormal;
     }
+    yaPintada = true;
   };
 
   // Un tic por segundo, solo mientras la caja se ve y la pestaña está delante.

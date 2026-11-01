@@ -164,10 +164,12 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
       }
     }
     /* Entra y se va fundiéndose; donde el navegador no sabe, aparece sin más. */
-    .menu[popover] { opacity: 0; pointer-events: none; transition: opacity .28s ease-out, display .28s allow-discrete, overlay .28s allow-discrete; }
-    .menu[popover]:popover-open { pointer-events: auto; }
-    .menu[popover]:popover-open { opacity: 1; }
+    .menu[popover] { opacity: 0; pointer-events: none; }
+    .menu[popover]:popover-open { opacity: 1; pointer-events: auto; transition: opacity .28s ease-out; }
     @starting-style { .menu[popover]:popover-open { opacity: 0; } }
+    /* Solo al cerrar de verdad (lo pone efectos.js): si valiera siempre, al girar una tableta y pasar
+       de escritorio a móvil el menú se vería un instante a pantalla completa. */
+    .menu[popover].cerrando { transition: opacity .28s ease-out, display .28s allow-discrete, overlay .28s allow-discrete; }
     .menu[popover]::backdrop { background: transparent; }
     /* Tres zarpazos enormes detrás de los enlaces: se abren de arriba abajo al entrar. */
     .menu[popover]::before {
@@ -797,7 +799,8 @@ html:has(.visor[open]) { overflow: hidden; }
 .pasos p { margin: 0; color: var(--suave); }
 .hex { position: relative; flex: none; width: 60px; height: 52px; display: grid; place-items: center; }
 .hex svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.hex-fondo { fill: #0e0e0e; stroke: url(#acero); stroke-width: 3; stroke-linejoin: round; }
+.hex-fondo { fill: #0e0e0e; stroke: url(#acero); stroke-width: 3; stroke-linejoin: round; transition: fill .35s; }
+.pasos li:hover .hex-fondo { fill: #33120d; }
 .hex-brillo { fill: none; stroke: var(--ascua); stroke-width: 1.5; stroke-linejoin: round; stroke-dasharray: 182; stroke-dashoffset: 0; filter: drop-shadow(0 0 4px var(--ascua)); }
 .anim .revelar .hex-brillo { stroke-dashoffset: 182; transition: stroke-dashoffset .8s var(--suave-salida) calc(.18s + var(--i, 0) * 75ms); }
 .anim .revelar.visible .hex-brillo { stroke-dashoffset: 0; }
@@ -865,7 +868,9 @@ kbd { padding: .05rem .4rem; border: 1px solid var(--borde); border-bottom-width
 /* La luz, dentro de la tarjeta: fuera de su caja ensancharía la tarjeta en el móvil. */
 .senales li.luz::before { inset: 0; border-radius: 4px; }
 .senales:not(.senales-voz) li { display: flex; align-items: center; gap: .9rem; }
-.tecla { flex: none; display: inline-grid; place-items: center; min-width: 2.4rem; height: 2.4rem; border-bottom-width: 3px; font: 1.25rem/1 var(--titulos); }
+.tecla { flex: none; display: inline-grid; place-items: center; min-width: 2.4rem; height: 2.4rem; border-bottom-width: 3px; font: 1.25rem/1 var(--titulos); transition: translate .12s, border-color .2s, color .2s; }
+/* La tecla se hunde al pasar o tocar su tarjeta, como si la pulsaras. */
+.senales li:hover .tecla, .senales li:active .tecla { translate: 0 2px; border-color: var(--ascua); color: var(--ascua-viva); }
 .senal { display: block; margin-bottom: .35rem; font: 1.6rem/1.15 var(--titulos); letter-spacing: .02em; text-transform: uppercase; color: var(--ascua-viva); }
 
 /* Aviso legal: texto corrido, a una columna. */
@@ -966,6 +971,16 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .seccion + .llamada { background: linear-gradient(90deg, transparent, rgba(138, 138, 138, .4) 30%, rgba(255, 70, 50, .85) 50%, rgba(138, 138, 138, .4) 70%, transparent) top center / min(var(--ancho), calc(100% - 32px)) 1px no-repeat; }
 
 .pagina-404 { min-height: 100vh; display: grid; place-items: center; }
+/* Tres zarpazos enormes detrás del texto: el rastro que no lleva a ninguna parte. */
+.pagina-404::after {
+  content: ""; position: absolute; left: 50%; top: 50%; z-index: -1; width: min(112vw, 62rem); height: min(92vh, 44rem); margin: min(-46vh, -22rem) 0 0 max(-56vw, -31rem); pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent, rgba(255, 53, 31, .2) 22%, rgba(255, 92, 74, .1) 72%, transparent) 10% 0 / 11% 100% no-repeat,
+    linear-gradient(180deg, transparent, rgba(255, 53, 31, .26) 28%, rgba(255, 92, 74, .12) 78%, transparent) 50% 0 / 11% 100% no-repeat,
+    linear-gradient(180deg, transparent, rgba(255, 53, 31, .18) 18%, rgba(255, 92, 74, .08) 66%, transparent) 90% 0 / 11% 100% no-repeat;
+  transform: skewX(-14deg); transform-origin: top;
+  animation: menu-zarpazo .8s var(--suave-salida) .15s both;
+}
 .pagina-404 h1 { font-size: clamp(2.2rem, 7vw, 4rem); text-transform: uppercase; }
 .pagina-404 .marca { display: inline-flex; margin-bottom: 2.4rem; }
 .acciones-404 { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; margin: 1.6rem 0 0; }
@@ -1024,6 +1039,9 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   filter: drop-shadow(0 0 18px rgba(255, 53, 31, .25));
 }
 .cifras span { font: 600 .95rem/1.3 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+/* Cada cifra cae con peso desde un poco más grande. */
+.anim .cifras .revelar b { scale: 1.4; transform-origin: left bottom; transition: scale .5s cubic-bezier(.2, 1.3, .4, 1) calc(var(--i, 0) * 70ms); }
+.anim .cifras .revelar.visible b { scale: 1; }
 
 /* Guía de dinosaurios */
 .guia-revisado { margin: 0; font: 600 .95rem/1.4 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }
@@ -1084,6 +1102,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .comparar-lista dt a:focus-visible { outline: 0; }
 .comparar-lista dt a:focus-visible::before { outline: 2px solid var(--ascua-viva); outline-offset: -2px; }
 .comparar-lista > .marcada { box-shadow: inset 2px 0 0 var(--ascua); background: rgba(255, 53, 31, .1); padding-left: .7rem; }
+.comparar-lista .c-peso, .comparar-lista .c-crece, .comparar-lista .c-grupo { transition: color .3s; }
 .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { color: var(--ascua-viva); }
 @media (min-width: 760px) {
   .comparar-fila, .comparar-lista > div { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.75fr); align-items: center; }
@@ -1473,7 +1492,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   .menu-cerrar::before, .menu-cerrar::after, .visor-cerrar::before, .visor-cerrar::after, .visor-pasar::before, .video-play::before { forced-color-adjust: none; background: ButtonText; }
   summary::before, summary::after { forced-color-adjust: none; background: CanvasText; }
   .menu[popover]:popover-open, .visor { background: Canvas; backdrop-filter: none; }
-  .menu[popover]::before { content: none; }
+  .menu[popover]::before, .pagina-404::after { content: none; }
   .menu a[aria-current] { text-decoration: underline 2px; text-underline-offset: .2em; }
   .comparar-lista > .marcada { outline: 2px solid Highlight; outline-offset: -2px; }
   .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { text-decoration: underline 2px; }
