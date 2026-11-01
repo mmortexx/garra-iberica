@@ -186,7 +186,9 @@ python herramientas/preparar_galeria.py RUTA/A/LAS/CAPTURAS
 ```
 
 Las capturas miden 3439 de ancho y 1439 de alto; una más baja se apunta en `ALTO` con su alto real, y
-ningún recorte puede salirse de él (`python herramientas/prueba_galeria.py` lo prueba).
+ningún recorte puede salirse de él (`python herramientas/prueba_galeria.py` lo prueba). Una imagen propia
+que no es captura va en `PROPIAS` con sus medidas: su original sale de la `carpeta` de su entrada en
+`galeria/fotos.json` y ningún tamaño pasa de su ancho original.
 Saca de cada una la foto de la galería (encuadrada en el dinosaurio, la mejor calidad que cabe en
 120 KB) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
 resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp`). Qué captura y

@@ -619,6 +619,7 @@ h2::after {
 .galeria .foto-panoramica { grid-column: 1 / -1; aspect-ratio: 1600 / 670; }
 .galeria .foto-entera { aspect-ratio: 3080 / 1439; }
 .galeria .foto-fila { aspect-ratio: 3080 / 1391; }
+.galeria .foto-atardecer { aspect-ratio: 1672 / 941; }
 .foto-cuernos img { object-position: 50% 0; }
 .galeria .foto-baja { aspect-ratio: 3080 / 1239; }
 .galeria .foto-media { aspect-ratio: 2600 / 1289; }

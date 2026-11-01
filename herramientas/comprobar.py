@@ -31,7 +31,7 @@ from urllib.parse import urlparse
 PAGINAS = montar_web.FICHEROS
 FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
-FOTOS_ORIGINAL = Path(os.environ.get('GARRA_FOTOS') or FICHAS_ORIGINAL.parent.parent / 'galeria' / 'fotos.json')
+FOTOS_ORIGINAL = preparar_galeria.FOTOS_ORIGINAL
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 GUIA_WIKI = 'Cómo usar la wiki'
 GUIA_COMBATE = 'Guía de combate'

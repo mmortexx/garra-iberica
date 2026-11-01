@@ -12,10 +12,14 @@ juego (arriba a la derecha). Por cada captura salen dos juegos de ficheros:
   PESO_GALERIA (las carga la página);
 - la vista ampliada, la captura entera menos la franja de la marca, en varios anchos hasta la
   resolución original (solo se descargan al abrir una foto).
+Una imagen propia que no es captura (PROPIAS) se saca igual, pero de la «carpeta» que le da
+galeria/fotos.json y sin agrandarla nunca: su vista ampliada llega hasta su ancho original.
 Las capturas de noche salen casi negras: las de ACLARAR se aclaran antes de recortar, canal a canal,
 con valor = 255·(v/255)^gamma (gamma por debajo de 1 levanta las sombras sin quemar las luces).
 """
 import io
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -28,6 +32,10 @@ IMG = Path(__file__).resolve().parent.parent / 'docs' / 'img'
 ANCHO = 3439
 # Alto de las capturas que no miden 1439 (el juego a veces guarda alguna más baja).
 ALTO = {'galeria-deino-fila': 1391}
+# Imágenes propias que no son capturas: medidas del original, sin marca de agua. El original está en la
+# «carpeta» de su entrada de fotos.json, relativa al proyecto del Discord.
+PROPIAS = {'galeria-manada-atardecer': (1672, 941)}
+FOTOS_ORIGINAL = Path(os.environ.get('GARRA_FOTOS') or Path.home() / 'Downloads' / 'garra-iberica' / 'galeria' / 'fotos.json')
 # Zona de la marca de agua «THE ISLE» en las capturas originales: ningún recorte la toca.
 MARCA = (3080, 0, 3439, 330)
 AMPLIADA = (0, 0, 3080, 1439)
@@ -62,11 +70,12 @@ FOTOS = {
     'galeria-deino-ojos': ('Captura de pantalla 2026-10-31 161902.png', (870, 330, 2980, 1220), (600, 1000, 1300)),
     'galeria-deino-guardia': ('Captura de pantalla 2026-10-31 235648.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
     'galeria-deino-fila': ('Captura de pantalla 2026-10-31 235710.png', (0, 0, 3080, 1391), (800, 1200, 1600)),
+    'galeria-manada-atardecer': ('manada-atardecer.png', (0, 0, 1672, 941), (600, 1000, 1300)),
 }
 ACLARAR = {'galeria-brasas': 0.45, 'galeria-deino-guardia': 0.65, 'galeria-deino-fila': 0.65}
 # Capturas cuya vista ampliada no puede ser la captura entera (chat con nombres de jugadores de otros
 # clanes, interfaz, avisos): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
-AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos')}
+AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos', *PROPIAS)}
 # Imagen al compartir cada página (1200x630, JPEG: WhatsApp no enseña WebP). Las demás páginas usan
 # og-garra-iberica.jpg (preparar_imagenes.py). página: (fichero, foto, centro horizontal del recorte
 # de 0 a 1, texto alternativo en español e inglés). montar_web.py y comprobar.py leen OG.
@@ -80,6 +89,10 @@ OG = {
 }
 OG_TAMANO = (1200, 630)
 PESO_OG = 115 * 1024
+
+
+def medidas(nombre):
+    return PROPIAS.get(nombre, (ANCHO, ALTO.get(nombre, 1439)))
 
 
 def ampliada_de(nombre):
@@ -97,10 +110,12 @@ def solapa(a, b):
 def problemas(nombre, tamano, caja, caja_ampliada):
     """Por qué no se puede sacar la foto de esa captura: medidas que no son las esperadas, recortes
     que se salen de la imagen o que tocan la marca de agua. Lista vacía si todo va bien."""
-    esperado = (ANCHO, ALTO.get(nombre, 1439))
+    esperado = medidas(nombre)
     if tuple(tamano) != esperado:
         return [f'la captura mide {tuple(tamano)}, no {esperado}: revisa los recortes (y ALTO si es más baja)']
     fallos = []
+    if max(FOTOS[nombre][2]) > caja[2] - caja[0]:
+        fallos.append(f'pide {max(FOTOS[nombre][2])} de ancho y su recorte mide {caja[2] - caja[0]}: no se agranda ninguna foto')
     for c in (caja, caja_ampliada):
         if not (0 <= c[0] < c[2] <= tamano[0] and 0 <= c[1] < c[3] <= tamano[1]):
             fallos.append(f'el recorte {c} se sale de la captura {tuple(tamano)}')
@@ -119,6 +134,15 @@ def webp(im, calidad):
     return b.getvalue()
 
 
+def original(origen, fichero, fotos=FOTOS_ORIGINAL):
+    """Dónde está el original: en la «carpeta» que le dé fotos.json o, sin ella, entre las capturas."""
+    if fotos.is_file():
+        for f in json.loads(fotos.read_text(encoding='utf-8'))['fotos']:
+            if f['archivo'] == fichero and f.get('carpeta'):
+                return fotos.parent.parent / f['carpeta'] / fichero
+    return origen / fichero
+
+
 def main(origen, nombres):
     desconocidas = set(nombres) - set(FOTOS)
     if desconocidas:
@@ -126,7 +150,7 @@ def main(origen, nombres):
     for nombre, (fichero, caja, anchos) in FOTOS.items():
         if nombres and nombre not in nombres:
             continue
-        im = Image.open(origen / fichero)
+        im = Image.open(original(origen, fichero))
         caja_ampliada, anchos_ampliada = ampliada_de(nombre)
         fallos = problemas(nombre, im.size, caja, caja_ampliada)
         if fallos:
