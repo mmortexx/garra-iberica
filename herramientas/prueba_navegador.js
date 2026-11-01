@@ -523,6 +523,14 @@ const ruta = r => ('/' + r).padEnd(15);
     if (!e.abierto || !e.cuenta.startsWith(`${orden + 1} /`)) fallos.push(`enlace directo: ${JSON.stringify(e)}, y es la ${orden + 1}`);
     if (e.pie !== alt) fallos.push(`pie «${e.pie}» y la foto dice «${alt}»`);
     if (e.separacion < 0 || e.separacion > 40 || e.pisaBotones || !e.dentro) fallos.push(`pie mal colocado: ${JSON.stringify(e)}`);
+    // El pie se lee, pero no estorba: lo que se pulsa o se desliza encima llega al visor. Y el lector de
+    // pantalla lo lee al abrir, y el aviso de «copiado» está en su sitio antes de hacer falta.
+    const estorbo = await p.evaluate(() => {
+      const v = document.querySelector('.visor'), c = v.querySelector('.visor-pie').getBoundingClientRect();
+      return { alto: c.height, debajo: document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2)?.closest('.visor-pie') ? 'el pie' : 'el visor', describe: document.getElementById(v.getAttribute('aria-describedby'))?.className, aviso: getComputedStyle(v.querySelector('.visor-aviso')).display };
+    });
+    if (estorbo.alto > 120 || estorbo.debajo !== 'el visor') fallos.push(`el pie estorba: ${JSON.stringify(estorbo)}`);
+    if (estorbo.describe !== 'visor-pie' || estorbo.aviso === 'none') fallos.push(`lector de pantalla: ${JSON.stringify(estorbo)}`);
     if (fallos.length) {
       malos++;
       console.log(ruta(r), 'enlace a cada foto, pie y «Atrás» en el visor:', fallos.join('; '));
@@ -549,10 +557,45 @@ const ruta = r => ('/' + r).padEnd(15);
     await hastaQue(p, fotoLista);
     e = await leer();
     if (!e.hash.startsWith('#foto-')) fallos.push(`al abrir, la dirección es «${e.hash}»`);
+    // En todas las fotos, sean como sean de altas, el pie queda debajo y no encima.
+    const total = await p.locator('.foto-ampliar').count();
+    for (let i = 0; i < total; i++) {
+      await p.tap('.visor-sig');
+      await hastaQue(p, fotoLista);
+      const paso = await leer();
+      if (paso.separacion < 0 || paso.pisaBotones || !paso.dentro) fallos.push(`pie mal colocado en ${paso.cuenta}: ${JSON.stringify(paso)}`);
+    }
     await p.goBack();
     await p.waitForTimeout(400);
     e = await leer();
     if (e.abierto || e.hash || !p.url().startsWith(BASE + r)) fallos.push(`«Atrás» con el visor abierto: ${JSON.stringify(e)} en ${p.url()}`);
+    const restaurar = () => p.evaluate(() => history.scrollRestoration);
+    if (await restaurar() !== 'auto') fallos.push('al cerrar, la página sigue sin recuperar su sitio al navegar');
+    // «Adelante» la vuelve a abrir; recargar la deja abierta; cerrar con la X vuelve atrás una sola vez.
+    await p.goForward();
+    await hastaQue(p, fotoLista);
+    e = await leer();
+    if (!e.abierto || !e.hash.startsWith('#foto-')) fallos.push(`«Adelante»: ${JSON.stringify(e)}`);
+    const conVisor = e.hash;
+    await p.reload({ waitUntil: 'load' });
+    await hastaQue(p, fotoLista);
+    e = await leer();
+    if (!e.abierto || e.hash !== conVisor) fallos.push(`recargar con el visor abierto: ${JSON.stringify(e)}, y era ${conVisor}`);
+    await p.tap('.visor-cerrar');
+    await p.waitForTimeout(400);
+    e = await leer();
+    if (e.abierto || e.hash || !p.url().startsWith(BASE + r)) fallos.push(`cerrar tras recargar: ${JSON.stringify(e)} en ${p.url()}`);
+    // Cerrar con la X deshace la entrada del historial, igual que «Atrás»: no deja un paso de más.
+    await p.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(300);
+    await p.tap('.foto-ampliar >> nth=2');
+    await hastaQue(p, fotoLista);
+    await p.tap('.visor-cerrar');
+    await p.waitForTimeout(400);
+    await p.goForward();
+    await p.waitForTimeout(400);
+    e = await leer();
+    if (!e.abierto) fallos.push('cerrar con la X deja un paso de más en el historial');
     await ctx.close();
     const sinJs = await navegador.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
     const q = await sinJs.newPage();
@@ -608,8 +651,99 @@ const ruta = r => ('/' + r).padEnd(15);
     await trazo([[200, 300]], [[200, 560]]);
     const e4 = await leer();
     if (e4.abierto) fallos.push('deslizar hacia abajo no cierra');
+    await ctx.close();
+    const otraVez = async lenta => {
+      const c = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      const q = await c.newPage();
+      if (lenta) await q.route('**/*-ampliada-*', ruta => setTimeout(() => ruta.continue().catch(() => {}), 2500));
+      await q.goto(BASE + r, { waitUntil: 'load' });
+      await q.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+      await q.waitForTimeout(500);
+      await q.tap('.foto-ampliar >> nth=0');
+      await (lenta ? q.waitForTimeout(200) : hastaQue(q, fotoLista));
+      const sesion = await c.newCDPSession(q);
+      return { c, q, dedo: (type, puntos) => sesion.send('Input.dispatchTouchEvent', { type, touchPoints: puntos.map(([x, y, id]) => ({ x, y, id })) }) };
+    };
+    // Deslizar desde el pie cambia de foto, y un toque en el vacío bajo la foto cierra (cada uno en su visor:
+    // el emulador se traga el primer toque que sigue a un deslizamiento rápido).
+    {
+      const { c, q, dedo } = await otraVez(false);
+      const estado = () => q.evaluate(() => { const v = document.querySelector('.visor'), p = v.querySelector('.visor-pie').getBoundingClientRect(); return { abierto: v.open, cuenta: v.querySelector('.visor-cuenta').textContent, y: p.top + p.height / 2 }; });
+      const { y } = await estado();
+      await dedo('touchStart', [[300, y, 0]]);
+      for (let i = 1; i <= 8; i++) {
+        await dedo('touchMove', [[300 - i * 26, y, 0]]);
+        await q.waitForTimeout(16);
+      }
+      await dedo('touchEnd', []);
+      await q.waitForTimeout(350);
+      await hastaQue(q, fotoLista);
+      const deslizado = await estado();
+      if (!deslizado.cuenta.startsWith('2 /')) fallos.push(`deslizar desde el pie no cambia de foto: ${JSON.stringify(deslizado)}`);
+      await c.close();
+    }
+    {
+      const { c, q } = await otraVez(false);
+      const vacio = await q.evaluate(() => { const v = document.querySelector('.visor'), c = v.querySelector('.visor-pie').getBoundingClientRect(); return c.bottom + 20; });
+      await q.touchscreen.tap(195, Math.min(vacio, 740));
+      await q.waitForTimeout(400);
+      if (await q.evaluate(() => document.querySelector('.visor').open)) fallos.push(`tocar el vacío bajo el pie, en ${vacio}, no cierra`);
+      await c.close();
+    }
+    // Dos dedos con la foto aún cargando no son un deslizamiento, sea cual sea el dedo que se levanta antes.
+    const { c: lenta, q, dedo } = await otraVez(true);
+    await dedo('touchStart', [[150, 420, 0]]);
+    await dedo('touchStart', [[150, 420, 0], [240, 420, 1]]);
+    for (let i = 1; i <= 8; i++) {
+      await dedo('touchMove', [[150 - i * 12, 420, 0], [240 + i * 12, 420, 1]]);
+      await q.waitForTimeout(16);
+    }
+    await dedo('touchEnd', [[336, 420, 1]]);
+    await q.waitForTimeout(30);
+    await dedo('touchEnd', []);
+    await q.waitForTimeout(350);
+    const conPinza = await q.evaluate(() => { const v = document.querySelector('.visor'); return { abierto: v.open, cargando: v.classList.contains('cargando'), cuenta: v.querySelector('.visor-cuenta').textContent }; });
+    if (!conPinza.cargando) fallos.push('la prueba de dos dedos llega tarde: la foto ya ha cargado');
+    if (!conPinza.abierto || !conPinza.cuenta.startsWith('1 /')) fallos.push(`dos dedos con la foto cargando: ${JSON.stringify(conPinza)}`);
+    await lenta.close();
     if (fallos.length) malos++;
     console.log(ruta(r), 'gestos del visor (deslizar y pellizcar):', fallos.length ? fallos.join('; ') : 'bien');
+  }
+  // Con el ratón, la foto ampliada se arrastra, también si se suelta encima de un botón, y al soltar deja de moverse.
+  async function pruebaVisorRaton(r) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 800 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(400);
+    await p.click('.foto-ampliar >> nth=0');
+    await hastaQue(p, fotoLista);
+    await p.mouse.click(683, 400);
+    await p.waitForTimeout(300);
+    const leer = () => p.evaluate(() => { const v = document.querySelector('.visor'), m = v.querySelector('.visor-marco'); return { abierto: v.open, real: v.classList.contains('real'), x: m.scrollLeft, y: m.scrollTop, arrastrando: m.classList.contains('arrastrando') }; });
+    const e0 = await leer();
+    if (!e0.real) fallos.push('pulsar no amplía');
+    await p.mouse.move(800, 400);
+    await p.mouse.down();
+    await p.mouse.move(500, 400, { steps: 8 });
+    await p.mouse.up();
+    const e1 = await leer();
+    if (Math.abs(e1.x - e0.x - 300) > 2 || !e1.real) fallos.push(`arrastrar 300 px mueve ${e1.x - e0.x} px: ${JSON.stringify(e1)}`);
+    await p.mouse.move(800, 400);
+    await p.mouse.down();
+    const cerrar = await p.locator('.visor-cerrar').boundingBox();
+    await p.mouse.move(cerrar.x + 10, cerrar.y + 10, { steps: 8 });
+    await p.mouse.up();
+    const e2 = await leer();
+    await p.mouse.move(400, 500, { steps: 4 });
+    const e3 = await leer();
+    if (!e2.abierto || e3.x !== e2.x || e3.y !== e2.y || e3.arrastrando) fallos.push(`soltar sobre un botón: ${JSON.stringify([e2, e3])}`);
+    await p.mouse.click(683, 400);
+    await p.waitForTimeout(200);
+    if ((await leer()).real) fallos.push('tras arrastrar, pulsar no vuelve a ajustar la foto');
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'arrastrar con el ratón en el visor:', fallos.length ? fallos.join('; ') : 'bien');
     await ctx.close();
   }
   // Las fotos a lo ancho son fotos enteras: en la cuadrícula no se les recorta más de un 1,5 % por los
@@ -705,6 +839,7 @@ const ruta = r => ('/' + r).padEnd(15);
     }
     await pruebaVisorEnlaces(r);
     await pruebaVisorGestos(r);
+    await pruebaVisorRaton(r);
     await pruebaRecortes(r);
   }
   // Con conexión lenta las fuentes llegan después del primer pintado: el texto no debe empujar
@@ -1202,6 +1337,13 @@ const ruta = r => ('/' + r).padEnd(15);
       const c = await color('.menu-cerrar', ps);
       if (!c || c === fondo || /rgba\(0, 0, 0, 0\)/.test(c)) fallos.push(`.menu-cerrar${ps} sin color (${c})`);
     }
+    // En la comparativa, sin sombras ni colores propios, la fila marcada y la columna activa se distinguen igual.
+    await p.goto(`${BASE}dinosaurios/?orden=peso&marca=triceratops`, { waitUntil: 'load' });
+    const resalte = await p.evaluate(() => {
+      const fila = document.querySelector('.comparar-lista > .marcada'), activa = document.querySelector('.comparar-lista > div .c-peso'), otra = document.querySelector('.comparar-lista > div .c-grupo');
+      return { fila: fila && getComputedStyle(fila).outlineStyle, activa: activa && getComputedStyle(activa).textDecorationLine, otra: otra && getComputedStyle(otra).textDecorationLine };
+    });
+    if (resalte.fila === 'none' || !resalte.fila || resalte.activa !== 'underline' || resalte.otra !== 'none') fallos.push(`comparativa en alto contraste: ${JSON.stringify(resalte)}`);
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');

@@ -701,16 +701,17 @@ html:has(.visor[open]) { overflow: hidden; }
 .visor-ant::before { transform: translateX(2px) rotate(135deg); }
 .visor-sig::before { transform: translateX(-2px) rotate(-45deg); }
 .visor-pie {
-  position: absolute; left: 0; right: 0; bottom: 4.2rem; width: min(100% - 1.5rem, 44rem); margin: 0 auto;
-  font-size: .95rem; line-height: 1.4; text-align: center; color: var(--texto); transition: opacity .25s;
+  position: absolute; left: 0; right: 0; width: min(100% - 1.5rem, 44rem); margin: 0 auto;
+  font-size: .95rem; line-height: 1.4; text-align: center; color: var(--texto); transition: opacity .25s; pointer-events: none;
 }
-.visor.real .visor-pie { opacity: 0; pointer-events: none; }
+.visor.real .visor-pie { opacity: 0; }
 .visor-aviso {
   position: absolute; top: 4rem; left: 50%; translate: -50% 0; width: max-content; max-width: calc(100% - 1.5rem); margin: 0;
   padding: .45rem .9rem; border: 1px solid var(--borde-fuerte); border-radius: 99px; background: #101010; color: var(--hueso);
   font-size: .95rem; overflow-wrap: anywhere;
 }
-.visor-aviso:empty { display: none; }
+/* Vacío no se ve, pero sigue ahí: un lector de pantalla solo anuncia un aviso que ya existía. */
+.visor-aviso:empty { padding: 0; border: 0; }
 /* De lado: los botones van a los lados de la foto; en vertical, debajo. */
 @media (min-width: 600px), (orientation: landscape) { .visor:not(.real) .visor-marco { padding: 4rem 4.5rem; } }
 @media (max-width: 599px) and (orientation: portrait) {
@@ -1355,4 +1356,6 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   summary::before, summary::after { forced-color-adjust: none; background: CanvasText; }
   .menu[popover]:popover-open, .visor { background: Canvas; backdrop-filter: none; }
   .menu a[aria-current] { text-decoration: underline 2px; text-underline-offset: .2em; }
+  .comparar-lista > .marcada { outline: 2px solid Highlight; outline-offset: -2px; }
+  .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { text-decoration: underline 2px; }
 }

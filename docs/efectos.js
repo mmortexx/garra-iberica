@@ -116,8 +116,9 @@
     const visor = document.createElement('dialog');
     visor.className = 'visor';
     visor.setAttribute('aria-label', t.visor);
-    visor.innerHTML = '<div class="visor-marco"><img class="visor-img" alt=""></div><p class="visor-cuenta" aria-live="polite"></p>'
-      + '<p class="visor-pie" aria-live="polite"></p><p class="visor-aviso" role="status"></p>'
+    visor.setAttribute('aria-describedby', 'visor-pie');
+    visor.innerHTML = '<div class="visor-marco"><img class="visor-img" alt="" draggable="false"></div><p class="visor-cuenta" aria-live="polite"></p>'
+      + '<p class="visor-pie" id="visor-pie" aria-live="polite"></p><p class="visor-aviso" role="status"></p>'
       + `<button class="visor-boton visor-cerrar" type="button" aria-label="${t.cerrar}" autofocus></button>`
       + (sePuedePasar ? `<button class="visor-boton visor-pasar" type="button" aria-label="${t.pasar}"></button>` : '')
       + `<button class="visor-boton visor-ant" type="button" aria-label="${t.ant}"></button>`
@@ -254,8 +255,17 @@
     // cambia de foto y hacia abajo cierra el visor. Un arrastre no cuenta como pulsación.
     let inicio = null, arrastrado = false;
     marco.addEventListener('pointerdown', ev => {
+      // Un segundo dedo nunca es un deslizamiento, aunque la foto aún no se pueda pellizcar.
+      if (!ev.isPrimary) {
+        inicio = null;
+        arrastrado = true;
+        img.style.removeProperty('translate');
+        return;
+      }
       inicio = { x: ev.clientX, y: ev.clientY, sl: marco.scrollLeft, st: marco.scrollTop, tipo: ev.pointerType };
       arrastrado = false;
+      // Así, soltar el ratón encima de un botón también acaba el arrastre.
+      if (ev.pointerType === 'mouse' && ev.target === img) marco.setPointerCapture(ev.pointerId);
     });
     marco.addEventListener('pointermove', ev => {
       if (!inicio) return;
