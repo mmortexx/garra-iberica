@@ -648,7 +648,12 @@ h2::after {
   background: #0e0e0e; border: 1px solid var(--linea); border-radius: 4px;
   transition: border-color .4s, box-shadow .4s;
 }
-.foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--suave-salida); }
+.foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--suave-salida), scale 1s var(--suave-salida), opacity .6s; }
+/* Las fotos que llegan tarde aparecen fundiéndose, no de golpe (lo marca efectos.js mientras cargan). */
+img.por-llegar { opacity: 0; }
+/* Al entrar en pantalla, la foto de la galería se asienta en su marco. */
+.anim .foto.revelar img { scale: 1.09; }
+.anim .foto.revelar.visible img { scale: 1; }
 .foto::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(180deg, transparent 55%, rgba(8, 8, 8, .35));
@@ -697,10 +702,12 @@ h2::after {
 .visor {
   position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
   margin: 0; padding: 0; border: 0; background: rgba(6, 6, 6, .92); color: var(--texto); overflow: hidden;
+  /* Se abre y se cierra fundiéndose; donde el navegador no sabe, aparece y desaparece sin más. */
+  opacity: 0; transition: opacity .22s ease-out, display .22s allow-discrete, overlay .22s allow-discrete;
 }
+.visor[open] { opacity: 1; }
+@starting-style { .visor[open] { opacity: 0; } }
 .visor::backdrop { background: transparent; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.visor[open] { animation: visor-entra .25s ease-out; }
-@keyframes visor-entra { from { opacity: 0; } }
 html:has(.visor[open]) { overflow: hidden; }
 .visor-marco {
   position: absolute; inset: 0; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); padding: 4rem 0;
@@ -1308,7 +1315,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   mask-image: linear-gradient(90deg, transparent, #000000 1.5rem, #000000 calc(100% - 1.5rem), transparent);
 }
 .tira { list-style: none; margin: 0; padding: 0; display: flex; gap: .7rem; width: max-content; animation: tira 38s ease-in-out infinite alternate; }
-.tira img { height: clamp(7rem, 16vw, 9.5rem); width: auto; border: 1px solid var(--linea); border-radius: 4px; }
+.tira img { height: clamp(7rem, 16vw, 9.5rem); width: auto; border: 1px solid var(--linea); border-radius: 4px; transition: opacity .6s; }
 .baldosa-galeria:hover .tira { animation-play-state: paused; }
 @keyframes tira { to { translate: min(0px, 100cqw - 100%) 0; } }
 
@@ -1395,7 +1402,20 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .batalla-empate { color: var(--hueso); }
 .batalla-nota { grid-column: 1 / -1; color: var(--suave); font-size: .98rem; }
 /* El vídeo, a lo ancho de la fila. Hasta darle al play solo se baja la portada. */
-.batalla-video { grid-column: 1 / -1; margin-top: .6rem; }
+.batalla-video { position: relative; grid-column: 1 / -1; margin-top: .6rem; }
+/* El botón grande encima de la portada (lo pone efectos.js; sin él quedan los controles del navegador). */
+.video-play {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: grid; place-items: center;
+  width: clamp(64px, 9vw, 92px); aspect-ratio: 1; padding: 0; border: 1px solid var(--borde-fuerte); border-radius: 50%;
+  background: rgba(8, 8, 8, .6); box-shadow: 0 0 0 7px rgba(255, 53, 31, .16), 0 14px 40px -8px rgba(255, 44, 20, .75), var(--cristal-brillo);
+  cursor: pointer; transition: scale .3s var(--suave-salida), background-color .25s, border-color .25s;
+}
+.video-play[hidden] { display: none; }
+.video-play::before { content: ""; width: 36%; aspect-ratio: 1; translate: 10% 0; background: var(--hueso); clip-path: polygon(0 0, 100% 50%, 0 100%); transition: background-color .25s; }
+@media (hover: hover) { .video-play:hover { scale: 1.1; background: var(--ascua); border-color: #ff968a; } .video-play:hover::before { background: #121212; } }
+.video-play:active { scale: .94; background: var(--ascua); transition-duration: .08s; }
+.video-play:active::before { background: #121212; }
+.video-play:focus-visible { outline-color: var(--hueso); outline-offset: 4px; border-radius: 50%; }
 .batalla-video video {
   display: block; width: 100%; height: auto; aspect-ratio: 1280 / 536; background: #000000;
   border: 1px solid var(--cristal-borde); border-radius: 4px; box-shadow: 0 18px 40px -22px rgba(255, 44, 20, .45), var(--cristal-brillo);
@@ -1450,7 +1470,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
    sistema. El menú del móvil, opaco; la página actual, subrayada (su trazo de ascua no se ve). */
 @media (forced-colors: active) {
   .menu-boton span, .menu-boton span::before, .menu-boton span::after,
-  .menu-cerrar::before, .menu-cerrar::after, .visor-cerrar::before, .visor-cerrar::after, .visor-pasar::before { forced-color-adjust: none; background: ButtonText; }
+  .menu-cerrar::before, .menu-cerrar::after, .visor-cerrar::before, .visor-cerrar::after, .visor-pasar::before, .video-play::before { forced-color-adjust: none; background: ButtonText; }
   summary::before, summary::after { forced-color-adjust: none; background: CanvasText; }
   .menu[popover]:popover-open, .visor { background: Canvas; backdrop-filter: none; }
   .menu[popover]::before { content: none; }

@@ -133,7 +133,7 @@
     const ahorro = navigator.connection && navigator.connection.saveData;
     const enlaceDe = i => `#${fotos[i].closest('.foto').id}`;
     const fotoDeLaDireccion = () => fotos.findIndex((_, i) => enlaceDe(i) === location.hash);
-    let actual = 0, anchoAjustada = 0;
+    let actual = 0, anchoAjustada = 0, sentido = 0;
     const enReal = () => visor.classList.contains('real');
     // Rectángulo que ocupa la foto dentro de su caja (object-fit: contain).
     const zonaFoto = () => {
@@ -176,7 +176,8 @@
       p.sizes = '100vw';
       p.srcset = fotos[(i + fotos.length) % fotos.length].dataset.srcset;
     };
-    const mostrar = i => {
+    const mostrar = (i, haciaDonde = 0) => {
+      sentido = haciaDonde;
       actual = (i + fotos.length) % fotos.length;
       const a = fotos[actual];
       ajustar();
@@ -200,6 +201,12 @@
       visor.classList.remove('cargando');
       anchoAjustada = zonaFoto().width;
       colocarPie();
+      // Entra por el lado hacia el que se pasa; al abrir el visor, crece un poco desde el centro.
+      if (!sinMovimiento.matches && img.animate) {
+        img.animate(sentido
+          ? [{ opacity: 0, translate: `${sentido * 56}px 0` }, { opacity: 1, translate: '0 0' }]
+          : [{ opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1 }], { duration: 280, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+      }
       precargar(actual + 1);
       precargar(actual - 1);
     };
@@ -217,14 +224,14 @@
       history.pushState({ visor: true }, '', enlaceDe(i));
     }));
     visor.querySelector('.visor-cerrar').addEventListener('click', () => visor.close());
-    visor.querySelector('.visor-ant').addEventListener('click', () => mostrar(actual - 1));
-    visor.querySelector('.visor-sig').addEventListener('click', () => mostrar(actual + 1));
+    visor.querySelector('.visor-ant').addEventListener('click', () => mostrar(actual - 1, -1));
+    visor.querySelector('.visor-sig').addEventListener('click', () => mostrar(actual + 1, 1));
     visor.querySelector('.visor-pasar')?.addEventListener('click', () => {
       pasarEnlace(location.href, aviso, t.copiado, t.fallo);
     });
     visor.addEventListener('keydown', ev => {
-      if (ev.key === 'ArrowLeft' && !enReal()) mostrar(actual - 1);
-      else if (ev.key === 'ArrowRight' && !enReal()) mostrar(actual + 1);
+      if (ev.key === 'ArrowLeft' && !enReal()) mostrar(actual - 1, -1);
+      else if (ev.key === 'ArrowRight' && !enReal()) mostrar(actual + 1, 1);
     });
     // Escape con la foto ampliada vuelve a ajustarla; si no, cierra.
     visor.addEventListener('cancel', ev => { if (enReal()) { ev.preventDefault(); ajustar(); } });
@@ -246,7 +253,7 @@
         mostrar(i);
         visor.showModal();
         colocarPie();
-      } else if (i !== actual) mostrar(i);
+      } else if (i !== actual) mostrar(i, i > actual ? 1 : -1);
     };
     addEventListener('popstate', seguirDireccion);
     if (fotoDeLaDireccion() >= 0) seguirDireccion();
@@ -260,6 +267,7 @@
         inicio = null;
         arrastrado = true;
         img.style.removeProperty('translate');
+        img.style.removeProperty('opacity');
         return;
       }
       inicio = { x: ev.clientX, y: ev.clientY, sl: marco.scrollLeft, st: marco.scrollTop, tipo: ev.pointerType };
@@ -276,15 +284,19 @@
         marco.scrollLeft = inicio.sl - dx;
         marco.scrollTop = inicio.st - dy;
       } else if (!enReal() && inicio.tipo !== 'mouse' && arrastrado) {
-        img.style.translate = Math.abs(dx) > Math.abs(dy) ? `${dx}px 0` : `0 ${Math.max(0, dy)}px`;
+        const deLado = Math.abs(dx) > Math.abs(dy);
+        img.style.translate = deLado ? `${dx}px 0` : `0 ${Math.max(0, dy)}px`;
+        // Al bajarla para cerrar, se va apagando.
+        img.style.opacity = deLado ? '' : Math.max(0.35, 1 - Math.max(0, dy) / 320);
       }
     });
     const soltar = ev => {
       img.style.removeProperty('translate');
+      img.style.removeProperty('opacity');
       if (!inicio) return;
       const dx = ev.clientX - inicio.x, dy = ev.clientY - inicio.y;
       if (ev.type === 'pointerup' && inicio.tipo !== 'mouse' && !enReal()) {
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) mostrar(actual + (dx < 0 ? 1 : -1));
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) mostrar(actual + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
         else if (dy > 80 && dy > Math.abs(dx) * 1.5) visor.close();
       }
       marco.classList.remove('arrastrando');
@@ -303,6 +315,7 @@
       inicio = null;
       arrastrado = true;
       img.style.removeProperty('translate');
+      img.style.removeProperty('opacity');
       const m = dedos(ev.touches), c = img.getBoundingClientRect();
       pinza = { ...m, z: zonaFoto(), k: 1, ax: m.x, ay: m.y };
       img.style.transformOrigin = `${m.x - c.left}px ${m.y - c.top}px`;
@@ -337,6 +350,24 @@
       if (dentro) ampliar(ev.clientX, ev.clientY); else visor.close();
     });
   }
+
+  // Vídeos de las batallas: botón grande de reproducir sobre la portada. Le da al play y se aparta;
+  // vuelve al acabar el vídeo. Los controles del navegador siguen ahí (y son lo que queda sin esto).
+  const playTexto = raiz.lang.startsWith('en') ? 'Play:' : 'Reproducir:';
+  document.querySelectorAll('.batalla-video video').forEach(v => {
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'video-play';
+    boton.setAttribute('aria-label', `${playTexto} ${v.getAttribute('aria-label')}`);
+    boton.addEventListener('click', () => {
+      v.focus();
+      const pedido = v.play();
+      if (pedido) pedido.catch(() => { boton.hidden = false; });
+    });
+    v.addEventListener('play', () => { boton.hidden = true; });
+    v.addEventListener('ended', () => { boton.hidden = false; });
+    v.after(boton);
+  });
 
   // Tira de fotos de la portada: las del final empiezan fuera de su marco y el navegador no las
   // pediría hasta que la tira las desliza dentro (llegarían en blanco). Se piden todas al acercarse.
@@ -400,6 +431,16 @@
     }
   }, { rootMargin: '0px 0px -8% 0px' });
   revelables.forEach(el => { if (!el.classList.contains('visible')) observador.observe(el); });
+
+  // Las fotos que llegan tarde se funden al llegar, en vez de saltar de golpe. Si una falla, también
+  // se quita la marca: nunca se queda invisible lo que el navegador sí sepa pintar.
+  document.querySelectorAll('.foto img, .baldosa-fondo, .tira img').forEach(foto => {
+    if (foto.complete) return;
+    foto.classList.add('por-llegar');
+    const llegada = () => foto.classList.remove('por-llegar');
+    foto.addEventListener('load', llegada, { once: true });
+    foto.addEventListener('error', llegada, { once: true });
+  });
 
   if (punteroFino.matches) {
     // Paralaje suave de la portada con el ratón.
