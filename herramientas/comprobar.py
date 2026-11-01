@@ -626,6 +626,20 @@ def revisar_movidas(raiz, falla):
                 falla(f'MOVIDAS[{lang}]: #{viejo} lleva a la sección #{seccion}, que no está en {inicio}{ruta}')
 
 
+def revisar_estilos(raiz, falla):
+    """Una llave de más en estilos.css no da error: el navegador tira en silencio la regla siguiente."""
+    css = re.sub(r'/\*.*?\*/|"(?:[^"\
+]|\.)*"', '', leer(raiz, 'estilos.css'), flags=re.S)
+    nivel = 0
+    for n, linea in enumerate(css.splitlines(), 1):
+        nivel += linea.count('{') - linea.count('}')
+        if nivel < 0:
+            falla(f'estilos.css: sobra una llave de cierre hacia esta línea ({n}, sin contar comentarios): «{linea.strip()[:60]}»')
+            return
+    if nivel:
+        falla(f'estilos.css: quedan {nivel} llaves sin cerrar')
+
+
 def revisar_privacidad(raiz, falla):
     """El aviso legal promete que la web no guarda ni pide nada y nombra a dónde llevan sus enlaces:
     si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
@@ -831,6 +845,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_especies(raiz, base, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
+    revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)

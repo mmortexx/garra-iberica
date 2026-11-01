@@ -555,7 +555,6 @@ h2::after {
   .ficha dl div { grid-template-columns: 1fr; gap: .1rem; }
 }
 
-}
 
 .cuenta { margin: 0 0 1.5rem; padding: 0 0 1.4rem; border-bottom: 1px solid var(--linea); }
 .cuenta p { margin: 0; }
