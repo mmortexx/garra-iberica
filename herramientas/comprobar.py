@@ -142,7 +142,8 @@ class Lector(HTMLParser):
         if tag == 'script' and a.get('type') == 'application/ld+json':
             self._jsonld = True
             self.jsonld.append('')
-        if tag == 'details':
+        # Las preguntas frecuentes son desplegables; las fichas plegadas (plegable) no son preguntas.
+        if tag == 'details' and 'plegable' not in (a.get('class') or '').split():
             self._details = ['', '']
         if self._details is not None and tag == 'summary':
             self._campo = 0
@@ -270,7 +271,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
             for i in imagenes:
                 if not i.startswith(base) or not (raiz / i[len(base):]).is_file():
                     falla(f'{nombre}: JSON-LD ImageObject «{i}» no apunta a un fichero de la web')
-            fichas = re.findall(r'<article class="dino[^"]*" id="([^"]+)"', html)
+            fichas = re.findall(r'<details class="dino[^"]*" id="([^"]+)"', html)
             lista = [e.get('url', '') for e in pagina_ld.get('mainEntity', {}).get('itemListElement', [])]
             if lista != [f'{base}{sufijo}{a}/' for a in fichas]:
                 falla(f'{nombre}: JSON-LD ItemList con {len(lista)} especies y la página tiene {len(fichas)} fichas')
@@ -584,7 +585,7 @@ def revisar_especies(raiz, base, falla):
             if f'<loc>{base}{guia}{a}/</loc>' not in mapa:
                 falla(f'sitemap.xml: falta la página de {f["nombre"]} ({base}{guia}{a}/)')
             enlace = re.escape(f'href="{montar_web.enlace(guia, guia + a + "/")}"')
-            if not re.search(rf'<article class="dino[^"]*" id="{a}"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*><a {enlace}>', html_guia):
+            if not re.search(rf'<details class="dino[^"]*" id="{a}"[^>]*>\s*<summary class="dino-cabeza"><h3[^>]*><a {enlace}>', html_guia):
                 falla(f'{guia}index.html: la ficha de {f["nombre"]} no enlaza a su página')
             if not re.search(rf'data-nombre="{re.escape(f["nombre"])}"[^>]*><dt><a {enlace}>', html_guia):
                 falla(f'{guia}index.html: la comparativa no enlaza {f["nombre"]} a su página')

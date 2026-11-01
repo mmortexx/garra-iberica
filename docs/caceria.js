@@ -48,14 +48,17 @@
     return { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 };
   };
 
-  // ¿Llego adulto a la cacería? Con el crecimiento de la ficha (minutos de juego a 1×) y el
-  // multiplicador del servidor: cuándo sería adulto jugando sin parar desde ahora y cuánto sobra
-  // (o falta, en negativo) hasta la próxima cacería que aún no ha empezado.
-  const planCrecer = (ahora, minutos, multiplicador = 1) => {
-    let { inicio, enCurso } = proximaCaceria(ahora);
-    if (enCurso) inicio = proximaCaceria(inicio + DURACION_MIN * 60000).inicio;
-    const adulto = ahora + Math.ceil(minutos / multiplicador) * 60000;
-    return { inicio, adulto, llega: adulto <= inicio, margen: inicio - adulto };
+  // ¿Llego adulto a la cacería? Con el crecimiento de la ficha (minutos de juego a 1×), el
+  // multiplicador del servidor y las horas de juego al día: cuándo sería adulto desde ahora, cuánto
+  // sobra (o falta, en negativo) hasta la próxima cacería que aún no ha empezado y a cuál llegaría.
+  const planCrecer = (ahora, minutos, multiplicador = 1, horasDia = 24) => {
+    const sinEmpezar = t => {
+      const c = proximaCaceria(t);
+      return c.enCurso ? proximaCaceria(c.inicio + DURACION_MIN * 60000).inicio : c.inicio;
+    };
+    const inicio = sinEmpezar(ahora);
+    const adulto = ahora + Math.ceil(minutos / multiplicador * 24 / horasDia) * 60000;
+    return { inicio, adulto, llega: adulto <= inicio, margen: inicio - adulto, alcanza: adulto <= inicio ? inicio : sinEmpezar(adulto) };
   };
 
   // La encuesta y el aviso de la misma semana que la cacería que empieza en «inicio».
@@ -118,7 +121,7 @@
   // Planificador de la guía de dinosaurios. Los textos vienen en la página, en su idioma.
   const plan = document.querySelector('[data-plan]');
   if (plan) {
-    const [especie, ritmo] = plan.querySelectorAll('select');
+    const [especie, ritmo, horas] = plan.querySelectorAll('select');
     const salida = plan.querySelector('[data-resultado]');
     const u = JSON.parse(plan.dataset.unidades);
     const quieto = matchMedia('(prefers-reduced-motion: reduce)');
@@ -134,8 +137,8 @@
     };
     const calcular = () => {
       const op = especie.selectedOptions[0];
-      const p = planCrecer(Date.now(), +op.value, +ritmo.value);
-      const datos = { dino: op.dataset.nombre, adulto: cuando.format(p.adulto), caceria: cuando.format(p.inicio), tiempo: duracion(Math.abs(p.margen)) };
+      const p = planCrecer(Date.now(), +op.value, +ritmo.value, +horas.value);
+      const datos = { dino: op.dataset.nombre, adulto: cuando.format(p.adulto), caceria: cuando.format(p.inicio), alcanza: cuando.format(p.alcanza), tiempo: duracion(Math.abs(p.margen)) };
       const titulo = document.createElement('b');
       titulo.textContent = p.llega ? plan.dataset.siTitulo : plan.dataset.noTitulo;
       const texto = (p.llega ? plan.dataset.si : plan.dataset.no).replace(/\{(\w+)\}/g, (_, k) => datos[k]);
@@ -152,8 +155,24 @@
       if (!primera && !quieto.matches && salida.animate) salida.animate([{ opacity: 0.25, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.16, 1, .3, 1)' });
       primera = false;
     };
-    especie.addEventListener('change', calcular);
-    ritmo.addEventListener('change', calcular);
+    // Lo elegido va en la dirección (?especie=triceratops&ritmo=2&horas=4#planificador): así se pasa el
+    // enlace y la página de cada especie abre el planificador con ella ya puesta.
+    const claves = { especie: o => o.dataset.ancla, ritmo: o => o.value, horas: o => o.value };
+    const campos = { especie, ritmo, horas };
+    const pedidos = new URLSearchParams(location.search);
+    for (const [nombre, sel] of Object.entries(campos)) {
+      const elegida = [...sel.options].find(o => claves[nombre](o) === pedidos.get(nombre));
+      if (elegida) sel.value = elegida.value;
+    }
+    plan.addEventListener('change', () => {
+      calcular();
+      const url = new URL(location.href);
+      for (const [nombre, sel] of Object.entries(campos)) {
+        if (sel.selectedIndex) url.searchParams.set(nombre, claves[nombre](sel.selectedOptions[0])); else url.searchParams.delete(nombre);
+      }
+      url.hash = plan.closest('section').id;
+      history.replaceState(history.state, '', url);
+    });
     // La cuenta cambia con la hora: se rehace al volver a la pestaña.
     document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
     calcular();

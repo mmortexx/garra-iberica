@@ -16,10 +16,10 @@
 <link rel="preload" href="../../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../../img/galeria-noche-1200.webp" imagesrcset="../../img/galeria-noche-800.webp 800w, ../../img/galeria-noche-1200.webp 1200w, ../../img/galeria-noche-1600.webp 1600w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../../estilos.css?v=fd40cb8353">
+<link rel="stylesheet" href="../../estilos.css?v=58a9f4614d">
 <script src="../../efectos.js?v=5ed9434985" defer></script>
-<script src="../../caceria.js?v=2931e8a931" defer></script>
-<script src="../../guia.js?v=d9d44f5af4" defer></script>
+<script src="../../caceria.js?v=b444db9577" defer></script>
+<script src="../../guia.js?v=5122d4fbcd" defer></script>
 <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
 
@@ -320,46 +320,7 @@
       <h1 id="titulo" class="entra">The Isle Evrima dinosaur guide</h1>
       <p class="entrada entra entra-2">The 22 cards we use on the clan Discord, so nobody starts blind: weight, growth, max group size, controls, a tip and the mutations the community recommends.</p>
       <p class="guia-revisado entra entra-3">Reviewed 30 Oct 2026 · patch 0.21.772</p>
-      <p class="saltos entra entra-3"><a href="#compare">Compare species</a><a href="#planner">Adult for the hunt?</a><a href="#mutations">Mutations</a></p>
-      <nav class="indice entra entra-4" aria-label="Species">
-          <div class="indice-grupo">
-            <p><a href="#carnivores">Carnivores</a></p>
-            <ul role="list">
-              <li><a href="#tyrannosaurus">Tyrannosaurus</a></li>
-              <li><a href="#allosaurus">Allosaurus</a></li>
-              <li><a href="#austroraptor">Austroraptor</a></li>
-              <li><a href="#carnotaurus">Carnotaurus</a></li>
-              <li><a href="#ceratosaurus">Ceratosaurus</a></li>
-              <li><a href="#deinosuchus">Deinosuchus</a></li>
-              <li><a href="#dilophosaurus">Dilophosaurus</a></li>
-              <li><a href="#herrerasaurus">Herrerasaurus</a></li>
-              <li><a href="#omniraptor">Omniraptor</a></li>
-              <li><a href="#pteranodon">Pteranodon</a></li>
-              <li><a href="#troodon">Troodon</a></li>
-            </ul>
-          </div>
-          <div class="indice-grupo">
-            <p><a href="#herbivores">Herbivores</a></p>
-            <ul role="list">
-              <li><a href="#diabloceratops">Diabloceratops</a></li>
-              <li><a href="#dryosaurus">Dryosaurus</a></li>
-              <li><a href="#hypsilophodon">Hypsilophodon</a></li>
-              <li><a href="#kentrosaurus">Kentrosaurus</a></li>
-              <li><a href="#maiasaura">Maiasaura</a></li>
-              <li><a href="#pachycephalosaurus">Pachycephalosaurus</a></li>
-              <li><a href="#stegosaurus">Stegosaurus</a></li>
-              <li><a href="#tenontosaurus">Tenontosaurus</a></li>
-              <li><a href="#triceratops">Triceratops</a></li>
-            </ul>
-          </div>
-          <div class="indice-grupo">
-            <p><a href="#omnivores">Omnivores</a></p>
-            <ul role="list">
-              <li><a href="#beipiaosaurus">Beipiaosaurus</a></li>
-              <li><a href="#gallimimus">Gallimimus</a></li>
-            </ul>
-          </div>
-      </nav>
+      <p class="saltos entra entra-3"><a href="#planner">Adult for the hunt?</a><a href="#carnivores">All the cards</a><a href="#how-to-read">How to read the cards</a><a href="#mutations">Mutations</a></p>
     </div>
   </section>
 
@@ -368,9 +329,9 @@
       <div class="revelar">
         <p class="antetitulo">At a glance</p>
         <h2 id="t-compare">Compare species</h2>
-        <p class="intro">All 22 species with their top weight, how long they take to grow up (1×) and their max group. Sort them, filter by how many of you will play together and tap one to open its card. The page link keeps your choice: share it with your group.</p>
+        <p class="intro">All 22 species with their top weight, how long they take to grow up (1×) and their max group. Sort them, filter by how many of you will play together and tap one to open its page. The page link keeps your choice: share it with your group.</p>
       </div>
-      <div class="plan" data-comparar hidden data-recuento="{n} of {total} species" data-ninguna="No species matches both.">
+      <div class="plan plan-tres" data-comparar hidden data-recuento="{n} of {total} species" data-ninguna="No species matches both.">
         <label>Sort by
           <select>
             <option value="fichas">Card order</option>
@@ -403,37 +364,620 @@
         </label>
         <p class="dino-fuente" role="status"></p>
       </div>
-      <dl class="glosario" data-comparar-lista>
-        <div data-nombre="Tyrannosaurus" data-dieta="carnivoros" data-peso="12300" data-crece="2133" data-grupo="2"><dt><a href="../../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>12.3&nbsp;t</b> · adult&nbsp;in&nbsp;<b>35&nbsp;h&nbsp;33&nbsp;min</b> · max&nbsp;group&nbsp;<b>2</b></dd></div>
-        <div data-nombre="Allosaurus" data-dieta="carnivoros" data-peso="3700" data-crece="600" data-grupo="3"><dt><a href="../../en/dinosaurs/allosaurus/">Allosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>3.7&nbsp;t</b> · adult&nbsp;in&nbsp;<b>10&nbsp;h</b> · max&nbsp;group&nbsp;<b>3</b></dd></div>
-        <div data-nombre="Austroraptor" data-dieta="carnivoros" data-peso="350" data-crece="480" data-grupo="8"><dt><a href="../../en/dinosaurs/austroraptor/">Austroraptor</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>350&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>about&nbsp;8&nbsp;h</b> (approximate) · max&nbsp;group&nbsp;<b>8</b></dd></div>
-        <div data-nombre="Carnotaurus" data-dieta="carnivoros" data-peso="1800" data-crece="460" data-grupo="3"><dt><a href="../../en/dinosaurs/carnotaurus/">Carnotaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>1800&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>7&nbsp;h&nbsp;40&nbsp;min</b> · max&nbsp;group&nbsp;<b>3</b></dd></div>
-        <div data-nombre="Ceratosaurus" data-dieta="carnivoros" data-peso="1950" data-crece="360" data-grupo="5"><dt><a href="../../en/dinosaurs/ceratosaurus/">Ceratosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>1950&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>6&nbsp;h</b> · max&nbsp;group&nbsp;<b>5</b></dd></div>
-        <div data-nombre="Deinosuchus" data-dieta="carnivoros" data-peso="13500" data-crece="1383" data-grupo="2"><dt><a href="../../en/dinosaurs/deinosuchus/">Deinosuchus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>13.5&nbsp;t</b> · adult&nbsp;in&nbsp;<b>23&nbsp;h&nbsp;3&nbsp;min</b> · max&nbsp;group&nbsp;<b>2</b></dd></div>
-        <div data-nombre="Dilophosaurus" data-dieta="carnivoros" data-peso="977" data-crece="360" data-grupo="4"><dt><a href="../../en/dinosaurs/dilophosaurus/">Dilophosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>977&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>6&nbsp;h</b> · max&nbsp;group&nbsp;<b>4</b></dd></div>
-        <div data-nombre="Herrerasaurus" data-dieta="carnivoros" data-peso="225" data-crece="325" data-grupo="10"><dt><a href="../../en/dinosaurs/herrerasaurus/">Herrerasaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>225&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>5&nbsp;h&nbsp;25&nbsp;min</b> · max&nbsp;group&nbsp;<b>10</b></dd></div>
-        <div data-nombre="Omniraptor" data-dieta="carnivoros" data-peso="660" data-crece="355" data-grupo="8"><dt><a href="../../en/dinosaurs/omniraptor/">Omniraptor</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>660&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>5&nbsp;h&nbsp;55&nbsp;min</b> · max&nbsp;group&nbsp;<b>8</b></dd></div>
-        <div data-nombre="Pteranodon" data-dieta="carnivoros" data-peso="120" data-crece="270" data-grupo="6"><dt><a href="../../en/dinosaurs/pteranodon/">Pteranodon</a> <span class="dieta dieta-carnivoro">Carnivore (fish-eater)</span></dt><dd>up&nbsp;to&nbsp;<b>120&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>4&nbsp;h&nbsp;30&nbsp;min</b> · max&nbsp;group&nbsp;<b>6</b></dd></div>
-        <div data-nombre="Troodon" data-dieta="carnivoros" data-peso="79.8" data-crece="190" data-grupo="10"><dt><a href="../../en/dinosaurs/troodon/">Troodon</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd>up&nbsp;to&nbsp;<b>79.8&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>3&nbsp;h&nbsp;10&nbsp;min</b> · max&nbsp;group&nbsp;<b>10</b></dd></div>
-        <div data-nombre="Diabloceratops" data-dieta="herbivoros" data-peso="3900" data-crece="465" data-grupo="6"><dt><a href="../../en/dinosaurs/diabloceratops/">Diabloceratops</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>3.9&nbsp;t</b> · adult&nbsp;in&nbsp;<b>7&nbsp;h&nbsp;45&nbsp;min</b> · max&nbsp;group&nbsp;<b>6</b></dd></div>
-        <div data-nombre="Dryosaurus" data-dieta="herbivoros" data-peso="185" data-crece="265" data-grupo="10"><dt><a href="../../en/dinosaurs/dryosaurus/">Dryosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>185&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>4&nbsp;h&nbsp;25&nbsp;min</b> · max&nbsp;group&nbsp;<b>10</b></dd></div>
-        <div data-nombre="Hypsilophodon" data-dieta="herbivoros" data-peso="23" data-crece="110" data-grupo="10"><dt><a href="../../en/dinosaurs/hypsilophodon/">Hypsilophodon</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>23&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>1&nbsp;h&nbsp;50&nbsp;min</b> · max&nbsp;group&nbsp;<b>10</b></dd></div>
-        <div data-nombre="Kentrosaurus" data-dieta="herbivoros" data-peso="2200" data-crece="665" data-grupo="5"><dt><a href="../../en/dinosaurs/kentrosaurus/">Kentrosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>2.2&nbsp;t</b> · adult&nbsp;in&nbsp;<b>11&nbsp;h&nbsp;5&nbsp;min</b> · max&nbsp;group&nbsp;<b>5</b></dd></div>
-        <div data-nombre="Maiasaura" data-dieta="herbivoros" data-peso="5400" data-crece="420" data-grupo="10"><dt><a href="../../en/dinosaurs/maiasaura/">Maiasaura</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>5.4&nbsp;t</b> · adult&nbsp;in&nbsp;<b>7&nbsp;h</b> · max&nbsp;group&nbsp;<b>10</b></dd></div>
-        <div data-nombre="Pachycephalosaurus" data-dieta="herbivoros" data-peso="910" data-crece="375" data-grupo="8"><dt><a href="../../en/dinosaurs/pachycephalosaurus/">Pachycephalosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>910&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>6&nbsp;h&nbsp;15&nbsp;min</b> · max&nbsp;group&nbsp;<b>8</b></dd></div>
-        <div data-nombre="Stegosaurus" data-dieta="herbivoros" data-peso="9300" data-crece="1075" data-grupo="5"><dt><a href="../../en/dinosaurs/stegosaurus/">Stegosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>9.3&nbsp;t</b> · adult&nbsp;in&nbsp;<b>17&nbsp;h&nbsp;55&nbsp;min</b> · max&nbsp;group&nbsp;<b>5</b></dd></div>
-        <div data-nombre="Tenontosaurus" data-dieta="herbivoros" data-peso="1830" data-crece="340" data-grupo="8"><dt><a href="../../en/dinosaurs/tenontosaurus/">Tenontosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>1830&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>5&nbsp;h&nbsp;40&nbsp;min</b> · max&nbsp;group&nbsp;<b>8</b></dd></div>
-        <div data-nombre="Triceratops" data-dieta="herbivoros" data-peso="12500" data-crece="1750" data-grupo="4"><dt><a href="../../en/dinosaurs/triceratops/">Triceratops</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd>up&nbsp;to&nbsp;<b>12.5&nbsp;t</b> · adult&nbsp;in&nbsp;<b>29&nbsp;h&nbsp;10&nbsp;min</b> (another source says about 12 h) · max&nbsp;group&nbsp;<b>4</b></dd></div>
-        <div data-nombre="Beipiaosaurus" data-dieta="omnivoros" data-peso="90" data-crece="220" data-grupo="12"><dt><a href="../../en/dinosaurs/beipiaosaurus/">Beipiaosaurus</a> <span class="dieta dieta-omnivoro">Omnivore</span></dt><dd>up&nbsp;to&nbsp;<b>90&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>3&nbsp;h&nbsp;40&nbsp;min</b> · max&nbsp;group&nbsp;<b>12</b></dd></div>
-        <div data-nombre="Gallimimus" data-dieta="omnivoros" data-peso="560" data-crece="325" data-grupo="8"><dt><a href="../../en/dinosaurs/gallimimus/">Gallimimus</a> <span class="dieta dieta-omnivoro">Omnivore</span></dt><dd>up&nbsp;to&nbsp;<b>560&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>5&nbsp;h&nbsp;25&nbsp;min</b> · max&nbsp;group&nbsp;<b>8</b></dd></div>
-      </dl>
+      <div class="comparar">
+        <p class="comparar-fila comparar-cabeza" aria-hidden="true"><span>Species</span><span class="comparar-cifras"><span class="c-peso">Top weight</span><span class="c-crece">To adult</span><span class="c-grupo">Max group</span></span></p>
+        <dl class="comparar-lista" data-comparar-lista>
+        <div data-nombre="Tyrannosaurus" data-dieta="carnivoros" data-peso="12300" data-crece="2133" data-grupo="2"><dt><a href="../../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>12.3 t</span><span class="c-crece"><span class="oculto">To adult: </span>35 h 33 min</span><span class="c-grupo"><span class="oculto">Max group: </span>2</span></dd></div>
+        <div data-nombre="Allosaurus" data-dieta="carnivoros" data-peso="3700" data-crece="600" data-grupo="3"><dt><a href="../../en/dinosaurs/allosaurus/">Allosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>3.7 t</span><span class="c-crece"><span class="oculto">To adult: </span>10 h</span><span class="c-grupo"><span class="oculto">Max group: </span>3</span></dd></div>
+        <div data-nombre="Austroraptor" data-dieta="carnivoros" data-peso="350" data-crece="480" data-grupo="8"><dt><a href="../../en/dinosaurs/austroraptor/">Austroraptor</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>350 kg</span><span class="c-crece"><span class="oculto">To adult: </span>about 8 h<small>(approximate)</small></span><span class="c-grupo"><span class="oculto">Max group: </span>8</span></dd></div>
+        <div data-nombre="Carnotaurus" data-dieta="carnivoros" data-peso="1800" data-crece="460" data-grupo="3"><dt><a href="../../en/dinosaurs/carnotaurus/">Carnotaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>1800 kg</span><span class="c-crece"><span class="oculto">To adult: </span>7 h 40 min</span><span class="c-grupo"><span class="oculto">Max group: </span>3</span></dd></div>
+        <div data-nombre="Ceratosaurus" data-dieta="carnivoros" data-peso="1950" data-crece="360" data-grupo="5"><dt><a href="../../en/dinosaurs/ceratosaurus/">Ceratosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>1950 kg</span><span class="c-crece"><span class="oculto">To adult: </span>6 h</span><span class="c-grupo"><span class="oculto">Max group: </span>5</span></dd></div>
+        <div data-nombre="Deinosuchus" data-dieta="carnivoros" data-peso="13500" data-crece="1383" data-grupo="2"><dt><a href="../../en/dinosaurs/deinosuchus/">Deinosuchus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>13.5 t</span><span class="c-crece"><span class="oculto">To adult: </span>23 h 3 min</span><span class="c-grupo"><span class="oculto">Max group: </span>2</span></dd></div>
+        <div data-nombre="Dilophosaurus" data-dieta="carnivoros" data-peso="977" data-crece="360" data-grupo="4"><dt><a href="../../en/dinosaurs/dilophosaurus/">Dilophosaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>977 kg</span><span class="c-crece"><span class="oculto">To adult: </span>6 h</span><span class="c-grupo"><span class="oculto">Max group: </span>4</span></dd></div>
+        <div data-nombre="Herrerasaurus" data-dieta="carnivoros" data-peso="225" data-crece="325" data-grupo="10"><dt><a href="../../en/dinosaurs/herrerasaurus/">Herrerasaurus</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>225 kg</span><span class="c-crece"><span class="oculto">To adult: </span>5 h 25 min</span><span class="c-grupo"><span class="oculto">Max group: </span>10</span></dd></div>
+        <div data-nombre="Omniraptor" data-dieta="carnivoros" data-peso="660" data-crece="355" data-grupo="8"><dt><a href="../../en/dinosaurs/omniraptor/">Omniraptor</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>660 kg</span><span class="c-crece"><span class="oculto">To adult: </span>5 h 55 min</span><span class="c-grupo"><span class="oculto">Max group: </span>8</span></dd></div>
+        <div data-nombre="Pteranodon" data-dieta="carnivoros" data-peso="120" data-crece="270" data-grupo="6"><dt><a href="../../en/dinosaurs/pteranodon/">Pteranodon</a> <span class="dieta dieta-carnivoro">Carnivore (fish-eater)</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>120 kg</span><span class="c-crece"><span class="oculto">To adult: </span>4 h 30 min</span><span class="c-grupo"><span class="oculto">Max group: </span>6</span></dd></div>
+        <div data-nombre="Troodon" data-dieta="carnivoros" data-peso="79.8" data-crece="190" data-grupo="10"><dt><a href="../../en/dinosaurs/troodon/">Troodon</a> <span class="dieta dieta-carnivoro">Carnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>79.8 kg</span><span class="c-crece"><span class="oculto">To adult: </span>3 h 10 min</span><span class="c-grupo"><span class="oculto">Max group: </span>10</span></dd></div>
+        <div data-nombre="Diabloceratops" data-dieta="herbivoros" data-peso="3900" data-crece="465" data-grupo="6"><dt><a href="../../en/dinosaurs/diabloceratops/">Diabloceratops</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>3.9 t</span><span class="c-crece"><span class="oculto">To adult: </span>7 h 45 min</span><span class="c-grupo"><span class="oculto">Max group: </span>6</span></dd></div>
+        <div data-nombre="Dryosaurus" data-dieta="herbivoros" data-peso="185" data-crece="265" data-grupo="10"><dt><a href="../../en/dinosaurs/dryosaurus/">Dryosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>185 kg</span><span class="c-crece"><span class="oculto">To adult: </span>4 h 25 min</span><span class="c-grupo"><span class="oculto">Max group: </span>10</span></dd></div>
+        <div data-nombre="Hypsilophodon" data-dieta="herbivoros" data-peso="23" data-crece="110" data-grupo="10"><dt><a href="../../en/dinosaurs/hypsilophodon/">Hypsilophodon</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>23 kg</span><span class="c-crece"><span class="oculto">To adult: </span>1 h 50 min</span><span class="c-grupo"><span class="oculto">Max group: </span>10</span></dd></div>
+        <div data-nombre="Kentrosaurus" data-dieta="herbivoros" data-peso="2200" data-crece="665" data-grupo="5"><dt><a href="../../en/dinosaurs/kentrosaurus/">Kentrosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>2.2 t</span><span class="c-crece"><span class="oculto">To adult: </span>11 h 5 min</span><span class="c-grupo"><span class="oculto">Max group: </span>5</span></dd></div>
+        <div data-nombre="Maiasaura" data-dieta="herbivoros" data-peso="5400" data-crece="420" data-grupo="10"><dt><a href="../../en/dinosaurs/maiasaura/">Maiasaura</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>5.4 t</span><span class="c-crece"><span class="oculto">To adult: </span>7 h</span><span class="c-grupo"><span class="oculto">Max group: </span>10</span></dd></div>
+        <div data-nombre="Pachycephalosaurus" data-dieta="herbivoros" data-peso="910" data-crece="375" data-grupo="8"><dt><a href="../../en/dinosaurs/pachycephalosaurus/">Pachycephalosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>910 kg</span><span class="c-crece"><span class="oculto">To adult: </span>6 h 15 min</span><span class="c-grupo"><span class="oculto">Max group: </span>8</span></dd></div>
+        <div data-nombre="Stegosaurus" data-dieta="herbivoros" data-peso="9300" data-crece="1075" data-grupo="5"><dt><a href="../../en/dinosaurs/stegosaurus/">Stegosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>9.3 t</span><span class="c-crece"><span class="oculto">To adult: </span>17 h 55 min</span><span class="c-grupo"><span class="oculto">Max group: </span>5</span></dd></div>
+        <div data-nombre="Tenontosaurus" data-dieta="herbivoros" data-peso="1830" data-crece="340" data-grupo="8"><dt><a href="../../en/dinosaurs/tenontosaurus/">Tenontosaurus</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>1830 kg</span><span class="c-crece"><span class="oculto">To adult: </span>5 h 40 min</span><span class="c-grupo"><span class="oculto">Max group: </span>8</span></dd></div>
+        <div data-nombre="Triceratops" data-dieta="herbivoros" data-peso="12500" data-crece="1750" data-grupo="4"><dt><a href="../../en/dinosaurs/triceratops/">Triceratops</a> <span class="dieta dieta-herbivoro">Herbivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>12.5 t</span><span class="c-crece"><span class="oculto">To adult: </span>29 h 10 min<small>(another source says about 12 h)</small></span><span class="c-grupo"><span class="oculto">Max group: </span>4</span></dd></div>
+        <div data-nombre="Beipiaosaurus" data-dieta="omnivoros" data-peso="90" data-crece="220" data-grupo="12"><dt><a href="../../en/dinosaurs/beipiaosaurus/">Beipiaosaurus</a> <span class="dieta dieta-omnivoro">Omnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>90 kg</span><span class="c-crece"><span class="oculto">To adult: </span>3 h 40 min</span><span class="c-grupo"><span class="oculto">Max group: </span>12</span></dd></div>
+        <div data-nombre="Gallimimus" data-dieta="omnivoros" data-peso="560" data-crece="325" data-grupo="8"><dt><a href="../../en/dinosaurs/gallimimus/">Gallimimus</a> <span class="dieta dieta-omnivoro">Omnivore</span></dt><dd><span class="c-peso"><span class="oculto">Top weight: </span>560 kg</span><span class="c-crece"><span class="oculto">To adult: </span>5 h 25 min</span><span class="c-grupo"><span class="oculto">Max group: </span>8</span></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="planner" aria-labelledby="t-planner">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">Before the hunt</p>
+        <h2 id="t-planner">Will you be adult for the hunt?</h2>
+        <p class="intro">Pick a species, the server's growth rate (if you don't know it, leave 1×, the game's own) and how much you play each day. It uses each card's growth time, starting from now.</p>
+      </div>
+      <div class="plan plan-tres" data-plan hidden data-si="With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time)." data-no="With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time). You would make the one on {alcanza}." data-si-titulo="You make it" data-no-titulo="You don&#x27;t make it" data-locale="en-GB" data-unidades="{&quot;d&quot;: [&quot;day&quot;, &quot;days&quot;], &quot;h&quot;: &quot;h&quot;, &quot;m&quot;: &quot;min&quot;}">
+        <label>Species
+          <select>
+            <option value="2133" data-nombre="Tyrannosaurus" data-ancla="tyrannosaurus">Tyrannosaurus · 35 h 33 min</option>
+            <option value="600" data-nombre="Allosaurus" data-ancla="allosaurus">Allosaurus · 10 h</option>
+            <option value="480" data-nombre="Austroraptor" data-ancla="austroraptor" data-nota="Approximate">Austroraptor · about 8 h</option>
+            <option value="460" data-nombre="Carnotaurus" data-ancla="carnotaurus">Carnotaurus · 7 h 40 min</option>
+            <option value="360" data-nombre="Ceratosaurus" data-ancla="ceratosaurus">Ceratosaurus · 6 h</option>
+            <option value="1383" data-nombre="Deinosuchus" data-ancla="deinosuchus">Deinosuchus · 23 h 3 min</option>
+            <option value="360" data-nombre="Dilophosaurus" data-ancla="dilophosaurus">Dilophosaurus · 6 h</option>
+            <option value="325" data-nombre="Herrerasaurus" data-ancla="herrerasaurus">Herrerasaurus · 5 h 25 min</option>
+            <option value="355" data-nombre="Omniraptor" data-ancla="omniraptor">Omniraptor · 5 h 55 min</option>
+            <option value="270" data-nombre="Pteranodon" data-ancla="pteranodon">Pteranodon · 4 h 30 min</option>
+            <option value="190" data-nombre="Troodon" data-ancla="troodon">Troodon · 3 h 10 min</option>
+            <option value="465" data-nombre="Diabloceratops" data-ancla="diabloceratops">Diabloceratops · 7 h 45 min</option>
+            <option value="265" data-nombre="Dryosaurus" data-ancla="dryosaurus">Dryosaurus · 4 h 25 min</option>
+            <option value="110" data-nombre="Hypsilophodon" data-ancla="hypsilophodon">Hypsilophodon · 1 h 50 min</option>
+            <option value="665" data-nombre="Kentrosaurus" data-ancla="kentrosaurus">Kentrosaurus · 11 h 5 min</option>
+            <option value="420" data-nombre="Maiasaura" data-ancla="maiasaura">Maiasaura · 7 h</option>
+            <option value="375" data-nombre="Pachycephalosaurus" data-ancla="pachycephalosaurus">Pachycephalosaurus · 6 h 15 min</option>
+            <option value="1075" data-nombre="Stegosaurus" data-ancla="stegosaurus">Stegosaurus · 17 h 55 min</option>
+            <option value="340" data-nombre="Tenontosaurus" data-ancla="tenontosaurus">Tenontosaurus · 5 h 40 min</option>
+            <option value="1750" data-nombre="Triceratops" data-ancla="triceratops" data-nota="Another source says about 12 h">Triceratops · 29 h 10 min</option>
+            <option value="220" data-nombre="Beipiaosaurus" data-ancla="beipiaosaurus">Beipiaosaurus · 3 h 40 min</option>
+            <option value="325" data-nombre="Gallimimus" data-ancla="gallimimus">Gallimimus · 5 h 25 min</option>
+          </select>
+        </label>
+        <label>Server growth rate
+          <select>
+            <option value="1">1× (base)</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+          </select>
+        </label>
+        <label>Hours played per day
+          <select>
+            <option value="24">Non-stop</option>
+            <option value="8">8 h</option>
+            <option value="4">4 h</option>
+            <option value="2">2 h</option>
+          </select>
+        </label>
+        <p class="plan-resultado" data-resultado role="status"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="carnivores" aria-labelledby="t-carnivores">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">11 species</p>
+        <h2 id="t-carnivores">Carnivores</h2>
+      </div>
+      <div class="dinos dinos-plegadas">
+        <details class="dino plegable panel luz revelar" id="tyrannosaurus">
+          <summary class="dino-cabeza"><h3 id="d-tyrannosaurus"><a href="../../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">9.3 t (Frail) · up to 12.3 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">35 h 33 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">2</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Space (from sub-adult): ambush, a faster sprint for 15 s that costs no stamina (1 min cooldown)</li>
+            <li data-ficha="hab">Hold and release LMB: Crush, a lunging bite that pins prey under half its weight or wounded prey; then RMB to throw them</li>
+            <li data-ficha="hab">RMB: snout bash (hold for the strong one) · Alt + LMB: directional bite</li>
+            <li data-ficha="hab">Its bites break bones, but it cannot eat them</li>
+            <li data-ficha="hab">F + 1 (from adult): vocals</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Brutal at ambushing and finishing off. Miss the Crush and you are stunned for 1 s, with a 5 s cooldown.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="allosaurus">
+          <summary class="dino-cabeza"><h3 id="d-allosaurus"><a href="../../en/dinosaurs/allosaurus/">Allosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">2.6 t (Frail) · up to 3.7 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">10 h</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">3</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Hold RMB: pounce with a claw swipe; causes bleed and deals more damage if it pins</li>
+            <li data-ficha="hab">Running + hold LMB: claw swipe with stacking bleed</li>
+            <li data-ficha="hab">Alt + LMB: directional attack</li>
+            <li data-ficha="hab">Pins prey up to half its weight, or 3/4 if it is below 20% stamina or health (two Allos add their weight together); the prey breaks free by holding E</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Wins through bleed from an ambush. Avoid long fights against the big ones.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="austroraptor">
+          <summary class="dino-cabeza"><h3 id="d-austroraptor"><a href="../../en/dinosaurs/austroraptor/">Austroraptor</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">240 kg (Frail) · up to 350 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">about 8 h (approximate)</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: pinning pounce, like the Omniraptor</li>
+            <li data-ficha="hab">Space: jump and attack in mid-air; from the water&#x27;s surface it launches out of the water</li>
+            <li data-ficha="hab">G: spear fishing</li>
+            <li data-ficha="hab">Cannot eat bones</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Hunt in rivers and on shorelines, mixing fishing and pounces.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="carnotaurus">
+          <summary class="dino-cabeza"><h3 id="d-carnotaurus"><a href="../../en/dinosaurs/carnotaurus/">Carnotaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">1300 kg (Frail) · up to 1800 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">7 h 40 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">3</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB while running: charge, with a cooldown</li>
+            <li data-ficha="hab">Alt + LMB: low bite that costs stamina</li>
+            <li data-ficha="hab">Turns slowly while running</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Very strong in open ground and weak in forests. On your own, avoid fighting 3 or more Omniraptors.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="ceratosaurus">
+          <summary class="dino-cabeza"><h3 id="d-ceratosaurus"><a href="../../en/dinosaurs/ceratosaurus/">Ceratosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">1450 kg (Frail) · up to 1950 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">6 h</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Cannot jump</li>
+            <li data-ficha="hab">Longest-range sense of smell in the game; bones give it all 3 nutrients</li>
+            <li data-ficha="hab">Its bile bite can make others vomit · hold RMB: charged bite (slows you by 10%)</li>
+            <li data-ficha="hab">Takes less damage while eating and while a body of 130 kg or more is within 30 m</li>
+            <li data-ficha="hab">RMB 3 times over a carcass: it vomits and makes it rot 5 times faster</li>
+            <li data-ficha="hab">Immune to bacteria</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">King of the carcasses: find the food before anyone else and defend it.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="deinosuchus">
+          <summary class="dino-cabeza"><h3 id="d-deinosuchus"><a href="../../en/dinosaurs/deinosuchus/">Deinosuchus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">9.5 t (Frail) · up to 13.5 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">23 h 3 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">2</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: lunge out of the water; hold it to keep your grip on the prey</li>
+            <li data-ficha="hab">To grab you must weigh at least twice as much as the prey (more if the prey is swimming)</li>
+            <li data-ficha="hab">Swims 500 m underwater at 30 km/h</li>
+            <li data-ficha="hab">The slowest dinosaur on land; its water drops from 100% to 0 in 10 min</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Ambush from the shore. Away from the water you are easy prey.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="HYDRO"><b>Hydrodynamic</b>: you swim faster (doubtful: one source says no mutation has given speed since October 2025)</li>
+            <li data-mut="HYPO"><b>Congenital Hypoalgesia</b>: less damage from larger species</li>
+            <li data-mut="REAB"><b>Reabsorption</b>: you regain a little water in the rain or while swimming in fresh water</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (Fluxio, 19 Oct 2026)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="dilophosaurus">
+          <summary class="dino-cabeza"><h3 id="d-dilophosaurus"><a href="../../en/dinosaurs/dilophosaurus/">Dilophosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">700 kg (Frail) · up to 977 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">6 h</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">4</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Very fast bite; its venom causes hallucinations</li>
+            <li data-ficha="hab">RMB on a fully envenomed (purple) target: copies that attack it (about 10 s cooldown); only the target can see them</li>
+            <li data-ficha="hab">Breaks free from grabs very quickly</li>
+            <li data-ficha="hab">Weak to bleed</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Envenom first (head hits build it up faster), then finish them off.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="herrerasaurus">
+          <summary class="dino-cabeza"><h3 id="d-herrerasaurus"><a href="../../en/dinosaurs/herrerasaurus/">Herrerasaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">175 kg (Frail) · up to 225 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">5 h 25 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Climbs almost any surface (not with stamina at 0)</li>
+            <li data-ficha="hab">Hold RMB and Space: pounce or latch; more damage the heavier the target</li>
+            <li data-ficha="hab">Dives for 25 s with night vision underwater</li>
+            <li data-ficha="hab">Its attacks cause bleed</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Attack from above and in a pack; in melee against big ones it loses.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="omniraptor">
+          <summary class="dino-cabeza"><h3 id="d-omniraptor"><a href="../../en/dinosaurs/omniraptor/">Omniraptor</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">395 kg (Frail) · up to 660 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">5 h 55 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: latching pounce (hold LMB for damage or RMB for bleed)</li>
+            <li data-ficha="hab">Only pins prey up to its own weight; 2 or more knock the target to the ground</li>
+            <li data-ficha="hab">High jumps onto rocks · jump + look down + click: kick</li>
+            <li data-ficha="hab">If you run out of stamina while latched, you fall stunned</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Pays off in a pair or a group; alone, it loses against the big ones.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
+            <li data-mut="LUNGS"><b>Multichambered Lungs</b>: better stamina recovery (unlocked by spending 4,500 stamina sprinting or swimming fast)</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (Fluxio, 18 Oct 2026)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="pteranodon">
+          <summary class="dino-cabeza"><h3 id="d-pteranodon"><a href="../../en/dinosaurs/pteranodon/">Pteranodon</a></h3><span class="dieta dieta-carnivoro">Carnivore (fish-eater)</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">90 kg (Frail) · up to 120 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">4 h 30 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">6</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Space 3 times in a row: take off</li>
+            <li data-ficha="hab">Hold Z, then RMB: cling to trees or walls</li>
+            <li data-ficha="hab">RMB on jumping fish: catch them in flight</li>
+            <li data-ficha="hab">Hold Space, or W + Ctrl twice: barrel roll</li>
+            <li data-ficha="hab">Cannot carry dinosaurs except hatchlings and small ones</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">The clan&#x27;s scout: watch and warn from the air. Weak in a straight fight.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="troodon">
+          <summary class="dino-cabeza"><h3 id="d-troodon"><a href="../../en/dinosaurs/troodon/">Troodon</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">60 kg (Frail) · up to 79.8 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">3 h 10 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Hold RMB: 360° venom pounce; it latches on and deals damage for 5 s</li>
+            <li data-ficha="hab">Each pounce adds one of 3 venom stages; with all 3 (they last 45 s), the prey takes more damage</li>
+            <li data-ficha="hab">If the pack pounces at the same time before the 3rd stage, the venom resets; a chirp tells you that you can pounce again</li>
+            <li data-ficha="hab">The venom mist hides you</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Nocturnal: hit and run, always in a group.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
+            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="herbivores" aria-labelledby="t-herbivores">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">9 species</p>
+        <h2 id="t-herbivores">Herbivores</h2>
+      </div>
+      <div class="dinos dinos-plegadas">
+        <details class="dino plegable panel luz revelar" id="diabloceratops">
+          <summary class="dino-cabeza"><h3 id="d-diabloceratops"><a href="../../en/dinosaurs/diabloceratops/">Diabloceratops</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">3 t (Frail) · up to 3.9 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">7 h 45 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">6</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">LMB: headbutt · while running: shove that knocks down targets under twice its weight (up to 6 t)</li>
+            <li data-ficha="hab">Hold RMB: sideways mode · A/D: strafe</li>
+            <li data-ficha="hab">Space + move: untangle the horns</li>
+            <li data-ficha="hab">Each attack costs one stamina point (it recovers in 30 s)</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Nimble for a horned dino: shove and reposition instead of staying locked in.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="dryosaurus">
+          <summary class="dino-cabeza"><h3 id="d-dryosaurus"><a href="../../en/dinosaurs/dryosaurus/">Dryosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">130 kg (Frail) · up to 185 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">4 h 25 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: dodge (2 charges, 10 s cooldown); costs no stamina, but not with food in your mouth</li>
+            <li data-ficha="hab">LMB: kick while walking, bite while running, tail swipe to the sides or behind</li>
+            <li data-ficha="hab">Its stomach empties in 30 min</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Lots of mobility and little damage: dodge and harass, don&#x27;t stay to fight.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="hypsilophodon">
+          <summary class="dino-cabeza"><h3 id="d-hypsilophodon"><a href="../../en/dinosaurs/hypsilophodon/">Hypsilophodon</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">20 kg (Frail) · up to 23 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">1 h 50 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Hold and release LMB: spits blinding acid (costs food) · hold E: clean yourself</li>
+            <li data-ficha="hab">Hold RMB + Space: grab on and climb</li>
+            <li data-ficha="hab">Hold Space before jumping: high jump</li>
+            <li data-ficha="hab">Its spit can knock a Herrerasaurus off a wall</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Blind your chaser and climb where it can&#x27;t follow.</span></p>
+          <h4>Recommended mutations</h4>
+          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="kentrosaurus">
+          <summary class="dino-cabeza"><h3 id="d-kentrosaurus"><a href="../../en/dinosaurs/kentrosaurus/">Kentrosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">1.95 t (Frail) · up to 2.2 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">11 h 5 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Hold RMB + LMB: charged tail swipe</li>
+            <li data-ficha="hab">Anyone who hits its tail or shoulders takes damage</li>
+            <li data-ficha="hab">Ctrl: defensive stance (more reflected damage and blocks some abilities)</li>
+            <li data-ficha="hab">It can be pounced on from the side it isn&#x27;t defending</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Keep the defensive stance facing the enemy and don&#x27;t let them flank you.</span></p>
+          <h4>Recommended mutations</h4>
+          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="maiasaura">
+          <summary class="dino-cabeza"><h3 id="d-maiasaura"><a href="../../en/dinosaurs/maiasaura/">Maiasaura</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">3.7 t (Frail) · up to 5.4 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">7 h</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Ctrl or Space: switch between biped and quadruped</li>
+            <li data-ficha="hab">Biped, LMB: 360° frontal claw swipe (several while running)</li>
+            <li data-ficha="hab">Quadruped, LMB + camera: kick to the front, back or side</li>
+            <li data-ficha="hab">Turns slowly except when running</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Strong in a big herd; switch stance depending on the enemy.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="pachycephalosaurus">
+          <summary class="dino-cabeza"><h3 id="d-pachycephalosaurus"><a href="../../en/dinosaurs/pachycephalosaurus/">Pachycephalosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">700 kg (Frail) · up to 910 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">6 h 15 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: leaping headbutt; often breaks bones</li>
+            <li data-ficha="hab">Alt + LMB: sideways headbutt that knocks down</li>
+            <li data-ficha="hab">The headbutt does no damage to targets over 3 t</li>
+            <li data-ficha="hab">Takes less damage to the head; poor swimmer and weak to falls</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Great for breaking the legs of mid-sized carnivores; against giants, run.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="stegosaurus">
+          <summary class="dino-cabeza"><h3 id="d-stegosaurus"><a href="../../en/dinosaurs/stegosaurus/">Stegosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">6 t (Frail) · up to 9.3 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">17 h 55 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Hold Alt + LMB: directional tail swipe with the highest bleed in the game (more damage to the head)</li>
+            <li data-ficha="hab">Hold RMB: charge (costs stamina)</li>
+            <li data-ficha="hab">Alternate A and D: dodge hits to the head</li>
+            <li data-ficha="hab">After the tail swipe, hold S to back off</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Punish anyone who comes from behind and always protect your head.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="tenontosaurus">
+          <summary class="dino-cabeza"><h3 id="d-tenontosaurus"><a href="../../en/dinosaurs/tenontosaurus/">Tenontosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">1600 kg (Frail) · up to 1830 kg (Prime) · 1600 health</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">5 h 40 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">RMB: back kick that knocks down and deals heavy damage</li>
+            <li data-ficha="hab">Alt + RMB: directional tail swipe</li>
+            <li data-ficha="hab">Alt + LMB: directional claw swipe</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Run and counter with the kick; it can take a lot of tail swipes.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="triceratops">
+          <summary class="dino-cabeza"><h3 id="d-triceratops"><a href="../../en/dinosaurs/triceratops/">Triceratops</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">9.5 t (Frail) · up to 12.5 t (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">29 h 10 min (another source says about 12 h)</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">4</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">LMB: headbutt · hold: flip and knock down · double click: extra hit on downed targets</li>
+            <li data-ficha="hab">Hold RMB: block hits to the head (and sideways mode)</li>
+            <li data-ficha="hab">Ctrl: sparring mode · Space in that mode: dodge and untangle horns</li>
+            <li data-ficha="hab">Each attack costs one stamina point (it recovers in 30 s)</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Extremely tanky, but attacking non-stop leaves you out of stamina.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
+            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="omnivores" aria-labelledby="t-omnivores">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">2 species</p>
+        <h2 id="t-omnivores">Omnivores</h2>
+      </div>
+      <div class="dinos dinos-plegadas">
+        <details class="dino plegable panel luz revelar" id="beipiaosaurus">
+          <summary class="dino-cabeza"><h3 id="d-beipiaosaurus"><a href="../../en/dinosaurs/beipiaosaurus/">Beipiaosaurus</a></h3><span class="dieta dieta-omnivoro">Omnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">90 kg</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">3 h 40 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">12</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">On land: LMB claw swipe with bleed, RMB peck (they swap in the water)</li>
+            <li data-ficha="hab">It floats: keep swimming to dive; 1 min 45 s of oxygen</li>
+            <li data-ficha="hab">Ctrl in the water: grip the bottom · hold Space: jumps and attacks out of the water</li>
+            <li data-ficha="hab">Smells crabs underwater; cannot graze</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Use the rivers to escape or to hunt.</span></p>
+          <h4>Recommended mutations</h4>
+          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
+        </details>
+        <details class="dino plegable panel luz revelar" id="gallimimus">
+          <summary class="dino-cabeza"><h3 id="d-gallimimus"><a href="../../en/dinosaurs/gallimimus/">Gallimimus</a></h3><span class="dieta dieta-omnivoro">Omnivore</span></summary>
+          <dl class="dino-datos">
+            <div><dt>Adult weight</dt><dd data-ficha="peso">535 kg (Frail) · up to 560 kg (Prime)</dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">5 h 25 min</dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
+          </dl>
+          <h4>Abilities</h4>
+          <ul class="dino-lista" role="list">
+            <li data-ficha="hab">Speed: 46.8 km/h with no diet and 55.4 km/h with all 3 nutrients</li>
+            <li data-ficha="hab">1: rally call, a short speed boost for the flock (doesn&#x27;t work alone)</li>
+            <li data-ficha="hab">Q: sniff out burrows · hold E: dig up frogs, crabs and compys</li>
+            <li data-ficha="hab">In a flock, those with a worse diet than the leader run faster near others</li>
+          </ul>
+          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">A runner: avoid melee and keep your diet up to be faster.</span></p>
+          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
+          <ul class="dino-lista dino-mut" role="list">
+            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
+            <li data-mut="HYPO"><b>Congenital Hypoalgesia</b>: less damage from larger species</li>
+            <li data-mut="OSTEO"><b>Osteosclerosis</b>: better resistance to fractures</li>
+          </ul>
+          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
+        </details>
+      </div>
     </div>
   </section>
 
   <section class="seccion" id="how-to-read" aria-labelledby="t-leer">
     <div class="envoltura">
       <div class="revelar">
-        <p class="antetitulo">Before you start</p>
+        <p class="antetitulo">Terms and data</p>
         <h2 id="t-leer">How to read the cards</h2>
       </div>
       <div class="normas escalonado">
@@ -463,578 +1007,6 @@
             <li>Spotted something wrong or outdated? Tell us on Discord and we will fix it.</li>
           </ul>
         </section>
-      </div>
-    </div>
-  </section>
-
-  <section class="seccion" id="planner" aria-labelledby="t-planner">
-    <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">Before the hunt</p>
-        <h2 id="t-planner">Will you be adult for the hunt?</h2>
-        <p class="intro">Pick a species and the server's growth rate (if you don't know it, leave 1×, the game's own). It uses each card's growth time, playing non-stop from now.</p>
-      </div>
-      <div class="plan" data-plan hidden data-si="With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time)." data-no="With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time)." data-si-titulo="You make it" data-no-titulo="You don&#x27;t make it" data-locale="en-GB" data-unidades="{&quot;d&quot;: [&quot;day&quot;, &quot;days&quot;], &quot;h&quot;: &quot;h&quot;, &quot;m&quot;: &quot;min&quot;}">
-        <label>Species
-          <select>
-            <option value="2133" data-nombre="Tyrannosaurus">Tyrannosaurus · 35 h 33 min</option>
-            <option value="600" data-nombre="Allosaurus">Allosaurus · 10 h</option>
-            <option value="480" data-nombre="Austroraptor" data-nota="Approximate">Austroraptor · about 8 h</option>
-            <option value="460" data-nombre="Carnotaurus">Carnotaurus · 7 h 40 min</option>
-            <option value="360" data-nombre="Ceratosaurus">Ceratosaurus · 6 h</option>
-            <option value="1383" data-nombre="Deinosuchus">Deinosuchus · 23 h 3 min</option>
-            <option value="360" data-nombre="Dilophosaurus">Dilophosaurus · 6 h</option>
-            <option value="325" data-nombre="Herrerasaurus">Herrerasaurus · 5 h 25 min</option>
-            <option value="355" data-nombre="Omniraptor">Omniraptor · 5 h 55 min</option>
-            <option value="270" data-nombre="Pteranodon">Pteranodon · 4 h 30 min</option>
-            <option value="190" data-nombre="Troodon">Troodon · 3 h 10 min</option>
-            <option value="465" data-nombre="Diabloceratops">Diabloceratops · 7 h 45 min</option>
-            <option value="265" data-nombre="Dryosaurus">Dryosaurus · 4 h 25 min</option>
-            <option value="110" data-nombre="Hypsilophodon">Hypsilophodon · 1 h 50 min</option>
-            <option value="665" data-nombre="Kentrosaurus">Kentrosaurus · 11 h 5 min</option>
-            <option value="420" data-nombre="Maiasaura">Maiasaura · 7 h</option>
-            <option value="375" data-nombre="Pachycephalosaurus">Pachycephalosaurus · 6 h 15 min</option>
-            <option value="1075" data-nombre="Stegosaurus">Stegosaurus · 17 h 55 min</option>
-            <option value="340" data-nombre="Tenontosaurus">Tenontosaurus · 5 h 40 min</option>
-            <option value="1750" data-nombre="Triceratops" data-nota="Another source says about 12 h">Triceratops · 29 h 10 min</option>
-            <option value="220" data-nombre="Beipiaosaurus">Beipiaosaurus · 3 h 40 min</option>
-            <option value="325" data-nombre="Gallimimus">Gallimimus · 5 h 25 min</option>
-          </select>
-        </label>
-        <label>Server growth rate
-          <select>
-            <option value="1">1× (base)</option>
-            <option value="1.5">1.5×</option>
-            <option value="2">2×</option>
-            <option value="3">3×</option>
-          </select>
-        </label>
-        <p class="plan-resultado" data-resultado role="status"></p>
-      </div>
-    </div>
-  </section>
-
-  <section class="seccion" id="carnivores" aria-labelledby="t-carnivores">
-    <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">11 species</p>
-        <h2 id="t-carnivores">Carnivores</h2>
-      </div>
-      <div class="dinos">
-        <article class="dino panel luz revelar" id="tyrannosaurus" aria-labelledby="d-tyrannosaurus">
-          <div class="dino-cabeza"><h3 id="d-tyrannosaurus"><a href="../../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">9.3 t (Frail) · up to 12.3 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">35 h 33 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">2</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Space (from sub-adult): ambush, a faster sprint for 15 s that costs no stamina (1 min cooldown)</li>
-            <li data-ficha="hab">Hold and release LMB: Crush, a lunging bite that pins prey under half its weight or wounded prey; then RMB to throw them</li>
-            <li data-ficha="hab">RMB: snout bash (hold for the strong one) · Alt + LMB: directional bite</li>
-            <li data-ficha="hab">Its bites break bones, but it cannot eat them</li>
-            <li data-ficha="hab">F + 1 (from adult): vocals</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Brutal at ambushing and finishing off. Miss the Crush and you are stunned for 1 s, with a 5 s cooldown.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="allosaurus" aria-labelledby="d-allosaurus">
-          <div class="dino-cabeza"><h3 id="d-allosaurus"><a href="../../en/dinosaurs/allosaurus/">Allosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">2.6 t (Frail) · up to 3.7 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">10 h</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">3</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Hold RMB: pounce with a claw swipe; causes bleed and deals more damage if it pins</li>
-            <li data-ficha="hab">Running + hold LMB: claw swipe with stacking bleed</li>
-            <li data-ficha="hab">Alt + LMB: directional attack</li>
-            <li data-ficha="hab">Pins prey up to half its weight, or 3/4 if it is below 20% stamina or health (two Allos add their weight together); the prey breaks free by holding E</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Wins through bleed from an ambush. Avoid long fights against the big ones.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="austroraptor" aria-labelledby="d-austroraptor">
-          <div class="dino-cabeza"><h3 id="d-austroraptor"><a href="../../en/dinosaurs/austroraptor/">Austroraptor</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">240 kg (Frail) · up to 350 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">about 8 h (approximate)</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: pinning pounce, like the Omniraptor</li>
-            <li data-ficha="hab">Space: jump and attack in mid-air; from the water&#x27;s surface it launches out of the water</li>
-            <li data-ficha="hab">G: spear fishing</li>
-            <li data-ficha="hab">Cannot eat bones</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Hunt in rivers and on shorelines, mixing fishing and pounces.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="carnotaurus" aria-labelledby="d-carnotaurus">
-          <div class="dino-cabeza"><h3 id="d-carnotaurus"><a href="../../en/dinosaurs/carnotaurus/">Carnotaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">1300 kg (Frail) · up to 1800 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">7 h 40 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">3</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB while running: charge, with a cooldown</li>
-            <li data-ficha="hab">Alt + LMB: low bite that costs stamina</li>
-            <li data-ficha="hab">Turns slowly while running</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Very strong in open ground and weak in forests. On your own, avoid fighting 3 or more Omniraptors.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="ceratosaurus" aria-labelledby="d-ceratosaurus">
-          <div class="dino-cabeza"><h3 id="d-ceratosaurus"><a href="../../en/dinosaurs/ceratosaurus/">Ceratosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">1450 kg (Frail) · up to 1950 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">6 h</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Cannot jump</li>
-            <li data-ficha="hab">Longest-range sense of smell in the game; bones give it all 3 nutrients</li>
-            <li data-ficha="hab">Its bile bite can make others vomit · hold RMB: charged bite (slows you by 10%)</li>
-            <li data-ficha="hab">Takes less damage while eating and while a body of 130 kg or more is within 30 m</li>
-            <li data-ficha="hab">RMB 3 times over a carcass: it vomits and makes it rot 5 times faster</li>
-            <li data-ficha="hab">Immune to bacteria</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">King of the carcasses: find the food before anyone else and defend it.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="deinosuchus" aria-labelledby="d-deinosuchus">
-          <div class="dino-cabeza"><h3 id="d-deinosuchus"><a href="../../en/dinosaurs/deinosuchus/">Deinosuchus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">9.5 t (Frail) · up to 13.5 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">23 h 3 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">2</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: lunge out of the water; hold it to keep your grip on the prey</li>
-            <li data-ficha="hab">To grab you must weigh at least twice as much as the prey (more if the prey is swimming)</li>
-            <li data-ficha="hab">Swims 500 m underwater at 30 km/h</li>
-            <li data-ficha="hab">The slowest dinosaur on land; its water drops from 100% to 0 in 10 min</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Ambush from the shore. Away from the water you are easy prey.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="HYDRO"><b>Hydrodynamic</b>: you swim faster (doubtful: one source says no mutation has given speed since October 2025)</li>
-            <li data-mut="HYPO"><b>Congenital Hypoalgesia</b>: less damage from larger species</li>
-            <li data-mut="REAB"><b>Reabsorption</b>: you regain a little water in the rain or while swimming in fresh water</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (Fluxio, 19 Oct 2026)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="dilophosaurus" aria-labelledby="d-dilophosaurus">
-          <div class="dino-cabeza"><h3 id="d-dilophosaurus"><a href="../../en/dinosaurs/dilophosaurus/">Dilophosaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">700 kg (Frail) · up to 977 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">6 h</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">4</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Very fast bite; its venom causes hallucinations</li>
-            <li data-ficha="hab">RMB on a fully envenomed (purple) target: copies that attack it (about 10 s cooldown); only the target can see them</li>
-            <li data-ficha="hab">Breaks free from grabs very quickly</li>
-            <li data-ficha="hab">Weak to bleed</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Envenom first (head hits build it up faster), then finish them off.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="herrerasaurus" aria-labelledby="d-herrerasaurus">
-          <div class="dino-cabeza"><h3 id="d-herrerasaurus"><a href="../../en/dinosaurs/herrerasaurus/">Herrerasaurus</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">175 kg (Frail) · up to 225 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">5 h 25 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Climbs almost any surface (not with stamina at 0)</li>
-            <li data-ficha="hab">Hold RMB and Space: pounce or latch; more damage the heavier the target</li>
-            <li data-ficha="hab">Dives for 25 s with night vision underwater</li>
-            <li data-ficha="hab">Its attacks cause bleed</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Attack from above and in a pack; in melee against big ones it loses.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="omniraptor" aria-labelledby="d-omniraptor">
-          <div class="dino-cabeza"><h3 id="d-omniraptor"><a href="../../en/dinosaurs/omniraptor/">Omniraptor</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">395 kg (Frail) · up to 660 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">5 h 55 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: latching pounce (hold LMB for damage or RMB for bleed)</li>
-            <li data-ficha="hab">Only pins prey up to its own weight; 2 or more knock the target to the ground</li>
-            <li data-ficha="hab">High jumps onto rocks · jump + look down + click: kick</li>
-            <li data-ficha="hab">If you run out of stamina while latched, you fall stunned</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Pays off in a pair or a group; alone, it loses against the big ones.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="HEMO"><b>Hemomania</b>: more damage to bleeding targets</li>
-            <li data-mut="LUNGS"><b>Multichambered Lungs</b>: better stamina recovery (unlocked by spending 4,500 stamina sprinting or swimming fast)</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (Fluxio, 18 Oct 2026)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="pteranodon" aria-labelledby="d-pteranodon">
-          <div class="dino-cabeza"><h3 id="d-pteranodon"><a href="../../en/dinosaurs/pteranodon/">Pteranodon</a></h3><span class="dieta dieta-carnivoro">Carnivore (fish-eater)</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">90 kg (Frail) · up to 120 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">4 h 30 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">6</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Space 3 times in a row: take off</li>
-            <li data-ficha="hab">Hold Z, then RMB: cling to trees or walls</li>
-            <li data-ficha="hab">RMB on jumping fish: catch them in flight</li>
-            <li data-ficha="hab">Hold Space, or W + Ctrl twice: barrel roll</li>
-            <li data-ficha="hab">Cannot carry dinosaurs except hatchlings and small ones</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">The clan&#x27;s scout: watch and warn from the air. Weak in a straight fight.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="troodon" aria-labelledby="d-troodon">
-          <div class="dino-cabeza"><h3 id="d-troodon"><a href="../../en/dinosaurs/troodon/">Troodon</a></h3><span class="dieta dieta-carnivoro">Carnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">60 kg (Frail) · up to 79.8 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">3 h 10 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Hold RMB: 360° venom pounce; it latches on and deals damage for 5 s</li>
-            <li data-ficha="hab">Each pounce adds one of 3 venom stages; with all 3 (they last 45 s), the prey takes more damage</li>
-            <li data-ficha="hab">If the pack pounces at the same time before the 3rd stage, the venom resets; a chirp tells you that you can pounce again</li>
-            <li data-ficha="hab">The venom mist hides you</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Nocturnal: hit and run, always in a group.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="APD"><b>Accelerated Prey Drive</b>: more damage to prey below 35% health</li>
-            <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="seccion" id="herbivores" aria-labelledby="t-herbivores">
-    <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">9 species</p>
-        <h2 id="t-herbivores">Herbivores</h2>
-      </div>
-      <div class="dinos">
-        <article class="dino panel luz revelar" id="diabloceratops" aria-labelledby="d-diabloceratops">
-          <div class="dino-cabeza"><h3 id="d-diabloceratops"><a href="../../en/dinosaurs/diabloceratops/">Diabloceratops</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">3 t (Frail) · up to 3.9 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">7 h 45 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">6</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">LMB: headbutt · while running: shove that knocks down targets under twice its weight (up to 6 t)</li>
-            <li data-ficha="hab">Hold RMB: sideways mode · A/D: strafe</li>
-            <li data-ficha="hab">Space + move: untangle the horns</li>
-            <li data-ficha="hab">Each attack costs one stamina point (it recovers in 30 s)</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Nimble for a horned dino: shove and reposition instead of staying locked in.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="dryosaurus" aria-labelledby="d-dryosaurus">
-          <div class="dino-cabeza"><h3 id="d-dryosaurus"><a href="../../en/dinosaurs/dryosaurus/">Dryosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">130 kg (Frail) · up to 185 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">4 h 25 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: dodge (2 charges, 10 s cooldown); costs no stamina, but not with food in your mouth</li>
-            <li data-ficha="hab">LMB: kick while walking, bite while running, tail swipe to the sides or behind</li>
-            <li data-ficha="hab">Its stomach empties in 30 min</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Lots of mobility and little damage: dodge and harass, don&#x27;t stay to fight.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="hypsilophodon" aria-labelledby="d-hypsilophodon">
-          <div class="dino-cabeza"><h3 id="d-hypsilophodon"><a href="../../en/dinosaurs/hypsilophodon/">Hypsilophodon</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">20 kg (Frail) · up to 23 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">1 h 50 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Hold and release LMB: spits blinding acid (costs food) · hold E: clean yourself</li>
-            <li data-ficha="hab">Hold RMB + Space: grab on and climb</li>
-            <li data-ficha="hab">Hold Space before jumping: high jump</li>
-            <li data-ficha="hab">Its spit can knock a Herrerasaurus off a wall</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Blind your chaser and climb where it can&#x27;t follow.</span></p>
-          <h4>Recommended mutations</h4>
-          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
-        </article>
-        <article class="dino panel luz revelar" id="kentrosaurus" aria-labelledby="d-kentrosaurus">
-          <div class="dino-cabeza"><h3 id="d-kentrosaurus"><a href="../../en/dinosaurs/kentrosaurus/">Kentrosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">1.95 t (Frail) · up to 2.2 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">11 h 5 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Hold RMB + LMB: charged tail swipe</li>
-            <li data-ficha="hab">Anyone who hits its tail or shoulders takes damage</li>
-            <li data-ficha="hab">Ctrl: defensive stance (more reflected damage and blocks some abilities)</li>
-            <li data-ficha="hab">It can be pounced on from the side it isn&#x27;t defending</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Keep the defensive stance facing the enemy and don&#x27;t let them flank you.</span></p>
-          <h4>Recommended mutations</h4>
-          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
-        </article>
-        <article class="dino panel luz revelar" id="maiasaura" aria-labelledby="d-maiasaura">
-          <div class="dino-cabeza"><h3 id="d-maiasaura"><a href="../../en/dinosaurs/maiasaura/">Maiasaura</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">3.7 t (Frail) · up to 5.4 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">7 h</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Ctrl or Space: switch between biped and quadruped</li>
-            <li data-ficha="hab">Biped, LMB: 360° frontal claw swipe (several while running)</li>
-            <li data-ficha="hab">Quadruped, LMB + camera: kick to the front, back or side</li>
-            <li data-ficha="hab">Turns slowly except when running</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Strong in a big herd; switch stance depending on the enemy.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="pachycephalosaurus" aria-labelledby="d-pachycephalosaurus">
-          <div class="dino-cabeza"><h3 id="d-pachycephalosaurus"><a href="../../en/dinosaurs/pachycephalosaurus/">Pachycephalosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">700 kg (Frail) · up to 910 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">6 h 15 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: leaping headbutt; often breaks bones</li>
-            <li data-ficha="hab">Alt + LMB: sideways headbutt that knocks down</li>
-            <li data-ficha="hab">The headbutt does no damage to targets over 3 t</li>
-            <li data-ficha="hab">Takes less damage to the head; poor swimmer and weak to falls</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Great for breaking the legs of mid-sized carnivores; against giants, run.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="stegosaurus" aria-labelledby="d-stegosaurus">
-          <div class="dino-cabeza"><h3 id="d-stegosaurus"><a href="../../en/dinosaurs/stegosaurus/">Stegosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">6 t (Frail) · up to 9.3 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">17 h 55 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">5</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Hold Alt + LMB: directional tail swipe with the highest bleed in the game (more damage to the head)</li>
-            <li data-ficha="hab">Hold RMB: charge (costs stamina)</li>
-            <li data-ficha="hab">Alternate A and D: dodge hits to the head</li>
-            <li data-ficha="hab">After the tail swipe, hold S to back off</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Punish anyone who comes from behind and always protect your head.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="tenontosaurus" aria-labelledby="d-tenontosaurus">
-          <div class="dino-cabeza"><h3 id="d-tenontosaurus"><a href="../../en/dinosaurs/tenontosaurus/">Tenontosaurus</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">1600 kg (Frail) · up to 1830 kg (Prime) · 1600 health</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">5 h 40 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">RMB: back kick that knocks down and deals heavy damage</li>
-            <li data-ficha="hab">Alt + RMB: directional tail swipe</li>
-            <li data-ficha="hab">Alt + LMB: directional claw swipe</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Run and counter with the kick; it can take a lot of tail swipes.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-        <article class="dino panel luz revelar" id="triceratops" aria-labelledby="d-triceratops">
-          <div class="dino-cabeza"><h3 id="d-triceratops"><a href="../../en/dinosaurs/triceratops/">Triceratops</a></h3><span class="dieta dieta-herbivoro">Herbivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">9.5 t (Frail) · up to 12.5 t (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">29 h 10 min (another source says about 12 h)</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">4</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">LMB: headbutt · hold: flip and knock down · double click: extra hit on downed targets</li>
-            <li data-ficha="hab">Hold RMB: block hits to the head (and sideways mode)</li>
-            <li data-ficha="hab">Ctrl: sparring mode · Space in that mode: dodge and untangle horns</li>
-            <li data-ficha="hab">Each attack costs one stamina point (it recovers in 30 s)</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Extremely tanky, but attacking non-stop leaves you out of stamina.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="TRU"><b>Truculency</b>: you shake off latched attackers sooner</li>
-            <li data-mut="HYPER"><b>Hypervigilance</b>: wider camera angle while eating and drinking, and you hear footsteps better</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="seccion" id="omnivores" aria-labelledby="t-omnivores">
-    <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">2 species</p>
-        <h2 id="t-omnivores">Omnivores</h2>
-      </div>
-      <div class="dinos">
-        <article class="dino panel luz revelar" id="beipiaosaurus" aria-labelledby="d-beipiaosaurus">
-          <div class="dino-cabeza"><h3 id="d-beipiaosaurus"><a href="../../en/dinosaurs/beipiaosaurus/">Beipiaosaurus</a></h3><span class="dieta dieta-omnivoro">Omnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">90 kg</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">3 h 40 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">12</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">On land: LMB claw swipe with bleed, RMB peck (they swap in the water)</li>
-            <li data-ficha="hab">It floats: keep swimming to dive; 1 min 45 s of oxygen</li>
-            <li data-ficha="hab">Ctrl in the water: grip the bottom · hold Space: jumps and attacks out of the water</li>
-            <li data-ficha="hab">Smells crabs underwater; cannot graze</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">Use the rivers to escape or to hunt.</span></p>
-          <h4>Recommended mutations</h4>
-          <p class="dino-fuente">No reliable recommendation for this species yet.</p>
-        </article>
-        <article class="dino panel luz revelar" id="gallimimus" aria-labelledby="d-gallimimus">
-          <div class="dino-cabeza"><h3 id="d-gallimimus"><a href="../../en/dinosaurs/gallimimus/">Gallimimus</a></h3><span class="dieta dieta-omnivoro">Omnivore</span></div>
-          <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">535 kg (Frail) · up to 560 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">5 h 25 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">8</dd></div>
-          </dl>
-          <h4>Abilities</h4>
-          <ul class="dino-lista" role="list">
-            <li data-ficha="hab">Speed: 46.8 km/h with no diet and 55.4 km/h with all 3 nutrients</li>
-            <li data-ficha="hab">1: rally call, a short speed boost for the flock (doesn&#x27;t work alone)</li>
-            <li data-ficha="hab">Q: sniff out burrows · hold E: dig up frogs, crabs and compys</li>
-            <li data-ficha="hab">In a flock, those with a worse diet than the leader run faster near others</li>
-          </ul>
-          <p class="dino-consejo"><b>Tip:</b> <span data-ficha="consejo">A runner: avoid melee and keep your diet up to be faster.</span></p>
-          <h4 class="dino-h4">Recommended mutations <a class="dino-glosario" href="#mutations">What each one does</a></h4>
-          <ul class="dino-lista dino-mut" role="list">
-            <li data-mut="CR"><b>Cellular Regeneration</b>: you heal faster</li>
-            <li data-mut="HYPO"><b>Congenital Hypoalgesia</b>: less damage from larger species</li>
-            <li data-mut="OSTEO"><b>Osteosclerosis</b>: better resistance to fractures</li>
-          </ul>
-          <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-        </article>
       </div>
     </div>
   </section>

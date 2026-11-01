@@ -961,8 +961,6 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 
 /* Guía de dinosaurios */
 .guia-revisado { margin: 0; font: 600 .95rem/1.4 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }
-.indice { display: grid; gap: 1.6rem 2.4rem; margin-top: 2.4rem; padding-top: 1.8rem; border-top: 1px solid var(--linea); }
-@media (min-width: 860px) { .indice { grid-template-columns: 2.2fr 1.8fr 1fr; } }
 .indice-grupo p { margin: 0 0 .7rem; }
 .indice-grupo p a { font: 1.25rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
 .indice-grupo p a:hover { color: var(--ascua-viva); }
@@ -974,7 +972,47 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 }
 .indice-grupo li a:hover { color: var(--hueso); border-color: var(--ascua); background: rgba(255, 53, 31, .08); }
 .dinos { display: grid; gap: 1rem 2.6rem; margin-top: 2.2rem; }
-@media (min-width: 860px) { .dinos { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 860px) { .dinos { grid-template-columns: repeat(2, 1fr); align-items: start; } }
+/* Fichas plegadas de la guía: una fila cada una; el + de las preguntas dice que se abren. */
+.dinos-plegadas { row-gap: 0; }
+details.dino { padding: 0; border-bottom: 0; }
+details.dino:first-of-type { border-top: 1px solid var(--linea); }
+details.dino[open] { padding-bottom: 1.6rem; border-bottom: 0; box-shadow: none; background: none; }
+details.dino p { padding: 0; color: inherit; }
+details.dino .dino-consejo { padding: .8rem 1rem; }
+details.dino .dino-fuente { color: var(--suave); }
+details.dino > summary { margin: 0; padding: .95rem 2.4rem .95rem 0; color: inherit; }
+details.dino[open] > summary { padding-left: 0; color: inherit; }
+@media (hover: hover) { details.dino > summary:hover { padding-left: 0; } }
+/* Comparativa: una fila por especie, con las cifras en columnas. En el móvil, el nombre encima. */
+.comparar { margin-top: 1.4rem; }
+.comparar-fila, .comparar-lista > div { display: grid; gap: .35rem 1.2rem; }
+.comparar-cifras, .comparar-lista dd { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, .7fr); gap: .8rem; }
+.comparar-cabeza {
+  position: sticky; top: 3.9rem; z-index: 2; margin: 0; padding: .55rem 0; background: var(--fondo); border-bottom: 1px solid var(--borde);
+  box-shadow: -100vw 0 var(--fondo), 100vw 0 var(--fondo);
+  font: 600 .9rem/1.2 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave);
+}
+.comparar-cabeza > span:first-child { display: none; }
+.comparar-lista { margin: 0; }
+.comparar-lista > div { position: relative; padding: .8rem 0; border-bottom: 1px solid var(--linea); transition: background-color .25s; }
+.comparar-lista > div[hidden] { display: none; }
+.comparar-lista dt { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; }
+.comparar-lista dt a { font: 1.2rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
+/* Toda la fila lleva a la página de la especie. */
+.comparar-lista dt a::after { content: ""; position: absolute; inset: 0; }
+.comparar-lista .dieta { padding: .25rem .55rem; font-size: .8rem; }
+.comparar-lista dd { margin: 0; color: var(--hueso); font-weight: 600; }
+.comparar-lista small { display: block; font-size: .85rem; font-weight: 400; line-height: 1.3; color: var(--suave); }
+@media (hover: hover) { .comparar-lista > div:hover { background: rgba(255, 53, 31, .07); } .comparar-lista > div:hover dt a { color: var(--ascua-viva); } }
+.comparar-lista dt a:focus-visible { outline: 0; }
+.comparar-lista dt a:focus-visible::after { outline: 2px solid var(--ascua-viva); outline-offset: -2px; }
+.comparar-lista > .marcada { box-shadow: inset 2px 0 0 var(--ascua); background: rgba(255, 53, 31, .1); padding-left: .7rem; }
+.comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { color: var(--ascua-viva); }
+@media (min-width: 760px) {
+  .comparar-fila, .comparar-lista > div { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.75fr); align-items: center; }
+  .comparar-cabeza > span:first-child { display: block; }
+}
 .dino { padding: 1.6rem 0 1.6rem; border-top: 1px solid var(--linea); scroll-margin-top: 6.5rem; }
 .dino-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: 1rem; }
 .dino-cabeza h3 { margin: 0; font-size: clamp(1.55rem, 3.6vw, 2rem); text-transform: uppercase; letter-spacing: .02em; }
@@ -1095,7 +1133,6 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .cabecera h1 { font-size: clamp(2.5rem, 7.4vw, 5.2rem); line-height: 1.1; text-transform: uppercase; max-width: 16ch; margin-bottom: 1.1rem; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
 .cabecera .entrada { max-width: 40rem; }
 .cabecera .acciones { margin-bottom: 0; }
-.cabecera .indice { margin-top: 2rem; }
 .anim .cabecera h1.entra { animation: descubrir .6s var(--suave-salida) .08s both; }
 @media (min-width: 900px) {
   .cabecera-dos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 3rem; align-items: end; }
@@ -1272,6 +1309,17 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .plan { display: grid; gap: 1.2rem 2rem; margin-top: 2rem; padding: 1.6rem 0 0; border-top: 1px solid var(--linea); }
 .plan[hidden] { display: none; }
 @media (min-width: 760px) { .plan { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
+/* Tres selectores: en el móvil caben dos en fila, y así no ocupan media pantalla. */
+.plan-tres { align-items: end; }
+.plan-tres > [role="status"] { grid-column: 1 / -1; margin: 0; }
+@media (min-width: 360px) {
+  .plan-tres { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .plan-tres[data-comparar] > label:nth-of-type(3), .plan-tres[data-plan] > label:first-child { grid-column: 1 / -1; }
+}
+@media (min-width: 760px) {
+  .plan-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem 2rem; }
+  .plan-tres[data-comparar] > label:nth-of-type(3), .plan-tres[data-plan] > label:first-child { grid-column: auto; }
+}
 .plan label { display: grid; gap: .45rem; font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
 .plan select {
   appearance: none; width: 100%; min-height: 48px; padding: .6rem 2.6rem .6rem .9rem;

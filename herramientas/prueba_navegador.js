@@ -815,6 +815,21 @@ const ruta = r => ('/' + r).padEnd(15);
       const rapido = await leer();
       if (otra.t === antes.t) fallos.push('no cambia con la especie');
       if (rapido.t === otra.t) fallos.push('no cambia con el ritmo');
+      // Lo elegido va en la dirección y, al abrirla, sale igual; un valor que no existe se ignora. Si no
+      // llega, dice a qué cacería llegaría: con pocas horas al día, el Tyrannosaurus nunca llega a la próxima.
+      await especie.selectOption({ index: 0 });
+      await ritmo.selectOption({ index: 0 });
+      const [horas] = (await caja.locator('select').all()).slice(2);
+      await horas.selectOption('2');
+      const pocas = await leer();
+      const direccion = await p.evaluate(() => location.href);
+      if (!/[?&]horas=2\b/.test(direccion) || /[?&](especie|ritmo)=/.test(direccion)) fallos.push(`dirección «${direccion}»`);
+      if (!/\bno\b/.test(pocas.c) || (pocas.t.match(/\d{1,2}:\d{2}/g) || []).length < 3) fallos.push(`a 2 h al día: «${pocas.t}»`);
+      const otraVez = await ctx.newPage();
+      await otraVez.goto(`${BASE}${r}?especie=triceratops&ritmo=2&horas=nada#${await caja.evaluate(c => c.closest('section').id)}`, { waitUntil: 'load' });
+      const puestos = await otraVez.evaluate(() => [...document.querySelectorAll('[data-plan] select')].map(s => s.selectedIndex ? s.selectedOptions[0].dataset.ancla || s.value : ''));
+      if (puestos[0] !== 'triceratops' || puestos[1] !== '2' || puestos[2]) fallos.push(`al abrir el enlace del planificador: ${puestos}`);
+      await otraVez.close();
       await ctx.close();
     }
     if (fallos.length) malos++;
@@ -838,6 +853,33 @@ const ruta = r => ('/' + r).padEnd(15);
         await ctx.close();
         continue;
       }
+      // Las cifras de cada especie, en columnas alineadas con su cabecera y sin salirse de la pantalla.
+      const columnas = await p.evaluate(() => {
+        const x = el => Math.round(el.getBoundingClientRect().left);
+        const cabeza = ['peso', 'crece', 'grupo'].map(k => x(document.querySelector(`.comparar-cabeza .c-${k}`)));
+        return [...document.querySelectorAll('[data-comparar-lista] > div')].flatMap(f => {
+          const fila = ['peso', 'crece', 'grupo'].map(k => f.querySelector(`.c-${k}`));
+          return fila.some((c, i) => x(c) !== cabeza[i] || c.getBoundingClientRect().right > innerWidth) ? [f.dataset.nombre] : [];
+        });
+      });
+      if (columnas.length) fallos.push(`cifras fuera de su columna: ${columnas}`);
+      // Fichas plegadas. Un enlace viejo a una (dinosaurios/#triceratops) lleva a ella y la abre; sin JavaScript
+      // se queda en su fila, plegada, y se abre al pulsarla.
+      const ficha = await ctx.newPage();
+      await ficha.goto(`${BASE}${r}#triceratops`, { waitUntil: 'load' });
+      await ficha.waitForTimeout(1500);
+      const vista = await ficha.evaluate(() => {
+        const d = document.getElementById('triceratops'), c = d.getBoundingClientRect();
+        return { abierta: d.open, arriba: c.top, ve: c.top >= -2 && c.top < innerHeight, cerradas: document.querySelectorAll('details.dino:not([open])').length, total: document.querySelectorAll('details.dino').length, alto: document.documentElement.scrollHeight };
+      });
+      if (vista.abierta !== js || !vista.ve) fallos.push(`#triceratops: ${JSON.stringify(vista)}`);
+      if (vista.cerradas !== vista.total - (js ? 1 : 0)) fallos.push(`fichas abiertas al entrar: ${vista.total - vista.cerradas}`);
+      await ficha.close();
+      const alto = await p.evaluate(() => document.documentElement.scrollHeight);
+      if (alto > 13000) fallos.push(`la guía mide ${alto} px en el móvil (máximo 13 000: las fichas se leen plegadas o en su página)`);
+      await p.locator('details.dino summary .dieta').first().click();
+      await p.waitForTimeout(100);
+      if (await p.evaluate(() => !document.querySelector('details.dino').open)) fallos.push('pulsar una ficha no la abre');
       if (!js) { await ctx.close(); continue; }
       const [orden, dieta, somos] = await caja.locator('select').all();
       for (const [criterio, campo, sentido] of [['peso', 'peso', -1], ['crece', 'crece', 1], ['grupo', 'grupo', -1]]) {

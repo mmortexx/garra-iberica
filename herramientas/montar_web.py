@@ -317,7 +317,7 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
                              for grande, mini, alt in fotos_galeria(cuerpo, url)]
     if pagina == 'dinosaurios':
         # Cada especie apunta a su página: es la lista que Google entiende como «resumen con enlaces».
-        especies = re.findall(r'<article class="dino[^"]*" id="[^"]+"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*>'
+        especies = re.findall(r'<details class="dino[^"]*" id="[^"]+"[^>]*>\s*<summary class="dino-cabeza"><h3[^>]*>'
                               r'<a href="([^"]+)">([^<]+)</a></h3>', cuerpo)
         nodos[2]['mainEntity'] = {'@type': 'ItemList', 'name': datos['h1'], 'numberOfItems': len(especies), 'itemListElement': [
             {'@type': 'ListItem', 'position': i, 'name': unescape(nombre), 'url': urljoin(url, enlace)}

@@ -32,8 +32,8 @@ T = {
         'intro': 'Las {n} fichas que usamos en el Discord del clan, para que nadie empiece a ciegas: peso, crecimiento, '
                  'tamaño máximo de grupo, controles, un consejo y las mutaciones que recomienda la comunidad.',
         'revisado': 'Revisado el {fecha} · parche {parche}',
-        'indice': 'Especies',
-        'leer_ante': 'Antes de empezar', 'leer_h2': 'Cómo leer las fichas',
+        'fichas_corto': 'Todas las fichas',
+        'leer_ante': 'Términos y datos', 'leer_h2': 'Cómo leer las fichas',
         # (título, frases copiadas de la guía del Discord, frases propias de la web).
         'bloques': [
             ('Términos', [
@@ -66,18 +66,20 @@ T = {
         'cta_boton': 'Únete a GARRA IBÉRICA en Discord', 'volver': 'Volver al inicio',
         'inicio': 'inicio', 'ids': ['carnivoros', 'herbivoros', 'omnivoros'], 'mut_id': 'mutaciones', 'leer_id': 'como-leer',
         'plan_id': 'planificador', 'plan_ante': 'Antes de la cacería', 'plan_h2': '¿Llegas adulto a la cacería?',
-        'plan_intro': 'Elige especie y el ritmo de crecimiento del servidor (si no lo sabes, deja 1×, el del juego). '
-                      'Se calcula con el crecimiento de cada ficha, jugando sin parar desde ahora.',
+        'plan_intro': 'Elige especie, el ritmo de crecimiento del servidor (si no lo sabes, deja 1×, el del juego) y cuánto '
+                      'juegas al día. Se calcula con el crecimiento de cada ficha, a partir de ahora.',
         'plan_especie': 'Especie', 'plan_ritmo': 'Crecimiento del servidor', 'plan_base': 'base', 'plan_coma': ',',
+        'plan_horas': 'Horas de juego al día', 'plan_sin_parar': 'Sin parar', 'plan_h': '{n} h',
         'plan_si_t': 'Llegas', 'plan_no_t': 'No llegas',
         'plan_si': 'Con {dino} serías adulto el {adulto}: {tiempo} antes de la cacería del {caceria} (hora de España).',
-        'plan_no': 'Con {dino} serías adulto el {adulto}: {tiempo} después de que empiece la cacería del {caceria} (hora de España).',
+        'plan_no': 'Con {dino} serías adulto el {adulto}: {tiempo} después de que empiece la cacería del {caceria} (hora de España). Llegarías a la del {alcanza}.',
         'plan_locale': 'es-ES', 'plan_unidades': {'d': ['día', 'días'], 'h': 'h', 'm': 'min'},
         'comp_id': 'comparar', 'comp_ante': 'De un vistazo', 'comp_h2': 'Comparar especies',
         'comp_intro': 'Las {n} especies con su peso máximo, lo que tardan en ser adultas (1×) y su grupo máximo. '
-                      'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ir a su ficha. '
+                      'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ver su página. '
                       'El enlace de la página guarda lo que elijas: pásalo a tu grupo.',
         'comp_fila': 'hasta {peso} · adulto en {crece} · grupo máx. {grupo}',
+        'comp_cols': ('Especie', 'Peso máx.', 'Hasta adulto', 'Grupo máx.'),
         'comp_orden': 'Ordenar', 'comp_dieta': 'Dieta', 'comp_somos': '¿Cuántos jugáis juntos?',
         'comp_ordenes': [('fichas', 'Como las fichas'), ('peso', 'Más pesado primero'), ('crece', 'Crece antes'),
                          ('grupo', 'Grupo más grande'), ('nombre', 'Nombre (A–Z)')],
@@ -106,8 +108,8 @@ T = {
         'intro': 'The {n} cards we use on the clan Discord, so nobody starts blind: weight, growth, max group size, '
                  'controls, a tip and the mutations the community recommends.',
         'revisado': 'Reviewed {fecha} · patch {parche}',
-        'indice': 'Species',
-        'leer_ante': 'Before you start', 'leer_h2': 'How to read the cards',
+        'fichas_corto': 'All the cards',
+        'leer_ante': 'Terms and data', 'leer_h2': 'How to read the cards',
         'bloques': [
             ('Terms', [
                 '<b>Prime</b>: adult that met 5 requirements before 75% growth (perfect diet, sanctuary, migrations…): more weight, bonuses and one more mutation slot.',
@@ -139,18 +141,20 @@ T = {
         'cta_boton': 'Join GARRA IBÉRICA on Discord', 'volver': 'Back to the home page',
         'inicio': 'top', 'ids': ['carnivores', 'herbivores', 'omnivores'], 'mut_id': 'mutations', 'leer_id': 'how-to-read',
         'plan_id': 'planner', 'plan_ante': 'Before the hunt', 'plan_h2': 'Will you be adult for the hunt?',
-        'plan_intro': "Pick a species and the server's growth rate (if you don't know it, leave 1×, the game's own). "
-                      "It uses each card's growth time, playing non-stop from now.",
+        'plan_intro': "Pick a species, the server's growth rate (if you don't know it, leave 1×, the game's own) and how "
+                      "much you play each day. It uses each card's growth time, starting from now.",
         'plan_especie': 'Species', 'plan_ritmo': 'Server growth rate', 'plan_base': 'base', 'plan_coma': '.',
+        'plan_horas': 'Hours played per day', 'plan_sin_parar': 'Non-stop', 'plan_h': '{n} h',
         'plan_si_t': 'You make it', 'plan_no_t': "You don't make it",
         'plan_si': 'With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time).',
-        'plan_no': 'With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time).',
+        'plan_no': 'With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time). You would make the one on {alcanza}.',
         'plan_locale': 'en-GB', 'plan_unidades': {'d': ['day', 'days'], 'h': 'h', 'm': 'min'},
         'comp_id': 'compare', 'comp_ante': 'At a glance', 'comp_h2': 'Compare species',
         'comp_intro': 'All {n} species with their top weight, how long they take to grow up (1×) and their max group. '
-                      'Sort them, filter by how many of you will play together and tap one to open its card. '
+                      'Sort them, filter by how many of you will play together and tap one to open its page. '
                       'The page link keeps your choice: share it with your group.',
         'comp_fila': 'up to {peso} · adult in {crece} · max group {grupo}',
+        'comp_cols': ('Species', 'Top weight', 'To adult', 'Max group'),
         'comp_orden': 'Sort by', 'comp_dieta': 'Diet', 'comp_somos': 'How many of you play together?',
         'comp_ordenes': [('fichas', 'Card order'), ('peso', 'Heaviest first'), ('crece', 'Fastest to grow'),
                          ('grupo', 'Largest group'), ('nombre', 'Name (A–Z)')],
@@ -271,20 +275,23 @@ def ficha(f, d, lang):
     t = T[lang]
     a = ancla(f['nombre'])
     dieta = GRUPO[f['dieta']].rstrip('s')
+    # Plegada: para elegir está la comparativa y para leerla entera, su página. guia.js la abre si la
+    # dirección la nombra (dinosaurios/#triceratops, los enlaces viejos).
     partes = [
-        f'<article class="dino panel luz revelar" id="{a}" aria-labelledby="d-{a}">',
-        f'  <div class="dino-cabeza"><h3 id="d-{a}"><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a></h3>'
-        f'<span class="dieta dieta-{dieta}">{escape(t["dieta"][f["dieta"]])}</span></div>',
+        f'<details class="dino plegable panel luz revelar" id="{a}">',
+        f'  <summary class="dino-cabeza"><h3 id="d-{a}"><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a></h3>'
+        f'<span class="dieta dieta-{dieta}">{escape(t["dieta"][f["dieta"]])}</span></summary>',
         *datos_juego(f, lang, 'h4'),
         # El glosario, al final de la página, explica cada mutación: enlace para no perder el hilo.
         *mutaciones(f, d, lang, 'h4', f'#{t["mut_id"]}'),
-        '</article>',
+        '</details>',
     ]
     return '\n'.join('        ' + p for p in partes)
 
 
 CRECE = re.compile(r'(\d+)\s*h(?:\s*(\d+)\s*min)?')
 RITMOS = (1, 1.5, 2, 3)
+HORAS = (24, 8, 4, 2)
 
 
 def minutos_crecer(texto):
@@ -326,6 +333,17 @@ def resumen(f, lang):
     return kg, fila.format(peso=dato_fila(peso), crece=dato_fila(v['crece']), grupo=dato_fila(f['grupo']))
 
 
+def cifras(f, lang):
+    """Las tres columnas de la comparativa; lo que la ficha matiza del crecimiento va debajo de la cifra."""
+    t = T[lang]
+    v = valores(f, lang)
+    crece, parentesis, matiz = v['crece'].partition(' (')
+    nota = f'<small>({escape(matiz)}</small>' if parentesis else ''
+    celdas = [('peso', escape(peso_max(v['peso'])[1])), ('crece', escape(crece) + nota), ('grupo', escape(f['grupo']))]
+    return ''.join(f'<span class="c-{k}"><span class="oculto">{col}: </span>{texto}</span>'
+                   for (k, texto), col in zip(celdas, t['comp_cols'][1:]))
+
+
 def puestos(d):
     """{especie: {criterio: (puesto, cuántas más empatan)}}, con los mismos criterios que la comparativa."""
     valor = {f['nombre']: {'peso': peso_max(f['peso'])[0], 'crece': -minutos_crecer(f['crece']), 'grupo': int(f['grupo'])}
@@ -339,13 +357,13 @@ def comparativa(d, lang):
     t = T[lang]
     filas, grupos = [], set()
     for f in d['fichas']:
-        kg, texto = resumen(f, lang)
+        kg, _ = resumen(f, lang)
         grupos.add(int(f['grupo']))
         g = GRUPO[f['dieta']]
         filas.append(f'        <div data-nombre="{escape(f["nombre"])}" data-dieta="{g}" data-peso="{kg:g}" '
                      f'data-crece="{minutos_crecer(f["crece"])}" data-grupo="{f["grupo"]}">'
                      f'<dt><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a> '
-                     f'<span class="dieta dieta-{g.rstrip("s")}">{escape(t["dieta"][f["dieta"]])}</span></dt><dd>{texto}</dd></div>')
+                     f'<span class="dieta dieta-{g.rstrip("s")}">{escape(t["dieta"][f["dieta"]])}</span></dt><dd>{cifras(f, lang)}</dd></div>')
     dietas = [('todas', t['comp_todas'])] + [(g, t['grupos'][g]) for g in ('carnivoros', 'herbivoros', 'omnivoros')]
     somos = [('1', t['comp_igual'])] + [(str(n), t['comp_n'].format(n=n)) for n in sorted(grupos) if n > 1]
 
@@ -361,15 +379,21 @@ def comparativa(d, lang):
         f'        <h2 id="t-{t["comp_id"]}">{t["comp_h2"]}</h2>',
         f'        <p class="intro">{t["comp_intro"].format(n=len(d["fichas"]))}</p>',
         '      </div>',
-        f'      <div class="plan" data-comparar hidden data-recuento="{escape(t["comp_cuenta"])}" data-ninguna="{escape(t["comp_ninguna"])}">',
+        f'      <div class="plan plan-tres" data-comparar hidden data-recuento="{escape(t["comp_cuenta"])}" data-ninguna="{escape(t["comp_ninguna"])}">',
         *selector(t['comp_orden'], t['comp_ordenes']),
         *selector(t['comp_dieta'], dietas),
         *selector(t['comp_somos'], somos),
         '        <p class="dino-fuente" role="status"></p>',
         '      </div>',
-        '      <dl class="glosario" data-comparar-lista>',
+        '      <div class="comparar">',
+        '        <p class="comparar-fila comparar-cabeza" aria-hidden="true">'
+        f'<span>{t["comp_cols"][0]}</span><span class="comparar-cifras">'
+        + ''.join(f'<span class="c-{k}">{col}</span>' for k, col in zip(('peso', 'crece', 'grupo'), t['comp_cols'][1:]))
+        + '</span></p>',
+        '        <dl class="comparar-lista" data-comparar-lista>',
         *filas,
-        '      </dl>',
+        '        </dl>',
+        '      </div>',
         '    </div>',
         '  </section>',
         '',
@@ -385,10 +409,11 @@ def planificador(d, lang):
         # Lo que la ficha matiza entre paréntesis (aproximado, otra fuente) sale con el resultado.
         matiz = re.search(r'\(([^)]*)\)', crece)
         nota = f' data-nota="{escape(matiz.group(1)[:1].upper() + matiz.group(1)[1:])}"' if matiz else ''
-        opciones.append(f'            <option value="{minutos_crecer(f["crece"])}" data-nombre="{escape(f["nombre"])}"{nota}>'
+        opciones.append(f'            <option value="{minutos_crecer(f["crece"])}" data-nombre="{escape(f["nombre"])}" data-ancla="{ancla(f["nombre"])}"{nota}>'
                         f'{escape(f["nombre"])} · {escape(crece.split(" (")[0])}</option>')
     ritmos = [f'            <option value="{r}">{str(r).replace(".", t["plan_coma"])}×{" (" + t["plan_base"] + ")" if r == 1 else ""}</option>'
               for r in RITMOS]
+    horas = [f'            <option value="{h}">{t["plan_sin_parar"] if h == 24 else t["plan_h"].format(n=h)}</option>' for h in HORAS]
     datos = {'si': t['plan_si'], 'no': t['plan_no'], 'si-titulo': t['plan_si_t'], 'no-titulo': t['plan_no_t'],
              'locale': t['plan_locale'], 'unidades': json.dumps(t['plan_unidades'], ensure_ascii=False)}
     return [
@@ -399,7 +424,7 @@ def planificador(d, lang):
         f'        <h2 id="t-{t["plan_id"]}">{t["plan_h2"]}</h2>',
         f'        <p class="intro">{t["plan_intro"]}</p>',
         '      </div>',
-        '      <div class="plan" data-plan hidden ' + ' '.join(f'data-{k}="{escape(v)}"' for k, v in datos.items()) + '>',
+        '      <div class="plan plan-tres" data-plan hidden ' + ' '.join(f'data-{k}="{escape(v)}"' for k, v in datos.items()) + '>',
         f'        <label>{t["plan_especie"]}',
         '          <select>',
         *opciones,
@@ -408,6 +433,11 @@ def planificador(d, lang):
         f'        <label>{t["plan_ritmo"]}',
         '          <select>',
         *ritmos,
+        '          </select>',
+        '        </label>',
+        f'        <label>{t["plan_horas"]}',
+        '          <select>',
+        *horas,
         '          </select>',
         '        </label>',
         '        <p class="plan-resultado" data-resultado role="status"></p>',
@@ -568,15 +598,6 @@ def contenido(lang, d=None):
     grupos = {g: [f for f in d['fichas'] if GRUPO[f['dieta']] == g] for g in ids}
     inicio_web = '@/' + ('en/' if lang == 'en' else '')
 
-    indice = []
-    for g, id_ in ids.items():
-        indice += ['          <div class="indice-grupo">',
-                   f'            <p><a href="#{id_}">{t["grupos"][g]}</a></p>',
-                   '            <ul role="list">',
-                   *[f'              <li><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a></li>' for f in grupos[g]],
-                   '            </ul>',
-                   '          </div>']
-
     secciones = []
     for g, id_ in ids.items():
         secciones += [
@@ -586,7 +607,7 @@ def contenido(lang, d=None):
             f'        <p class="antetitulo">{t["especies"](len(grupos[g]))}</p>',
             f'        <h2 id="t-{id_}">{t["grupos"][g]}</h2>',
             '      </div>',
-            '      <div class="dinos">',
+            '      <div class="dinos dinos-plegadas">',
             *[ficha(f, d, lang) for f in grupos[g]],
             '      </div>',
             '    </div>',
@@ -605,15 +626,13 @@ def contenido(lang, d=None):
         f'      <p class="entrada entra entra-2">{t["intro"].format(n=n)}</p>',
         f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
         '      <p class="saltos entra entra-3">' + ''.join(
-            f'<a href="#{t[i]}">{t[h]}</a>' for i, h in (('comp_id', 'comp_h2'), ('plan_id', 'plan_corto'), ('mut_id', 'mut_h2'))) + '</p>',
-        f'      <nav class="indice entra entra-4" aria-label="{t["indice"]}">',
-        *indice,
-        '      </nav>',
+            f'<a href="#{i}">{texto}</a>' for i, texto in (
+                (t['plan_id'], t['plan_corto']), (t['ids'][0], t['fichas_corto']), (t['leer_id'], t['leer_h2']), (t['mut_id'], t['mut_h2']))) + '</p>',
         ]),
         *comparativa(d, lang),
-        *lectura(t, revisado),
         *planificador(d, lang),
         *secciones,
+        *lectura(t, revisado),
         f'  <section class="seccion" id="{t["mut_id"]}" aria-labelledby="t-{t["mut_id"]}">',
         '    <div class="envoltura">',
         '      <div class="revelar">',

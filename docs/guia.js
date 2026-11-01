@@ -1,7 +1,16 @@
 // Guía de dinosaurios: ordenar y filtrar la comparativa de especies. Sin JavaScript la lista se ve
 // entera, en el orden de las fichas, y los selectores no salen. Lo elegido va en la dirección
-// (?orden=peso&dieta=herbivoros&grupo=5#comparar) para poder pasar el enlace ya filtrado.
+// (?orden=peso&dieta=herbivoros&grupo=5#comparar) para poder pasar el enlace ya filtrado. Con
+// &marca=triceratops, la página de una especie enseña dónde queda esa especie en la lista.
 (() => {
+  // Las fichas van plegadas: un enlace a una (dinosaurios/#triceratops) la abre.
+  const abrirFicha = () => {
+    const destino = location.hash && document.getElementById(location.hash.slice(1));
+    if (destino && destino.matches('details')) { destino.open = true; destino.scrollIntoView(); }
+  };
+  addEventListener('hashchange', abrirFicha);
+  abrirFicha();
+
   const caja = document.querySelector('[data-comparar]');
   const lista = document.querySelector('[data-comparar-lista]');
   if (!caja || !lista) return;
@@ -27,6 +36,7 @@
       vistas += ve;
     }
     lista.append(...ordenadas);
+    lista.parentElement.dataset.orden = orden.value;
     estado.textContent = vistas
       ? caja.dataset.recuento.replace('{n}', vistas).replace('{total}', filas.length)
       : caja.dataset.ninguna;
@@ -37,9 +47,11 @@
     const v = pedidos.get(nombre);
     if (v !== null && [...sel.options].some(o => o.value === v)) sel.value = v;
   }
+  const marcada = filas.find(f => f.querySelector('a').pathname.endsWith(`/${pedidos.get('marca')}/`));
   caja.addEventListener('change', () => {
     poner();
     const url = new URL(location.href);
+    url.searchParams.delete('marca');
     for (const [nombre, sel] of Object.entries(campos)) {
       if (sel.selectedIndex) url.searchParams.set(nombre, sel.value); else url.searchParams.delete(nombre);
     }
@@ -48,4 +60,8 @@
   });
   poner();
   caja.hidden = false;
+  if (marcada) {
+    marcada.classList.add('marcada');
+    if (!marcada.hidden) marcada.scrollIntoView({ block: 'center' });
+  }
 })();

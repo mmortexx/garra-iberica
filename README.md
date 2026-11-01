@@ -13,8 +13,8 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
-| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). |
-| `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos). Sin él, la lista se ve entera en el orden de las fichas. |
+| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). |
+| `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos). Sin él, la lista se ve entera en el orden de las fichas. También abre la ficha plegada que nombre la dirección (`dinosaurios/#triceratops`, los enlaces viejos). |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
@@ -55,7 +55,8 @@ node herramientas/prueba_caceria.js
   `comprobar.py` falla si alguna página dice otro número de fichas o, cuando encuentra el original
   (variable `GARRA_FICHAS` o `~/Downloads/garra-iberica/wiki/fichas.json`), si la copia se ha
   quedado atrás. El planificador de cada ficha («¿Llegas adulto a la cacería?») usa los tiempos de
-  crecimiento de esas mismas fichas; `guia_dinos.py` se para si no entiende alguno.
+  crecimiento de esas mismas fichas, y las horas que se juega al día; `guia_dinos.py` se para si no entiende alguno.
+  En la guía las fichas van plegadas: para elegir está la comparativa y para leer una entera, su página.
   La comparativa de especies («Comparar especies», arriba de la guía) sale de esas mismas fichas:
   peso máximo (el Prime, o el único si no lo hay), crecimiento y grupo máximo. `guia_dinos.py` se para
   si un peso no se entiende, si el español y el inglés dan pesos distintos o si un grupo no es un número.

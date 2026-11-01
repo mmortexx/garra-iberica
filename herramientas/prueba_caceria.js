@@ -57,6 +57,21 @@ const planes = [
   ['con 2× tarda la mitad y llega', '2026-10-30T12:00:00Z', 2133, 2, '2026-10-31T21:00:00Z', true, 33 * 60 - 1067],
   ['durante la cacería, apunta a la del sábado siguiente', '2026-10-31T21:30:00Z', 600, 1, '2026-11-07T21:00:00Z', true, 7 * 24 * 60 - 30 - 600],
 ];
+// Con horas de juego al día: [nombre, ahora, minutos a 1×, multiplicador, horas al día, llega, cacería a la que llegaría]
+const conHoras = [
+  ['T. rex a 8 h al día desde el lunes: tarda 4,4 días y llega el mismo sábado', '2026-10-26T12:00:00Z', 2133, 1, 8, true, '2026-10-31T21:00:00Z'],
+  ['T. rex a 2 h al día desde el lunes: tarda 17,8 días y llega a la de tres sábados después', '2026-10-26T12:00:00Z', 2133, 1, 2, false, '2026-11-14T21:00:00Z'],
+  ['si acaba durante una cacería, cuenta la siguiente', '2026-10-31T20:30:00Z', 60, 1, 24, false, '2026-11-07T21:00:00Z'],
+];
+for (const [nombre, ahora, minutos, mult, horas, llega, alcanza] of conHoras) {
+  try {
+    const r = planCrecer(Date.parse(ahora), minutos, mult, horas);
+    if (r.llega !== llega || r.alcanza !== Date.parse(alcanza)) throw new Error(`llega ${r.llega}, alcanza ${new Date(r.alcanza).toISOString()}`);
+  } catch (e) {
+    malos++;
+    console.log(`FALLO ${nombre}: ${e.message}`);
+  }
+}
 for (const [nombre, ahora, minutos, mult, inicio, llega, margen] of planes) {
   try {
     const r = planCrecer(Date.parse(ahora), minutos, mult);
@@ -119,6 +134,6 @@ try {
   console.log('FALLO', 'una zona desconocida no rompe la página', '→', e.message.split('\n')[0]);
 }
 
-const total = casos.length + tiempos.length + planes.length + semanas.length + zonas.length + 1;
+const total = casos.length + tiempos.length + planes.length + conHoras.length + semanas.length + zonas.length + 1;
 console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);
