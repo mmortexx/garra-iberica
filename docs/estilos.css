@@ -945,6 +945,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 /* Nombre de la especie en su página: una sola palabra que no se puede partir; la letra baja lo justo
    para que quepa la más larga (Pachycephalosaurus, 8,6 em) en 320 px. */
 .cabecera h1.especie-nombre { max-width: none; font-size: min(clamp(2.5rem, 7.4vw, 5.2rem), (100vw - 2rem) / 9.2); overflow-wrap: anywhere; }
+/* La dieta sobre la foto de la cabecera: con fondo propio oscuro se lee sobre cualquier zona de la foto. */
+.cabecera .dieta { display: inline-block; background: rgba(8, 8, 8, .85); }
 .llamada h2.especie-nombre { font-size: min(clamp(2rem, 5vw, 3.1rem), (100vw - 2rem) / 9.8); overflow-wrap: anywhere; }
 .dieta { padding: .4rem .75rem; border: 1px solid; border-radius: 99px; font: 600 .9rem/1 var(--etiquetas); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 .dieta-carnivoro { color: #ff6c5c; border-color: rgba(255, 53, 31, .45); background: rgba(255, 44, 20, .08); }
