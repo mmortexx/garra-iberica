@@ -10,6 +10,7 @@ herramientas/fichas_dinos.json (ver guia_dinos.py).
 En los textos de paginas/:
   @/                   principio de la web; se cambia por la ruta relativa que toque
   {{discord}}          invitación de Discord
+  {{steam}}            The Isle en Steam
   {{n_fichas}}         número de fichas de dinosaurios
   {{especies}}         lista de especies con enlace a su página
   {{google_calendar}}  enlace para añadir la Cacería a Google Calendar (de datos_clan.json)
@@ -239,6 +240,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
     # Cada marcador se calcula solo si la página lo usa.
     valores = {
         'discord': lambda: INVITACION,
+        'steam': lambda: STEAM,
         'n_fichas': lambda: str(len(d['fichas'])),
         'especies': lambda: especies(lang, d),
         'google_calendar': lambda: calendario.enlace_google(lang, base),

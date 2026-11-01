@@ -5,6 +5,7 @@
 // rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
 // llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento,
 // comparativa de especies, página de cada especie, batallas de la portada enlazadas a El clan,
+// botón principal de la portada a la vista en móviles bajos,
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona,
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
@@ -792,6 +793,28 @@ const ruta = r => ('/' + r).padEnd(15);
     if (mal) malos++;
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
+  }
+  // Portada: en un móvil bajo el botón principal se ve sin bajar, y en ancho la guía y la Cacería
+  // van lado a lado aunque en el móvil la Cacería vaya primero.
+  for (const inicio of ['', 'en/']) {
+    const fallos = [];
+    for (const [ancho, alto] of [[360, 640], [375, 667], [390, 844]]) {
+      const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+      const p = await ctx.newPage();
+      await p.goto(BASE + inicio, { waitUntil: 'load' });
+      await p.evaluate(() => document.fonts.ready);
+      const abajo = await p.evaluate(() => document.querySelector('.portada .boton').getBoundingClientRect().bottom);
+      if (abajo > alto) fallos.push(`a ${ancho}x${alto} el botón acaba en ${Math.round(abajo)} px`);
+      await ctx.close();
+    }
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + inicio, { waitUntil: 'load' });
+    const [g, c] = await p.evaluate(() => ['.baldosa-dinos', '.baldosa-caceria'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return { izq: r.left, arriba: r.top }; }));
+    if (!(g.izq < c.izq) || Math.abs(g.arriba - c.arriba) > 1) fallos.push(`en ancho, guía y Cacería descolocadas (${JSON.stringify([g, c])})`);
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log(ruta(inicio), 'botón principal a la vista y mosaico en su sitio:', fallos.length ? fallos.join('; ') : 'bien');
   }
   // Vídeos de las batallas: al abrir la página solo se bajan las portadas, no los vídeos; cada vídeo
   // (y su versión ligera) se sirve como vídeo y, al darle al play, arranca (si este Chromium sabe

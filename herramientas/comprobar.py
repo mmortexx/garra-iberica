@@ -25,6 +25,7 @@ from html import unescape
 from html.parser import HTMLParser
 from montar_web import RUTA, huella
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Todas las páginas las genera herramientas/montar_web.py: {fichero: (página, idioma)}.
 PAGINAS = montar_web.FICHEROS
@@ -51,6 +52,8 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 # más, o estos mismos en cualquier otro sitio, sigue fallando.
 JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
+# A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
@@ -623,6 +626,46 @@ def revisar_movidas(raiz, falla):
                 falla(f'MOVIDAS[{lang}]: #{viejo} lleva a la sección #{seccion}, que no está en {inicio}{ruta}')
 
 
+def revisar_estilos(raiz, falla):
+    """Una llave de más en estilos.css no da error: el navegador tira en silencio la regla siguiente."""
+    css = re.sub(r'/\*.*?\*/|"(?:[^"\
+]|\.)*"', '', leer(raiz, 'estilos.css'), flags=re.S)
+    nivel = 0
+    for n, linea in enumerate(css.splitlines(), 1):
+        nivel += linea.count('{') - linea.count('}')
+        if nivel < 0:
+            falla(f'estilos.css: sobra una llave de cierre hacia esta línea ({n}, sin contar comentarios): «{linea.strip()[:60]}»')
+            return
+    if nivel:
+        falla(f'estilos.css: quedan {nivel} llaves sin cerrar')
+
+
+def revisar_privacidad(raiz, falla):
+    """El aviso legal promete que la web no guarda ni pide nada y nombra a dónde llevan sus enlaces:
+    si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
+    for js in raiz.glob('*.js'):
+        guarda = re.search(r'localStorage|sessionStorage|indexedDB|document\.cookie', js.read_text(encoding='utf-8'))
+        if guarda:
+            falla(f'{js.name} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
+    dominios = set()
+    for nombre in PAGINAS:
+        html = leer(raiz, nombre)
+        if re.search(r'<form\b', html):
+            falla(f'{nombre}: tiene un formulario y el aviso legal dice que no los hay')
+        dominios |= set(re.findall(r'href="https?://([^/"]+)', html))
+    dominios -= {urlparse(guia_dinos.base_web(raiz)).netloc}
+    for lang in montar_web.LANGS:
+        legal = plano(leer(raiz, RUTA['legal', lang] + 'index.html'))
+        for dominio in sorted(dominios):
+            if dominio not in SITIOS_FUERA:
+                falla(f'hay enlaces a {dominio} y no está en SITIOS_FUERA de comprobar.py: añádelo y nómbralo en el aviso legal')
+            elif not re.search(rf'{SITIOS_FUERA[dominio]}[^.]*(?:llevan fuera|take you off)', legal):
+                falla(f'{RUTA["legal", lang]}index.html: hay enlaces a {dominio} y el apartado de enlaces no nombra {SITIOS_FUERA[dominio]}')
+        for dominio, sitio in SITIOS_FUERA.items():
+            if dominio not in dominios:
+                falla(f'SITIOS_FUERA nombra {dominio} y ninguna página enlaza allí: quítalo también del aviso legal ({sitio})')
+
+
 def guia_del_discord(posts, titulo):
     """La guía de posts.json (lista «guias») cuyo título contiene `titulo`, o None si no está."""
     try:
@@ -801,6 +844,8 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_montaje(raiz, d, falla)
     revisar_especies(raiz, base, falla)
     revisar_movidas(raiz, falla)
+    revisar_privacidad(raiz, falla)
+    revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
