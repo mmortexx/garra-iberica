@@ -44,7 +44,7 @@ node herramientas/prueba_caceria.js
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
-  `{{discord}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}` y `{{grupo:Especie}}` se
+  `{{discord}}`, `{{steam}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}` y `{{grupo:Especie}}` se
   rellenan solos. El menú de arriba lleva solo las siete páginas de `MENU` (Inicio incluida); Normas y el aviso legal
   van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
@@ -117,6 +117,7 @@ node herramientas/prueba_caceria.js
   (`{{alfas}}` en la página, en orden alfabético y con el mismo estilo). Son la única excepción a
   los apodos vigilados: solo esos tres (`JEFES` en `comprobar.py`), solo dentro de ese fragmento y
   de esa cita, y el comprobador falla si la tarjeta cambia de jefes o si un apodo sale en otro sitio.
+  Vigila también lo que promete el aviso legal: ningún script guarda nada en el navegador, ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 18
@@ -131,7 +132,7 @@ node herramientas/prueba_caceria.js
   no tapa el pie y
   comprueba que, si las fuentes llegan tarde, la página no da saltos y que, si llegan a tiempo, se
   pintan las fuentes propias. En El clan, que el móvil reproduce el vídeo ligero y el escritorio el
-  normal. Accesibilidad: el texto sobre fotos (portada, cabeceras, baldosas) con contraste suficiente
+  normal. En la portada, que un móvil bajo ve el botón principal sin bajar y que, en ancho, la guía y la Cacería van lado a lado. Accesibilidad: el texto sobre fotos (portada, cabeceras, baldosas) con contraste suficiente
   medido sobre la foto real, nada que se pulse por debajo de 24 px y los iconos del menú y de las
   preguntas visibles en el alto contraste de Windows. Procesador en el móvil: las ascuas no piden más
   de 30 fotogramas por segundo y ninguna animación en marcha repinta sombras, fondos o filtros (en
