@@ -460,11 +460,11 @@ def cabecera(t, lineas):
     ]
 
 
-def llamada(t, h2, volver, volver_a):
+def llamada(t, h2, volver, volver_a, clase=''):
     return [
         '  <section class="llamada" aria-labelledby="t-llamada" data-ascuas>',
         '    <div class="envoltura centro revelar">',
-        f'      <h2 id="t-llamada">{h2}</h2>',
+        f'      <h2 id="t-llamada"{f' class="{clase}"' if clase else ''}>{h2}</h2>',
         f'      <p>{t["cta_p"]}</p>',
         f'      <a class="boton boton-grande latido" href="{{{{discord}}}}" rel="noopener" target="_blank">{t["cta_boton"]}<span class="oculto">{t["nueva"]}</span></a>',
         f'      <p class="volver"><a class="boton boton-sec boton-mini" href="{volver_a}">{volver}</a></p>',
@@ -550,7 +550,7 @@ def contenido_especie(nombre, lang, d=None):
             '  </section>',
             '',
         ]
-    lineas += [*lectura(t, revisado), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia)]
+    lineas += [*lectura(t, revisado), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
     resto = t['esp_resto'][0 if f['mut'] else 1]
     pagina = {'titulo': t['esp_titulo'].format(nombre=nombre), 'h1': nombre,
               'descripcion': t['esp_desc'].format(nombre=nombre, peso=peso, crece=crece, grupo=f['grupo'], resto=resto)}
