@@ -201,7 +201,21 @@ const efectos = async navegador => {
     if (m) fallos.push(`${nombre}: ${m} bloques animados u ocultos`);
     await ctx.close();
   }
-  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll):', fallos.length ? fallos.join('; ') : 'bien');
+  // Móvil con la web quieta: las ascuas recalculan 30 veces por segundo; si salen 60, alguna animación se
+  // ha salido de la tarjeta gráfica (pasó con dos a la vez en la garra: el procesador, del 13 % al 40 %).
+  for (const r of ['', 'en/', 'clan/', 'galeria/']) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
+    await p.waitForTimeout(4000);
+    const cdp = await ctx.newCDPSession(p);
+    await cdp.send('Performance.enable');
+    const estilos = async () => (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'RecalcStyleCount').value;
+    const antes = await estilos();
+    await p.waitForTimeout(3000);
+    const porSegundo = (await estilos() - antes) / 3;
+    if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
+    await ctx.close();
+  }
+  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll, procesador):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
 (async () => {
@@ -1099,7 +1113,8 @@ const efectos = async navegador => {
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
     await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
-    await p.waitForTimeout(2500);
+    // Hasta 10 s: en una máquina cargada 2,5 s no siempre bastan, y la tira tarda más en deslizarlas.
+    await p.waitForFunction(() => [...document.querySelectorAll('.tira img')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 }).catch(() => {});
     const sin = await p.evaluate(() => [...document.querySelectorAll('.tira img')].filter(i => !(i.complete && i.naturalWidth)).map(i => i.getAttribute('src').split('/').pop()));
     if (sin.length) malos++;
     console.log(ruta(r), 'tira de la galería cargada al llegar:', sin.length ? `faltan ${sin.join(', ')}` : 'sí');

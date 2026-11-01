@@ -430,6 +430,7 @@
   const enPantalla = el => el.getBoundingClientRect().top < innerHeight * 0.92;
   revelables.forEach(el => { if (enPantalla(el)) el.classList.add('visible'); });
   raiz.classList.add('anim');
+  if (portada) portada.addEventListener('animationend', ev => { if (ev.animationName === 'encender') portada.classList.add('encendida'); });
   const observador = new IntersectionObserver(entradas => {
     for (const e of entradas) {
       if (e.isIntersecting) { e.target.classList.add('visible'); observador.unobserve(e.target); }

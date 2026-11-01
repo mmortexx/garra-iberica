@@ -342,9 +342,12 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   width: clamp(220px, 34vw, 520px); aspect-ratio: 1; translate: calc(var(--garra-x) - 50%) calc(var(--garra-y) - 50%);
   background: radial-gradient(circle, rgba(255, 53, 30, .55), rgba(255, 35, 10, .17) 40%, transparent 68%);
   will-change: opacity, scale;
-  animation: encender 1.5s var(--suave-salida) .25s backwards, brasa 3.6s ease-in-out 1.75s infinite;
+  animation: brasa 3.6s ease-in-out infinite;
 }
-/* Al abrir la página, los arañazos prenden de golpe y bajan hasta su latido de siempre. */
+/* Al abrir la página, los arañazos prenden de golpe y bajan hasta su latido de siempre. Una cosa y
+   luego la otra (efectos.js cambia al acabar): las dos juntas en el mismo elemento dejan de ir por la
+   tarjeta gráfica y el latido se lleva el procesador del móvil. */
+.anim .portada:not(.encendida)::after { animation: encender 1.5s var(--suave-salida) .25s backwards; }
 @keyframes encender {
   0% { opacity: 0; scale: .7; }
   30% { opacity: 1; scale: 1.28; }
