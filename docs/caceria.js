@@ -9,11 +9,14 @@
   const AVISOS = { encuesta: [3, 20], recordatorio: [6, 20] };
   const DIAS = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
-  const formato = new Intl.DateTimeFormat('en-GB', {
-    timeZone: ZONA, hourCycle: 'h23', weekday: 'short',
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
-  });
+  // El primer formateador de hora de la página es lo más caro de este script (unos 45 ms en un móvil
+  // lento): se crea al necesitarlo, no al cargar.
+  let formato;
   const partes = ms => {
+    formato ||= new Intl.DateTimeFormat('en-GB', {
+      timeZone: ZONA, hourCycle: 'h23', weekday: 'short',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
     const p = Object.fromEntries(formato.formatToParts(ms).map(x => [x.type, x.value]));
     return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour, mi: +p.minute, s: +p.second, dia: DIAS[p.weekday] };
   };
@@ -71,10 +74,13 @@
 
   // Día y hora de un instante en otra zona («» = la del dispositivo). Una zona que el navegador
   // no conoce da null en vez de romper la página.
+  // Crear un formateador es lo que cuesta (decenas de ms en un móvil lento): uno por zona e idioma.
+  const formateadores = new Map();
   const enZona = (ms, zona, locale) => {
     try {
-      const f = new Intl.DateTimeFormat(locale, { timeZone: zona || undefined, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-      const p = Object.fromEntries(f.formatToParts(ms).map(x => [x.type, x.value]));
+      const clave = `${locale}|${zona}`;
+      if (!formateadores.has(clave)) formateadores.set(clave, new Intl.DateTimeFormat(locale, { timeZone: zona || undefined, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }));
+      const p = Object.fromEntries(formateadores.get(clave).formatToParts(ms).map(x => [x.type, x.value]));
       return { dia: p.weekday, hora: `${p.hour}:${p.minute}` };
     } catch (e) {
       return null;
@@ -84,35 +90,40 @@
   const api = { proximaCaceria, restante, planCrecer, semana, enZona, ZONA };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
 
-  // ¿A qué hora es en tu país? Los países y los textos vienen en la página, en su idioma.
+  // ¿A qué hora es en tu país? Cambia el resultado y las horas de «Así va cada semana». Los países
+  // y los textos vienen en la página, en su idioma; sin JavaScript se quedan las horas de España.
   const horas = document.querySelector('[data-horas]');
   if (horas) {
     const lista = horas.querySelector('select');
     const salida = horas.querySelector('[data-resultado]');
-    const locale = horas.dataset.locale;
-    const propia = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const elegida = [...lista.options].find(o => o.value && (o.value === propia || (o.dataset.alias || '').split(' ').includes(propia)));
-    lista.value = elegida ? elegida.value : '';
+    const textos = horas.dataset;
+    const titulos = document.querySelectorAll('[data-aviso]');
+    const rotulo = document.querySelector('[data-horas-rotulo]');
     const calcular = () => {
       const s = semana(proximaCaceria(Date.now()).inicio);
       const zona = lista.value;
-      const v = Object.fromEntries(Object.entries(s).map(([k, ms]) => [k, enZona(ms, zona, locale)]));
+      const v = Object.fromEntries(Object.entries(s).map(([k, ms]) => [k, enZona(ms, zona, textos.locale)]));
       if (Object.values(v).includes(null)) { horas.hidden = true; return; }
+      const cuando = k => `${v[k].dia[0].toUpperCase()}${v[k].dia.slice(1)}, ${v[k].hora}`;
+      const pais = lista.selectedOptions[0].text.replace(/ \(.*/, '');
+      for (const t of titulos) t.textContent = cuando(t.dataset.aviso);
+      rotulo.textContent = zona ? textos.rotulo.replace('{pais}', pais) : textos.rotuloPropio;
       const titulo = document.createElement('b');
-      titulo.textContent = `${v.caceria.dia}, ${v.caceria.hora}`;
-      // Una línea por aviso: en el móvil, todo seguido se corta por donde cae.
-      const notas = horas.dataset.nota.split(' · ').map(linea => {
-        const nota = document.createElement('span');
-        nota.className = 'plan-nota';
-        nota.textContent = linea.replace(/\{(\w+)\}/g, (_, k) => `${v[k].dia}, ${v[k].hora}`);
-        return nota;
-      });
-      salida.replaceChildren(titulo, horas.dataset.texto, ...notas);
+      titulo.textContent = cuando('caceria');
+      salida.replaceChildren(titulo, zona ? textos.texto : textos.textoPropio);
     };
     lista.addEventListener('change', calcular);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
-    calcular();
-    if (salida.firstChild) horas.hidden = false;
+    horas.hidden = false;
+    // En su propia tarea, cuando el navegador respire: la cuenta atrás ya está pintada y abrir la
+    // página no se bloquea por esto.
+    const elegir = () => {
+      const propia = new Intl.DateTimeFormat(textos.locale).resolvedOptions().timeZone;
+      const elegida = [...lista.options].find(o => o.value && (o.value === propia || (o.dataset.alias || '').split(' ').includes(propia)));
+      if (elegida && !lista.value) lista.value = elegida.value;
+      calcular();
+    };
+    if (window.requestIdleCallback) requestIdleCallback(elegir, { timeout: 300 }); else setTimeout(elegir);
   }
 
   // Planificador de la guía de dinosaurios. Los textos vienen en la página, en su idioma.
@@ -165,19 +176,19 @@
   const nodoTiempo = caja.querySelector('time');
   const nodoFalta = caja.querySelector('[data-falta]');
   const nodoLocal = caja.querySelector('[data-local]');
+  const nodoTitulo = caja.querySelector('.cuenta-titulo');
+  const tituloNormal = nodoTitulo.textContent;
   const TEXTOS = {
     es: {
-      locale: 'es-ES', enCurso: 'Empezó a las 22:00: entra en Cacería 1.', faltan: 'Faltan ', local: 'En tu hora: ',
+      locale: 'es-ES', enCurso: 'Ya ha empezado: entra en Cacería 1.', tituloEnCurso: 'Cacería en marcha', faltan: 'Faltan ', espana: ' en España', reserva: 'sábado, 30 de noviembre, 22:00',
       unidades: { d: ['día', 'días'], h: ['hora', 'horas'], m: ['min', 'min'], s: ['seg', 'seg'] },
     },
     en: {
-      locale: 'en-GB', enCurso: 'Started at 22:00: join the Cacería 1 voice channel.', faltan: 'Starts in ', local: 'Your time: ',
+      locale: 'en-GB', enCurso: 'It has started: join the Cacería 1 voice channel.', tituloEnCurso: 'Hunt under way', faltan: 'Starts in ', espana: ' in Spain', reserva: 'Saturday 30 November at 22:00',
       unidades: { d: ['day', 'days'], h: ['hour', 'hours'], m: ['min', 'min'], s: ['sec', 'sec'] },
     },
   };
   const t = TEXTOS[document.documentElement.lang.slice(0, 2)] || TEXTOS.es;
-  const fechaLarga = new Intl.DateTimeFormat(t.locale, { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long' });
-  const horaLocal = new Intl.DateTimeFormat(t.locale, { weekday: 'long', hour: '2-digit', minute: '2-digit' });
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const dos = n => String(n).padStart(2, '0');
 
@@ -197,6 +208,8 @@
       grupo.className = 't';
       cifra.className = 'n';
       nombre.className = 'u';
+      cifra.textContent = '00';
+      nombre.textContent = t.unidades[k][1];
       grupo.append(cifra, ' ', nombre);
       nodoFalta.append(grupo);
       piezas[k] = { grupo, cifra, nombre };
@@ -220,15 +233,18 @@
     if (inicio !== ultimoInicio) {
       ultimoInicio = inicio;
       nodoTiempo.dateTime = new Date(inicio).toISOString();
-      nodoTiempo.textContent = fechaLarga.format(inicio) + ', 22:00';
+      // Lo primero, la fecha y la hora de quien mira; si no es la de España, debajo la de España.
       const mismoDesfase = new Date(inicio).getTimezoneOffset() * -60000 === desfase(inicio);
+      const fecha = new Intl.DateTimeFormat(t.locale, { timeZone: mismoDesfase ? ZONA : undefined, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      nodoTiempo.textContent = fecha.format(inicio);
       nodoLocal.hidden = mismoDesfase;
-      if (!mismoDesfase) nodoLocal.textContent = t.local + horaLocal.format(inicio);
+      if (!mismoDesfase) nodoLocal.textContent = `${dos(HORA)}:00${t.espana}`;
     }
     if (enCurso) {
       if (montada) { nodoFalta.textContent = t.enCurso; montada = false; }
       else if (nodoFalta.textContent !== t.enCurso) nodoFalta.textContent = t.enCurso;
       caja.classList.add('en-curso');
+      nodoTitulo.textContent = t.tituloEnCurso;
     } else {
       if (!montada) montar();
       const r = restante(inicio - ahora);
@@ -238,8 +254,8 @@
       poner('m', r.m, dos(r.m));
       poner('s', r.s, dos(r.s));
       caja.classList.remove('en-curso');
+      nodoTitulo.textContent = tituloNormal;
     }
-    caja.hidden = false;
   };
 
   // Un tic por segundo, solo mientras la caja se ve y la pestaña está delante.
@@ -250,7 +266,16 @@
     reloj = setInterval(pintar, 1000);
   };
   const apagar = () => { clearInterval(reloj); reloj = 0; };
-  pintar();
-  new IntersectionObserver(([e]) => { aLaVista = e.isIntersecting; aLaVista ? encender() : apagar(); }).observe(caja);
-  document.addEventListener('visibilitychange', () => (document.hidden ? apagar() : encender()));
+  // La caja guarda ya su sitio, con textos de su tamaño aún sin ver, y las cifras llegan en la tarea
+  // siguiente: así abrir la página no se queda bloqueada creando el formateador.
+  montar();
+  nodoTiempo.textContent = t.reserva;
+  caja.classList.add('cargando');
+  caja.hidden = false;
+  setTimeout(() => {
+    try { pintar(); } catch (e) { caja.hidden = true; return; }
+    caja.classList.remove('cargando');
+    new IntersectionObserver(([e]) => { aLaVista = e.isIntersecting; aLaVista ? encender() : apagar(); }).observe(caja);
+    document.addEventListener('visibilitychange', () => (document.hidden ? apagar() : encender()));
+  });
 })();

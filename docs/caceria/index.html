@@ -16,9 +16,9 @@
 <link rel="preload" href="../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../img/galeria-pareja-1000.webp" imagesrcset="../img/galeria-pareja-600.webp 600w, ../img/galeria-pareja-1000.webp 1000w, ../img/galeria-pareja-1300.webp 1300w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../estilos.css?v=d9493bce9a">
+<link rel="stylesheet" href="../estilos.css?v=8e20a171b1">
 <script src="../efectos.js?v=dba4525acc" defer></script>
-<script src="../caceria.js?v=2931e8a931" defer></script>
+<script src="../caceria.js?v=762731bcbe" defer></script>
 <link rel="icon" href="../favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 
@@ -187,32 +187,20 @@
         <p class="cuenta-fecha"><time></time></p>
         <p class="cuenta-falta" data-falta></p>
         <p class="cuenta-local" data-local hidden></p>
+        <p class="cuenta-accion"><a class="boton boton-mini" href="https://discord.com/invite/txpBJzXvtK" rel="noopener" target="_blank">Entrar en el Discord<span class="oculto"> (se abre en una pestaña nueva)</span></a></p>
       </div>
     </div>
   </section>
 
-  <section class="seccion" id="apuntarte" aria-labelledby="t-apuntarte">
+  <section class="seccion" id="semana" aria-labelledby="t-semana">
     <div class="envoltura">
-      <div class="marco marco-ancho revelar"><img src="../img/evento_caceria-1400.webp" srcset="../img/evento_caceria-800.webp 800w, ../img/evento_caceria-1400.webp 1400w" sizes="(min-width: 1180px) 1100px, (max-width: 700px) 160vw, 94vw" alt="Cartel de la Cacería del clan GARRA IBÉRICA: dos lanzas cruzadas en una medalla de acero, cada sábado a las 22:00" width="1400" height="560" loading="lazy" decoding="async"></div>
-      <div class="dos">
-        <div class="revelar">
-          <p class="antetitulo">Desde España y Latinoamérica</p>
-          <h2 id="t-apuntarte">Una cita fija para toda la manada</h2>
-          <p>En Latinoamérica cae entre las 13:00 y las 18:00, según el país y la época del año.</p>
-          <p>Si aún no eres del clan, empieza por <a href="../unete/">los tres pasos para entrar</a>.</p>
-        </div>
-        <div class="ficha luz revelar escalon-1">
-          <h3>Cómo apuntarte</h3>
-          <p>En Discord, en el evento <b>Cacería del clan</b>, pulsa <b>«Me interesa»</b> y Discord te avisará antes de empezar.</p>
-          <p>Para entrar en la voz del clan necesitas ser al menos <b>Recluta</b>.</p>
-          <div class="calendario">
-            <p>Añádela a tu calendario y te avisará cada semana, a tu hora.</p>
-            <p class="calendario-botones"><a class="boton boton-sec boton-mini boton-cal" href="../caceria.ics">Añadir a mi calendario</a><a class="enlace-cal" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Cacer%C3%ADa%20del%20clan%20%C2%B7%20GARRA%20IB%C3%89RICA&amp;dates=20261031T220000%2F20261031T230000&amp;ctz=Europe%2FMadrid&amp;recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSA&amp;details=Cada%20s%C3%A1bado%20a%20las%2022%3A00%20%28hora%20peninsular%20espa%C3%B1ola%29%2C%20en%20el%20canal%20de%20voz%20Cacer%C3%ADa%201%20del%20Discord%20del%20clan.%20Necesitas%20ser%20al%20menos%20Recluta.%20https%3A%2F%2Fmmortexx.github.io%2Fgarra-iberica%2F&amp;location=Discord%20%C2%B7%20canal%20de%20voz%20Cacer%C3%ADa%201" rel="noopener" target="_blank">Google Calendar<span class="oculto"> (se abre en una pestaña nueva)</span></a></p>
-          </div>
-        </div>
+      <div class="revelar">
+        <p class="antetitulo" data-horas-rotulo>Hora de España</p>
+        <h2 id="t-semana">Así va cada semana</h2>
+        <p class="intro">En Latinoamérica cae entre las 13:00 y las 18:00, según el país y la época del año. Elige tu país y verás aquí todas las horas.</p>
       </div>
-      <div class="plan" data-horas hidden data-locale="es-ES" data-texto="Es la hora a la que empieza la cacería allí." data-nota="Encuesta en #general: {encuesta} · Aviso al rol 🔔 Cacerías: {recordatorio}">
-        <label>¿A qué hora es en tu país?
+      <div class="plan" data-horas hidden data-locale="es-ES" data-rotulo="Horas en {pais}" data-rotulo-propio="Tu hora" data-texto="Es la hora a la que empieza allí." data-texto-propio="Es la hora a la que empieza en tu dispositivo.">
+        <label>¿A qué hora es la cacería en tu país?
           <select>
           <option value="">Mi hora (la de este dispositivo)</option>
           <option value="America/Argentina/Buenos_Aires" data-alias="America/Buenos_Aires">Argentina</option>
@@ -243,21 +231,36 @@
         </label>
         <p class="plan-resultado si" data-resultado role="status"></p>
       </div>
+      <ol class="pasos escalonado" role="list">
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3 data-aviso="encuesta">Miércoles, 20:00</h3><p>Encuesta en <b>#general</b>: «¿Vienes a la cacería del sábado?». Contesta <i>Voy</i>, <i>Voy, pero llego tarde</i> o <i>No puedo</i>. Se cierra al empezar la cacería.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3 data-aviso="recordatorio">Sábado, 20:00</h3><p>Dos horas antes, aviso en <b>#general</b> para quien tiene el rol <b>🔔 Cacerías</b>, con el canal de voz y el evento. <a href="#apuntarte">Cómo tener el rol</a>.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3 data-aviso="caceria">Sábado, 22:00</h3><p>Todos a la voz en <b>Cacería 1</b>. Formamos manada por especie y un líder marca el rumbo. Antes de salir, repasa la <a href="../combate/">guía de combate</a> y mira <a href="../dinosaurios/#planificador">si tu dino llega adulto</a>.</p></div></li>
+      </ol>
+      <div class="ranking panel luz revelar">
+        <h3><img src="../img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy">Ranking semanal</h3>
+        <dl>
+          <div><dt>Qué cuenta</dt><dd>Bajas, K/D, horas, misiones, logros y muertes de los últimos 7 días, con los datos de Asura Nexus.</dd></div>
+          <div><dt>Dónde y cuándo</dt><dd>En <b>#ranking</b>. Se va actualizando durante la semana y cada lunes empieza uno nuevo.</dd></div>
+          <div><dt>Qué reparte</dt><dd>El <b>cazador de la semana</b> (quien más bajas suma), el dino más letal del clan y un título gracioso para cada uno, como Rey de la cadena alimenticia (el que más bajas suma) o Merienda de la isla (el que más muere).</dd></div>
+          <div><dt>Cómo salir</dt><dd>Solo sale quien está en el <b>grupo del clan en Asura Nexus</b>: el enlace para unirte está en #ranking.</dd></div>
+        </dl>
+      </div>
     </div>
   </section>
 
-  <section class="seccion" id="semana" aria-labelledby="t-semana">
+  <section class="seccion" id="apuntarte" aria-labelledby="t-apuntarte">
     <div class="envoltura">
+      <div class="marco marco-ancho revelar"><img src="../img/evento_caceria-1400.webp" srcset="../img/evento_caceria-800.webp 800w, ../img/evento_caceria-1400.webp 1400w" sizes="(min-width: 1180px) 1100px, (max-width: 700px) 160vw, 94vw" alt="Cartel de la Cacería del clan GARRA IBÉRICA: dos lanzas cruzadas en una medalla de acero, cada sábado a las 22:00" width="1400" height="560" loading="lazy" decoding="async"></div>
       <div class="revelar">
-        <p class="antetitulo">Hora de España</p>
-        <h2 id="t-semana">Así va cada semana</h2>
+        <p class="antetitulo">Que no se te pase</p>
+        <h2 id="t-apuntarte">Cómo apuntarte</h2>
       </div>
-      <ol class="pasos escalonado" role="list">
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3>Miércoles, 20:00</h3><p>Encuesta en <b>#general</b>: «¿Vienes a la cacería del sábado?». Contesta <i>Voy</i>, <i>Voy, pero llego tarde</i> o <i>No puedo</i>. Se cierra al empezar la cacería.</p></div></li>
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3>Sábado, 20:00</h3><p>Dos horas antes, aviso en <b>#general</b> para quien tiene el rol <b>🔔 Cacerías</b>, con el canal de voz y el evento. El rol lo eliges tú en Discord: en <b>Canales y roles → Personalizar</b>, responde «Sí, avisadme» a «¿Te avisamos de las cacerías?».</p></div></li>
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3>Sábado, 22:00</h3><p>Todos a la voz en <b>Cacería 1</b>. Formamos manada por especie y un líder marca el rumbo. Antes de salir, repasa la <a href="../combate/">guía de combate</a>.</p></div></li>
-      </ol>
-      <p class="nota revelar"><img src="../img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy"> <span><b>Ranking semanal.</b> Cada semana sale en <b>#ranking</b> la tabla del clan con los datos de Asura Nexus de los últimos 7 días: bajas, K/D, horas, misiones, logros y muertes. Se va actualizando durante la semana y cada lunes empieza una nueva. Lleva el <b>cazador de la semana</b> (quien más bajas suma), el dino más letal del clan y un título gracioso para cada uno, como Rey de la cadena alimenticia (el que más bajas suma) o Merienda de la isla (el que más muere). Solo sale quien está en el <b>grupo del clan en Asura Nexus</b>: el enlace para unirte está en #ranking.</span></p>
+      <ul class="tarjetas tarjetas-tres escalonado" role="list">
+        <li class="tarjeta revelar"><img src="../img/emoji-caza.webp" alt="" width="52" height="52" loading="lazy"><h3>En el evento</h3><p>En Discord, en el evento <b>Cacería del clan</b>, pulsa <b>«Me interesa»</b> y Discord te avisará antes de empezar.</p></li>
+        <li class="tarjeta revelar"><img src="../img/emoji-miembro.webp" alt="" width="52" height="52" loading="lazy"><h3>Con el rol 🔔 Cacerías</h3><p>Te llega el aviso de las dos horas antes. En Discord, en <b>Canales y roles → Personalizar</b>, responde «Sí, avisadme» a «¿Te avisamos de las cacerías?».</p></li>
+        <li class="tarjeta revelar"><img src="../img/emoji-normas.webp" alt="" width="52" height="52" loading="lazy"><h3>En tu calendario</h3><p>Te avisará cada semana, a tu hora.</p><p class="calendario-botones"><a class="boton boton-sec boton-mini boton-cal" href="../caceria.ics">Añadir a mi calendario</a><a class="enlace-cal" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Cacer%C3%ADa%20del%20clan%20%C2%B7%20GARRA%20IB%C3%89RICA&amp;dates=20261031T220000%2F20261031T230000&amp;ctz=Europe%2FMadrid&amp;recur=RRULE%3AFREQ%3DWEEKLY%3BBYDAY%3DSA&amp;details=Cada%20s%C3%A1bado%20a%20las%2022%3A00%20%28hora%20peninsular%20espa%C3%B1ola%29%2C%20en%20el%20canal%20de%20voz%20Cacer%C3%ADa%201%20del%20Discord%20del%20clan.%20Necesitas%20ser%20al%20menos%20Recluta.%20https%3A%2F%2Fmmortexx.github.io%2Fgarra-iberica%2F&amp;location=Discord%20%C2%B7%20canal%20de%20voz%20Cacer%C3%ADa%201" rel="noopener" target="_blank">Google Calendar<span class="oculto"> (se abre en una pestaña nueva)</span></a></p></li>
+      </ul>
+      <p class="revelar apuntarte-pie">Para entrar en la voz del clan necesitas ser al menos <b>Recluta</b>. Si aún no eres del clan, empieza por <a href="../unete/">los tres pasos para entrar</a>.</p>
     </div>
   </section>
 

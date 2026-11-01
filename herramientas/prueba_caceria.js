@@ -119,6 +119,23 @@ try {
   console.log('FALLO', 'una zona desconocida no rompe la página', '→', e.message.split('\n')[0]);
 }
 
-const total = casos.length + tiempos.length + planes.length + semanas.length + zonas.length + 1;
+// Crear un formateador es lo que cuesta al abrir la página: uno por zona e idioma, sin mezclarlos.
+try {
+  const Original = Intl.DateTimeFormat;
+  let creados = 0;
+  Intl.DateTimeFormat = function (...a) { creados++; return new Original(...a); };
+  const ms = Date.parse('2026-10-31T21:00:00Z');
+  for (const extra of [0, 3600000, 7200000]) enZona(ms + extra, 'Asia/Tokyo', 'es-ES');
+  Intl.DateTimeFormat = Original;
+  assert.equal(creados, 1);
+  assert.deepEqual(enZona(ms, 'Asia/Tokyo', 'en-GB'), { dia: 'Sunday', hora: '06:00' });
+  assert.deepEqual(enZona(ms, 'Asia/Tokyo', 'es-ES'), { dia: 'domingo', hora: '06:00' });
+  console.log('ok   ', 'un formateador por zona e idioma');
+} catch (e) {
+  fallos++;
+  console.log('FALLO', 'un formateador por zona e idioma', '→', e.message.split('\n')[0]);
+}
+
+const total = casos.length + tiempos.length + planes.length + semanas.length + zonas.length + 2;
 console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);

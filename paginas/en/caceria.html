@@ -15,32 +15,20 @@ h1: Weekly clan hunt: Saturdays at 22:00
         <p class="cuenta-fecha"><time></time></p>
         <p class="cuenta-falta" data-falta></p>
         <p class="cuenta-local" data-local hidden></p>
+        <p class="cuenta-accion"><a class="boton boton-mini" href="{{discord}}" rel="noopener" target="_blank">Join the Discord<span class="oculto"> (opens in a new tab)</span></a></p>
       </div>
     </div>
   </section>
 
-  <section class="seccion" id="sign-up" aria-labelledby="t-sign-up">
+  <section class="seccion" id="week" aria-labelledby="t-week">
     <div class="envoltura">
-      <div class="marco marco-ancho revelar"><img src="@/img/evento_caceria-en-1400.webp" srcset="@/img/evento_caceria-en-800.webp 800w, @/img/evento_caceria-en-1400.webp 1400w" sizes="(min-width: 1180px) 1100px, (max-width: 700px) 160vw, 94vw" alt="CLAN HUNT poster for GARRA IBÉRICA: two crossed spears on a steel medal, every Saturday at 22:00 Spain time" width="1400" height="560" loading="lazy" decoding="async"></div>
-      <div class="dos">
-        <div class="revelar">
-          <p class="antetitulo">From Spain and Latin America</p>
-          <h2 id="t-sign-up">A fixed date for the whole pack</h2>
-          <p>In Latin America it falls between 13:00 and 18:00, depending on the country and the time of year.</p>
-          <p>Not in the clan yet? Start with <a href="@/en/join/">the three steps to join</a>.</p>
-        </div>
-        <div class="ficha luz revelar escalon-1">
-          <h3>How to sign up</h3>
-          <p>On Discord, open the <b>Cacería del clan</b> event and press <b>“Interested”</b>; Discord will remind you before it starts.</p>
-          <p>You need at least the <b>Recluta</b> (Recruit) rank to join the clan voice channels.</p>
-          <div class="calendario">
-            <p>Add it to your calendar and it will remind you every week, in your own time zone.</p>
-            <p class="calendario-botones"><a class="boton boton-sec boton-mini boton-cal" href="@/en/caceria.ics">Add to my calendar</a><a class="enlace-cal" href="{{google_calendar}}" rel="noopener" target="_blank">Google Calendar<span class="oculto"> (opens in a new tab)</span></a></p>
-          </div>
-        </div>
+      <div class="revelar">
+        <p class="antetitulo" data-horas-rotulo>Spain time</p>
+        <h2 id="t-week">How each week goes</h2>
+        <p class="intro">In Latin America it falls between 13:00 and 18:00, depending on the country and the time of year. Pick your country to see every time here.</p>
       </div>
-      <div class="plan" data-horas hidden data-locale="en-GB" data-texto="That is when the hunt starts there." data-nota="Poll in #general: {encuesta} · Reminder for the 🔔 Cacerías role: {recordatorio}">
-        <label>What time is it in your country?
+      <div class="plan" data-horas hidden data-locale="en-GB" data-rotulo="Times in {pais}" data-rotulo-propio="Your time" data-texto="That is when it starts there." data-texto-propio="That is when it starts on your device’s clock.">
+        <label>What time is the hunt in your country?
           <select>
           <option value="">My time (this device)</option>
           <option value="America/Argentina/Buenos_Aires" data-alias="America/Buenos_Aires">Argentina</option>
@@ -71,21 +59,36 @@ h1: Weekly clan hunt: Saturdays at 22:00
         </label>
         <p class="plan-resultado si" data-resultado role="status"></p>
       </div>
+      <ol class="pasos escalonado" role="list">
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3 data-aviso="encuesta">Wednesday, 20:00</h3><p>Poll in <b>#general</b>: “Coming to the clan hunt on Saturday?”. Answer <i>I’m in</i>, <i>I’ll be late</i> or <i>Can’t make it</i>. It closes when the hunt starts.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3 data-aviso="recordatorio">Saturday, 20:00</h3><p>Two hours before, a reminder in <b>#general</b> for everyone with the <b>🔔 Cacerías</b> role, with the voice channel and the event. <a href="#sign-up">How to get the role</a>.</p></div></li>
+        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3 data-aviso="caceria">Saturday, 22:00</h3><p>Everyone into the <b>Cacería 1</b> voice channel. We form packs by species and a leader sets the course. Before heading out, read the <a href="@/en/combat/">combat guide</a> and check <a href="@/en/dinosaurs/#planner">whether your dino will be adult in time</a>.</p></div></li>
+      </ol>
+      <div class="ranking panel luz revelar">
+        <h3><img src="@/img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy">Weekly ranking</h3>
+        <dl>
+          <div><dt>What it counts</dt><dd>Kills, K/D, hours, quests, achievements and deaths over the last 7 days, using Asura Nexus data.</dd></div>
+          <div><dt>Where and when</dt><dd>In <b>#ranking</b>. It is updated as the week goes on and a new one starts every Monday.</dd></div>
+          <div><dt>What it hands out</dt><dd>The <b>hunter of the week</b> (whoever has the most kills), the clan’s deadliest dino and a funny title for everyone, such as King of the Food Chain (Rey de la cadena alimenticia, most kills) or Island Snack (Merienda de la isla, most deaths).</dd></div>
+          <div><dt>How to show up</dt><dd>Only members of the <b>clan group on Asura Nexus</b> show up: the link to join it is in #ranking.</dd></div>
+        </dl>
+      </div>
     </div>
   </section>
 
-  <section class="seccion" id="week" aria-labelledby="t-week">
+  <section class="seccion" id="sign-up" aria-labelledby="t-sign-up">
     <div class="envoltura">
+      <div class="marco marco-ancho revelar"><img src="@/img/evento_caceria-en-1400.webp" srcset="@/img/evento_caceria-en-800.webp 800w, @/img/evento_caceria-en-1400.webp 1400w" sizes="(min-width: 1180px) 1100px, (max-width: 700px) 160vw, 94vw" alt="CLAN HUNT poster for GARRA IBÉRICA: two crossed spears on a steel medal, every Saturday at 22:00 Spain time" width="1400" height="560" loading="lazy" decoding="async"></div>
       <div class="revelar">
-        <p class="antetitulo">Spain time</p>
-        <h2 id="t-week">How each week goes</h2>
+        <p class="antetitulo">So you don’t miss it</p>
+        <h2 id="t-sign-up">How to sign up</h2>
       </div>
-      <ol class="pasos escalonado" role="list">
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h3>Wednesday, 20:00</h3><p>Poll in <b>#general</b>: “Coming to the clan hunt on Saturday?”. Answer <i>I’m in</i>, <i>I’ll be late</i> or <i>Can’t make it</i>. It closes when the hunt starts.</p></div></li>
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h3>Saturday, 20:00</h3><p>Two hours before, a reminder in <b>#general</b> for everyone with the <b>🔔 Cacerías</b> role, with the voice channel and the event. You pick the role yourself in Discord: in <b>Canales y roles → Personalizar</b> (Channels &amp; Roles → Customize), answer «Sí, avisadme» to «¿Te avisamos de las cacerías?» (“Shall we tell you about the hunts?”).</p></div></li>
-        <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h3>Saturday, 22:00</h3><p>Everyone into the <b>Cacería 1</b> voice channel. We form packs by species and a leader sets the course. Before heading out, read the <a href="@/en/combat/">combat guide</a>.</p></div></li>
-      </ol>
-      <p class="nota revelar"><img src="@/img/emoji-trofeo.webp" alt="" width="32" height="32" loading="lazy"> <span><b>Weekly ranking.</b> Every week <b>#ranking</b> gets the clan’s table with Asura Nexus data for the last 7 days: kills, K/D, hours, quests, achievements and deaths. It is updated as the week goes on and a new one starts every Monday. It names the <b>hunter of the week</b> (whoever has the most kills) and the clan’s deadliest dino, and gives everyone a funny title, such as King of the Food Chain (Rey de la cadena alimenticia, most kills) or Island Snack (Merienda de la isla, most deaths). Only members of the <b>clan group on Asura Nexus</b> show up: the link to join it is in #ranking.</span></p>
+      <ul class="tarjetas tarjetas-tres escalonado" role="list">
+        <li class="tarjeta revelar"><img src="@/img/emoji-caza.webp" alt="" width="52" height="52" loading="lazy"><h3>On the event</h3><p>On Discord, open the <b>Cacería del clan</b> event and press <b>“Interested”</b>; Discord will remind you before it starts.</p></li>
+        <li class="tarjeta revelar"><img src="@/img/emoji-miembro.webp" alt="" width="52" height="52" loading="lazy"><h3>With the 🔔 Cacerías role</h3><p>You get the two-hour reminder. On Discord, in <b>Canales y roles → Personalizar</b> (Channels &amp; Roles → Customize), answer «Sí, avisadme» to «¿Te avisamos de las cacerías?» (“Shall we tell you about the hunts?”).</p></li>
+        <li class="tarjeta revelar"><img src="@/img/emoji-normas.webp" alt="" width="52" height="52" loading="lazy"><h3>In your calendar</h3><p>It will remind you every week, in your own time zone.</p><p class="calendario-botones"><a class="boton boton-sec boton-mini boton-cal" href="@/en/caceria.ics">Add to my calendar</a><a class="enlace-cal" href="{{google_calendar}}" rel="noopener" target="_blank">Google Calendar<span class="oculto"> (opens in a new tab)</span></a></p></li>
+      </ul>
+      <p class="revelar apuntarte-pie">You need at least the <b>Recluta</b> (Recruit) rank to join the clan voice channels. Not in the clan yet? Start with <a href="@/en/join/">the three steps to join</a>.</p>
     </div>
   </section>
 
