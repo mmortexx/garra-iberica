@@ -35,6 +35,7 @@ python herramientas/calendario.py
 python herramientas/montar_web.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
+python herramientas/prueba_galeria.py
 ```
 
 - `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
@@ -85,7 +86,7 @@ node herramientas/prueba_caceria.js
   exportados (lista `VIDEOS`, clave de `batallas.json` → fichero dentro de `~/Videos`) en
   `docs/video/batalla-<clave>.mp4`, más una versión ligera para móviles (`-movil.mp4`, un tercio del
   peso, la que se reproduce en pantallas de hasta 700 px), con su portada en `docs/img/`. La lista de El clan pone el
-  vídeo a cada batalla que lo tiene. Se oyen tal cual (con la voz, si la hay): lo decidió Quilez.
+  vídeo a cada batalla que lo tiene. Se oyen tal cual (con la voz, si la hay), a propósito.
   Para una batalla nueva: añadir su línea a `VIDEOS`, ejecutar el script y montar.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
   dónde lleva cada enlace viejo (`/#normas` → `normas/`) y `comprobar.py` vigila que el destino
@@ -138,7 +139,7 @@ node herramientas/prueba_caceria.js
   de 30 fotogramas por segundo y ninguna animación en marcha repinta sombras, fondos o filtros (en
   táctil el latido del botón es un anillo que solo se escala y se apaga).
 
-GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las tres en cada push y pull request.
+GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
 `gh secret set VIGILAR_APODOS < herramientas/vigilar.local.txt`. Pages publica aunque falle: si
 sale en rojo, se arregla y se vuelve a subir.

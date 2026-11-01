@@ -5,8 +5,8 @@ La carpeta por defecto es ~/Videos. Con claves (p. ej. delta-1), solo genera esa
 Solo lee los originales (2560x1440 a 120 fps, unos 35 Mb/s: no caben en la web). Vienen con franjas
 negras arriba y abajo (formato de cine, 2,39:1): se quitan. Por cada batalla de VIDEOS escribe:
 - docs/video/batalla-<clave>.mp4: 1280x536 a 30 fps, H.264 y AAC (lo reproduce cualquier navegador),
-  con el índice al principio para que empiece a verse antes de bajar entero. Con sonido: lo decidió
-  Quilez. Si pasa de PESO_MAX, se repite con menos calidad.
+  con el índice al principio para que empiece a verse antes de bajar entero. Con sonido, a propósito.
+  Si pasa de PESO_MAX, se repite con menos calidad.
 - docs/video/batalla-<clave>-movil.mp4: la misma a 854x358 y como mucho ~1,1 Mb/s, para pantallas de
   hasta 700 px (la página la elige con <source media>). En un móvil se ve igual y pesa un tercio:
   menos datos y no se para a cargar con poca cobertura.
