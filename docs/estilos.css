@@ -346,8 +346,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 }
 /* Al abrir la página, los arañazos prenden de golpe y bajan hasta su latido de siempre. Una cosa y
    luego la otra (efectos.js cambia al acabar): las dos juntas en el mismo elemento dejan de ir por la
-   tarjeta gráfica y el latido se lleva el procesador del móvil. */
-.anim .portada:not(.encendida)::after { animation: encender 1.5s var(--suave-salida) .25s backwards; }
+   tarjeta gráfica y el latido se lleva el procesador del móvil. Con :where, para que el reposo pueda
+   pararlo también mientras prende. */
+.anim .portada:where(:not(.encendida))::after { animation: encender 1.5s var(--suave-salida) .25s backwards; }
 @keyframes encender {
   0% { opacity: 0; scale: .7; }
   30% { opacity: 1; scale: 1.28; }
