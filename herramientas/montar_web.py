@@ -11,14 +11,14 @@ En los textos de paginas/:
   @/                   principio de la web; se cambia por la ruta relativa que toque
   {{discord}}          invitación de Discord
   {{n_fichas}}         número de fichas de dinosaurios
-  {{especies}}         lista de especies con enlace a su ficha
+  {{especies}}         lista de especies con enlace a su página
   {{google_calendar}}  enlace para añadir la Cacería a Google Calendar (de datos_clan.json)
   {{migas}}            «Inicio / página», con enlace al inicio
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
   {{alfas}}            los tres jefes, de la cita de la tarjeta #rangos en datos_clan.json
   {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
-  {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a la ficha
+  {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a su página
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
@@ -65,9 +65,15 @@ PAGINAS = [
 # Inicio, además de en la marca: no todo el mundo sabe que la marca lleva a la portada.
 MENU = ('inicio', 'clan', 'dinosaurios', 'caceria', 'combate', 'galeria', 'unete')
 PIE = [p for p, _, _ in PAGINAS if p != 'legal']
+# Una página por especie (dinosaurios/tyrannosaurus/), colgando de la guía: salen de las fichas.
+ESPECIES = {'especie-' + guia_dinos.ancla(f['nombre']): f['nombre'] for f in guia_dinos.datos()['fichas']}
+# Orden de las páginas al montarlas y en el mapa del sitio.
+ORDEN = [p for p, _, _ in PAGINAS] + list(ESPECIES)
 RUTA = {(p, lang): rutas[i] for p, rutas, _ in PAGINAS for i, lang in enumerate(LANGS)}
 NOMBRE = {(p, lang): nombres[i] for p, _, nombres in PAGINAS for i, lang in enumerate(LANGS)}
-FICHEROS = {RUTA[clave] + 'index.html': clave for clave in RUTA}
+RUTA.update({(p, lang): guia_dinos.ruta_especie(n, lang) for p, n in ESPECIES.items() for lang in LANGS})
+NOMBRE.update({(p, lang): n for p, n in ESPECIES.items() for lang in LANGS})
+FICHEROS = {RUTA[p, lang] + 'index.html': (p, lang) for p in ORDEN for lang in LANGS}
 # Secciones que antes estaban en la portada: un enlace viejo (/#normas) lleva a su sitio nuevo.
 MOVIDAS = {
     'es': {'guia': 'dinosaurios/', 'galeria': 'galeria/', 'entrar': 'unete/', 'caceria': 'caceria/',
@@ -167,7 +173,7 @@ def fuente(pagina, lang):
 def especies(lang, d):
     filas = []
     for g in ('carnivoros', 'herbivoros', 'omnivoros'):
-        enlaces = ', '.join(f'<a href="@/{guia_dinos.RUTAS[lang]}#{guia_dinos.ancla(f["nombre"])}">{escape(f["nombre"])}</a>'
+        enlaces = ', '.join(f'<a href="@/{guia_dinos.ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a>'
                             for f in d['fichas'] if guia_dinos.GRUPO[f['dieta']] == g)
         if enlaces:
             filas.append(f'<div><dt>{guia_dinos.T[lang]["grupos"][g]}</dt><dd>{enlaces}</dd></div>')
@@ -209,17 +215,24 @@ def normas(lang):
 
 
 def grupo(nombre, lang, d):
-    """«Especie N»: el grupo máximo de su ficha, con enlace a ella (una sola fuente para la web)."""
+    """«Especie N»: el grupo máximo de su ficha, con enlace a su página (una sola fuente para la web)."""
     f = next((f for f in d['fichas'] if f['nombre'] == nombre), None)
     if not f or not f['grupo'].isdigit():
         sys.exit(f'{{{{grupo:{nombre}}}}}: no hay ficha de {nombre} con un grupo máximo en número')
-    return f'<a href="@/{guia_dinos.RUTAS[lang]}#{guia_dinos.ancla(nombre)}">{escape(nombre)}</a> {f["grupo"]}'
+    return f'<a href="@/{guia_dinos.ruta_especie(nombre, lang)}">{escape(nombre)}</a> {f["grupo"]}'
+
+
+def ramas(pagina, lang):
+    """[(nombre, ruta)] de Inicio a la página, pasando por la guía si es una especie."""
+    camino = ['inicio'] + (['dinosaurios'] if pagina in ESPECIES else []) + [pagina]
+    return [(NOMBRE[p, lang], RUTA[p, lang]) for p in camino]
 
 
 def migas(pagina, lang):
-    inicio = NOMBRE['inicio', lang]
-    return (f'<nav class="migas" aria-label="{T[lang]["migas"]}"><a href="@/{RUTA["inicio", lang]}">{inicio}</a>'
-            f'<span aria-current="page">{NOMBRE[pagina, lang]}</span></nav>')
+    *arriba, (aqui, _) = ramas(pagina, lang)
+    enlaces = ''.join(f'<a href="@/{ruta}">{escape(nombre)}</a>' for nombre, ruta in arriba)
+    return (f'<nav class="migas" aria-label="{T[lang]["migas"]}">{enlaces}'
+            f'<span aria-current="page">{escape(aqui)}</span></nav>')
 
 
 def rellenar(cuerpo, pagina, lang, base, d):
@@ -256,6 +269,8 @@ def preguntas(cuerpo):
 
 def imagen_og(pagina, lang):
     """(fichero en img/, texto alternativo) de la imagen al compartir la página."""
+    if pagina in ESPECIES:
+        pagina = 'dinosaurios'
     if pagina in preparar_galeria.OG:
         fichero, _, _, alt_es, alt_en = preparar_galeria.OG[pagina]
         return fichero, alt_es if lang == 'es' else alt_en
@@ -292,8 +307,8 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
     if pagina != 'inicio':
         nodos[2]['breadcrumb'] = {'@id': url + '#migas'}
         nodos.append({'@type': 'BreadcrumbList', '@id': url + '#migas', 'itemListElement': [
-            {'@type': 'ListItem', 'position': 1, 'name': NOMBRE['inicio', lang], 'item': base + RUTA['inicio', lang]},
-            {'@type': 'ListItem', 'position': 2, 'name': NOMBRE[pagina, lang], 'item': url}]})
+            {'@type': 'ListItem', 'position': i, 'name': nombre, 'item': base + ruta}
+            for i, (nombre, ruta) in enumerate(ramas(pagina, lang), 1)]})
     if pagina == 'galeria':
         # Cada foto con su descripción y quién la hizo: así la entienden Google Imágenes y los demás.
         nodos[2]['@type'] = 'ImageGallery'
@@ -301,10 +316,12 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
                               'creditText': 'GARRA IBÉRICA', 'creator': {'@id': base + '#clan'}}
                              for grande, mini, alt in fotos_galeria(cuerpo, url)]
     if pagina == 'dinosaurios':
-        especies = re.findall(r'<article class="dino[^"]*" id="([^"]+)"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*>([^<]+)</h3>', cuerpo)
+        # Cada especie apunta a su página: es la lista que Google entiende como «resumen con enlaces».
+        especies = re.findall(r'<article class="dino[^"]*" id="[^"]+"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*>'
+                              r'<a href="([^"]+)">([^<]+)</a></h3>', cuerpo)
         nodos[2]['mainEntity'] = {'@type': 'ItemList', 'name': datos['h1'], 'numberOfItems': len(especies), 'itemListElement': [
-            {'@type': 'ListItem', 'position': i, 'name': unescape(nombre), 'url': f'{url}#{ancla}'}
-            for i, (ancla, nombre) in enumerate(especies, 1)]}
+            {'@type': 'ListItem', 'position': i, 'name': unescape(nombre), 'url': urljoin(url, enlace)}
+            for i, (enlace, nombre) in enumerate(especies, 1)]}
     faq = preguntas(cuerpo)
     if faq:
         nodos.append({'@type': 'FAQPage', '@id': url + '#preguntas', 'inLanguage': lang, 'mainEntity': [
@@ -387,6 +404,8 @@ def contenido(pagina, lang, d):
     """Datos (título, descripción, h1), contenido sin rellenar y fecha de revisión (o None)."""
     if pagina == 'dinosaurios':
         return guia_dinos.contenido(lang, d)
+    if pagina in ESPECIES:
+        return guia_dinos.contenido_especie(ESPECIES[pagina], lang, d)
     return (*fuente(pagina, lang), None)
 
 
@@ -477,12 +496,12 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
 
 def sitemap(base, d, fotos=None):
     """fotos: {(página, idioma): [direcciones de sus fotos]}, para Google Imágenes."""
-    fecha = {'dinosaurios': guia_dinos.revision(d)[1]}
+    fecha = {p: guia_dinos.revision(d)[1] for p in ['dinosaurios', *ESPECIES]}
     fotos = fotos or {}
     lineas = ['<?xml version="1.0" encoding="UTF-8"?>',
               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" '
               'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">']
-    for pagina, _, _ in PAGINAS:
+    for pagina in ORDEN:
         for lang in LANGS:
             lineas += ['  <url>',
                        f'    <loc>{base + RUTA[pagina, lang]}</loc>',

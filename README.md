@@ -10,7 +10,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | Fichero | Para qué |
 |---|---|
 | `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
-| `docs/**/index.html` | Las 18 páginas publicadas (9 por idioma). Las genera `herramientas/montar_web.py`; no se editan a mano. |
+| `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). |
@@ -37,7 +37,7 @@ python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 ```
 
-- `montar_web.py` genera las 18 páginas, el mapa del sitio y la versión de los estilos en
+- `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
   `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
@@ -59,6 +59,14 @@ node herramientas/prueba_caceria.js
   La comparativa de especies («Comparar especies», arriba de la guía) sale de esas mismas fichas:
   peso máximo (el Prime, o el único si no lo hay), crecimiento y grupo máximo. `guia_dinos.py` se para
   si un peso no se entiende, si el español y el inglés dan pesos distintos o si un grupo no es un número.
+  Cada ficha tiene además su página, en español y en inglés (`dinosaurios/<especie>/` y
+  `en/dinosaurs/<especie>/`, con el nombre en minúsculas y sin tildes): la ficha entera, su puesto
+  frente a las demás en peso, crecimiento y grupo, las otras de su dieta y «Cómo leer las fichas».
+  Se crean y se borran solas con las fichas al ejecutar `montar_web.py`; el nombre de cada ficha en la
+  guía, la comparativa, la portada y la guía de combate enlazan a ella. `comprobar.py` falla si falta
+  o sobra alguna, si la española y la inglesa no se enlazan entre sí, si no está en el mapa del sitio
+  o si un dato (marcado con `data-ficha` / `data-mut`) no es el de `fichas_dinos.json`. Cambiar el
+  nombre de una especie cambia su dirección: los enlaces que ya circulen a la vieja dejan de funcionar.
 - Las batallas del clan (portada y El clan, marcadores `{{batallas_cifras}}` y `{{batallas}}`) salen
   de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
   Discord. `montar_web.py` la pone al día sola si encuentra el original (variable
@@ -88,7 +96,7 @@ node herramientas/prueba_caceria.js
   que ejecutarlo si cambia la hora de la Cacería o la dirección. Los `.ics` llevan finales de línea
   CRLF, como pide el formato; `.gitattributes` evita que git los cambie.
 
-- `comprobar.py` revisa las 18 páginas: título, encabezado, metadatos, idiomas, datos estructurados
+- `comprobar.py` revisa todas las páginas (las fijas y las de cada especie): título, encabezado, metadatos, idiomas, datos estructurados
   (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
   fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de

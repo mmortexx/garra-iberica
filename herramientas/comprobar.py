@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
@@ -270,7 +271,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
                     falla(f'{nombre}: JSON-LD ImageObject «{i}» no apunta a un fichero de la web')
             fichas = re.findall(r'<article class="dino[^"]*" id="([^"]+)"', html)
             lista = [e.get('url', '') for e in pagina_ld.get('mainEntity', {}).get('itemListElement', [])]
-            if lista != [f'{base}{sufijo}#{a}' for a in fichas]:
+            if lista != [f'{base}{sufijo}{a}/' for a in fichas]:
                 falla(f'{nombre}: JSON-LD ItemList con {len(lista)} especies y la página tiene {len(fichas)} fichas')
             faq = tipos.get('FAQPage')
             visibles = doc.preguntas
@@ -321,8 +322,9 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
                 falla(f'{nombre}: <img src="{a.get("src")}"> sin width/height (provoca saltos al cargar)')
     usados = set()
     for ruta in sorted(locales):
-        limpia, _, version = ruta.partition('?v=')
-        limpia, _, fragmento = limpia.partition('#')
+        limpia, _, fragmento = ruta.partition('#')
+        limpia, _, consulta = limpia.partition('?')
+        version = consulta[2:] if consulta.startswith('v=') else ''
         destino = (carpeta / (limpia + 'index.html' if limpia.endswith('/') else limpia)).resolve()
         if not destino.is_file():
             falla(f'{nombre}: referencia a un fichero que no existe: {ruta}')
@@ -546,6 +548,64 @@ def revisar_montaje(raiz, d, falla):
                 falla(f'{nombre}: {con_mut} fichas con mutaciones y {enlaces} enlaces a su glosario (#{mut_id})')
 
 
+def direccion_especie(nombre):
+    """Carpeta de la página de una especie. Es una copia aparte de guia_dinos.ancla() a propósito: si
+    alguien cambia esa regla, cambian las direcciones ya publicadas y compartidas, y aquí falla."""
+    sin_tildes = unicodedata.normalize('NFKD', nombre).encode('ascii', 'ignore').decode()
+    return re.sub(r'[^a-z0-9]+', '-', sin_tildes.lower()).strip('-')
+
+
+def revisar_especies(raiz, base, falla):
+    """Una página por ficha en cada idioma, ni una más ni una menos; cada una enlazada con la de la otra
+    lengua, en el mapa del sitio, enlazada desde su ficha de la guía y desde la comparativa, y diciendo lo
+    mismo que fichas_dinos.json, que se lee aquí directamente (no a través de montar_web.py)."""
+    d = json.loads(guia_dinos.FICHAS.read_text(encoding='utf-8'))
+    fichas = {direccion_especie(f['nombre']): f for f in d['fichas']}
+    mapa = leer(raiz, 'sitemap.xml')
+    for lang, guia in guia_dinos.RUTAS.items():
+        otra = 'en' if lang == 'es' else 'es'
+        hay = {p.parent.name for p in (raiz / guia).glob('*/index.html')}
+        for a in sorted(set(fichas) - hay):
+            falla(f'{guia}{a}/: falta la página de {fichas[a]["nombre"]}')
+        for a in sorted(hay - set(fichas)):
+            falla(f'{guia}{a}/: página de una especie que no tiene ficha en {guia_dinos.FICHAS.name}')
+        html_guia = leer(raiz, guia + 'index.html')
+        muts = d['mut_en' if lang == 'en' else 'mut']
+        for a, f in fichas.items():
+            nombre = f'{guia}{a}/index.html'
+            if a not in hay:
+                continue
+            html = leer(raiz, nombre)
+            pareja = base + guia_dinos.RUTAS[otra] + a + '/'
+            if not (raiz / guia_dinos.RUTAS[otra] / a / 'index.html').is_file() or \
+                    f'<link rel="alternate" hreflang="{otra}" href="{pareja}">' not in html:
+                falla(f'{nombre}: su versión en «{otra}» ({pareja}) no existe o la página no la enlaza')
+            if f'<loc>{base}{guia}{a}/</loc>' not in mapa:
+                falla(f'sitemap.xml: falta la página de {f["nombre"]} ({base}{guia}{a}/)')
+            enlace = re.escape(f'href="{montar_web.enlace(guia, guia + a + "/")}"')
+            if not re.search(rf'<article class="dino[^"]*" id="{a}"[^>]*>\s*<div class="dino-cabeza"><h3[^>]*><a {enlace}>', html_guia):
+                falla(f'{guia}index.html: la ficha de {f["nombre"]} no enlaza a su página')
+            if not re.search(rf'data-nombre="{re.escape(f["nombre"])}"[^>]*><dt><a {enlace}>', html_guia):
+                falla(f'{guia}index.html: la comparativa no enlaza {f["nombre"]} a su página')
+            h1 = re.findall(r'<h1[^>]*>([^<]*)</h1>', html)
+            if h1 != [f['nombre']]:
+                falla(f'{nombre}: el título es {h1} y debe ser «{f["nombre"]}»')
+            en = f['en'] if lang == 'en' else {}
+            v = {k: en.get(k, f[k]) for k in ('peso', 'crece', 'hab', 'consejo', 'mutfuente')}
+            esperado = {'peso': [v['peso']], 'crece': [v['crece']], 'grupo': [f['grupo']], 'hab': v['hab'],
+                        'consejo': [v['consejo']], 'mutfuente': [v['mutfuente']] if f['mut'] else [],
+                        'dieta': [guia_dinos.T[lang]['dieta'][f['dieta']]]}
+            visto = {}
+            for campo, texto in re.findall(r'<\w+ [^>]*data-ficha="(\w+)"[^>]*>(.*?)</', html):
+                visto.setdefault(campo, []).append(unescape(texto))
+            for campo in sorted(esperado.keys() | visto.keys()):
+                if visto.get(campo, []) != esperado.get(campo, []):
+                    falla(f'{nombre}: «{campo}» dice {visto.get(campo, [])} y la ficha, {esperado.get(campo, [])}')
+            vistas = re.findall(r'<li data-mut="([^"]+)">(.*?)</li>', html)
+            if [(k, sin_etiquetas(texto)) for k, texto in vistas] != [(k, muts[k]) for k in f['mut']]:
+                falla(f'{nombre}: las mutaciones no son las de la ficha ({[k for k, _ in vistas]} y {f["mut"]})')
+
+
 def revisar_movidas(raiz, falla):
     """Enlaces viejos a secciones de la portada (/#normas): cada uno lleva a una página y sección
     que existen, y ninguno tapa una sección que siga en la portada."""
@@ -739,6 +799,7 @@ def main(raiz, sin_apodos=False, avisa=print):
                                  h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete',
                                  og=montar_web.imagen_og(pagina, lang)[0])
     revisar_montaje(raiz, d, falla)
+    revisar_especies(raiz, base, falla)
     revisar_movidas(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
@@ -753,12 +814,12 @@ def main(raiz, sin_apodos=False, avisa=print):
               'i': 'http://www.google.com/schemas/sitemap-image/1.1'}
         urls = ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', ns)
         locs = [u.find('s:loc', ns).text for u in urls]
-        esperadas = [base + RUTA[p, lang] for p, _, _ in montar_web.PAGINAS for lang in montar_web.LANGS]
+        esperadas = [base + RUTA[p, lang] for p in montar_web.ORDEN for lang in montar_web.LANGS]
         if locs != esperadas:
             falla(f'sitemap.xml lista {locs} y debe listar {esperadas}')
         for u in urls:
             loc = u.find('s:loc', ns).text
-            p = next((p for p, _, _ in montar_web.PAGINAS if loc in (base + RUTA[p, 'es'], base + RUTA[p, 'en'])), 'inicio')
+            p = next((p for p in montar_web.ORDEN if loc in (base + RUTA[p, 'es'], base + RUTA[p, 'en'])), 'inicio')
             alt = {l.get('hreflang'): l.get('href') for l in u.findall('x:link', ns)}
             if alt != {'es': base + RUTA[p, 'es'], 'en': base + RUTA[p, 'en'], 'x-default': base + RUTA[p, 'es']}:
                 falla(f'sitemap.xml: {loc} sin las alternativas de idioma correctas')

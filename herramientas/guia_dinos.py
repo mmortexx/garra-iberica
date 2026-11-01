@@ -84,6 +84,16 @@ T = {
         'comp_todas': 'Todas', 'comp_igual': 'Da igual', 'comp_n': '{n} o más',
         'comp_cuenta': '{n} de {total} especies', 'comp_ninguna': 'Ninguna especie cumple las dos cosas.',
         'plan_corto': '¿Llegas a la cacería?',
+        'esp_titulo': '{nombre} en The Isle Evrima: peso y crecimiento – GARRA IBÉRICA',
+        'esp_desc': '{nombre} en The Isle Evrima: hasta {peso}, adulto en {crece} (1×) y grupo máx. de {grupo}. {resto}',
+        'esp_resto': ('Controles, consejo y mutaciones recomendadas.', 'Controles y consejo.'),
+        'esp_ficha_ante': 'Su ficha', 'esp_ficha_h2': 'Cómo se juega',
+        'esp_frente': 'Frente a las demás',
+        'esp_puestos': [('peso', 'Más pesada'), ('crece', 'Crece antes'), ('grupo', 'Grupo más grande')],
+        'esp_puesto': 'n.º {n} de {total}', 'esp_lista': 'ver la lista',
+        'esp_empata': lambda e: ' (empata con otra)' if e == 1 else f' (empata con otras {e})',
+        'esp_otras_ante': 'Más especies', 'esp_otras': 'Otros {grupo}', 'esp_todas': 'Las {n} especies en la guía',
+        'esp_guia': 'Su ficha en la guía', 'esp_cta_h2': '¿Vas a jugar {nombre}?', 'esp_volver': 'Volver a la guía',
     },
     'en': {
         'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
@@ -147,6 +157,16 @@ T = {
         'comp_todas': 'All', 'comp_igual': 'Any', 'comp_n': '{n} or more',
         'comp_cuenta': '{n} of {total} species', 'comp_ninguna': 'No species matches both.',
         'plan_corto': 'Adult for the hunt?',
+        'esp_titulo': '{nombre} in The Isle Evrima: weight and growth – GARRA IBÉRICA',
+        'esp_desc': '{nombre} in The Isle Evrima: up to {peso}, adult in {crece} (1×), max group {grupo}. {resto}',
+        'esp_resto': ('Controls, a tip and recommended mutations.', 'Controls and a tip.'),
+        'esp_ficha_ante': 'Its card', 'esp_ficha_h2': 'How to play it',
+        'esp_frente': 'Against the rest',
+        'esp_puestos': [('peso', 'Heaviest'), ('crece', 'Fastest to grow'), ('grupo', 'Largest group')],
+        'esp_puesto': 'no. {n} of {total}', 'esp_lista': 'see the list',
+        'esp_empata': lambda e: ' (tied with 1 other)' if e == 1 else f' (tied with {e} others)',
+        'esp_otras_ante': 'More species', 'esp_otras': 'Other {grupo}', 'esp_todas': 'All {n} species in the guide',
+        'esp_guia': 'Its card in the guide', 'esp_cta_h2': 'Playing {nombre}?', 'esp_volver': 'Back to the guide',
     },
 }
 
@@ -197,38 +217,69 @@ def mutacion(texto):
     return f'<b>{escape(nombre)}</b>: {escape(efecto)}'
 
 
+def ruta_especie(nombre, lang):
+    """Dirección de la página de una especie dentro de la web: dinosaurios/tyrannosaurus/."""
+    return f'{RUTAS[lang]}{ancla(nombre)}/'
+
+
+def valores(f, lang):
+    en = f['en'] if lang == 'en' else {}
+    return {k: en.get(k, f[k]) for k in ('peso', 'crece', 'hab', 'consejo', 'mutfuente')}
+
+
+# Lo que dice la ficha va marcado con data-ficha / data-mut: comprobar.py lo compara con fichas_dinos.json.
+def datos_juego(f, lang, nivel):
+    t = T[lang]
+    v = valores(f, lang)
+    sub = ' class="dino-sub"' if nivel != 'h4' else ''
+    return [
+        '  <dl class="dino-datos">',
+        f'    <div><dt>{t["peso"]}</dt><dd data-ficha="peso">{escape(v["peso"])}</dd></div>',
+        f'    <div><dt>{t["crece"]}</dt><dd data-ficha="crece">{escape(v["crece"])}</dd></div>',
+        f'    <div><dt>{t["grupo"]}</dt><dd data-ficha="grupo">{escape(f["grupo"])}</dd></div>',
+        '  </dl>',
+        f'  <{nivel}{sub}>{t["hab"]}</{nivel}>',
+        '  <ul class="dino-lista" role="list">',
+        *[f'    <li data-ficha="hab">{escape(h)}</li>' for h in v['hab']],
+        '  </ul>',
+        f'  <p class="dino-consejo"><b>{t["consejo"]}:</b> <span data-ficha="consejo">{escape(v["consejo"])}</span></p>',
+    ]
+
+
+def mutaciones(f, d, lang, nivel, glosario=None):
+    """glosario: enlace a la explicación de cada mutación, o None si no hace falta."""
+    t = T[lang]
+    v = valores(f, lang)
+    muts = d['mut_en'] if lang == 'en' else d['mut']
+    sub = ['dino-sub'] if nivel != 'h4' else []
+
+    def titulo(clases, extra=''):
+        attr = f' class="{" ".join(clases)}"' if clases else ''
+        return f'  <{nivel}{attr}>{t["mut"]}{extra}</{nivel}>'
+    if not f['mut']:
+        return [titulo(sub), f'  <p class="dino-fuente">{t["sin"]}</p>']
+    enlace = f' <a class="dino-glosario" href="{glosario}">{t["mut_ver"]}</a>' if glosario else ''
+    fuente = escape(t['fuente']).format(fuente=f'<span data-ficha="mutfuente">{escape(v["mutfuente"])}</span>')
+    return [titulo(['dino-h4', *sub], enlace),
+            '  <ul class="dino-lista dino-mut" role="list">',
+            *[f'    <li data-mut="{escape(k)}">{mutacion(muts[k])}</li>' for k in f['mut']],
+            '  </ul>',
+            f'  <p class="dino-fuente">{fuente}</p>']
+
+
 def ficha(f, d, lang):
     t = T[lang]
-    en = f['en'] if lang == 'en' else {}
-    v = {k: en.get(k, f[k]) for k in ('peso', 'crece', 'hab', 'consejo', 'mutfuente')}
-    muts = d['mut_en'] if lang == 'en' else d['mut']
     a = ancla(f['nombre'])
     dieta = GRUPO[f['dieta']].rstrip('s')
     partes = [
         f'<article class="dino panel luz revelar" id="{a}" aria-labelledby="d-{a}">',
-        f'  <div class="dino-cabeza"><h3 id="d-{a}">{escape(f["nombre"])}</h3>'
+        f'  <div class="dino-cabeza"><h3 id="d-{a}"><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a></h3>'
         f'<span class="dieta dieta-{dieta}">{escape(t["dieta"][f["dieta"]])}</span></div>',
-        '  <dl class="dino-datos">',
-        f'    <div><dt>{t["peso"]}</dt><dd>{escape(v["peso"])}</dd></div>',
-        f'    <div><dt>{t["crece"]}</dt><dd>{escape(v["crece"])}</dd></div>',
-        f'    <div><dt>{t["grupo"]}</dt><dd>{escape(f["grupo"])}</dd></div>',
-        '  </dl>',
-        f'  <h4>{t["hab"]}</h4>',
-        '  <ul class="dino-lista" role="list">',
-        *[f'    <li>{escape(h)}</li>' for h in v['hab']],
-        '  </ul>',
-        f'  <p class="dino-consejo"><b>{t["consejo"]}:</b> {escape(v["consejo"])}</p>',
-    ]
-    if f['mut']:
+        *datos_juego(f, lang, 'h4'),
         # El glosario, al final de la página, explica cada mutación: enlace para no perder el hilo.
-        partes += [f'  <h4 class="dino-h4">{t["mut"]} <a class="dino-glosario" href="#{t["mut_id"]}">{t["mut_ver"]}</a></h4>',
-                   '  <ul class="dino-lista dino-mut" role="list">',
-                   *[f'    <li>{mutacion(muts[k])}</li>' for k in f['mut']],
-                   '  </ul>',
-                   f'  <p class="dino-fuente">{escape(t["fuente"].format(fuente=v["mutfuente"]))}</p>']
-    else:
-        partes += [f'  <h4>{t["mut"]}</h4>', f'  <p class="dino-fuente">{t["sin"]}</p>']
-    partes.append('</article>')
+        *mutaciones(f, d, lang, 'h4', f'#{t["mut_id"]}'),
+        '</article>',
+    ]
     return '\n'.join('        ' + p for p in partes)
 
 
@@ -261,25 +312,39 @@ def dato_fila(v):
     return f'<b>{escape(cifra).replace(" ", "&nbsp;")}</b>' + (f' ({escape(matiz)}' if parentesis else '')
 
 
+def resumen(f, lang):
+    """(kg, «hasta 12,3 t · adulto en 35 h 33 min · grupo máx. 2») de una ficha, para comparar especies."""
+    t = T[lang]
+    v = valores(f, lang)
+    kg, peso = peso_max(v['peso'])
+    if kg != peso_max(f['peso'])[0]:
+        sys.exit(f'{FICHAS.name}: {f["nombre"]} pesa distinto en español y en inglés')
+    if not f['grupo'].isdigit():
+        sys.exit(f'{FICHAS.name}: {f["nombre"]} con grupo máximo «{f["grupo"]}», que no es un número')
+    # Cada dato en negrita y sin partirse (la línea se corta entre datos o en su matiz entre paréntesis).
+    fila = t['comp_fila'].replace(' · ', '|').replace(' ', '&nbsp;').replace('|', ' · ')
+    return kg, fila.format(peso=dato_fila(peso), crece=dato_fila(v['crece']), grupo=dato_fila(f['grupo']))
+
+
+def puestos(d):
+    """{especie: {criterio: (puesto, cuántas más empatan)}}, con los mismos criterios que la comparativa."""
+    valor = {f['nombre']: {'peso': peso_max(f['peso'])[0], 'crece': -minutos_crecer(f['crece']), 'grupo': int(f['grupo'])}
+             for f in d['fichas']}
+    return {n: {k: (1 + sum(o[k] > x for o in valor.values()), sum(o[k] == x for o in valor.values()) - 1)
+                for k, x in v.items()} for n, v in valor.items()}
+
+
 def comparativa(d, lang):
     """Todas las especies en una lista; guia.js la ordena y la filtra. Sin JavaScript, en el orden de las fichas."""
     t = T[lang]
     filas, grupos = [], set()
     for f in d['fichas']:
-        en = f['en'] if lang == 'en' else {}
-        kg, peso = peso_max(en.get('peso', f['peso']))
-        if kg != peso_max(f['peso'])[0]:
-            sys.exit(f'{FICHAS.name}: {f["nombre"]} pesa distinto en español y en inglés')
-        if not f['grupo'].isdigit():
-            sys.exit(f'{FICHAS.name}: {f["nombre"]} con grupo máximo «{f["grupo"]}», que no es un número')
+        kg, texto = resumen(f, lang)
         grupos.add(int(f['grupo']))
         g = GRUPO[f['dieta']]
-        # Cada dato en negrita y sin partirse (la línea se corta entre datos o en su matiz entre paréntesis).
-        fila = t['comp_fila'].replace(' · ', '|').replace(' ', '&nbsp;').replace('|', ' · ')
-        texto = fila.format(peso=dato_fila(peso), crece=dato_fila(en.get('crece', f['crece'])), grupo=dato_fila(f['grupo']))
         filas.append(f'        <div data-nombre="{escape(f["nombre"])}" data-dieta="{g}" data-peso="{kg:g}" '
                      f'data-crece="{minutos_crecer(f["crece"])}" data-grupo="{f["grupo"]}">'
-                     f'<dt><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a> '
+                     f'<dt><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a> '
                      f'<span class="dieta dieta-{g.rstrip("s")}">{escape(t["dieta"][f["dieta"]])}</span></dt><dd>{texto}</dd></div>')
     dietas = [('todas', t['comp_todas'])] + [(g, t['grupos'][g]) for g in ('carnivoros', 'herbivoros', 'omnivoros')]
     somos = [('1', t['comp_igual'])] + [(str(n), t['comp_n'].format(n=n)) for n in sorted(grupos) if n > 1]
@@ -353,6 +418,145 @@ def planificador(d, lang):
     ]
 
 
+def lectura(t, revisado):
+    """«Cómo leer las fichas»: en la guía y en la página de cada especie."""
+    bloques = []
+    for titulo, del_discord, propias in t['bloques']:
+        bloques += [f'        <section class="bloque panel luz revelar" aria-labelledby="b-{ancla(titulo)}">',
+                    f'          <h3 id="b-{ancla(titulo)}">{titulo}</h3>',
+                    '          <ul role="list">',
+                    *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
+                    '          </ul>',
+                    '        </section>']
+    return [
+        f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
+        '    <div class="envoltura">',
+        '      <div class="revelar">',
+        f'        <p class="antetitulo">{t["leer_ante"]}</p>',
+        f'        <h2 id="t-leer">{t["leer_h2"]}</h2>',
+        '      </div>',
+        '      <div class="normas escalonado">',
+        *bloques,
+        '      </div>',
+        '    </div>',
+        '  </section>',
+        '',
+    ]
+
+
+def cabecera(t, lineas):
+    """Cabecera con la foto de fondo de la guía; lineas va entre las migas y el final."""
+    return [
+        f'  <section class="cabecera" id="{t["inicio"]}" aria-labelledby="titulo" data-ascuas>',
+        '    <img class="cabecera-fondo" src="@/img/galeria-noche-1200.webp" srcset="@/img/galeria-noche-800.webp 800w, '
+        '@/img/galeria-noche-1200.webp 1200w, @/img/galeria-noche-1600.webp 1600w" sizes="100vw" alt="" '
+        'width="1600" height="670" fetchpriority="high">',
+        '    <div class="envoltura cabecera-in">',
+        '      {{migas}}',
+        *lineas,
+        '    </div>',
+        '  </section>',
+        '',
+    ]
+
+
+def llamada(t, h2, volver, volver_a):
+    return [
+        '  <section class="llamada" aria-labelledby="t-llamada" data-ascuas>',
+        '    <div class="envoltura centro revelar">',
+        f'      <h2 id="t-llamada">{h2}</h2>',
+        f'      <p>{t["cta_p"]}</p>',
+        f'      <a class="boton boton-grande latido" href="{{{{discord}}}}" rel="noopener" target="_blank">{t["cta_boton"]}<span class="oculto">{t["nueva"]}</span></a>',
+        f'      <p class="volver"><a class="boton boton-sec boton-mini" href="{volver_a}">{volver}</a></p>',
+        '    </div>',
+        '  </section>',
+    ]
+
+
+def contenido_especie(nombre, lang, d=None):
+    """(datos, contenido de <main>, fecha ISO) de la página de una especie: su ficha entera, cómo queda
+    frente a las demás, las otras de su dieta y cómo leer la ficha. Todo sale de fichas_dinos.json."""
+    d = d or datos()
+    t = T[lang]
+    f = next((f for f in d['fichas'] if f['nombre'] == nombre), None)
+    if not f:
+        sys.exit(f'{FICHAS.name}: no hay ficha de {nombre}')
+    fechas, fecha_iso, parche = revision(d)
+    revisado = t['revisado'].format(fecha=fechas[lang], parche=parche)
+    n = len(d['fichas'])
+    a = ancla(nombre)
+    g = GRUPO[f['dieta']]
+    guia = '@/' + RUTAS[lang]
+    _, fila = resumen(f, lang)
+    v = valores(f, lang)
+    peso, crece = peso_max(v['peso'])[1], v['crece'].split(' (')[0]
+
+    frente = []
+    for criterio, etiqueta in t['esp_puestos']:
+        puesto, empates = puestos(d)[nombre][criterio]
+        texto = t['esp_puesto'].format(n=puesto, total=n) + (t['esp_empata'](empates) if empates else '')
+        frente.append(f'<div><dt>{etiqueta}</dt><dd data-puesto="{criterio}">{texto} · '
+                      f'<a href="{guia}?orden={criterio}#{t["comp_id"]}">{t["esp_lista"]}</a></dd></div>')
+    otras = [o for o in d['fichas'] if GRUPO[o['dieta']] == g and o is not f]
+    otras_h2 = t['esp_otras'].format(grupo=t['grupos'][g].lower())
+
+    lineas = [
+        *cabecera(t, [
+            f'      <p class="entra"><span class="dieta dieta-{g.rstrip("s")}" data-ficha="dieta">{escape(t["dieta"][f["dieta"]])}</span></p>',
+            f'      <h1 id="titulo" class="entra especie-nombre">{escape(nombre)}</h1>',
+            f'      <p class="entrada entra entra-2">{fila[:1].upper() + fila[1:]}.</p>',
+            f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
+            '      <p class="saltos entra entra-3">' + ''.join(f'<a href="{guia}#{i}">{texto}</a>' for i, texto in (
+                (a, t['esp_guia']), (t['comp_id'], t['comp_h2']), (t['plan_id'], t['plan_corto']))) + '</p>',
+        ]),
+        '  <section class="seccion" id="ficha" aria-labelledby="t-ficha">',
+        '    <div class="envoltura">',
+        '      <div class="revelar">',
+        f'        <p class="antetitulo">{t["esp_ficha_ante"]}</p>',
+        f'        <h2 id="t-ficha">{t["esp_ficha_h2"]}</h2>',
+        '      </div>',
+        '      <div class="dinos">',
+        *['        ' + p for p in [
+            '<article class="dino panel luz revelar">',
+            *datos_juego(f, lang, 'h3'),
+            '</article>',
+            '<article class="dino panel luz revelar">',
+            *mutaciones(f, d, lang, 'h3'),
+            f'  <h3 class="dino-sub">{t["esp_frente"]}</h3>',
+            '  <dl class="dino-datos">',
+            *['    ' + x for x in frente],
+            '  </dl>',
+            '</article>']],
+        '      </div>',
+        '    </div>',
+        '  </section>',
+        '',
+    ]
+    if otras:
+        lineas += [
+            '  <section class="seccion" id="otras" aria-labelledby="t-otras">',
+            '    <div class="envoltura">',
+            '      <div class="revelar">',
+            f'        <p class="antetitulo">{t["esp_otras_ante"]}</p>',
+            f'        <h2 id="t-otras">{otras_h2}</h2>',
+            '      </div>',
+            '      <div class="indice-grupo revelar">',
+            '        <ul role="list">',
+            *[f'          <li><a href="@/{ruta_especie(o["nombre"], lang)}">{escape(o["nombre"])}</a></li>' for o in otras],
+            '        </ul>',
+            '      </div>',
+            f'      <p class="saltos revelar"><a href="{guia}">{t["esp_todas"].format(n=n)}</a></p>',
+            '    </div>',
+            '  </section>',
+            '',
+        ]
+    lineas += [*lectura(t, revisado), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia)]
+    resto = t['esp_resto'][0 if f['mut'] else 1]
+    pagina = {'titulo': t['esp_titulo'].format(nombre=nombre), 'h1': nombre,
+              'descripcion': t['esp_desc'].format(nombre=nombre, peso=peso, crece=crece, grupo=f['grupo'], resto=resto)}
+    return pagina, '\n'.join(lineas), fecha_iso
+
+
 def contenido(lang, d=None):
     """(datos de la página, contenido de <main> con los marcadores de montar_web.py, fecha ISO)."""
     d = d or datos()
@@ -372,15 +576,6 @@ def contenido(lang, d=None):
                    *[f'              <li><a href="#{ancla(f["nombre"])}">{escape(f["nombre"])}</a></li>' for f in grupos[g]],
                    '            </ul>',
                    '          </div>']
-
-    bloques = []
-    for titulo, del_discord, propias in t['bloques']:
-        bloques += [f'        <section class="bloque panel luz revelar" aria-labelledby="b-{ancla(titulo)}">',
-                    f'          <h3 id="b-{ancla(titulo)}">{titulo}</h3>',
-                    '          <ul role="list">',
-                    *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
-                    '          </ul>',
-                    '        </section>']
 
     secciones = []
     for g, id_ in ids.items():
@@ -405,12 +600,7 @@ def contenido(lang, d=None):
         glosario.append(f'        <div><dt>{escape(nombre)}</dt><dd>{escape(efecto[:1].upper() + efecto[1:])}</dd></div>')
 
     lineas = [
-        f'  <section class="cabecera" id="{t["inicio"]}" aria-labelledby="titulo" data-ascuas>',
-        '    <img class="cabecera-fondo" src="@/img/galeria-noche-1200.webp" srcset="@/img/galeria-noche-800.webp 800w, '
-        '@/img/galeria-noche-1200.webp 1200w, @/img/galeria-noche-1600.webp 1600w" sizes="100vw" alt="" '
-        'width="1600" height="670" fetchpriority="high">',
-        '    <div class="envoltura cabecera-in">',
-        '      {{migas}}',
+        *cabecera(t, [
         f'      <h1 id="titulo" class="entra">{t["h1"]}</h1>',
         f'      <p class="entrada entra entra-2">{t["intro"].format(n=n)}</p>',
         f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
@@ -419,22 +609,9 @@ def contenido(lang, d=None):
         f'      <nav class="indice entra entra-4" aria-label="{t["indice"]}">',
         *indice,
         '      </nav>',
-        '    </div>',
-        '  </section>',
-        '',
+        ]),
         *comparativa(d, lang),
-        f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
-        '    <div class="envoltura">',
-        '      <div class="revelar">',
-        f'        <p class="antetitulo">{t["leer_ante"]}</p>',
-        f'        <h2 id="t-leer">{t["leer_h2"]}</h2>',
-        '      </div>',
-        '      <div class="normas escalonado">',
-        *bloques,
-        '      </div>',
-        '    </div>',
-        '  </section>',
-        '',
+        *lectura(t, revisado),
         *planificador(d, lang),
         *secciones,
         f'  <section class="seccion" id="{t["mut_id"]}" aria-labelledby="t-{t["mut_id"]}">',
@@ -450,14 +627,7 @@ def contenido(lang, d=None):
         '    </div>',
         '  </section>',
         '',
-        '  <section class="llamada" aria-labelledby="t-llamada" data-ascuas>',
-        '    <div class="envoltura centro revelar">',
-        f'      <h2 id="t-llamada">{t["cta_h2"]}</h2>',
-        f'      <p>{t["cta_p"]}</p>',
-        f'      <a class="boton boton-grande latido" href="{{{{discord}}}}" rel="noopener" target="_blank">{t["cta_boton"]}<span class="oculto">{t["nueva"]}</span></a>',
-        f'      <p class="volver"><a class="boton boton-sec boton-mini" href="{inicio_web}">{t["volver"]}</a></p>',
-        '    </div>',
-        '  </section>',
+        *llamada(t, t['cta_h2'], t['volver'], inicio_web),
     ]
     pagina = {'titulo': t['titulo'], 'descripcion': t['desc'].format(n=n), 'h1': t['h1']}
     return pagina, '\n'.join(lineas), fecha_iso

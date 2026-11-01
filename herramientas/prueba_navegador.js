@@ -4,7 +4,8 @@
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
 // rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
 // llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento,
-// comparativa de especies, batallas de la portada enlazadas a El clan, vídeo ligero en el móvil,
+// comparativa de especies, página de cada especie, batallas de la portada enlazadas a El clan,
+// vídeo ligero en el móvil,
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
 //   node herramientas/prueba_navegador.js
@@ -12,7 +13,8 @@
 const { chromium } = require('playwright');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
-// Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una.
+// Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
+// añaden al empezar, desde el mapa del sitio.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
   ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
@@ -20,8 +22,8 @@ const PAGINAS = [
   ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
   ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
-// Páginas que solo se enlazan desde el pie y desde las páginas de su tema, no desde el menú.
-const FUERA_MENU = ['normas', 'legal'];
+// Páginas que no están en el menú (se llega desde el pie o desde la página de su tema): no marcan ninguno.
+const FUERA_MENU = ['normas', 'legal', 'especie'];
 // Enlaces del menú (montar_web.MENU), Inicio incluido.
 const EN_MENU = 7;
 const CON_CUENTA = ['inicio', 'caceria'];
@@ -33,6 +35,14 @@ const MOVIDAS = [['#normas', 'normas/'], ['en/#rules', 'en/rules/'], ['#guia', '
 const ruta = r => ('/' + r).padEnd(15);
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+  // Páginas de cada especie: iguales por dentro, así que a la batería completa van solo, en cada idioma,
+  // la de nombre más largo y la de más corto. Todas pasan por la prueba de especies, más abajo.
+  const mapa = await (await fetch(BASE + 'sitemap.xml')).text();
+  const ESPECIES = [...mapa.matchAll(/<loc>[^<]*?\/((?:en\/dinosaurs|dinosaurios)\/[a-z0-9-]+\/)<\/loc>/g)].map(m => m[1]);
+  for (const guia of ['dinosaurios/', 'en/dinosaurs/']) {
+    const suyas = ESPECIES.filter(r => r.startsWith(guia)).sort((a, b) => a.length - b.length);
+    if (suyas.length) PAGINAS.push([suyas.at(-1), 'especie'], [suyas[0], 'especie']);
+  }
   const casos = [
     ['normal tras scroll', {}],
     ['reducir movimiento', { reducedMotion: 'reduce' }],
@@ -678,7 +688,7 @@ const ruta = r => ('/' + r).padEnd(15);
       await p.goto(BASE + r, { waitUntil: 'load' });
       const caja = p.locator('[data-comparar]');
       const filas = () => p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')]
-        .filter(f => f.offsetParent).map(f => ({ ...f.dataset, ancla: f.querySelector('a').hash })));
+        .filter(f => f.offsetParent).map(f => ({ ...f.dataset, enlace: f.querySelector('a').getAttribute('href'), destino: f.querySelector('a').href })));
       const todas = await filas();
       if (todas.length < 2) fallos.push(`${todas.length} especies en la lista`);
       if (!(await caja.count()) || (await caja.isVisible()) !== js) {
@@ -712,13 +722,58 @@ const ruta = r => ('/' + r).padEnd(15);
       if (abierta.length !== grandes.length || abierta.some(g => g < n)) fallos.push(`al abrir ?grupo=${n}: ${abierta.length} especies y deberían ser ${grandes.length}`);
       await otra.close();
       if (herbivoros.length) {
-        await p.locator(`[data-comparar-lista] a[href="${herbivoros[0].ancla}"]`).click();
-        if (await p.evaluate(() => location.hash) !== herbivoros[0].ancla) fallos.push('pulsar una especie no lleva a su ficha');
+        await Promise.all([p.waitForEvent('load'), p.locator(`[data-comparar-lista] a[href="${herbivoros[0].enlace}"]`).click()]);
+        if (p.url() !== herbivoros[0].destino || !/\/[a-z0-9-]+\/$/.test(p.url())) fallos.push(`pulsar una especie lleva a ${p.url()} y no a su página`);
       }
       await ctx.close();
     }
     if (fallos.length) malos++;
     console.log(ruta(r), 'comparativa de especies:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Página de cada especie, en el móvil más estrecho: las mismas que lista la comparativa de la guía
+  // (ni más ni menos que en el mapa del sitio), cada una carga sin errores ni nada más ancho que la
+  // pantalla, con su nombre, el grupo que dice la guía, el cambio de idioma a la misma especie y la
+  // vuelta a su ficha en la guía. «ver la lista» abre la comparativa ya ordenada.
+  for (const guia of ['dinosaurios/', 'en/dinosaurs/']) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(`${p.url()}: ${e.message}`));
+    p.on('console', m => { if (m.type() === 'error') errores.push(`${p.url()}: ${m.text()}`); });
+    p.on('response', x => { if (x.status() >= 400) errores.push(`${x.status()} ${x.url()}`); });
+    await p.goto(BASE + guia, { waitUntil: 'load' });
+    const lista = await p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')]
+      .map(f => ({ nombre: f.dataset.nombre, grupo: f.dataset.grupo, url: f.querySelector('a').href })));
+    const delMapa = ESPECIES.filter(r => r.startsWith(guia)).map(r => BASE + r).sort();
+    if (JSON.stringify(lista.map(e => e.url).sort()) !== JSON.stringify(delMapa)) fallos.push(`la guía enlaza ${lista.length} especies y el mapa del sitio tiene ${delMapa.length}`);
+    for (const e of lista) {
+      await p.goto(e.url, { waitUntil: 'load' });
+      const v = await p.evaluate(() => ({
+        h1: document.querySelector('h1').textContent.trim(),
+        grupo: document.querySelector('[data-ficha="grupo"]')?.textContent,
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        idioma: document.querySelector('.barra-acciones .idioma').href,
+        guia: document.querySelector('.saltos a').href,
+      }));
+      const otra = guia === 'dinosaurios/' ? e.url.replace('/dinosaurios/', '/en/dinosaurs/') : e.url.replace('/en/dinosaurs/', '/dinosaurios/');
+      const ancla = e.url.split('/').at(-2);
+      if (v.h1 !== e.nombre) fallos.push(`${ancla}: título «${v.h1}»`);
+      if (v.grupo !== e.grupo) fallos.push(`${ancla}: grupo ${v.grupo} y la guía dice ${e.grupo}`);
+      if (v.sobra > 0) fallos.push(`${ancla}: ${v.sobra} px más ancha que la pantalla`);
+      if (v.idioma !== otra) fallos.push(`${ancla}: el idioma lleva a ${v.idioma}`);
+      if (v.guia !== BASE + guia + '#' + ancla) fallos.push(`${ancla}: «su ficha en la guía» lleva a ${v.guia}`);
+    }
+    if (lista.length) {
+      await p.goto(lista[0].url, { waitUntil: 'load' });
+      await Promise.all([p.waitForEvent('load'), p.locator('[data-puesto="peso"] a').click()]);
+      const pesos = await p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')].filter(f => f.offsetParent).map(f => +f.dataset.peso));
+      if (!pesos.length || pesos.some((x, i) => i && x > pesos[i - 1])) fallos.push(`«ver la lista» no abre la comparativa por peso: ${pesos.join(' ')}`);
+    }
+    if (errores.length) fallos.push(`errores: ${JSON.stringify(errores.slice(0, 3))}`);
+    if (fallos.length) malos++;
+    console.log(ruta(guia), `páginas de especies (${lista.length}):`, fallos.length ? fallos.join('; ') : 'bien');
+    await ctx.close();
   }
   // Batallas: la portada enlaza a la lista de El clan, y la lista tiene alguna batalla.
   for (const [inicio, clan] of [['', 'clan/'], ['en/', 'en/clan/']]) {
