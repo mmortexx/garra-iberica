@@ -1008,13 +1008,13 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .comparar-lista dt { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; }
 .comparar-lista dt a { font: 1.2rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
 /* Toda la fila lleva a la página de la especie. */
-.comparar-lista dt a::after { content: ""; position: absolute; inset: 0; }
+.comparar-lista dt a::before { content: ""; position: absolute; inset: 0; }
 .comparar-lista .dieta { padding: .25rem .55rem; font-size: .8rem; }
 .comparar-lista dd { margin: 0; color: var(--hueso); font-weight: 600; }
 .comparar-lista small { display: block; font-size: .85rem; font-weight: 400; line-height: 1.3; color: var(--suave); }
 @media (hover: hover) { .comparar-lista > div:hover { background: rgba(255, 53, 31, .07); } .comparar-lista > div:hover dt a { color: var(--ascua-viva); } }
 .comparar-lista dt a:focus-visible { outline: 0; }
-.comparar-lista dt a:focus-visible::after { outline: 2px solid var(--ascua-viva); outline-offset: -2px; }
+.comparar-lista dt a:focus-visible::before { outline: 2px solid var(--ascua-viva); outline-offset: -2px; }
 .comparar-lista > .marcada { box-shadow: inset 2px 0 0 var(--ascua); background: rgba(255, 53, 31, .1); padding-left: .7rem; }
 .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { color: var(--ascua-viva); }
 @media (min-width: 760px) {
