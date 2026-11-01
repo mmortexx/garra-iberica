@@ -460,7 +460,10 @@
     const lienzo = document.createElement('canvas');
     lienzo.className = 'ascuas';
     lienzo.setAttribute('aria-hidden', 'true');
-    contenedor.prepend(lienzo);
+    const bruma = document.createElement('div');
+    bruma.className = 'bruma';
+    bruma.setAttribute('aria-hidden', 'true');
+    contenedor.prepend(bruma, lienzo);
     const ctx = lienzo.getContext('2d');
     let w = 0, h = 0, particulas = [], activo = false, ultimo = 0, id = 0, espera = 0;
     const cuantas = () => Math.round(Math.min(70, Math.max(22, w * h / 16000)));
@@ -512,10 +515,14 @@
     medir();
     new ResizeObserver(unaVezPorFotograma(medir)).observe(contenedor);
     let visible = false;
-    new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? arrancar() : parar(); }).observe(contenedor);
+    new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      bruma.classList.toggle('fuera', !visible);
+      visible ? arrancar() : parar();
+    }).observe(contenedor);
     document.addEventListener('visibilitychange', () => (document.hidden ? parar() : visible && arrancar()));
     alCambiarReposo.push(() => (enReposo ? parar() : visible && arrancar()));
-    requestAnimationFrame(() => lienzo.classList.add('encendido'));
+    requestAnimationFrame(() => { lienzo.classList.add('encendido'); bruma.classList.add('encendido'); });
   };
   const iniciarAscuas = () => document.querySelectorAll('[data-ascuas]').forEach(ascuas);
   const cuandoLibre = window.requestIdleCallback || (fn => setTimeout(fn, 200));

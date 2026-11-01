@@ -338,16 +338,22 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   content: ""; position: absolute; z-index: -2; pointer-events: none;
   left: 0; top: 0;
   width: clamp(220px, 34vw, 520px); aspect-ratio: 1; translate: calc(var(--garra-x) - 50%) calc(var(--garra-y) - 50%);
-  background: radial-gradient(circle, rgba(255, 53, 30, .38), rgba(255, 35, 10, .12) 40%, transparent 68%);
+  background: radial-gradient(circle, rgba(255, 53, 30, .55), rgba(255, 35, 10, .17) 40%, transparent 68%);
   will-change: opacity, scale;
-  animation: brasa 3.6s ease-in-out infinite;
+  animation: encender 1.5s var(--suave-salida) .25s backwards, brasa 3.6s ease-in-out 1.75s infinite;
+}
+/* Al abrir la página, los arañazos prenden de golpe y bajan hasta su latido de siempre. */
+@keyframes encender {
+  0% { opacity: 0; scale: .7; }
+  30% { opacity: 1; scale: 1.28; }
+  100% { opacity: .38; scale: 1; }
 }
 @keyframes brasa {
-  0%, 100% { opacity: .55; scale: 1; }
-  18% { opacity: .9; }
-  32% { opacity: .62; }
-  55% { opacity: 1; scale: 1.06; }
-  72% { opacity: .7; }
+  0%, 100% { opacity: .38; scale: 1; }
+  18% { opacity: .62; }
+  32% { opacity: .43; }
+  55% { opacity: .69; scale: 1.06; }
+  72% { opacity: .48; }
 }
 .ascuas { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 2s; }
 .ascuas.encendido { opacity: 1; }
@@ -464,7 +470,10 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 /* Arañazos bajo los títulos */
 h2::after {
   content: ""; display: block; width: 4.6rem; height: 11px; margin-top: .6rem;
-  background: linear-gradient(100deg, transparent 0 8%, var(--ascua) 8% 22%, transparent 22% 39%, var(--ascua) 39% 53%, transparent 53% 70%, var(--ascua) 70% 84%, transparent 84%);
+  background:
+    linear-gradient(var(--ascua), var(--ascua)) 9.3% 0 / 14% 100% no-repeat,
+    linear-gradient(var(--ascua), var(--ascua)) 45.35% 0 / 14% 100% no-repeat,
+    linear-gradient(var(--ascua), var(--ascua)) 81.4% 0 / 14% 100% no-repeat;
   transform: skewX(-25deg); transform-origin: left;
   filter: drop-shadow(0 0 6px rgba(255, 53, 31, .75));
 }
@@ -475,8 +484,23 @@ h2::after {
 .anim .revelar.visible h2 { clip-path: inset(-.3em -.3em -.6em -.3em); translate: 0 0; }
 .anim .revelar .antetitulo::before { transform: scaleX(0); transform-origin: right; transition: transform .45s var(--suave-salida) .08s; }
 .anim .revelar.visible .antetitulo::before { transform: scaleX(1); }
-.anim .revelar h2::after { transform: skewX(-25deg) scaleX(0); transition: transform .45s var(--suave-salida) .25s; }
-.anim .revelar.visible h2::after { transform: skewX(-25deg) scaleX(1); }
+/* Los tres arañazos se rasgan de arriba abajo, uno tras otro. Al llegar a una sección por su enlace
+   (los botones de arriba de cada página) se vuelven a rasgar: dice dónde has caído. */
+.anim .revelar h2::after { background-size: 14% 0, 14% 0, 14% 0; }
+.anim .revelar.visible h2::after { background-size: 14% 100%, 14% 100%, 14% 100%; animation: rasgar .42s ease-out .3s both; }
+.anim .seccion:target .revelar.visible h2::after { animation: rasgar-de-nuevo .42s ease-out .55s both; }
+@keyframes rasgar {
+  0% { background-size: 14% 0, 14% 0, 14% 0; }
+  33% { background-size: 14% 100%, 14% 0, 14% 0; }
+  66% { background-size: 14% 100%, 14% 100%, 14% 0; }
+  100% { background-size: 14% 100%, 14% 100%, 14% 100%; }
+}
+@keyframes rasgar-de-nuevo {
+  0% { background-size: 14% 0, 14% 0, 14% 0; }
+  33% { background-size: 14% 100%, 14% 0, 14% 0; }
+  66% { background-size: 14% 100%, 14% 100%, 14% 0; }
+  100% { background-size: 14% 100%, 14% 100%, 14% 100%; }
+}
 
 /* Aparición al hacer scroll */
 .anim .revelar { opacity: 0; translate: 0 28px; transition: opacity .45s var(--suave-salida), translate .45s var(--suave-salida); transition-delay: calc(var(--i, 0) * 45ms); }
@@ -1131,6 +1155,37 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   100% { transform: translate3d(7%, 5%, 0) rotate(4deg) scale(1.12); }
 }
 
+/* Bruma rasante en portada, cabeceras y llamadas (la crea efectos.js junto a las ascuas): bancos de
+   niebla que cruzan despacio por la parte de abajo. Cada capa mide dos veces el ancho y se repite, así
+   que al moverse media vuelta queda igual y el bucle no se nota. Solo transform y a saltos, como la niebla
+   de fondo; se para con la pestaña oculta, en reposo y fuera de pantalla. En el móvil, una capa. */
+.bruma { position: absolute; left: 0; right: 0; bottom: 0; z-index: -1; height: 62%; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 3s; }
+.bruma.encendido { opacity: 1; }
+.bruma::before, .bruma::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 200%; will-change: transform;
+  background:
+    radial-gradient(ellipse 15% 42% at 18% 74%, rgba(205, 198, 194, .15), transparent 70%),
+    radial-gradient(ellipse 11% 30% at 42% 58%, rgba(170, 164, 164, .09), transparent 70%),
+    radial-gradient(ellipse 14% 36% at 66% 84%, rgba(205, 198, 194, .12), transparent 70%),
+    radial-gradient(ellipse 10% 26% at 88% 66%, rgba(255, 70, 50, .09), transparent 70%);
+  background-size: 50% 100%;
+  animation: bruma 96s steps(768) infinite;
+}
+.bruma::after {
+  background:
+    radial-gradient(ellipse 13% 34% at 30% 88%, rgba(255, 70, 50, .1), transparent 70%),
+    radial-gradient(ellipse 16% 40% at 62% 70%, rgba(190, 184, 182, .11), transparent 70%),
+    radial-gradient(ellipse 10% 28% at 86% 92%, rgba(205, 198, 194, .09), transparent 70%);
+  background-size: 50% 100%;
+  animation-duration: 142s; animation-timing-function: steps(1136); animation-direction: reverse;
+}
+@keyframes bruma { to { transform: translate3d(-50%, 0, 0); } }
+.bruma.fuera::before, .bruma.fuera::after, .reposo .bruma::before, .reposo .bruma::after { animation-play-state: paused; }
+@media (hover: none), (max-width: 700px) { .bruma::after { content: none; } }
+/* En el móvil la foto de la portada va arriba y el texto debajo: la bruma, a los pies de la foto. */
+@media (max-width: 700px) { .portada .bruma { top: 8rem; bottom: auto; height: 15rem; } }
+@media (max-width: 700px) and (max-height: 720px) { .portada .bruma { top: 3rem; height: 12rem; } }
+
 /* Reposo (lo pone efectos.js tras 20 s sin actividad, con otra ventana delante o con el menú o el
    visor tapando la página): el ambiente se queda quieto donde esté. Así el cristal del menú no
    tiene que volver a desenfocar lo de detrás en cada fotograma. */
@@ -1282,7 +1337,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   /* La entrada de la portada y de las cabeceras espera a que acaben los zarpazos: si no, al llegar
      desde otra página de la web se jugaba entera detrás de ellos y solo se veía al entrar de fuera.
      «.cabecera h1.entra», para ganar a «.anim .cabecera h1.entra», que la volvería a poner en marcha. */
-  :root:active-view-transition :is(.h1-marca, .h1-sub, .entra, .cabecera h1.entra) { animation-play-state: paused; }
+  :root:active-view-transition :is(.h1-marca, .h1-sub, .entra, .cabecera h1.entra), :root:active-view-transition .portada::after { animation-play-state: paused; }
 }
 @keyframes pagina-sale { to { scale: .965; filter: brightness(.3); } }
 @keyframes zarpazo {
@@ -1297,6 +1352,10 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .cabecera-in { animation: salir-portada linear both; animation-timeline: view(); animation-range: exit 0% exit 90%; }
+    /* Las fotos de las baldosas de la portada se mueven un poco más despacio que su marco. */
+    .baldosa-fondo { scale: 1.12; animation: baldosa-lenta linear both; animation-timeline: view(); }
+    @keyframes baldosa-lenta { from { translate: 0 -5%; } to { translate: 0 5%; } }
+    @media (hover: hover) { .baldosa:hover .baldosa-fondo { scale: 1.18; } }
     .cabecera-fondo {
       animation: acercar 22s var(--suave-salida) both, fondo-lento linear both;
       animation-timeline: auto, view(); animation-range: normal, exit 0% exit 100%;
