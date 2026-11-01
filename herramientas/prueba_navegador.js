@@ -722,7 +722,7 @@ const ruta = r => ('/' + r).padEnd(15);
       if (abierta.length !== grandes.length || abierta.some(g => g < n)) fallos.push(`al abrir ?grupo=${n}: ${abierta.length} especies y deberían ser ${grandes.length}`);
       await otra.close();
       if (herbivoros.length) {
-        await Promise.all([p.waitForEvent('load'), p.locator(`[data-comparar-lista] a[href="${herbivoros[0].enlace}"]`).click()]);
+        await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator(`[data-comparar-lista] a[href="${herbivoros[0].enlace}"]`).click()]);
         if (p.url() !== herbivoros[0].destino || !/\/[a-z0-9-]+\/$/.test(p.url())) fallos.push(`pulsar una especie lleva a ${p.url()} y no a su página`);
       }
       await ctx.close();
@@ -766,7 +766,10 @@ const ruta = r => ('/' + r).padEnd(15);
     }
     if (lista.length) {
       await p.goto(lista[0].url, { waitUntil: 'load' });
-      await Promise.all([p.waitForEvent('load'), p.locator('[data-puesto="peso"] a').click()]);
+    }
+    if (lista.length && !(await p.locator('[data-puesto="peso"] a').count())) fallos.push('sin «ver la lista» del peso');
+    else if (lista.length) {
+      await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('[data-puesto="peso"] a').click()]);
       const pesos = await p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')].filter(f => f.offsetParent).map(f => +f.dataset.peso));
       if (!pesos.length || pesos.some((x, i) => i && x > pesos[i - 1])) fallos.push(`«ver la lista» no abre la comparativa por peso: ${pesos.join(' ')}`);
     }
