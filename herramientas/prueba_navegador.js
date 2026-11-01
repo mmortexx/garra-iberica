@@ -139,7 +139,69 @@ const efectos = async navegador => {
     if ((n > 0) !== esperadas) fallos.push(`/${r} comparativa ${esperadas ? 'sin' : 'con'} movimiento al ordenar (${n} filas, ${JSON.stringify(opts)})`);
     await ctx.close();
   }
-  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa):', fallos.length ? fallos.join('; ') : 'bien');
+  // Al hacer scroll: cada animación ligada al scroll depende de la página, no de una caja suya que no se
+  // mueve (un overflow: hidden de más la deja clavada y no da ningún error), y de verdad avanza al bajar
+  // y vuelve al subir. Lo que entra acaba entero, también al final de la página.
+  const ESPERADAS = { '': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'en/': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'caceria/': ['salir-portada', 'fondo-lento', 'aparecer', 'cartel', 'linea-seccion', 'rombo'], 'en/clan/': ['salir-portada', 'fondo-lento', 'aparecer', 'linea-seccion', 'rombo'], 'galeria/': ['salir-portada', 'fondo-lento', 'aparecer'] };
+  for (const [aparato, opts] of [['PC', {}], ['móvil', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
+    for (const [r, nombres] of Object.entries(ESPERADAS)) {
+      const { ctx, p } = await abrir(r, opts);
+      const v = await p.evaluate(async () => {
+        const unFotograma = () => new Promise(z => requestAnimationFrame(() => requestAnimationFrame(z)));
+        const irA = async y => { scrollTo({ top: y, behavior: 'instant' }); await unFotograma(); };
+        const deScroll = () => document.getAnimations().filter(a => a.timeline && a.timeline.constructor.name !== 'DocumentTimeline' && a.animationName !== 'progreso');
+        const avance = a => a.effect.getComputedTiming().progress;
+        const quien = a => `${a.animationName} en ${a.effect.target.className || a.effect.target.tagName}${a.effect.pseudoElement || ''}`;
+        const clavadas = new Set(), vistas = new Set(), quietas = [];
+        const repasar = () => { for (const a of deScroll()) { vistas.add(a.animationName); if (a.timeline.source !== document.documentElement) clavadas.add(quien(a)); } };
+        repasar();
+        // Cada animación, con su caja a dos alturas de la pantalla: tiene que dar valores distintos.
+        for (const nombre of ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'cartel', 'linea-seccion', 'rombo']) {
+          // Una que aún esté por debajo de la pantalla: la primera puede estar ya entera al cargar.
+          const suyas = deScroll().filter(x => x.animationName === nombre);
+          const a = suyas.find(x => x.effect.target.getBoundingClientRect().top > innerHeight * 1.2) || suyas[0];
+          if (!a) continue;
+          const caja = a.effect.target.closest('.seccion') && /linea|rombo/.test(nombre) ? a.effect.target : a.effect.target.closest('.portada, .cabecera') || a.effect.target;
+          const yCaja = caja.getBoundingClientRect().top + scrollY;
+          const alturas = /salir|fondo/.test(nombre) ? [yCaja + caja.offsetHeight * .3, yCaja + caja.offsetHeight * .9]
+            : /aparecer|linea|rombo/.test(nombre) ? [yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .18) * .25, yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .3) * .85]
+              : [yCaja - innerHeight * .7, yCaja - innerHeight * .1];
+          await irA(alturas[0]);
+          const uno = avance(a);
+          await irA(alturas[1]);
+          const dos = avance(a);
+          await irA(alturas[0]);
+          const vuelta = avance(a);
+          if (dos === uno || vuelta !== uno) quietas.push(`${quien(a)}: ${uno} → ${dos} → ${vuelta}`);
+        }
+        // Se recorre la página entera, para ver también lo que solo existe más abajo.
+        const alto = document.documentElement.scrollHeight;
+        for (let y = 0; y < alto; y += innerHeight * .8) { await irA(y); repasar(); }
+        await irA(alto);
+        await new Promise(z => setTimeout(z, 1400));
+        const a_medias = [...document.querySelectorAll('.revelar')].filter(el => parseFloat(getComputedStyle(el).opacity) < .99).map(el => el.className);
+        return { clavadas: [...clavadas], vistas: [...vistas], quietas, a_medias, sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+      });
+      // El cartel de la Cacería en el móvil va quieto a propósito: el zoom cortaría las letras.
+      const faltan = nombres.filter(n => !v.vistas.includes(n) && !(n === 'cartel' && aparato === 'móvil'));
+      const lugar = `${aparato} /${r}`;
+      if (v.clavadas.length) fallos.push(`${lugar} sin seguir a la página: ${v.clavadas.slice(0, 6).join(', ')}`);
+      if (faltan.length) fallos.push(`${lugar} no están atadas al scroll: ${faltan.join(', ')}`);
+      if (v.quietas.length) fallos.push(`${lugar} no avanzan o no vuelven: ${v.quietas.join('; ')}`);
+      if (v.a_medias.length) fallos.push(`${lugar} se quedan a medias al final: ${v.a_medias.slice(0, 4).join(', ')}`);
+      if (v.sobra > 0) fallos.push(`${lugar} ${v.sobra} px más ancha que la pantalla`);
+      await ctx.close();
+    }
+  }
+  // Sin movimiento nada se mueve al bajar; sin JavaScript, los bloques se ven desde el principio.
+  for (const [nombre, opts, sel] of [['sin movimiento', { reducedMotion: 'reduce' }, '.revelar, .portada-in'], ['sin JavaScript', { javaScriptEnabled: false }, '.revelar']]) {
+    const { ctx, p } = await abrir('', opts);
+    await p.waitForTimeout(800);
+    const m = await p.evaluate(s => [...document.querySelectorAll(s)].filter(el => getComputedStyle(el).opacity !== '1' || getComputedStyle(el).animationName !== 'none').length, sel);
+    if (m) fallos.push(`${nombre}: ${m} bloques animados u ocultos`);
+    await ctx.close();
+  }
+  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
 (async () => {
@@ -506,7 +568,8 @@ const efectos = async navegador => {
     });
     const fallos = [];
     const esperar = (cuando, e, quieto) => {
-      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso !== (quieto ? 'paused' : 'running') || e.niebla !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
+      // El pulso de la garra son varias animaciones: todas a la vez.
+      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso.split(', ').some(s => s !== (quieto ? 'paused' : 'running')) || e.niebla !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
     };
     esperar('al cargar', await estado(), false);
     await p.evaluate(() => dispatchEvent(new Event('blur')));
@@ -747,6 +810,8 @@ const efectos = async navegador => {
       return { abierto: v.open, real: v.classList.contains('real'), cuenta: v.querySelector('.visor-cuenta').textContent, ancho: i.getBoundingClientRect().width,
         escala: visualViewport.scale, boton: v.querySelector('.visor-cerrar').getBoundingClientRect().width, resto: i.style.transform, fuente: i.currentSrc, marcoX: v.querySelector('.visor-marco').scrollLeft };
     });
+    // La foto entra creciendo un poco: se mide ya en su tamaño.
+    await p.evaluate(() => Promise.all(document.querySelector('.visor-img').getAnimations().map(a => a.finished)));
     const e0 = await leer();
     await trazo([[300, 420]], [[90, 420]]);
     await hastaQue(p, fotoLista);

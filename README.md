@@ -12,9 +12,9 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
 | `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
-| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
+| `docs/efectos.js` | Ascuas y bruma rasante (portada, cabeceras y llamadas), paralaje, apariciones al hacer scroll, fotos que se funden al llegar, botón grande de reproducir en los vídeos de las batallas, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). |
-| `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos). Sin él, la lista se ve entera en el orden de las fichas. También abre la ficha plegada que nombre la dirección (`dinosaurios/#triceratops`, los enlaces viejos). |
+| `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos); las filas viajan a su sitio nuevo. Sin él, la lista se ve entera en el orden de las fichas. También abre la ficha plegada que nombre la dirección (`dinosaurios/#triceratops`, los enlaces viejos). |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
@@ -137,7 +137,13 @@ python herramientas/prueba_galeria.py
   medido sobre la foto real, nada que se pulse por debajo de 24 px y los iconos del menú y de las
   preguntas visibles en el alto contraste de Windows. Procesador en el móvil: las ascuas no piden más
   de 30 fotogramas por segundo y ninguna animación en marcha repinta sombras, fondos o filtros (en
-  táctil el latido del botón es un anillo que solo se escala y se apaga).
+  táctil el latido del botón es un anillo que solo se escala y se apaga). Efectos que, rotos, no dan ningún
+  error (`SOLO=efectos` prueba solo estos): el menú del móvil sigue maquetado mientras se funde al cerrar, la
+  bruma se para fuera de pantalla y en reposo y no existe con «reducir movimiento», los arañazos de los títulos
+  acaban enteros, ninguna foto se queda invisible aunque falle al cargar, el botón de los vídeos va en su idioma
+  y se aparta al reproducir, las filas de la comparativa viajan, salvo con «reducir movimiento», y todo lo
+  ligado al scroll depende de la página y avanza al bajar y vuelve al subir: un `overflow: hidden` en la caja
+  de fuera lo dejaría clavado sin ningún aviso (usad `overflow: clip`).
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
