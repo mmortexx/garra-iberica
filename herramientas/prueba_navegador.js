@@ -494,6 +494,145 @@ const ruta = r => ('/' + r).padEnd(15);
     console.log(ruta(''), 'menú al volver atrás:', !r.memoria ? 'el navegador no recuperó la página de memoria: no se pudo probar' : r.abierto || r.inerte ? `sigue abierto o inerte ${JSON.stringify(r)}` : 'cerrado');
     await conMemoria.close();
   }
+  const hastaQue = (p, cond, arg) => p.waitForFunction(cond, arg, { timeout: 8000 }).then(() => true, () => false);
+  const fotoLista = () => { const v = document.querySelector('.visor'); const i = v && v.querySelector('.visor-img'); return !!i && v.open && i.complete && i.naturalWidth > 0 && !v.classList.contains('cargando'); };
+  // Cada foto tiene su dirección: abrirla entra directo a esa foto, con su texto a la vista debajo; al
+  // cambiar de foto cambia la dirección y es la que se copia; «Atrás» cierra el visor sin salir de la
+  // galería, y cerrar deja la dirección limpia. Sin JavaScript, la dirección lleva a la foto.
+  async function pruebaVisorEnlaces(r) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }).catch(() => {});
+    const p = await ctx.newPage();
+    await p.addInitScript(() => { delete Navigator.prototype.share; });
+    await p.goto(`${BASE}${r}#foto-colina`, { waitUntil: 'load' });
+    const leer = () => p.evaluate(() => {
+      const v = document.querySelector('.visor'), z = v.querySelector('.visor-img').getBoundingClientRect(), i = v.querySelector('.visor-img');
+      const pie = v.querySelector('.visor-pie'), ant = v.querySelector('.visor-ant').getBoundingClientRect();
+      if (!pie) return { abierto: v.open, cuenta: v.querySelector('.visor-cuenta').textContent, hash: location.hash, sinPie: true };
+      const caja = pie.getBoundingClientRect();
+      const alto = z.width * i.naturalHeight / i.naturalWidth, fondoFoto = z.top + (z.height + Math.min(alto, z.height)) / 2;
+      return { abierto: v.open, cuenta: v.querySelector('.visor-cuenta').textContent, pie: pie.textContent, hash: location.hash,
+        separacion: caja.top - fondoFoto, pisaBotones: caja.bottom > ant.top && ant.top > fondoFoto, dentro: caja.top >= 0 && caja.bottom <= innerHeight };
+    });
+    if (!(await hastaQue(p, fotoLista))) fallos.push('el enlace a una foto no abre el visor');
+    let e = await leer();
+    const orden = await p.evaluate(() => { const f = [...document.querySelectorAll('.foto')]; return f.findIndex(x => x.id === 'foto-colina'); });
+    const alt = await p.evaluate(() => document.querySelector('#foto-colina img')?.alt);
+    if (!e.abierto || !e.cuenta.startsWith(`${orden + 1} /`)) fallos.push(`enlace directo: ${JSON.stringify(e)}, y es la ${orden + 1}`);
+    if (e.pie !== alt) fallos.push(`pie «${e.pie}» y la foto dice «${alt}»`);
+    if (e.separacion < 0 || e.separacion > 40 || e.pisaBotones || !e.dentro) fallos.push(`pie mal colocado: ${JSON.stringify(e)}`);
+    if (fallos.length) {
+      malos++;
+      console.log(ruta(r), 'enlace a cada foto, pie y «Atrás» en el visor:', fallos.join('; '));
+      await ctx.close();
+      return;
+    }
+    await p.tap('.visor-sig');
+    await hastaQue(p, fotoLista);
+    e = await leer();
+    if (e.hash === '#foto-colina' || !e.hash.startsWith('#foto-')) fallos.push(`al cambiar de foto la dirección es «${e.hash}»`);
+    await p.tap('.visor-pasar');
+    const copiado = await hastaQue(p, () => document.querySelector('.visor-aviso').textContent !== '');
+    const enlace = await p.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+    if (!copiado || !enlace.endsWith(e.hash)) fallos.push(`compartir copia «${enlace}» y la foto es ${e.hash}`);
+    // Entró por enlace directo: cerrar deja la dirección limpia y se queda en la galería.
+    await p.tap('.visor-cerrar');
+    await p.waitForTimeout(300);
+    e = await leer();
+    if (e.abierto || e.hash) fallos.push(`al cerrar: ${JSON.stringify(e)}`);
+    // Entró pulsando: «Atrás» cierra el visor y no sale de la galería.
+    await p.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(400);
+    await p.tap('.foto-ampliar >> nth=1');
+    await hastaQue(p, fotoLista);
+    e = await leer();
+    if (!e.hash.startsWith('#foto-')) fallos.push(`al abrir, la dirección es «${e.hash}»`);
+    await p.goBack();
+    await p.waitForTimeout(400);
+    e = await leer();
+    if (e.abierto || e.hash || !p.url().startsWith(BASE + r)) fallos.push(`«Atrás» con el visor abierto: ${JSON.stringify(e)} en ${p.url()}`);
+    await ctx.close();
+    const sinJs = await navegador.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+    const q = await sinJs.newPage();
+    await q.goto(`${BASE}${r}#foto-colina`, { waitUntil: 'load' });
+    await q.waitForTimeout(1500);
+    const caja = await q.locator('#foto-colina').boundingBox();
+    if (!caja || caja.y < 0 || caja.y > 844) fallos.push(`sin JavaScript, el enlace no lleva a la foto: ${JSON.stringify(caja)}`);
+    await sinJs.close();
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'enlace a cada foto, pie y «Atrás» en el visor:', fallos.length ? fallos.join('; ') : 'bien');
+  }
+  // Gestos del móvil: con el dedo la foto cambia de lado y se cierra hacia abajo; con dos dedos se amplía
+  // la foto y no la página (los botones siguen igual), pide una versión más grande y se puede reducir.
+  async function pruebaVisorGestos(r) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('.galeria').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForTimeout(500);
+    await p.tap('.foto-ampliar >> nth=0');
+    await hastaQue(p, fotoLista);
+    const cdp = await ctx.newCDPSession(p);
+    const toque = (type, puntos) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: puntos.map(([x, y], id) => ({ x, y, id })) });
+    const trazo = async (desde, hasta, pasos = 8) => {
+      await toque('touchStart', desde);
+      for (let i = 1; i <= pasos; i++) {
+        await toque('touchMove', desde.map(([x, y], d) => [x + (hasta[d][0] - x) * i / pasos, y + (hasta[d][1] - y) * i / pasos]));
+        await p.waitForTimeout(16);
+      }
+      await toque('touchEnd', []);
+      await p.waitForTimeout(350);
+    };
+    const leer = () => p.evaluate(() => {
+      const v = document.querySelector('.visor'), i = v.querySelector('.visor-img');
+      return { abierto: v.open, real: v.classList.contains('real'), cuenta: v.querySelector('.visor-cuenta').textContent, ancho: i.getBoundingClientRect().width,
+        escala: visualViewport.scale, boton: v.querySelector('.visor-cerrar').getBoundingClientRect().width, resto: i.style.transform, fuente: i.currentSrc, marcoX: v.querySelector('.visor-marco').scrollLeft };
+    });
+    const e0 = await leer();
+    await trazo([[300, 420]], [[90, 420]]);
+    await hastaQue(p, fotoLista);
+    const e1 = await leer();
+    if (!e1.cuenta.startsWith('2 /')) fallos.push(`deslizar a un lado no cambia de foto: ${e1.cuenta}`);
+    await trazo([[140, 420], [250, 420]], [[40, 420], [350, 420]]);
+    await p.waitForTimeout(300);
+    const e2 = await leer();
+    if (!e2.real || e2.ancho < e0.ancho * 2 || e2.resto) fallos.push(`pellizcar no amplía la foto: ${JSON.stringify(e2)}`);
+    if (e2.escala !== 1 || e2.boton !== e0.boton) fallos.push(`pellizcar amplía la página entera: ${JSON.stringify(e2)}`);
+    if (!e2.fuente.includes('-3080.') && !e2.fuente.includes('-2400.')) fallos.push(`ampliada con pellizco y sin la foto grande: ${e2.fuente}`);
+    await trazo([[40, 420], [350, 420]], [[185, 420], [205, 420]]);
+    const e3 = await leer();
+    if (e3.real || e3.ancho !== e0.ancho) fallos.push(`pellizcar hacia dentro no vuelve a ajustar: ${JSON.stringify(e3)}`);
+    await trazo([[200, 300]], [[200, 560]]);
+    const e4 = await leer();
+    if (e4.abierto) fallos.push('deslizar hacia abajo no cierra');
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'gestos del visor (deslizar y pellizcar):', fallos.length ? fallos.join('; ') : 'bien');
+    await ctx.close();
+  }
+  // Las fotos a lo ancho son fotos enteras: en la cuadrícula no se les recorta más de un 1,5 % por los
+  // lados ni, salvo la de los cuernos (que se ancla arriba para no cortárselos), por arriba y por abajo.
+  async function pruebaRecortes(r) {
+    const fallos = [];
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    for (const w of [390, 700, 1366, 1920]) {
+      await p.setViewportSize({ width: w, height: 850 });
+      await p.waitForTimeout(100);
+      const pierden = await p.evaluate(() => [...document.querySelectorAll('.foto-ancha img, .foto-panoramica img, .foto-grande img')].map(i => {
+        const c = i.getBoundingClientRect(), caja = c.width / c.height, foto = +i.getAttribute('width') / +i.getAttribute('height');
+        return { foto: i.closest('.foto').id, pierde: 100 * (1 - Math.min(caja / foto, foto / caja)), arriba: parseFloat(getComputedStyle(i).objectPosition.split(' ')[1]) };
+      }));
+      for (const f of pierden) {
+        if (f.foto === 'foto-cuernos' ? f.arriba !== 0 : f.pierde > 1.5) fallos.push(`${w}px: ${f.foto} pierde ${f.pierde.toFixed(1)} %`);
+      }
+    }
+    if (fallos.length) malos++;
+    console.log(ruta(r), 'fotos a lo ancho sin recortar:', fallos.length ? fallos.join('; ') : 'bien');
+    await ctx.close();
+  }
   // Visor de la galería, con ratón y con el dedo: abre, cambia de foto, amplía y vuelve, cierra
   // devolviendo el foco a la foto. Las grandes no se descargan hasta abrir el visor.
   for (const [r] of PAGINAS.filter(([, tipo]) => CON_GALERIA.includes(tipo))) {
@@ -563,6 +702,9 @@ const ruta = r => ('/' + r).padEnd(15);
       console.log(ruta(r), `visor de la galería (${tipo}):`, fallos.length ? fallos.join('; ') : 'bien');
       await ctx.close();
     }
+    await pruebaVisorEnlaces(r);
+    await pruebaVisorGestos(r);
+    await pruebaRecortes(r);
   }
   // Con conexión lenta las fuentes llegan después del primer pintado: el texto no debe empujar
   // la página al cambiar de la fuente de reserva a la buena.

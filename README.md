@@ -12,7 +12,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
 | `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
-| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería, el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
+| `docs/efectos.js` | Ascuas, paralaje, apariciones al hacer scroll, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). |
 | `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos). Sin él, la lista se ve entera en el orden de las fichas. |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
@@ -124,7 +124,7 @@ node herramientas/prueba_caceria.js
   o, por debajo, tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha
   que la pantalla y la marca de la cabecera en la misma vertical que los títulos de las secciones.
   En el móvil abre el menú, lo cierra con Escape y con la X y recorre todas las páginas desde él;
-  prueba los enlaces viejos de la portada, usa el visor de la galería con ratón y con el dedo,
+  prueba los enlaces viejos de la portada, usa el visor de la galería con ratón y con el dedo (enlace directo a una foto, pie, «Atrás», deslizar y pellizcar), que las fotos a lo ancho no se recorten,
   comprueba que la escalera de rangos sube en títulos y líneas, que el ambiente se para en reposo
   (y con el menú o el visor encima), que el botón de volver arriba sale al subir, lleva arriba y
   no tapa el pie y
@@ -191,7 +191,7 @@ resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp
 qué recorte va en cada foto está al principio del script. Las de noche que salen casi negras se aclaran
 en el mismo script (`ACLARAR`). Si una captura lleva chat con nombres de otros jugadores, interfaz o
 avisos, su ampliada es el mismo recorte de la galería (`AMPLIADA_PROPIA`), nunca la captura entera;
-`comprobar.py` falla si alguna foto o ampliada no mide lo que da su recorte. Las ampliadas solo se descargan al abrir
+`comprobar.py` falla si alguna foto o ampliada no mide lo que da su recorte, si su texto no es el de `galeria/fotos.json` del proyecto del Discord (variable `GARRA_FOTOS`) o si cambia su enlace: cada foto se abre directa con `galeria/#foto-<nombre>` y esos enlaces circulan. Las ampliadas solo se descargan al abrir
 una foto en el visor; `comprobar.py` no deja que la página las cargue por su cuenta.
 
 Necesita Python con Pillow y fontTools.

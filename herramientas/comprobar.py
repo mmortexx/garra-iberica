@@ -30,6 +30,7 @@ from pathlib import Path
 PAGINAS = montar_web.FICHEROS
 FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
+FOTOS_ORIGINAL = Path(os.environ.get('GARRA_FOTOS') or FICHAS_ORIGINAL.parent.parent / 'galeria' / 'fotos.json')
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 GUIA_WIKI = 'Cómo usar la wiki'
 GUIA_COMBATE = 'Guía de combate'
@@ -713,7 +714,7 @@ def medidas_webp(fichero):
     return None
 
 
-def revisar_galeria(raiz, falla):
+def revisar_galeria(raiz, falla, avisa):
     """Cada foto de la galería, y su vista ampliada, mide lo que da su recorte en preparar_galeria.py:
     si alguien regenera una ampliada con la captura entera donde no toca (chat con nombres de otros
     clanes), cambian sus proporciones y esto falla."""
@@ -729,6 +730,29 @@ def revisar_galeria(raiz, falla):
                 esperado, real = (w, round(ch * w / cw)), medidas_webp(fichero)
                 if real != esperado:
                     falla(f'img/{fichero.name} mide {real} y su recorte da {esperado}: regenérala con preparar_galeria.py')
+    # Cada foto se puede enlazar (galeria/#foto-colina): dirección fija a partir del nombre del fichero, en
+    # los dos idiomas igual, porque esos enlaces se pasan por Discord. Y dice lo que dice galeria/fotos.json.
+    original = None
+    if not FOTOS_ORIGINAL.is_file():
+        avisa(f'sin {FOTOS_ORIGINAL}: no se comprueba que el texto de cada foto siga siendo el del Discord')
+    else:
+        original = {f['archivo']: f for f in json.loads(FOTOS_ORIGINAL.read_text(encoding='utf-8'))['fotos']}
+    anclas = {}
+    for lang, ruta in (('es', 'galeria/'), ('en', 'en/gallery/')):
+        fotos = re.findall(r'<li id="([^"]*)" class="foto[^"]*"><a class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, ruta + 'index.html'))
+        anclas[lang] = [i for i, _, _ in fotos]
+        if len(fotos) != len(preparar_galeria.FOTOS) or {n for _, n, _ in fotos} != set(preparar_galeria.FOTOS):
+            falla(f'{ruta}: enseña {len(fotos)} fotos con su enlace y preparar_galeria.py tiene {len(preparar_galeria.FOTOS)}')
+        for ancla, nombre, alt in fotos:
+            if ancla != 'foto-' + nombre.removeprefix('galeria-'):
+                falla(f'{ruta}: la foto {nombre} tiene el enlace #{ancla}: los enlaces de las fotos no se cambian')
+            f = original and original.get(preparar_galeria.FOTOS[nombre][0])
+            if original and not f:
+                falla(f'{ruta}: {nombre} no está en {FOTOS_ORIGINAL.name}')
+            elif f and f[lang] != unescape(alt):
+                falla(f'{ruta}: {nombre} dice «{unescape(alt)}» y {FOTOS_ORIGINAL.name}, «{f[lang]}»')
+    if anclas['es'] != anclas['en']:
+        falla('la galería no tiene las mismas fotos en el mismo orden en español y en inglés')
 
 
 def revisar_guia(falla, avisa):
@@ -804,7 +828,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_datos(raiz, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
-    revisar_galeria(raiz, falla)
+    revisar_galeria(raiz, falla, avisa)
     permitidos = revisar_alfas(raiz, falla)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):

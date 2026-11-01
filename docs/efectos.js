@@ -80,50 +80,59 @@
     addEventListener('resize', unaVezPorFotograma(situarGarra), { passive: true });
   }
 
-  // Compartir la web: el menú de compartir del sistema si lo hay; si no, copiar la dirección.
-  // Sin ninguna de las dos cosas, el botón no aparece.
+  // Compartir un enlace: el menú de compartir del sistema si lo hay; si no, copiar la dirección.
+  const pasarEnlace = async (direccion, estado, copiado, fallo) => {
+    estado.textContent = '';
+    if (navigator.share) {
+      try { await navigator.share({ title: document.title, url: direccion }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(direccion);
+      estado.textContent = copiado;
+    } catch {
+      estado.textContent = `${fallo} ${direccion}`;
+    }
+  };
+  const sePuedePasar = navigator.share || navigator.clipboard;
+  // Compartir la web. Sin ninguna de las dos maneras, el botón no aparece.
   const compartir = document.querySelector('[data-compartir]');
-  if (compartir && (navigator.share || navigator.clipboard)) {
+  if (compartir && sePuedePasar) {
     const estado = compartir.querySelector('[role="status"]');
     const canonica = document.querySelector('link[rel="canonical"]');
     const direccion = canonica ? canonica.href : location.href.split('#')[0];
     compartir.hidden = false;
-    compartir.querySelector('button').addEventListener('click', async () => {
-      estado.textContent = '';
-      if (navigator.share) {
-        try { await navigator.share({ title: document.title, url: direccion }); return; }
-        catch (e) { if (e.name === 'AbortError') return; }
-      }
-      try {
-        await navigator.clipboard.writeText(direccion);
-        estado.textContent = compartir.dataset.copiado;
-      } catch {
-        estado.textContent = `${compartir.dataset.fallo} ${direccion}`;
-      }
-    });
+    compartir.querySelector('button').addEventListener('click', () => pasarEnlace(direccion, estado, compartir.dataset.copiado, compartir.dataset.fallo));
   }
 
   // Visor de la galería. Sin él, cada foto es un enlace a su imagen grande.
-  // Ajustada, la foto cabe en pantalla; al pulsarla pasa a su resolución real, centrada en ese punto.
+  // Ajustada, la foto cabe en pantalla; al pulsarla pasa a su resolución real, centrada en ese punto,
+  // y con dos dedos se amplía lo que se quiera. Cada foto tiene su dirección (galeria/#foto-colina).
   const fotos = [...document.querySelectorAll('.foto-ampliar')];
   if (fotos.length && window.HTMLDialogElement) {
     const t = raiz.lang.startsWith('en')
-      ? { visor: 'Photo viewer', cerrar: 'Close', ant: 'Previous photo', sig: 'Next photo' }
-      : { visor: 'Visor de fotos', cerrar: 'Cerrar', ant: 'Foto anterior', sig: 'Foto siguiente' };
+      ? { visor: 'Photo viewer', cerrar: 'Close', ant: 'Previous photo', sig: 'Next photo', pasar: 'Share this photo', copiado: 'Link copied', fallo: 'Copy this link:' }
+      : { visor: 'Visor de fotos', cerrar: 'Cerrar', ant: 'Foto anterior', sig: 'Foto siguiente', pasar: 'Compartir esta foto', copiado: 'Enlace copiado', fallo: 'Copia este enlace:' };
     const visor = document.createElement('dialog');
     visor.className = 'visor';
     visor.setAttribute('aria-label', t.visor);
     visor.innerHTML = '<div class="visor-marco"><img class="visor-img" alt=""></div><p class="visor-cuenta" aria-live="polite"></p>'
+      + '<p class="visor-pie" aria-live="polite"></p><p class="visor-aviso" role="status"></p>'
       + `<button class="visor-boton visor-cerrar" type="button" aria-label="${t.cerrar}" autofocus></button>`
+      + (sePuedePasar ? `<button class="visor-boton visor-pasar" type="button" aria-label="${t.pasar}"></button>` : '')
       + `<button class="visor-boton visor-ant" type="button" aria-label="${t.ant}"></button>`
       + `<button class="visor-boton visor-sig" type="button" aria-label="${t.sig}"></button>`;
     document.body.append(visor);
     const marco = visor.querySelector('.visor-marco');
     const img = visor.querySelector('.visor-img');
     const cuenta = visor.querySelector('.visor-cuenta');
+    const pie = visor.querySelector('.visor-pie');
+    const aviso = visor.querySelector('.visor-aviso');
     const anchoMayor = a => Math.max(...a.dataset.srcset.split(',').map(p => parseInt(p.trim().split(/\s+/)[1], 10)));
     const ahorro = navigator.connection && navigator.connection.saveData;
-    let actual = 0;
+    const enlaceDe = i => `#${fotos[i].closest('.foto').id}`;
+    const fotoDeLaDireccion = () => fotos.findIndex((_, i) => enlaceDe(i) === location.hash);
+    let actual = 0, anchoAjustada = 0;
     const enReal = () => visor.classList.contains('real');
     // Rectángulo que ocupa la foto dentro de su caja (object-fit: contain).
     const zonaFoto = () => {
@@ -133,27 +142,38 @@
       const w = img.naturalWidth * esc, h = img.naturalHeight * esc;
       return { left: c.left + (c.width - w) / 2, top: c.top + (c.height - h) / 2, width: w, height: h };
     };
+    // El pie va justo debajo de la foto, sin salirse de la pantalla ni pisar los botones de abajo.
+    const colocarPie = () => {
+      const z = zonaFoto();
+      const abajo = visor.querySelector('.visor-ant').getBoundingClientRect();
+      const tope = (abajo.top > z.top + z.height ? abajo.top : innerHeight) - pie.offsetHeight - 8;
+      pie.style.top = `${Math.max(0, Math.min(z.top + z.height + 8, tope))}px`;
+    };
     const ajustar = () => {
       visor.classList.remove('real');
       img.style.removeProperty('width');
       img.sizes = '100vw';
+      if (img.naturalWidth) { anchoAjustada = zonaFoto().width; colocarPie(); }
+    };
+    // Ancho de la foto y qué punto de ella (de 0 a 1) queda en qué punto de la pantalla.
+    const ponerAncho = (ancho, fx, fy, x, y) => {
+      img.sizes = `${Math.ceil(ancho)}px`;
+      img.style.width = `${ancho}px`;
+      visor.classList.add('real');
+      marco.scrollLeft = fx * ancho - x;
+      marco.scrollTop = fy * ancho * img.naturalHeight / img.naturalWidth - y;
     };
     const ampliar = (x, y) => {
       const z = zonaFoto();
       const fx = Math.min(1, Math.max(0, (x - z.left) / z.width)), fy = Math.min(1, Math.max(0, (y - z.top) / z.height));
       const ancho = Math.round(Math.max(anchoMayor(fotos[actual]) / (devicePixelRatio || 1), z.width * 1.5));
-      img.sizes = `${ancho}px`;
-      img.style.width = `${ancho}px`;
-      visor.classList.add('real');
-      const alto = ancho * z.height / z.width;
-      marco.scrollLeft = fx * ancho - marco.clientWidth / 2;
-      marco.scrollTop = fy * alto - marco.clientHeight / 2;
+      ponerAncho(ancho, fx, fy, marco.clientWidth / 2, marco.clientHeight / 2);
     };
     const precargar = i => {
       if (ahorro) return;
       const p = new Image();
       p.sizes = '100vw';
-      p.srcset = fotos[i].dataset.srcset;
+      p.srcset = fotos[(i + fotos.length) % fotos.length].dataset.srcset;
     };
     const mostrar = i => {
       actual = (i + fotos.length) % fotos.length;
@@ -165,8 +185,11 @@
       img.removeAttribute('src');
       img.srcset = a.dataset.srcset;
       img.src = a.href;
-      img.alt = a.querySelector('img').alt;
+      // El texto de la foto está a la vista en el pie: el lector de pantalla lo lee de ahí.
+      pie.textContent = a.querySelector('img').alt;
+      aviso.textContent = '';
       cuenta.textContent = `${actual + 1} / ${fotos.length}`;
+      if (visor.open) history.replaceState(history.state, '', enlaceDe(actual));
       // Además del «load», por si el navegador no lo da (foto ya en caché, por ejemplo).
       const pedida = img.src;
       img.decode().then(() => { if (img.src === pedida) lista(); }, () => {});
@@ -174,7 +197,10 @@
     const lista = () => {
       if (!visor.classList.contains('cargando')) return;
       visor.classList.remove('cargando');
-      precargar((actual + 1) % fotos.length);
+      anchoAjustada = zonaFoto().width;
+      colocarPie();
+      precargar(actual + 1);
+      precargar(actual - 1);
     };
     img.addEventListener('load', lista);
     img.addEventListener('error', () => visor.classList.remove('cargando'));
@@ -183,21 +209,49 @@
       ev.preventDefault();
       mostrar(i);
       visor.showModal();
+      colocarPie();
+      // Una entrada en el historial: «Atrás» cierra la foto en vez de salir de la galería. Al volver,
+      // la página se queda en la última foto vista, no donde estaba al abrir.
+      history.scrollRestoration = 'manual';
+      history.pushState({ visor: true }, '', enlaceDe(i));
     }));
     visor.querySelector('.visor-cerrar').addEventListener('click', () => visor.close());
     visor.querySelector('.visor-ant').addEventListener('click', () => mostrar(actual - 1));
     visor.querySelector('.visor-sig').addEventListener('click', () => mostrar(actual + 1));
+    visor.querySelector('.visor-pasar')?.addEventListener('click', () => {
+      pasarEnlace(location.href, aviso, t.copiado, t.fallo);
+    });
     visor.addEventListener('keydown', ev => {
       if (ev.key === 'ArrowLeft' && !enReal()) mostrar(actual - 1);
       else if (ev.key === 'ArrowRight' && !enReal()) mostrar(actual + 1);
     });
     // Escape con la foto ampliada vuelve a ajustarla; si no, cierra.
     visor.addEventListener('cancel', ev => { if (enReal()) { ev.preventDefault(); ajustar(); } });
-    visor.addEventListener('close', () => { ajustar(); fotos[actual].focus(); });
-    addEventListener('resize', () => { if (visor.open && enReal()) ajustar(); });
+    visor.addEventListener('close', () => {
+      ajustar();
+      fotos[actual].focus();
+      if (fotoDeLaDireccion() < 0) return;
+      if (history.state && history.state.visor) history.back();
+      else history.replaceState(history.state, '', location.pathname + location.search);
+    });
+    addEventListener('resize', () => { if (visor.open) ajustar(); });
+    // La dirección manda: «Atrás» o «Adelante», o abrir la web con el enlace de una foto.
+    const seguirDireccion = () => {
+      const i = fotoDeLaDireccion();
+      if (i < 0) {
+        history.scrollRestoration = 'auto';
+        if (visor.open) visor.close();
+      } else if (!visor.open) {
+        mostrar(i);
+        visor.showModal();
+        colocarPie();
+      } else if (i !== actual) mostrar(i);
+    };
+    addEventListener('popstate', seguirDireccion);
+    if (fotoDeLaDireccion() >= 0) seguirDireccion();
 
-    // Arrastrar con el ratón recorre la foto ampliada; deslizar con el dedo cambia de foto.
-    // Un arrastre no cuenta como pulsación.
+    // Arrastrar con el ratón recorre la foto ampliada. Con el dedo, la foto sigue al dedo: de lado
+    // cambia de foto y hacia abajo cierra el visor. Un arrastre no cuenta como pulsación.
     let inicio = null, arrastrado = false;
     marco.addEventListener('pointerdown', ev => {
       inicio = { x: ev.clientX, y: ev.clientY, sl: marco.scrollLeft, st: marco.scrollTop, tipo: ev.pointerType };
@@ -211,19 +265,60 @@
         marco.classList.add('arrastrando');
         marco.scrollLeft = inicio.sl - dx;
         marco.scrollTop = inicio.st - dy;
+      } else if (!enReal() && inicio.tipo !== 'mouse' && arrastrado) {
+        img.style.translate = Math.abs(dx) > Math.abs(dy) ? `${dx}px 0` : `0 ${Math.max(0, dy)}px`;
       }
     });
     const soltar = ev => {
+      img.style.removeProperty('translate');
       if (!inicio) return;
       const dx = ev.clientX - inicio.x, dy = ev.clientY - inicio.y;
-      if (ev.type === 'pointerup' && inicio.tipo !== 'mouse' && !enReal() && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        mostrar(actual + (dx < 0 ? 1 : -1));
+      if (ev.type === 'pointerup' && inicio.tipo !== 'mouse' && !enReal()) {
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) mostrar(actual + (dx < 0 ? 1 : -1));
+        else if (dy > 80 && dy > Math.abs(dx) * 1.5) visor.close();
       }
       marco.classList.remove('arrastrando');
       inicio = null;
     };
     marco.addEventListener('pointerup', soltar);
     marco.addEventListener('pointercancel', soltar);
+
+    // Pellizcar: mientras dura, la foto se escala sin volver a maquetar (va fluida); al soltar se queda
+    // a ese tamaño, ya con la versión de la foto que le corresponde, y se recorre como cualquier ampliada.
+    let pinza = null;
+    const dedos = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) });
+    marco.addEventListener('touchstart', ev => {
+      if (ev.touches.length !== 2 || !img.naturalWidth) return;
+      ev.preventDefault();
+      inicio = null;
+      arrastrado = true;
+      img.style.removeProperty('translate');
+      const m = dedos(ev.touches), c = img.getBoundingClientRect();
+      pinza = { ...m, z: zonaFoto(), k: 1, ax: m.x, ay: m.y };
+      img.style.transformOrigin = `${m.x - c.left}px ${m.y - c.top}px`;
+    }, { passive: false });
+    marco.addEventListener('touchmove', ev => {
+      if (!pinza || ev.touches.length !== 2) return;
+      ev.preventDefault();
+      const m = dedos(ev.touches);
+      const mayor = Math.max(anchoMayor(fotos[actual]) / (devicePixelRatio || 1) * 2, anchoAjustada * 4);
+      pinza.k = Math.min(mayor, Math.max(anchoAjustada * .8, pinza.z.width * m.d / pinza.d)) / pinza.z.width;
+      pinza.ax = m.x;
+      pinza.ay = m.y;
+      img.style.transform = `translate(${m.x - pinza.x}px, ${m.y - pinza.y}px) scale(${pinza.k})`;
+    }, { passive: false });
+    const soltarPinza = ev => {
+      if (!pinza || ev.touches.length >= 2) return;
+      const { z, x, y, k, ax, ay } = pinza;
+      pinza = null;
+      img.style.removeProperty('transform');
+      img.style.removeProperty('transform-origin');
+      const ancho = z.width * k;
+      if (ancho < anchoAjustada * 1.1) ajustar();
+      else ponerAncho(ancho, (x - z.left) / z.width, (y - z.top) / z.height, ax, ay);
+    };
+    marco.addEventListener('touchend', soltarPinza);
+    marco.addEventListener('touchcancel', soltarPinza);
     marco.addEventListener('click', ev => {
       if (arrastrado) { arrastrado = false; return; }
       if (enReal()) { ajustar(); return; }
