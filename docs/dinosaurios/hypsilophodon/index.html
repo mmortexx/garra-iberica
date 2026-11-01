@@ -16,8 +16,8 @@
 <link rel="preload" href="../../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../../img/galeria-noche-1200.webp" imagesrcset="../../img/galeria-noche-800.webp 800w, ../../img/galeria-noche-1200.webp 1200w, ../../img/galeria-noche-1600.webp 1600w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../../estilos.css?v=58a9f4614d">
-<script src="../../efectos.js?v=5ed9434985" defer></script>
+<link rel="stylesheet" href="../../estilos.css?v=5917601349">
+<script src="../../efectos.js?v=968122b809" defer></script>
 <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
 
@@ -185,9 +185,8 @@
       <nav class="migas" aria-label="Estás en"><a href="../../">Inicio</a><a href="../../dinosaurios/">Dinosaurios</a><span aria-current="page">Hypsilophodon</span></nav>
       <p class="entra"><span class="dieta dieta-herbivoro" data-ficha="dieta">Herbívoro</span></p>
       <h1 id="titulo" class="entra especie-nombre">Hypsilophodon</h1>
-      <p class="entrada entra entra-2">Hasta&nbsp;<b>23&nbsp;kg</b> · adulto&nbsp;en&nbsp;<b>1&nbsp;h&nbsp;50&nbsp;min</b> · grupo&nbsp;máx.&nbsp;<b>10</b>.</p>
-      <p class="guia-revisado entra entra-3">Revisado el 30/10/2026 · parche 0.21.772</p>
-      <p class="saltos entra entra-3"><a href="../../dinosaurios/#hypsilophodon">Su ficha en la guía</a><a href="../../dinosaurios/#comparar">Comparar especies</a><a href="../../dinosaurios/#planificador">¿Llegas a la cacería?</a></p>
+      <p class="guia-revisado entra entra-2">Revisado el 30/10/2026 · parche 0.21.772</p>
+      <p class="saltos entra entra-3"><a href="../../dinosaurios/?especie=hypsilophodon#planificador">¿Llegas a la cacería?</a><a href="../../dinosaurios/?marca=hypsilophodon#comparar">Comparar especies</a></p>
     </div>
   </section>
 
@@ -200,9 +199,9 @@
       <div class="dinos">
         <article class="dino panel luz revelar">
           <dl class="dino-datos">
-            <div><dt>Peso adulto</dt><dd data-ficha="peso">20 kg (Frail) · hasta 23 kg (Prime)</dd></div>
-            <div><dt>Crecimiento</dt><dd data-ficha="crece">1 h 50 min</dd></div>
-            <div><dt>Grupo máx.</dt><dd data-ficha="grupo">10</dd></div>
+            <div><dt>Peso adulto</dt><dd data-ficha="peso">20 kg (Frail) · hasta 23 kg (Prime)</dd><dd class="dino-puesto" data-puesto="peso">n.º 22 de 22 en peso · <a href="../../dinosaurios/?orden=peso&amp;marca=hypsilophodon#comparar">ver la lista</a></dd></div>
+            <div><dt>Crecimiento</dt><dd data-ficha="crece">1 h 50 min</dd><dd class="dino-puesto" data-puesto="crece">n.º 1 de 22 en crecer antes · <a href="../../dinosaurios/?orden=crece&amp;marca=hypsilophodon#comparar">ver la lista</a></dd></div>
+            <div><dt>Grupo máx.</dt><dd data-ficha="grupo">10</dd><dd class="dino-puesto" data-puesto="grupo">n.º 2 de 22 en tamaño de grupo (empata con otras 4) · <a href="../../dinosaurios/?orden=grupo&amp;marca=hypsilophodon#comparar">ver la lista</a></dd></div>
           </dl>
           <h3 class="dino-sub">Habilidades</h3>
           <ul class="dino-lista" role="list">
@@ -216,12 +215,6 @@
         <article class="dino panel luz revelar">
           <h3 class="dino-sub">Mutaciones recomendadas</h3>
           <p class="dino-fuente">Aún no hay una recomendación fiable para esta especie.</p>
-          <h3 class="dino-sub">Frente a las demás</h3>
-          <dl class="dino-datos">
-            <div><dt>Más pesada</dt><dd data-puesto="peso">n.º 22 de 22 · <a href="../../dinosaurios/?orden=peso#comparar">ver la lista</a></dd></div>
-            <div><dt>Crece antes</dt><dd data-puesto="crece">n.º 1 de 22 · <a href="../../dinosaurios/?orden=crece#comparar">ver la lista</a></dd></div>
-            <div><dt>Grupo más grande</dt><dd data-puesto="grupo">n.º 2 de 22 (empata con otras 4) · <a href="../../dinosaurios/?orden=grupo#comparar">ver la lista</a></dd></div>
-          </dl>
         </article>
       </div>
     </div>
@@ -251,12 +244,10 @@
 
   <section class="seccion" id="como-leer" aria-labelledby="t-leer">
     <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">Términos y datos</p>
-        <h2 id="t-leer">Cómo leer las fichas</h2>
-      </div>
-      <div class="normas escalonado">
-        <section class="bloque panel luz revelar" aria-labelledby="b-terminos">
+      <details class="plegable lectura revelar">
+        <summary><h2 id="t-leer">Cómo leer las fichas</h2></summary>
+      <div class="normas">
+        <section class="bloque panel luz" aria-labelledby="b-terminos">
           <h3 id="b-terminos">Términos</h3>
           <ul role="list">
             <li><b>Prime</b>: adulto que cumplió 5 requisitos antes del 75 % de crecimiento (dieta perfecta, santuario, migraciones…): más peso, bonus y un hueco más de mutación.</li>
@@ -265,7 +256,7 @@
             <li><b>Grupo máx.</b>: tamaño máximo de grupo de la especie.</li>
           </ul>
         </section>
-        <section class="bloque panel luz revelar" aria-labelledby="b-mutaciones">
+        <section class="bloque panel luz" aria-labelledby="b-mutaciones">
           <h3 id="b-mutaciones">Mutaciones</h3>
           <ul role="list">
             <li>Al crecer eliges mutaciones en huecos (slots); otras se desbloquean cumpliendo tareas.</li>
@@ -274,7 +265,7 @@
             <li>Las recomendadas de cada ficha son <b>orientativas</b>: salen de guías de la comunidad.</li>
           </ul>
         </section>
-        <section class="bloque panel luz revelar" aria-labelledby="b-datos-al-dia">
+        <section class="bloque panel luz" aria-labelledby="b-datos-al-dia">
           <h3 id="b-datos-al-dia">Datos al día</h3>
           <ul role="list">
             <li>Revisado el 30/10/2026 · parche 0.21.772.</li>
@@ -283,6 +274,7 @@
           </ul>
         </section>
       </div>
+      </details>
     </div>
   </section>
 

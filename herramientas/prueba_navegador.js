@@ -916,8 +916,8 @@ const ruta = r => ('/' + r).padEnd(15);
   }
   // Página de cada especie, en el móvil más estrecho: las mismas que lista la comparativa de la guía
   // (ni más ni menos que en el mapa del sitio), cada una carga sin errores ni nada más ancho que la
-  // pantalla, con su nombre, el grupo que dice la guía, el cambio de idioma a la misma especie y la
-  // vuelta a su ficha en la guía. «ver la lista» abre la comparativa ya ordenada.
+  // pantalla, con su nombre, el grupo que dice la guía, el cambio de idioma a la misma especie y el
+  // enlace al planificador con ella ya puesta. «ver la lista» abre la comparativa ya ordenada y la señala.
   for (const guia of ['dinosaurios/', 'en/dinosaurs/']) {
     const fallos = [];
     const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
@@ -946,7 +946,8 @@ const ruta = r => ('/' + r).padEnd(15);
       if (v.grupo !== e.grupo) fallos.push(`${ancla}: grupo ${v.grupo} y la guía dice ${e.grupo}`);
       if (v.sobra > 0) fallos.push(`${ancla}: ${v.sobra} px más ancha que la pantalla`);
       if (v.idioma !== otra) fallos.push(`${ancla}: el idioma lleva a ${v.idioma}`);
-      if (v.guia !== BASE + guia + '#' + ancla) fallos.push(`${ancla}: «su ficha en la guía» lleva a ${v.guia}`);
+      if (!v.guia.startsWith(`${BASE}${guia}?especie=${ancla}#`)) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
+      if (await p.evaluate(() => document.querySelector('details.lectura').open)) fallos.push(`${ancla}: «cómo leer» debería empezar plegado`);
     }
     if (lista.length) {
       await p.goto(lista[0].url, { waitUntil: 'load' });
@@ -956,6 +957,13 @@ const ruta = r => ('/' + r).padEnd(15);
       await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('[data-puesto="peso"] a').click()]);
       const pesos = await p.evaluate(() => [...document.querySelectorAll('[data-comparar-lista] > div')].filter(f => f.offsetParent).map(f => +f.dataset.peso));
       if (!pesos.length || pesos.some((x, i) => i && x > pesos[i - 1])) fallos.push(`«ver la lista» no abre la comparativa por peso: ${pesos.join(' ')}`);
+      await p.waitForTimeout(800);
+      const senal = await p.evaluate(() => { const m = document.querySelector('.marcada'), c = m && m.getBoundingClientRect(); return m && { nombre: m.dataset.nombre, ve: c.top >= 0 && c.bottom <= innerHeight }; });
+      if (!senal || senal.nombre !== lista[0].nombre || !senal.ve) fallos.push(`«ver la lista» no señala la especie: ${JSON.stringify(senal)} y es ${lista[0].nombre}`);
+      await p.goto(lista[1].url, { waitUntil: 'load' });
+      await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.saltos a').first().click()]);
+      const puesta = await p.evaluate(() => { const o = document.querySelector('[data-plan] select').selectedOptions[0]; return o && o.dataset.nombre; });
+      if (puesta !== lista[1].nombre) fallos.push(`el planificador abre con ${puesta} y venía de ${lista[1].nombre}`);
     }
     if (errores.length) fallos.push(`errores: ${JSON.stringify(errores.slice(0, 3))}`);
     if (fallos.length) malos++;

@@ -61,8 +61,8 @@ node herramientas/prueba_caceria.js
   peso máximo (el Prime, o el único si no lo hay), crecimiento y grupo máximo. `guia_dinos.py` se para
   si un peso no se entiende, si el español y el inglés dan pesos distintos o si un grupo no es un número.
   Cada ficha tiene además su página, en español y en inglés (`dinosaurios/<especie>/` y
-  `en/dinosaurs/<especie>/`, con el nombre en minúsculas y sin tildes): la ficha entera, su puesto
-  frente a las demás en peso, crecimiento y grupo, las otras de su dieta y «Cómo leer las fichas».
+  `en/dinosaurs/<especie>/`, con el nombre en minúsculas y sin tildes): la ficha entera, con su puesto
+  frente a las demás junto a cada dato (peso, crecimiento y grupo), las otras de su dieta y «Cómo leer las fichas», plegado.
   Se crean y se borran solas con las fichas al ejecutar `montar_web.py`; el nombre de cada ficha en la
   guía, la comparativa, la portada y la guía de combate enlazan a ella. `comprobar.py` falla si falta
   o sobra alguna, si la española y la inglesa no se enlazan entre sí, si no está en el mapa del sitio

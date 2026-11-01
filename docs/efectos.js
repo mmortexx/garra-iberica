@@ -288,7 +288,7 @@
     let pinza = null;
     const dedos = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) });
     marco.addEventListener('touchstart', ev => {
-      if (ev.touches.length !== 2 || !img.naturalWidth) return;
+      if (ev.touches.length !== 2 || !img.naturalWidth || !ev.cancelable) return;
       ev.preventDefault();
       inicio = null;
       arrastrado = true;

@@ -62,6 +62,8 @@
   caja.hidden = false;
   if (marcada) {
     marcada.classList.add('marcada');
-    if (!marcada.hidden) marcada.scrollIntoView({ block: 'center' });
+    // Al terminar de cargar: antes, el navegador aún saltaría al ancla de la dirección.
+    const irAella = () => { if (!marcada.hidden) marcada.scrollIntoView({ block: 'center', behavior: 'instant' }); };
+    if (document.readyState === 'complete') irAella(); else addEventListener('load', irAella, { once: true });
   }
 })();

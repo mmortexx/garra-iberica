@@ -78,7 +78,6 @@ T = {
         'comp_intro': 'Las {n} especies con su peso máximo, lo que tardan en ser adultas (1×) y su grupo máximo. '
                       'Ordénalas, filtra por cuántos vais a jugar juntos y pulsa una para ver su página. '
                       'El enlace de la página guarda lo que elijas: pásalo a tu grupo.',
-        'comp_fila': 'hasta {peso} · adulto en {crece} · grupo máx. {grupo}',
         'comp_cols': ('Especie', 'Peso máx.', 'Hasta adulto', 'Grupo máx.'),
         'comp_orden': 'Ordenar', 'comp_dieta': 'Dieta', 'comp_somos': '¿Cuántos jugáis juntos?',
         'comp_ordenes': [('fichas', 'Como las fichas'), ('peso', 'Más pesado primero'), ('crece', 'Crece antes'),
@@ -90,12 +89,11 @@ T = {
         'esp_desc': '{nombre} en The Isle Evrima: hasta {peso}, adulto en {crece} (1×) y grupo máx. de {grupo}. {resto}',
         'esp_resto': ('Controles, consejo y mutaciones recomendadas.', 'Controles y consejo.'),
         'esp_ficha_ante': 'Su ficha', 'esp_ficha_h2': 'Cómo se juega',
-        'esp_frente': 'Frente a las demás',
-        'esp_puestos': [('peso', 'Más pesada'), ('crece', 'Crece antes'), ('grupo', 'Grupo más grande')],
-        'esp_puesto': 'n.º {n} de {total}', 'esp_lista': 'ver la lista',
+        'esp_puestos': {'peso': 'en peso', 'crece': 'en crecer antes', 'grupo': 'en tamaño de grupo'},
+        'esp_puesto': 'n.º {n} de {total} {criterio}', 'esp_lista': 'ver la lista',
         'esp_empata': lambda e: ' (empata con otra)' if e == 1 else f' (empata con otras {e})',
         'esp_otras_ante': 'Más especies', 'esp_otras': 'Otros {grupo}', 'esp_todas': 'Las {n} especies en la guía',
-        'esp_guia': 'Su ficha en la guía', 'esp_cta_h2': '¿Vas a jugar {nombre}?', 'esp_volver': 'Volver a la guía',
+        'esp_cta_h2': '¿Vas a jugar {nombre}?', 'esp_volver': 'Volver a la guía',
     },
     'en': {
         'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
@@ -153,7 +151,6 @@ T = {
         'comp_intro': 'All {n} species with their top weight, how long they take to grow up (1×) and their max group. '
                       'Sort them, filter by how many of you will play together and tap one to open its page. '
                       'The page link keeps your choice: share it with your group.',
-        'comp_fila': 'up to {peso} · adult in {crece} · max group {grupo}',
         'comp_cols': ('Species', 'Top weight', 'To adult', 'Max group'),
         'comp_orden': 'Sort by', 'comp_dieta': 'Diet', 'comp_somos': 'How many of you play together?',
         'comp_ordenes': [('fichas', 'Card order'), ('peso', 'Heaviest first'), ('crece', 'Fastest to grow'),
@@ -165,12 +162,11 @@ T = {
         'esp_desc': '{nombre} in The Isle Evrima: up to {peso}, adult in {crece} (1×), max group {grupo}. {resto}',
         'esp_resto': ('Controls, a tip and recommended mutations.', 'Controls and a tip.'),
         'esp_ficha_ante': 'Its card', 'esp_ficha_h2': 'How to play it',
-        'esp_frente': 'Against the rest',
-        'esp_puestos': [('peso', 'Heaviest'), ('crece', 'Fastest to grow'), ('grupo', 'Largest group')],
-        'esp_puesto': 'no. {n} of {total}', 'esp_lista': 'see the list',
+        'esp_puestos': {'peso': 'by weight', 'crece': 'for fastest growth', 'grupo': 'by group size'},
+        'esp_puesto': 'no. {n} of {total} {criterio}', 'esp_lista': 'see the list',
         'esp_empata': lambda e: ' (tied with 1 other)' if e == 1 else f' (tied with {e} others)',
         'esp_otras_ante': 'More species', 'esp_otras': 'Other {grupo}', 'esp_todas': 'All {n} species in the guide',
-        'esp_guia': 'Its card in the guide', 'esp_cta_h2': 'Playing {nombre}?', 'esp_volver': 'Back to the guide',
+        'esp_cta_h2': 'Playing {nombre}?', 'esp_volver': 'Back to the guide',
     },
 }
 
@@ -232,15 +228,16 @@ def valores(f, lang):
 
 
 # Lo que dice la ficha va marcado con data-ficha / data-mut: comprobar.py lo compara con fichas_dinos.json.
-def datos_juego(f, lang, nivel):
+def datos_juego(f, lang, nivel, puesto=lambda criterio: ''):
+    """puesto: en la página de la especie, cómo queda en cada dato frente a las demás."""
     t = T[lang]
     v = valores(f, lang)
     sub = ' class="dino-sub"' if nivel != 'h4' else ''
     return [
         '  <dl class="dino-datos">',
-        f'    <div><dt>{t["peso"]}</dt><dd data-ficha="peso">{escape(v["peso"])}</dd></div>',
-        f'    <div><dt>{t["crece"]}</dt><dd data-ficha="crece">{escape(v["crece"])}</dd></div>',
-        f'    <div><dt>{t["grupo"]}</dt><dd data-ficha="grupo">{escape(f["grupo"])}</dd></div>',
+        f'    <div><dt>{t["peso"]}</dt><dd data-ficha="peso">{escape(v["peso"])}</dd>{puesto("peso")}</div>',
+        f'    <div><dt>{t["crece"]}</dt><dd data-ficha="crece">{escape(v["crece"])}</dd>{puesto("crece")}</div>',
+        f'    <div><dt>{t["grupo"]}</dt><dd data-ficha="grupo">{escape(f["grupo"])}</dd>{puesto("grupo")}</div>',
         '  </dl>',
         f'  <{nivel}{sub}>{t["hab"]}</{nivel}>',
         '  <ul class="dino-lista" role="list">',
@@ -313,24 +310,15 @@ def peso_max(texto):
     return float(m.group(1).replace(',', '.')) * (1000 if m.group(2) == 't' else 1), m.group(0).split(' (')[0]
 
 
-def dato_fila(v):
-    """«29 h 10 min (otra fuente…)» → la cifra en negrita y sin cortes; el matiz, aparte."""
-    cifra, parentesis, matiz = v.partition(' (')
-    return f'<b>{escape(cifra).replace(" ", "&nbsp;")}</b>' + (f' ({escape(matiz)}' if parentesis else '')
-
-
-def resumen(f, lang):
-    """(kg, «hasta 12,3 t · adulto en 35 h 33 min · grupo máx. 2») de una ficha, para comparar especies."""
-    t = T[lang]
+def kilos(f, lang):
+    """Peso máximo de una ficha para comparar especies; se para si los idiomas no coinciden o el grupo no es un número."""
     v = valores(f, lang)
-    kg, peso = peso_max(v['peso'])
+    kg = peso_max(v['peso'])[0]
     if kg != peso_max(f['peso'])[0]:
         sys.exit(f'{FICHAS.name}: {f["nombre"]} pesa distinto en español y en inglés')
     if not f['grupo'].isdigit():
         sys.exit(f'{FICHAS.name}: {f["nombre"]} con grupo máximo «{f["grupo"]}», que no es un número')
-    # Cada dato en negrita y sin partirse (la línea se corta entre datos o en su matiz entre paréntesis).
-    fila = t['comp_fila'].replace(' · ', '|').replace(' ', '&nbsp;').replace('|', ' · ')
-    return kg, fila.format(peso=dato_fila(peso), crece=dato_fila(v['crece']), grupo=dato_fila(f['grupo']))
+    return kg
 
 
 def cifras(f, lang):
@@ -357,7 +345,7 @@ def comparativa(d, lang):
     t = T[lang]
     filas, grupos = [], set()
     for f in d['fichas']:
-        kg, _ = resumen(f, lang)
+        kg = kilos(f, lang)
         grupos.add(int(f['grupo']))
         g = GRUPO[f['dieta']]
         filas.append(f'        <div data-nombre="{escape(f["nombre"])}" data-dieta="{g}" data-peso="{kg:g}" '
@@ -448,16 +436,31 @@ def planificador(d, lang):
     ]
 
 
-def lectura(t, revisado):
-    """«Cómo leer las fichas»: en la guía y en la página de cada especie."""
+def lectura(t, revisado, plegada=False):
+    """«Cómo leer las fichas»: en la guía y, plegado (se repetiría 44 veces), en la página de cada especie."""
     bloques = []
+    revelar = '' if plegada else ' revelar'
     for titulo, del_discord, propias in t['bloques']:
-        bloques += [f'        <section class="bloque panel luz revelar" aria-labelledby="b-{ancla(titulo)}">',
+        bloques += [f'        <section class="bloque panel luz{revelar}" aria-labelledby="b-{ancla(titulo)}">',
                     f'          <h3 id="b-{ancla(titulo)}">{titulo}</h3>',
                     '          <ul role="list">',
                     *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
                     '          </ul>',
                     '        </section>']
+    if plegada:
+        return [
+            f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
+            '    <div class="envoltura">',
+            '      <details class="plegable lectura revelar">',
+            f'        <summary><h2 id="t-leer">{t["leer_h2"]}</h2></summary>',
+            '      <div class="normas">',
+            *bloques,
+            '      </div>',
+            '      </details>',
+            '    </div>',
+            '  </section>',
+            '',
+        ]
     return [
         f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
         '    <div class="envoltura">',
@@ -517,16 +520,14 @@ def contenido_especie(nombre, lang, d=None):
     a = ancla(nombre)
     g = GRUPO[f['dieta']]
     guia = '@/' + RUTAS[lang]
-    _, fila = resumen(f, lang)
     v = valores(f, lang)
     peso, crece = peso_max(v['peso'])[1], v['crece'].split(' (')[0]
 
-    frente = []
-    for criterio, etiqueta in t['esp_puestos']:
-        puesto, empates = puestos(d)[nombre][criterio]
-        texto = t['esp_puesto'].format(n=puesto, total=n) + (t['esp_empata'](empates) if empates else '')
-        frente.append(f'<div><dt>{etiqueta}</dt><dd data-puesto="{criterio}">{texto} · '
-                      f'<a href="{guia}?orden={criterio}#{t["comp_id"]}">{t["esp_lista"]}</a></dd></div>')
+    def puesto(criterio):
+        lugar, empates = puestos(d)[nombre][criterio]
+        texto = t['esp_puesto'].format(n=lugar, total=n, criterio=t['esp_puestos'][criterio]) + (t['esp_empata'](empates) if empates else '')
+        return (f'<dd class="dino-puesto" data-puesto="{criterio}">{texto} · '
+                f'<a href="{guia}?orden={criterio}&amp;marca={a}#{t["comp_id"]}">{t["esp_lista"]}</a></dd>')
     otras = [o for o in d['fichas'] if GRUPO[o['dieta']] == g and o is not f]
     otras_h2 = t['esp_otras'].format(grupo=t['grupos'][g].lower())
 
@@ -534,10 +535,9 @@ def contenido_especie(nombre, lang, d=None):
         *cabecera(t, [
             f'      <p class="entra"><span class="dieta dieta-{g.rstrip("s")}" data-ficha="dieta">{escape(t["dieta"][f["dieta"]])}</span></p>',
             f'      <h1 id="titulo" class="entra especie-nombre">{escape(nombre)}</h1>',
-            f'      <p class="entrada entra entra-2">{fila[:1].upper() + fila[1:]}.</p>',
-            f'      <p class="guia-revisado entra entra-3">{revisado}</p>',
-            '      <p class="saltos entra entra-3">' + ''.join(f'<a href="{guia}#{i}">{texto}</a>' for i, texto in (
-                (a, t['esp_guia']), (t['comp_id'], t['comp_h2']), (t['plan_id'], t['plan_corto']))) + '</p>',
+            f'      <p class="guia-revisado entra entra-2">{revisado}</p>',
+            '      <p class="saltos entra entra-3">' + ''.join(f'<a href="{guia}?{q}#{i}">{texto}</a>' for q, i, texto in (
+                (f'especie={a}', t['plan_id'], t['plan_corto']), (f'marca={a}', t['comp_id'], t['comp_h2']))) + '</p>',
         ]),
         '  <section class="seccion" id="ficha" aria-labelledby="t-ficha">',
         '    <div class="envoltura">',
@@ -548,14 +548,10 @@ def contenido_especie(nombre, lang, d=None):
         '      <div class="dinos">',
         *['        ' + p for p in [
             '<article class="dino panel luz revelar">',
-            *datos_juego(f, lang, 'h3'),
+            *datos_juego(f, lang, 'h3', puesto),
             '</article>',
             '<article class="dino panel luz revelar">',
             *mutaciones(f, d, lang, 'h3'),
-            f'  <h3 class="dino-sub">{t["esp_frente"]}</h3>',
-            '  <dl class="dino-datos">',
-            *['    ' + x for x in frente],
-            '  </dl>',
             '</article>']],
         '      </div>',
         '    </div>',
@@ -580,7 +576,7 @@ def contenido_especie(nombre, lang, d=None):
             '  </section>',
             '',
         ]
-    lineas += [*lectura(t, revisado), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
+    lineas += [*lectura(t, revisado, plegada=True), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
     resto = t['esp_resto'][0 if f['mut'] else 1]
     pagina = {'titulo': t['esp_titulo'].format(nombre=nombre), 'h1': nombre,
               'descripcion': t['esp_desc'].format(nombre=nombre, peso=peso, crece=crece, grupo=f['grupo'], resto=resto)}

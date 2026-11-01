@@ -16,8 +16,8 @@
 <link rel="preload" href="../../../fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../../../fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" as="image" href="../../../img/galeria-noche-1200.webp" imagesrcset="../../../img/galeria-noche-800.webp 800w, ../../../img/galeria-noche-1200.webp 1200w, ../../../img/galeria-noche-1600.webp 1600w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="../../../estilos.css?v=58a9f4614d">
-<script src="../../../efectos.js?v=5ed9434985" defer></script>
+<link rel="stylesheet" href="../../../estilos.css?v=5917601349">
+<script src="../../../efectos.js?v=968122b809" defer></script>
 <link rel="icon" href="../../../favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
 
@@ -184,9 +184,8 @@
       <nav class="migas" aria-label="You are in"><a href="../../../en/">Home</a><a href="../../../en/dinosaurs/">Dinosaurs</a><span aria-current="page">Troodon</span></nav>
       <p class="entra"><span class="dieta dieta-carnivoro" data-ficha="dieta">Carnivore</span></p>
       <h1 id="titulo" class="entra especie-nombre">Troodon</h1>
-      <p class="entrada entra entra-2">Up&nbsp;to&nbsp;<b>79.8&nbsp;kg</b> · adult&nbsp;in&nbsp;<b>3&nbsp;h&nbsp;10&nbsp;min</b> · max&nbsp;group&nbsp;<b>10</b>.</p>
-      <p class="guia-revisado entra entra-3">Reviewed 30 Oct 2026 · patch 0.21.772</p>
-      <p class="saltos entra entra-3"><a href="../../../en/dinosaurs/#troodon">Its card in the guide</a><a href="../../../en/dinosaurs/#compare">Compare species</a><a href="../../../en/dinosaurs/#planner">Adult for the hunt?</a></p>
+      <p class="guia-revisado entra entra-2">Reviewed 30 Oct 2026 · patch 0.21.772</p>
+      <p class="saltos entra entra-3"><a href="../../../en/dinosaurs/?especie=troodon#planner">Adult for the hunt?</a><a href="../../../en/dinosaurs/?marca=troodon#compare">Compare species</a></p>
     </div>
   </section>
 
@@ -199,9 +198,9 @@
       <div class="dinos">
         <article class="dino panel luz revelar">
           <dl class="dino-datos">
-            <div><dt>Adult weight</dt><dd data-ficha="peso">60 kg (Frail) · up to 79.8 kg (Prime)</dd></div>
-            <div><dt>Growth</dt><dd data-ficha="crece">3 h 10 min</dd></div>
-            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd></div>
+            <div><dt>Adult weight</dt><dd data-ficha="peso">60 kg (Frail) · up to 79.8 kg (Prime)</dd><dd class="dino-puesto" data-puesto="peso">no. 21 of 22 by weight · <a href="../../../en/dinosaurs/?orden=peso&amp;marca=troodon#compare">see the list</a></dd></div>
+            <div><dt>Growth</dt><dd data-ficha="crece">3 h 10 min</dd><dd class="dino-puesto" data-puesto="crece">no. 2 of 22 for fastest growth · <a href="../../../en/dinosaurs/?orden=crece&amp;marca=troodon#compare">see the list</a></dd></div>
+            <div><dt>Max group</dt><dd data-ficha="grupo">10</dd><dd class="dino-puesto" data-puesto="grupo">no. 2 of 22 by group size (tied with 4 others) · <a href="../../../en/dinosaurs/?orden=grupo&amp;marca=troodon#compare">see the list</a></dd></div>
           </dl>
           <h3 class="dino-sub">Abilities</h3>
           <ul class="dino-lista" role="list">
@@ -220,12 +219,6 @@
             <li data-mut="HEMA"><b>Hematophagy</b>: you regain some thirst while eating carcasses</li>
           </ul>
           <p class="dino-fuente">A rough guide: <span data-ficha="mutfuente">community guide (XGamingServer, undated)</span>.</p>
-          <h3 class="dino-sub">Against the rest</h3>
-          <dl class="dino-datos">
-            <div><dt>Heaviest</dt><dd data-puesto="peso">no. 21 of 22 · <a href="../../../en/dinosaurs/?orden=peso#compare">see the list</a></dd></div>
-            <div><dt>Fastest to grow</dt><dd data-puesto="crece">no. 2 of 22 · <a href="../../../en/dinosaurs/?orden=crece#compare">see the list</a></dd></div>
-            <div><dt>Largest group</dt><dd data-puesto="grupo">no. 2 of 22 (tied with 4 others) · <a href="../../../en/dinosaurs/?orden=grupo#compare">see the list</a></dd></div>
-          </dl>
         </article>
       </div>
     </div>
@@ -257,12 +250,10 @@
 
   <section class="seccion" id="how-to-read" aria-labelledby="t-leer">
     <div class="envoltura">
-      <div class="revelar">
-        <p class="antetitulo">Terms and data</p>
-        <h2 id="t-leer">How to read the cards</h2>
-      </div>
-      <div class="normas escalonado">
-        <section class="bloque panel luz revelar" aria-labelledby="b-terms">
+      <details class="plegable lectura revelar">
+        <summary><h2 id="t-leer">How to read the cards</h2></summary>
+      <div class="normas">
+        <section class="bloque panel luz" aria-labelledby="b-terms">
           <h3 id="b-terms">Terms</h3>
           <ul role="list">
             <li><b>Prime</b>: adult that met 5 requirements before 75% growth (perfect diet, sanctuary, migrations…): more weight, bonuses and one more mutation slot.</li>
@@ -271,7 +262,7 @@
             <li><b>Max group</b>: the largest group size for the species.</li>
           </ul>
         </section>
-        <section class="bloque panel luz revelar" aria-labelledby="b-mutations">
+        <section class="bloque panel luz" aria-labelledby="b-mutations">
           <h3 id="b-mutations">Mutations</h3>
           <ul role="list">
             <li>As you grow you pick mutations in slots; others unlock by completing tasks.</li>
@@ -280,7 +271,7 @@
             <li>The recommended ones in each card are <b>only a rough guide</b>: they come from community guides.</li>
           </ul>
         </section>
-        <section class="bloque panel luz revelar" aria-labelledby="b-up-to-date-data">
+        <section class="bloque panel luz" aria-labelledby="b-up-to-date-data">
           <h3 id="b-up-to-date-data">Up-to-date data</h3>
           <ul role="list">
             <li>Reviewed 30 Oct 2026 · patch 0.21.772.</li>
@@ -289,6 +280,7 @@
           </ul>
         </section>
       </div>
+      </details>
     </div>
   </section>
 

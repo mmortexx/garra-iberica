@@ -984,6 +984,13 @@ details.dino .dino-fuente { color: var(--suave); }
 details.dino > summary { margin: 0; padding: .95rem 2.4rem .95rem 0; color: inherit; }
 details.dino[open] > summary { padding-left: 0; color: inherit; }
 @media (hover: hover) { details.dino > summary:hover { padding-left: 0; } }
+/* «Cómo leer las fichas» en la página de cada especie: un título que se abre. */
+details.lectura { border-top: 1px solid var(--linea); }
+details.lectura[open] { box-shadow: none; background: none; }
+details.lectura > summary, details.lectura[open] > summary { padding: 1.1rem 2.4rem 1.1rem 0; }
+details.lectura h2 { margin: 0; font-size: clamp(1.5rem, 4vw, 2.1rem); }
+details.lectura h2::after { content: none; }
+details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 /* Comparativa: una fila por especie, con las cifras en columnas. En el móvil, el nombre encima. */
 .comparar { margin-top: 1.4rem; }
 .comparar-fila, .comparar-lista > div { display: grid; gap: .35rem 1.2rem; }
@@ -1036,7 +1043,8 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .dino-datos div:first-child { border-top: 0; }
 .dino-datos dt { font: 600 .9rem/1.65 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
 .dino-datos dd { margin: 0; color: var(--hueso); }
-@media (max-width: 419px) { .dino-datos div { grid-template-columns: 1fr; gap: 0; } }
+.dino-datos .dino-puesto { grid-column: 2; font-size: .92rem; color: var(--suave); }
+@media (max-width: 419px) { .dino-datos div { grid-template-columns: 1fr; gap: 0; } .dino-datos .dino-puesto { grid-column: 1; } }
 .dino h4, .dino .dino-sub { margin: 1.3rem 0 .65rem; font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .16em; text-transform: uppercase; color: var(--ascua); }
 .dino-h4 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1rem; }
 .dino-glosario { position: relative; font-size: .85rem; letter-spacing: .08em; color: var(--suave); text-decoration: none; white-space: nowrap; }
@@ -1309,16 +1317,16 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .plan { display: grid; gap: 1.2rem 2rem; margin-top: 2rem; padding: 1.6rem 0 0; border-top: 1px solid var(--linea); }
 .plan[hidden] { display: none; }
 @media (min-width: 760px) { .plan { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
-/* Tres selectores: en el móvil caben dos en fila, y así no ocupan media pantalla. */
+/* Tres selectores: en el móvil, el primero (el de textos largos) solo y dos en fila, para no ocupar media pantalla. */
 .plan-tres { align-items: end; }
 .plan-tres > [role="status"] { grid-column: 1 / -1; margin: 0; }
 @media (min-width: 360px) {
   .plan-tres { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-  .plan-tres[data-comparar] > label:nth-of-type(3), .plan-tres[data-plan] > label:first-child { grid-column: 1 / -1; }
+  .plan-tres > label:first-child { grid-column: 1 / -1; }
 }
 @media (min-width: 760px) {
   .plan-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem 2rem; }
-  .plan-tres[data-comparar] > label:nth-of-type(3), .plan-tres[data-plan] > label:first-child { grid-column: auto; }
+  .plan-tres > label:first-child { grid-column: auto; }
 }
 .plan label { display: grid; gap: .45rem; font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
 .plan select {
