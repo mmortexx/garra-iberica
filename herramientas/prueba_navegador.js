@@ -8,11 +8,13 @@
 // botón principal de la portada a la vista en móviles bajos,
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
-// contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows.
-// Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright instalado:
+// contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows,
+// y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
+// Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
 // CHROME_PATH opcional, para usar un Chromium concreto.
 const { chromium } = require('playwright');
+const { readFileSync } = require('fs');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
 // Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
@@ -256,7 +258,33 @@ const efectos = async navegador => {
     if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
     await ctx.close();
   }
-  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll, procesador):', fallos.length ? fallos.join('; ') : 'bien');
+  // Auditoría de accesibilidad. Sin movimiento, para medir los colores finales y no los de media animación.
+  const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+  const auditar = async (p, donde) => {
+    await p.evaluate(axe);
+    const r = await p.evaluate(() => axe.run(document, { resultTypes: ['violations'] }).then(a => a.violations.map(v => `${v.id} ×${v.nodes.length} (${v.nodes[0].target.join(' ')})`)));
+    if (r.length) fallos.push(`${donde}: ${r.join(', ')}`);
+  };
+  for (const [aparato, opts] of [['móvil', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }], ['PC', { viewport: { width: 1366, height: 850 } }]]) {
+    const { ctx, p } = await abrir('', { ...opts, reducedMotion: 'reduce', bypassCSP: true });
+    const paginas = [...PAGINAS.map(([r]) => r), 'dinosaurios/triceratops/', 'en/dinosaurs/triceratops/'];
+    for (const r of paginas) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      await p.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; }));
+      await auditar(p, `${aparato} /${r}`);
+    }
+    if (aparato === 'móvil') {
+      await p.goto(BASE, { waitUntil: 'load' });
+      await p.tap('.menu-boton');
+      await auditar(p, 'móvil, menú abierto');
+    }
+    await p.goto(BASE + 'galeria/', { waitUntil: 'load' });
+    await p.click('.galeria a');
+    await p.waitForSelector('.visor[open] .visor-img');
+    await auditar(p, `${aparato}, visor abierto`);
+    await ctx.close();
+  }
+  console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll, procesador, auditoría):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
 (async () => {

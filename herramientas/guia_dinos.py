@@ -32,7 +32,7 @@ T = {
         'intro': 'Las {n} fichas que usamos en el Discord del clan, para que nadie empiece a ciegas: peso, crecimiento, '
                  'tamaño máximo de grupo, controles, un consejo y las mutaciones que recomienda la comunidad.',
         'revisado': 'Revisado el {fecha} · parche {parche}',
-        'fichas_corto': 'Todas las fichas',
+        'fichas_corto': 'Todas las fichas', 'ficha_pagina': 'Ver la página de {nombre}',
         'leer_ante': 'Términos y datos', 'leer_h2': 'Cómo leer las fichas',
         # (título, frases copiadas de la guía del Discord, frases propias de la web).
         'bloques': [
@@ -106,7 +106,7 @@ T = {
         'intro': 'The {n} cards we use on the clan Discord, so nobody starts blind: weight, growth, max group size, '
                  'controls, a tip and the mutations the community recommends.',
         'revisado': 'Reviewed {fecha} · patch {parche}',
-        'fichas_corto': 'All the cards',
+        'fichas_corto': 'All the cards', 'ficha_pagina': 'Open the {nombre} page',
         'leer_ante': 'Terms and data', 'leer_h2': 'How to read the cards',
         'bloques': [
             ('Terms', [
@@ -276,8 +276,10 @@ def ficha(f, d, lang):
     # dirección la nombra (dinosaurios/#triceratops, los enlaces viejos).
     partes = [
         f'<details class="dino plegable panel luz revelar" id="{a}">',
-        f'  <summary class="dino-cabeza"><h3 id="d-{a}"><a href="@/{ruta_especie(f["nombre"], lang)}">{escape(f["nombre"])}</a></h3>'
+        f'  <summary class="dino-cabeza"><h3 id="d-{a}">{escape(f["nombre"])}</h3>'
         f'<span class="dieta dieta-{dieta}">{escape(t["dieta"][f["dieta"]])}</span></summary>',
+        # Fuera de summary: un enlace dentro del botón de plegar no lo alcanza un lector de pantalla.
+        f'  <p class="dino-enlace"><a href="@/{ruta_especie(f["nombre"], lang)}">{t["ficha_pagina"].format(nombre=escape(f["nombre"]))}</a></p>',
         *datos_juego(f, lang, 'h4'),
         # El glosario, al final de la página, explica cada mutación: enlace para no perder el hilo.
         *mutaciones(f, d, lang, 'h4', f'#{t["mut_id"]}'),
@@ -441,12 +443,12 @@ def lectura(t, revisado, plegada=False):
     bloques = []
     revelar = '' if plegada else ' revelar'
     for titulo, del_discord, propias in t['bloques']:
-        bloques += [f'        <section class="bloque panel luz{revelar}" aria-labelledby="b-{ancla(titulo)}">',
-                    f'          <h3 id="b-{ancla(titulo)}">{titulo}</h3>',
+        bloques += [f'        <div class="bloque panel luz{revelar}">',
+                    f'          <h3>{titulo}</h3>',
                     '          <ul role="list">',
                     *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
                     '          </ul>',
-                    '        </section>']
+                    '        </div>']
     if plegada:
         return [
             f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',

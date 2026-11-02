@@ -31,7 +31,7 @@ jobs:
         run: python herramientas/prueba_galeria.py
       - name: Instalar Playwright y Chromium
         run: |
-          npm install --no-save --no-package-lock playwright@1.60.0
+          npm install --no-save --no-package-lock playwright@1.60.0 axe-core@4.14.0
           npx playwright install --with-deps chromium
       - name: Prueba en navegador
         run: |

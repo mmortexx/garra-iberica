@@ -121,7 +121,7 @@ python herramientas/prueba_galeria.py
   Vigila también lo que promete el aviso legal: ningún script guarda nada en el navegador, ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
-- `prueba_navegador.js` (opcional, necesita Playwright y la web servida en local) abre las 18
+- `prueba_navegador.js` (opcional, necesita Playwright y axe-core y la web servida en local) abre las 18
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde 1020 px
   o, por debajo, tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha

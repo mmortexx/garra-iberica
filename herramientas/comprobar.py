@@ -588,7 +588,7 @@ def revisar_especies(raiz, base, falla):
             if f'<loc>{base}{guia}{a}/</loc>' not in mapa:
                 falla(f'sitemap.xml: falta la página de {f["nombre"]} ({base}{guia}{a}/)')
             enlace = re.escape(f'href="{montar_web.enlace(guia, guia + a + "/")}"')
-            if not re.search(rf'<details class="dino[^"]*" id="{a}"[^>]*>\s*<summary class="dino-cabeza"><h3[^>]*><a {enlace}>', html_guia):
+            if not re.search(rf'<details class="dino[^"]*" id="{a}"[^>]*>\s*<summary class="dino-cabeza">.*?</summary>\s*<p class="dino-enlace"><a {enlace}>', html_guia):
                 falla(f'{guia}index.html: la ficha de {f["nombre"]} no enlaza a su página')
             if not re.search(rf'data-nombre="{re.escape(f["nombre"])}"[^>]*><dt><a {enlace}>', html_guia):
                 falla(f'{guia}index.html: la comparativa no enlaza {f["nombre"]} a su página')

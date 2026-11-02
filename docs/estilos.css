@@ -1099,9 +1099,9 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .dino-cabeza h3 { margin: 0; font-size: clamp(1.55rem, 3.6vw, 2rem); text-transform: uppercase; letter-spacing: .02em; }
 .dino:hover .dino-cabeza h3 { color: #f4f4f4; }
 /* El nombre lleva a la página de la especie. */
-.dino-cabeza h3 a { color: inherit; text-decoration: none; }
-.dino-cabeza h3 a::after { content: " →"; content: " →" / ""; font-size: .7em; color: var(--ascua); }
-.dino-cabeza h3 a:hover { color: var(--ascua-viva); }
+.dino-enlace { margin: 0 0 .9rem; }
+.dino-enlace a { font-weight: 600; }
+.dino-enlace a::after { content: " →"; content: " →" / ""; color: var(--ascua); }
 /* Nombre de la especie en su página: una sola palabra que no se puede partir; la letra baja lo justo
    para que quepa la más larga (Pachycephalosaurus, 8,6 em) en 320 px. */
 .cabecera h1.especie-nombre { max-width: none; font-size: min(clamp(2.5rem, 7.4vw, 5.2rem), (100vw - 2rem) / 9.2); overflow-wrap: anywhere; }
