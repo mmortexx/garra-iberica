@@ -1129,7 +1129,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 @media (max-width: 419px) { .dino-datos div { grid-template-columns: 1fr; gap: 0; } .dino-datos .dino-puesto { grid-column: 1; } }
 .dino h4, .dino .dino-sub { margin: 1.3rem 0 .65rem; font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .16em; text-transform: uppercase; color: var(--ascua); }
 .dino-h4 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1rem; }
-.dino-glosario { position: relative; font-size: .85rem; letter-spacing: .08em; color: var(--suave); text-decoration: none; white-space: nowrap; }
+.dino-glosario { position: relative; font: 600 .85rem/1.2 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); text-decoration: none; white-space: nowrap; }
 .dino-glosario::after { content: " ↓"; content: " ↓" / ""; color: var(--ascua); }
 .dino-glosario:hover { color: var(--ascua-viva); }
 .dino-glosario::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }

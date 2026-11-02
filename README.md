@@ -212,6 +212,11 @@ Necesita Python con Pillow y fontTools.
 Al estar en una subcarpeta (`/garra-iberica/`), Google no lee nuestro `robots.txt`: el mapa del sitio
 hay que enviarlo a mano en Google Search Console y en Bing Webmaster Tools (`sitemap.xml`).
 
+`comprobar.py` vigila lo que depende de nosotros: títulos de 60 caracteres como mucho (Google corta el
+resto, y al final va el nombre del clan), descripciones de 70 a 155, encabezados sin números pegados ni
+enlaces dentro y, en el texto que se lee, las palabras con las que se busca un clan (`BUSQUEDAS`). Cada
+vídeo de batalla nuevo necesita su fecha de publicación en `batallas_web.VIDEOS_PUBLICADOS`.
+
 Después de publicar un cambio de contenido, `python herramientas/indexnow.py` avisa a Bing (y a
 DuckDuckGo, Yahoo, Ecosia, Yandex y demás buscadores de IndexNow) para que vuelvan a pasar. Usa la
 clave pública `docs/<clave>.txt`; no se borra ni se renombra. Google no usa IndexNow.

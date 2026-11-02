@@ -90,7 +90,7 @@ T = {
         'otra': ('en', 'English version', 'EN'), 'migas': 'Estás en',
         'unete': 'Únete<span class="oculto"> en Discord (se abre en una pestaña nueva)</span>',
         'nueva': ' (se abre en una pestaña nueva)',
-        'pie_texto': 'Clan español de The Isle Evrima, abierto a jugadores de España y Latinoamérica.',
+        'pie_enlace': 'Clan español de The Isle Evrima', 'pie_texto': ', abierto a jugadores de España y Latinoamérica.',
         'pie_menu': 'Pie de página', 'pie_discord': 'Discord del clan', 'pie_steam': 'The Isle en Steam',
         'arriba': 'Volver arriba ↑', 'subir': 'Volver arriba',
         'legal': 'Web de fans hecha por el clan. No estamos afiliados a los creadores de The Isle ni a Discord. Las marcas pertenecen a sus dueños.',
@@ -110,7 +110,7 @@ T = {
         'otra': ('es', 'Versión en español', 'ES'), 'migas': 'You are in',
         'unete': 'Join<span class="oculto"> on Discord (opens in a new tab)</span>',
         'nueva': ' (opens in a new tab)',
-        'pie_texto': 'Spanish-speaking The Isle Evrima clan, open to players from Spain and Latin America.',
+        'pie_enlace': 'Spanish-speaking The Isle Evrima clan', 'pie_texto': ', open to players from Spain and Latin America.',
         'pie_menu': 'Footer', 'pie_discord': 'Clan Discord', 'pie_steam': 'The Isle on Steam',
         'arriba': 'Back to top ↑', 'subir': 'Back to top',
         'legal': 'Fan site made by the clan. We are not affiliated with the creators of The Isle or with Discord. All trademarks belong to their owners.',
@@ -258,6 +258,8 @@ def rellenar(cuerpo, pagina, lang, base, d):
             sys.exit(f'paginas/{lang}/{pagina}.html: marcador desconocido {m.group(0)}')
         return valores[m.group(1)]()
     cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, cuerpo)
+    if pagina == 'inicio':
+        cuerpo = textos_tira(cuerpo, lang)
     pre = prefijo(RUTA[pagina, lang])
     cuerpo = cuerpo.replace('@/', pre)
     return re.sub(r'(href|src)=""', r'\1="./"', cuerpo)
@@ -277,6 +279,13 @@ def imagen_og(pagina, lang):
         fichero, _, _, alt_es, alt_en = preparar_galeria.OG[pagina]
         return fichero, alt_es if lang == 'es' else alt_en
     return 'og-garra-iberica.jpg', T[lang]['og_alt']
+
+
+def textos_tira(cuerpo, lang):
+    """La tira de fotos de la portada se describe con los textos de la galería, sin repetirlos en la página."""
+    galeria = (FUENTES / lang / 'galeria.html').read_text(encoding='utf-8')
+    textos = dict(re.findall(r'class="foto-ampliar" href="@/img/(galeria-[a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', galeria))
+    return re.sub(r'(<li><img src="@/img/(galeria-[a-z-]+)-\d+\.webp" alt=")(")', lambda m: m[1] + textos[m[2]] + m[3], cuerpo)
 
 
 def fotos_galeria(cuerpo, url):
@@ -324,6 +333,8 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
         nodos[2]['mainEntity'] = {'@type': 'ItemList', 'name': datos['h1'], 'numberOfItems': len(especies), 'itemListElement': [
             {'@type': 'ListItem', 'position': i, 'name': unescape(nombre), 'url': urljoin(url, enlace)}
             for i, (nombre, enlace) in enumerate(especies, 1)]}
+    if pagina == 'clan':
+        nodos += batallas_web.videos_declarados(lang, base)
     faq = preguntas(cuerpo)
     if faq:
         nodos.append({'@type': 'FAQPage', '@id': url + '#preguntas', 'inLanguage': lang, 'mainEntity': [
@@ -383,7 +394,7 @@ def pie(pagina, lang):
         '  <div class="envoltura pie-in">',
         '    <div class="pie-marca">',
         f'      <img src="{prefijo(desde)}img/emoji-garra.webp" alt="" width="48" height="48" loading="lazy">',
-        f'      <p><b>GARRA IBÉRICA</b><br>{t["pie_texto"]}</p>',
+        f'      <p><b>GARRA IBÉRICA</b><br><a href="{enlace(desde, RUTA["inicio", lang])}">{t["pie_enlace"]}</a>{t["pie_texto"]}</p>',
         '    </div>',
         f'    <nav class="pie-menu" aria-label="{t["pie_menu"]}">',
         *[f'      <a href="{enlace(desde, RUTA[p, lang])}">{NOMBRE[p, lang]}</a>' for p in PIE],

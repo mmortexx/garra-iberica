@@ -30,6 +30,7 @@ T = {
         'inferioridad': ', en inferioridad', 'contra': 'contra', 'de': 'de', 'ganadas': ['batalla ganada', 'batallas ganadas'],
         'aria': 'Batallas del clan', 'todas': 'Todas las batallas', 'nuestros': 'de los nuestros', 'suyos': 'de {r}',
         'con_video': 'Batallas y vídeos', 'video': 'Vídeo de la batalla contra {r}', 'bajar': 'Descargar el vídeo de la batalla contra {r}',
+        'video_texto': '{frase}: {n} contra {m} en The Isle Evrima. Vídeo del clan GARRA IBÉRICA.',
         'mes': ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
     },
     'en': {
@@ -38,9 +39,15 @@ T = {
         'inferioridad': ', outnumbered', 'contra': 'vs', 'de': 'of', 'ganadas': ['battle won', 'battles won'],
         'aria': 'Clan battles', 'todas': 'All battles', 'nuestros': 'of ours', 'suyos': 'from {r}',
         'con_video': 'Battles and videos', 'video': 'Video of the battle against {r}', 'bajar': 'Download the video of the battle against {r}',
+        'video_texto': '{frase}: {n} against {m} in The Isle Evrima. Video by the GARRA IBÉRICA clan.',
         'mes': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     },
 }
+
+
+# Cuándo se publicó cada vídeo en la web (no cuándo fue la batalla). Montar la web no puede deducirlo y salir
+# siempre igual; comprobar.py avisa si un vídeo nuevo no está aquí.
+VIDEOS_PUBLICADOS = {'smoke-1': '2026-10-31T13:04:35Z', 'delta-1': '2026-10-31T13:04:35Z'}
 
 
 def al_dia():
@@ -127,6 +134,20 @@ def video(b, lang):
             f'data-portada="@/img/{nombre}.webp" aria-label="{t["video"].format(r=r)}">'
             f'{movil}<source src="@/video/{nombre}.mp4" type="video/mp4">'
             f'<a href="@/video/{nombre}.mp4">{t["bajar"].format(r=r)}</a></video></div>')
+
+
+def videos_declarados(lang, base, batallas=None):
+    """Los vídeos de las batallas tal como los pide Google, con el mismo fichero y la misma portada que la página."""
+    t = T[lang]
+    nodos = []
+    for b in (cargar() if batallas is None else batallas):
+        nombre = f'batalla-{b["clave"]}'
+        if (DOCS / 'video' / f'{nombre}.mp4').is_file():
+            nodos.append({'@type': 'VideoObject', 'name': f'GARRA IBÉRICA: {t["video"].format(r=b["rival"])}',
+                          'description': t['video_texto'].format(frase=frase(b, lang), n=b['nosotros'], m=b['ellos']),
+                          'thumbnailUrl': f'{base}img/{nombre}.webp', 'contentUrl': f'{base}video/{nombre}.mp4',
+                          'uploadDate': VIDEOS_PUBLICADOS.get(b['clave'], ''), 'creator': {'@id': base + '#clan'}})
+    return nodos
 
 
 def lista(lang, batallas=None):

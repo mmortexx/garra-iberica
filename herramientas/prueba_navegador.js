@@ -260,8 +260,8 @@ const efectos = async navegador => {
   }
   // Cada respuesta tiene su dirección: abre esa pregunta y la deja a la vista, entrando de fuera y desde la
   // portada, que lleva a ellas. Las direcciones circulan: cambiar una rompe enlaces ya compartidos.
-  for (const [r, respuestas] of [['unete/', ['como-entro', 'buscando', 'coste', 'nuevo', 'micro', 'latam', 'es-servidor', 'que-es', 'servidor', 'cuando', 'avisos', 'dietas', 'ranking', 'rangos', 'apoyar']],
-    ['en/join/', ['how-to-join', 'recruiting', 'spanish', 'cost', 'new', 'mic', 'latam', 'is-server', 'what-is', 'server', 'when', 'alerts', 'diets', 'ranking', 'ranks', 'support']]]) {
+  for (const [r, respuestas] of [['unete/', ['como-entro', 'gente', 'buscando', 'coste', 'nuevo', 'micro', 'latam', 'es-servidor', 'que-es', 'servidor', 'cuando', 'avisos', 'dietas', 'ranking', 'rangos', 'apoyar']],
+    ['en/join/', ['how-to-join', 'people', 'recruiting', 'spanish', 'cost', 'new', 'mic', 'latam', 'is-server', 'what-is', 'server', 'when', 'alerts', 'diets', 'ranking', 'ranks', 'support']]]) {
     const { ctx, p } = await abrir(r);
     const ids = await p.evaluate(() => [...document.querySelectorAll('.faq details')].map(d => d.id));
     if (JSON.stringify(ids) !== JSON.stringify(respuestas)) fallos.push(`/${r} direcciones de las preguntas: ${ids.join(',')}`);

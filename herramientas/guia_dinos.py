@@ -22,7 +22,7 @@ GRUPO = {'Carnívoro': 'carnivoros', 'Carnívoro (pescador)': 'carnivoros', 'Her
 
 T = {
     'es': {
-        'titulo': 'Guía de dinosaurios de The Isle Evrima en español – GARRA IBÉRICA',
+        'titulo': 'Guía de dinosaurios de The Isle en español – GARRA IBÉRICA',
         'h1': 'Guía de dinosaurios de The Isle Evrima',
         'desc': 'Las {n} especies jugables de The Isle Evrima en español: compara peso, crecimiento y grupo máximo, '
                 'con controles, consejos y mutaciones recomendadas.',
@@ -85,7 +85,7 @@ T = {
         'comp_todas': 'Todas', 'comp_igual': 'Da igual', 'comp_n': '{n} o más',
         'comp_cuenta': '{n} de {total} especies', 'comp_ninguna': 'Ninguna especie cumple las dos cosas.',
         'plan_corto': '¿Llegas a la cacería?',
-        'esp_titulo': '{nombre} en The Isle Evrima: peso y crecimiento – GARRA IBÉRICA',
+        'esp_titulo': '{nombre} en The Isle Evrima: guía – GARRA IBÉRICA',
         'esp_desc': '{nombre} en The Isle Evrima: hasta {peso}, adulto en {crece} (1×) y grupo máx. de {grupo}. {resto}',
         'esp_resto': ('Controles, consejo y mutaciones recomendadas.', 'Controles y consejo.'),
         'esp_ficha_ante': 'Su ficha', 'esp_ficha_h2': 'Cómo se juega',
@@ -158,7 +158,7 @@ T = {
         'comp_todas': 'All', 'comp_igual': 'Any', 'comp_n': '{n} or more',
         'comp_cuenta': '{n} of {total} species', 'comp_ninguna': 'No species matches both.',
         'plan_corto': 'Adult for the hunt?',
-        'esp_titulo': '{nombre} in The Isle Evrima: weight and growth – GARRA IBÉRICA',
+        'esp_titulo': '{nombre} in The Isle Evrima: guide – GARRA IBÉRICA',
         'esp_desc': '{nombre} in The Isle Evrima: up to {peso}, adult in {crece} (1×), max group {grupo}. {resto}',
         'esp_resto': ('Controls, a tip and recommended mutations.', 'Controls and a tip.'),
         'esp_ficha_ante': 'Its card', 'esp_ficha_h2': 'How to play it',
@@ -256,12 +256,14 @@ def mutaciones(f, d, lang, nivel, glosario=None):
 
     def titulo(clases, extra=''):
         attr = f' class="{" ".join(clases)}"' if clases else ''
-        return f'  <{nivel}{attr}>{t["mut"]}{extra}</{nivel}>'
+        cabeza = f'<{nivel}{attr}>{t["mut"]}</{nivel}>'
+        # El enlace, al lado y no dentro: dentro pasaría a formar parte del título que leen Google y los lectores de pantalla.
+        return f'  <div class="dino-h4">{cabeza}{extra}</div>' if extra else f'  {cabeza}'
     if not f['mut']:
         return [titulo(sub), f'  <p class="dino-fuente">{t["sin"]}</p>']
     enlace = f' <a class="dino-glosario" href="{glosario}">{t["mut_ver"]}</a>' if glosario else ''
     fuente = escape(t['fuente']).format(fuente=f'<span data-ficha="mutfuente">{escape(v["mutfuente"])}</span>')
-    return [titulo(['dino-h4', *sub], enlace),
+    return [titulo(sub, enlace),
             '  <ul class="dino-lista dino-mut" role="list">',
             *[f'    <li data-mut="{escape(k)}">{mutacion(muts[k])}</li>' for k in f['mut']],
             '  </ul>',

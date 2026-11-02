@@ -25,7 +25,7 @@ from html import unescape
 from html.parser import HTMLParser
 from montar_web import RUTA, huella
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 # Todas las páginas las genera herramientas/montar_web.py: {fichero: (página, idioma)}.
 PAGINAS = montar_web.FICHEROS
@@ -221,9 +221,21 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         falla(f'{nombre}: tiene {doc.h1} <h1> y debe tener 1')
     if ' '.join(doc.textos['h1'].split()) != h1:
         falla(f'{nombre}: <h1> es «{" ".join(doc.textos["h1"].split())}» y debe ser «{h1}»')
+    # Google no pone un máximo, pero corta por el ancho del resultado: pasado esto se pierde lo último, que es el nombre del clan.
+    if len(titulo) > 60:
+        falla(f'{nombre}: <title> mide {len(titulo)} caracteres (máximo 60): «{titulo}»')
     desc = metas.get('description') or ''
-    if not 70 <= len(desc) <= 160:
-        falla(f'{nombre}: meta description mide {len(desc)} caracteres (70–160)')
+    if not 70 <= len(desc) <= 155:
+        falla(f'{nombre}: meta description mide {len(desc)} caracteres (70–155)')
+    # Google y los lectores de pantalla leen el encabezado de corrido: ni números pegados a la primera palabra
+    # ni un enlace añadido, que pasaría a formar parte del título.
+    for dentro in re.findall(r'<h[1-6][^>]*>(.*?)</h[1-6]>', html, re.S):
+        junto = re.sub(r'<[^>]+>', '', dentro).strip()
+        if re.match(r'\d+[^\W\d]', junto):
+            falla(f'{nombre}: encabezado con el número pegado al texto: «{junto}»')
+        enlaces = re.findall(r'<a [^>]*>(.*?)</a>', dentro, re.S)
+        if enlaces and plano(' '.join(enlaces)) != plano(dentro):
+            falla(f'{nombre}: encabezado con un enlace que no es todo el título: «{plano(dentro)}»')
     if canon != [base + sufijo]:
         falla(f'{nombre}: canonical {canon} y debe ser {base + sufijo}')
     if alternas != {'es': base + pareja[0], 'en': base + pareja[1], 'x-default': base + pareja[0]}:
@@ -505,6 +517,68 @@ def revisar_normas(normas, tarjetas, falla):
             falla(f'{DATOS.name} ({lang}): «{n["rango"]}» no está en la tarjeta de rangos')
 
 
+# Cómo buscan un clan quienes no lo conocen. Tiene que estar en el texto que se lee, no escondido: Google
+# ignora el campo keywords y el texto oculto penaliza.
+BUSQUEDAS = {
+    'index.html': ['clan español', 'comunidad hispana', 'servidor de Discord', 'España y Latinoamérica', 'gente para jugar', 'en manada', 'Asura'],
+    'unete/index.html': ['servidor de Discord', 'gente para jugar', 'clan, grupo, tribu o comunidad', 'España y Latinoamérica', 'en manada', 'Asura'],
+    'en/index.html': ['Spanish-speaking', 'Hispanic community', 'Discord server', 'Spain and Latin America', 'people to play', 'as a pack', 'Asura'],
+    'en/join/index.html': ['Discord server', 'people to play', 'clan, group, tribe or community', 'Spain and Latin America', 'as a pack', 'Asura'],
+}
+
+
+def texto_visible(html):
+    cuerpo = html[html.find('<body'):]
+    return plano(re.sub(r'<(script|style)\b.*?</\1>|<span class="oculto">.*?</span>', ' ', cuerpo, flags=re.S))
+
+
+def revisar_busquedas(raiz, base, falla):
+    """Lo que pide quien busca clan está a la vista, las fotos de la portada se describen y los vídeos se declaran."""
+    for nombre, frases in BUSQUEDAS.items():
+        visible = texto_visible(leer(raiz, nombre))
+        for frase in frases:
+            if frase not in visible:
+                falla(f'{nombre}: el texto visible no dice «{frase}», que es como lo buscan')
+    for fichero in raiz.rglob('index.html'):
+        nombre = fichero.relative_to(raiz).as_posix()
+        pie = montar_web.T['en' if nombre.startswith('en/') else 'es']['pie_enlace']
+        if not re.search(rf'<footer.*?<a href="[^"]+">{re.escape(pie)}</a>', fichero.read_text(encoding='utf-8'), re.S):
+            falla(f'{nombre}: el pie no enlaza a la portada con «{pie}»')
+    for portada, galeria, clan in (('index.html', 'galeria/index.html', 'clan/index.html'),
+                                   ('en/index.html', 'en/gallery/index.html', 'en/clan/index.html')):
+        # La tira de fotos de la portada se describe con el texto de la galería.
+        textos = {foto: alt for foto, alt in re.findall(r'class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, galeria))}
+        html = leer(raiz, portada)
+        tira = re.search(r'<ul class="tira"[^>]*>(.*?)</ul>', html, re.S)
+        fotos = re.findall(r'<li><img src="[^"]*?img/([a-z-]+)-\d+\.webp" alt="([^"]*)"', tira.group(1)) if tira else []
+        if not fotos:
+            falla(f'{portada}: no encuentro las fotos de la tira')
+        for foto, alt in fotos:
+            if not alt or alt != textos.get(foto):
+                falla(f'{portada}: la foto {foto} de la tira no lleva el texto de la galería (lleva «{alt}»)')
+        # Cada vídeo de una batalla, declarado para Google con lo que pide y apuntando a ficheros que existen.
+        html = leer(raiz, clan)
+        pagina = base + clan.replace('index.html', '')
+        grafo = next(iter(json.loads(b)['@graph'] for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)))
+        declarados = {n.get('contentUrl'): n for n in grafo if n.get('@type') == 'VideoObject'}
+        videos = re.findall(r'<video [^>]*data-portada="([^"]+)"[^>]*>.*?<source src="([^"]+)" type="video/mp4"><a ', html, re.S)
+        if not videos:
+            falla(f'{clan}: no encuentro los vídeos de las batallas')
+        for portada_video, fichero in videos:
+            nodo = declarados.pop(urljoin(pagina, fichero), None)
+            if not nodo:
+                falla(f'{clan}: el vídeo {fichero} no está declarado como VideoObject')
+                continue
+            if nodo.get('thumbnailUrl') != urljoin(pagina, portada_video):
+                falla(f'{clan}: el vídeo {fichero} declara otra portada: {nodo.get("thumbnailUrl")}')
+            if not re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ', nodo.get('uploadDate') or ''):
+                falla(f'{clan}: el vídeo {fichero} sin fecha de publicación válida: {nodo.get("uploadDate")} (ponla en batallas_web.VIDEOS_PUBLICADOS)')
+            if not nodo.get('name') or not nodo.get('description'):
+                falla(f'{clan}: el vídeo {fichero} sin nombre o descripción')
+        if declarados:
+            falla(f'{clan}: declara vídeos que la página no enseña: {sorted(declarados)}')
+
+
 def revisar_alfas(raiz, falla):
     """Los jefes de El clan son los de la cita de la tarjeta #rangos y justo los de JEFES. Devuelve,
     por fichero, el único texto en el que pueden salir sus nombres sin que salte «sin apodos»."""
@@ -548,7 +622,7 @@ def revisar_montaje(raiz, d, falla):
             html = leer(raiz, nombre)
             mut_id = guia_dinos.T[lang]['mut_id']
             con_mut = html.count('class="dino-lista dino-mut"')
-            enlaces = len(re.findall(rf'<h4 class="dino-h4">[^<]*<a class="dino-glosario" href="#{mut_id}">', html))
+            enlaces = len(re.findall(rf'<div class="dino-h4"><h4>[^<]*</h4> <a class="dino-glosario" href="#{mut_id}">', html))
             if not con_mut or enlaces != con_mut or f'id="{mut_id}"' not in html:
                 falla(f'{nombre}: {con_mut} fichas con mutaciones y {enlaces} enlaces a su glosario (#{mut_id})')
 
@@ -867,6 +941,7 @@ def main(raiz, sin_apodos=False, avisa=print):
                                  og=montar_web.imagen_og(pagina, lang)[0])
     revisar_montaje(raiz, d, falla)
     revisar_especies(raiz, base, falla)
+    revisar_busquedas(raiz, base, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_estilos(raiz, falla)
