@@ -89,6 +89,12 @@ python herramientas/prueba_batallas.py
   `python herramientas/prueba_cifras.py` prueba qué acepta y qué rechaza, cómo se copia y cómo sale la portada con
   y sin datos. Las bajas del podio (las de cada especie) no tienen por qué sumar las bajas del clan: son dos
   recuentos distintos de Asura Nexus.
+- «Empezar en Asura» (`unete/` y `en/join/`, apartado `#empezar-asura` / `#start-asura`) resume lo que decía la web
+  oficial de Asura el 2 de noviembre de 2026 (los dos servidores, el boleto de lotería diario, el plan gratis de
+  Nexus con mapa en vivo y el aviso de hacer safelog, con su temporizador de 45 s) y manda a comprobar allí las
+  normas. Solo dice eso: ninguna promesa más. Si la web de Asura cambia, hay que cambiar el texto en los dos
+  idiomas y la fecha; `comprobar.py` (`ASURA`) falla si falta el apartado, una de esas frases, la fecha o si enlaza a
+  algo que no sea su web, y el aviso legal nombra Asura entre los sitios a los que sacan los enlaces.
 - Las batallas del clan (portada y El clan, marcadores `{{cifras}}` y `{{batallas}}`) salen
   de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
   Discord. `montar_web.py` la pone al día sola si encuentra el original (variable

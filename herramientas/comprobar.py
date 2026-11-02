@@ -55,7 +55,7 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
-SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
@@ -619,6 +619,38 @@ def revisar_busquedas(raiz, base, falla):
             falla(f'{clan}: declara vídeos que la página no enseña: {sorted(declarados)}')
 
 
+# «Empezar en Asura» (Cómo entrar): lo que la web oficial de Asura decía el 2/11/2026 y la frase de que las normas se
+# comprueban allí. Es lo único que la fuente dice: ninguna promesa más.
+ASURA = {
+    'es': ('unete/index.html', 'empezar-asura', ['Asura 1', 'Asura 2', 'Start here if you’re new', 'Built for big fights', 'Dino Lab',
+           'Always safelog before using any buy, request, storage save/load, or skin change', '45 segundos', 'lotería gratis',
+           'mapa en vivo', 'Comprueba las normas allí']),
+    'en': ('en/join/index.html', 'start-asura', ['Asura 1', 'Asura 2', 'Start here if you’re new', 'Built for big fights', 'Dino Lab',
+           'Always safelog before using any buy, request, storage save/load, or skin change', '45-second', 'free lottery ticket',
+           'live map', 'Check the rules there']),
+}
+WEB_ASURA = 'https://asura-evrima.com/'
+
+
+def revisar_asura(raiz, falla):
+    for lang, (nombre, ancla, frases) in ASURA.items():
+        html = leer(raiz, nombre)
+        m = re.search(rf'<section class="seccion" id="{ancla}".*?</section>', html, re.S)
+        if not m:
+            falla(f'{nombre}: falta el apartado «Empezar en Asura» (id="{ancla}")')
+            continue
+        seccion = m.group(0)
+        visible = texto_visible('<body>' + seccion)
+        for frase in frases:
+            if frase not in visible:
+                falla(f'{nombre}: el apartado de Asura no dice «{frase}»')
+        enlaces = re.findall(r'<a [^>]*href="(https?://[^"]+)"', seccion)
+        if not enlaces or set(enlaces) != {WEB_ASURA}:
+            falla(f'{nombre}: el apartado de Asura debe enlazar solo a su web oficial ({WEB_ASURA}) y enlaza a {sorted(set(enlaces))}')
+        if not re.search(r'<time datetime="\d{4}-\d\d-\d\d">', seccion):
+            falla(f'{nombre}: el apartado de Asura no dice a qué día son los datos')
+
+
 def revisar_alfas(raiz, falla):
     """Los jefes de El clan son los de la cita de la tarjeta #rangos y justo los de JEFES. Devuelve,
     por fichero, el único texto en el que pueden salir sus nombres sin que salte «sin apodos»."""
@@ -1048,6 +1080,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_montaje(raiz, d, falla)
     revisar_especies(raiz, base, falla)
     revisar_busquedas(raiz, base, falla)
+    revisar_asura(raiz, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_estilos(raiz, falla)
