@@ -1,7 +1,7 @@
 // Uso: node herramientas/prueba_caceria.js [ruta a caceria.js]
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { proximaCaceria, restante, planCrecer, semana, enZona, aIso } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
+const { proximaCaceria, restante, planCrecer, semana, enZona } = require(path.resolve(process.argv[2] || path.join(__dirname, '..', 'docs', 'caceria.js')));
 
 const casos = [
   ['jueves, horario de invierno', '2026-10-29T12:00:00Z', '2026-10-31T21:00:00Z', false],
@@ -134,28 +134,6 @@ try {
   console.log('FALLO', 'una zona desconocida no rompe la página', '→', e.message.split('\n')[0]);
 }
 
-// El instante de la Cacería como lo pide el marcado Event (hora de Madrid con su desfase), incluidos los dos
-// cambios de hora: el desfase es el del instante, no el de la época del año de la página.
-const isos = [
-  ['sábado de invierno', '2026-11-07T21:00:00Z', '2026-11-07T22:00:00+01:00'],
-  ['sábado de verano', '2026-10-24T20:00:00Z', '2026-10-24T22:00:00+02:00'],
-  ['el segundo antes de volver al horario de invierno', '2026-10-25T00:59:59Z', '2026-10-25T02:59:59+02:00'],
-  ['justo al volver al horario de invierno', '2026-10-25T01:00:00Z', '2026-10-25T02:00:00+01:00'],
-  ['el segundo antes de pasar al horario de verano', '2026-03-29T00:59:59Z', '2026-03-29T01:59:59+01:00'],
-  ['justo al pasar al horario de verano', '2026-03-29T01:00:00Z', '2026-03-29T03:00:00+02:00'],
-  ['el último segundo del año en Madrid', '2026-12-31T22:59:59Z', '2026-12-31T23:59:59+01:00'],
-  ['medianoche de año nuevo en Madrid', '2026-12-31T23:00:00Z', '2027-01-01T00:00:00+01:00'],
-];
-for (const [nombre, instante, esperado] of isos) {
-  try {
-    assert.equal(aIso(Date.parse(instante)), esperado);
-    console.log('ok   ', 'ISO:', nombre);
-  } catch (e) {
-    fallos++;
-    console.log('FALLO', 'ISO:', nombre, '→', e.message.split('\n')[0]);
-  }
-}
-
 // Crear un formateador es lo que cuesta al abrir la página: uno por zona e idioma, sin mezclarlos.
 try {
   const Original = Intl.DateTimeFormat;
@@ -173,6 +151,6 @@ try {
   console.log('FALLO', 'un formateador por zona e idioma', '→', e.message.split('\n')[0]);
 }
 
-const total = casos.length + tiempos.length + planes.length + conHoras.length + semanas.length + zonas.length + isos.length + 2;
+const total = casos.length + tiempos.length + planes.length + conHoras.length + semanas.length + zonas.length + 2;
 console.log(fallos ? `${fallos} fallos` : `Todo correcto (${total} casos)`);
 process.exit(fallos ? 1 : 0);

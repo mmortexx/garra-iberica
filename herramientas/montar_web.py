@@ -25,7 +25,6 @@ En los textos de paginas/:
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
 """
-import datetime as dt
 import hashlib
 import json
 import re
@@ -49,8 +48,7 @@ DATOS_CLAN = HERRAMIENTAS / 'datos_clan.json'
 INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js']
-# Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas) y desde cuándo cuenta
-# la «próxima Cacería» del marcado Event.
+# Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
 REVISADA = '2026-11-02'
 LANGS = ('es', 'en')
 
@@ -344,9 +342,6 @@ def grafo(pagina, lang, base, datos, cuerpo, fecha):
             for i, (nombre, enlace) in enumerate(especies, 1)]}
     if pagina == 'clan':
         nodos += batallas_web.videos_declarados(lang, base)
-    if pagina == 'caceria':
-        # La próxima Cacería desde la última revisión (no desde hoy: así montar da siempre lo mismo). Caduca; ver calendario.evento().
-        nodos.append({**calendario.evento(lang, base, INVITACION, dt.date.fromisoformat(REVISADA)), 'image': [og]})
     faq = preguntas(cuerpo)
     if faq:
         nodos.append({'@type': 'FAQPage', '@id': url + '#preguntas', 'inLanguage': lang, 'mainEntity': [
@@ -443,8 +438,10 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
     datos, cuerpo, fecha = contenido(pagina, lang, d)
     cuerpo = rellenar(cuerpo, pagina, lang, base, d)
     desc = datos['descripcion']
-    if not 70 <= len(desc) <= 160:
-        sys.exit(f'{pagina} ({lang}): la descripción mide {len(desc)} caracteres (70–160)')
+    if not 70 <= len(desc) <= 155:
+        sys.exit(f'{pagina} ({lang}): la descripción mide {len(desc)} caracteres (70–155)')
+    if len(datos['titulo']) > 60:
+        sys.exit(f'{pagina} ({lang}): el título mide {len(datos["titulo"])} caracteres (máximo 60)')
     v = {n: huella(docs / n) for n in VERSIONADOS}
     url = base + desde
     scripts = [f'<script src="{pre}efectos.js?v={v["efectos.js"]}" defer></script>']

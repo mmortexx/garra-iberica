@@ -29,8 +29,6 @@ jobs:
         run: node herramientas/prueba_caceria.js
       - name: Prueba de los recortes de la galería
         run: python herramientas/prueba_galeria.py
-      - name: Prueba del calendario y del Event de la Cacería
-        run: python herramientas/prueba_calendario.py
       - name: Prueba de las cifras del clan
         run: python herramientas/prueba_cifras.py
       - name: Prueba de las batallas

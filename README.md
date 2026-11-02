@@ -36,7 +36,6 @@ python herramientas/montar_web.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 python herramientas/prueba_galeria.py
-python herramientas/prueba_calendario.py
 python herramientas/prueba_cifras.py
 python herramientas/prueba_batallas.py
 python herramientas/prueba_borradores.py
@@ -45,7 +44,7 @@ python herramientas/prueba_borradores.py
 - `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
-  `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
+  `titulo:` (60 como mucho), `descripcion:` (70–155 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
@@ -133,16 +132,6 @@ python herramientas/prueba_borradores.py
   en las páginas, todo a partir de `herramientas/datos_clan.json` y de la dirección de la web. Hay
   que ejecutarlo si cambia la hora de la Cacería o la dirección. Los `.ics` llevan finales de línea
   CRLF, como pide el formato; `.gitattributes` evita que git los cambie.
-  También da el marcado `Event` (schema.org) de las páginas de la Cacería (`/caceria/` y `/en/hunt/`): la
-  próxima Cacería, con su hora de Madrid y el Discord como lugar, y el horario semanal (`eventSchedule`).
-  **La fecha de la próxima Cacería caduca**, porque la web es estática: `montar_web.py` la calcula desde `REVISADA`
-  (no desde hoy, para que montar dé siempre lo mismo), así que a la semana de montar ya es una pasada. Por eso
-  `caceria.js` la cambia en el navegador por la de verdad (con el desfase de Madrid de ese día, aunque el
-  dispositivo esté en otra zona; Google también ejecuta JavaScript al rastrear), y sin JavaScript queda el
-  horario semanal, que no caduca. `comprobar.py` revisa que el Event cuadre con `datos_clan.json` y, si la
-  fecha que lleva la página ya pasó, avisa (no falla): la de montar se pone al día al volver a montar, con `REVISADA` al
-  día, y publicar. `python herramientas/prueba_calendario.py` y
-  `node herramientas/prueba_caceria.js` prueban la próxima fecha y su desfase, también en los cambios de hora.
 
 - `comprobar.py` revisa todas las páginas (las fijas y las de cada especie): título, encabezado, metadatos, idiomas, datos estructurados
   (y que las preguntas frecuentes coincidan con las visibles), sitemap, robots, enlaces, imágenes,
