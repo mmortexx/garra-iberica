@@ -35,7 +35,7 @@ ALTO = {'galeria-deino-fila': 1391}
 # Imágenes propias que no son capturas: medidas del original, sin marca de agua. El original está en la
 # «carpeta» de su entrada de fotos.json, relativa al proyecto del Discord.
 PROPIAS = {'galeria-manada-atardecer': (1672, 941)}
-FOTOS_ORIGINAL = Path(os.environ.get('GARRA_FOTOS') or Path.home() / 'Downloads' / 'garra-iberica' / 'galeria' / 'fotos.json')
+FOTOS_ORIGINAL = Path(os.environ.get('GARRA_FOTOS') or Path.home() / 'Documents' / 'Cosas' / 'garra-iberica' / 'galeria' / 'fotos.json')
 # Zona de la marca de agua «THE ISLE» en las capturas originales: ningún recorte la toca.
 MARCA = (3080, 0, 3439, 330)
 AMPLIADA = (0, 0, 3080, 1439)

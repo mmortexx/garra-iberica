@@ -15,7 +15,7 @@ from pathlib import Path
 HERRAMIENTAS = Path(__file__).resolve().parent
 DOCS = HERRAMIENTAS.parent / 'docs'
 FICHAS = HERRAMIENTAS / 'fichas_dinos.json'
-INVITACION = 'https://discord.com/invite/txpBJzXvtK'
+INVITACION = 'https://discord.com/invite/z5mU6a9Kf8'
 STEAM = 'https://store.steampowered.com/app/376210/'
 RUTAS = {'es': 'dinosaurios/', 'en': 'en/dinosaurs/'}
 GRUPO = {'Carnívoro': 'carnivoros', 'Carnívoro (pescador)': 'carnivoros', 'Herbívoro': 'herbivoros', 'Omnívoro': 'omnivoros'}

@@ -54,7 +54,7 @@ python herramientas/prueba_galeria.py
   `montar_web.py`), copia exacta de `wiki/fichas.json` del proyecto del Discord. Si cambian las
   fichas: copiar ese fichero encima de `fichas_dinos.json` y ejecutar `montar_web.py`.
   `comprobar.py` falla si alguna página dice otro número de fichas o, cuando encuentra el original
-  (variable `GARRA_FICHAS` o `~/Downloads/garra-iberica/wiki/fichas.json`), si la copia se ha
+  (variable `GARRA_FICHAS` o `~/Documents/Cosas/garra-iberica/wiki/fichas.json`), si la copia se ha
   quedado atrás. El planificador de cada ficha («¿Llegas adulto a la cacería?») usa los tiempos de
   crecimiento de esas mismas fichas, y las horas que se juega al día; `guia_dinos.py` se para si no entiende alguno.
   En la guía las fichas van plegadas: para elegir está la comparativa y para leer una entera, su página.
@@ -72,7 +72,7 @@ python herramientas/prueba_galeria.py
 - Las batallas del clan (portada y El clan, marcadores `{{batallas_cifras}}` y `{{batallas}}`) salen
   de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
   Discord. `montar_web.py` la pone al día sola si encuentra el original (variable
-  `GARRA_BATALLAS` o `~/Downloads/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
+  `GARRA_BATALLAS` o `~/Documents/Cosas/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
   falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
   web hay que volver a montar y publicar: no aparece sola.
 - La guía de combate (`paginas/<idioma>/combate.html`) es la del canal #wiki del Discord, con otra
@@ -108,7 +108,7 @@ python herramientas/prueba_galeria.py
   y la franja horaria de la Cacería en Latinoamérica (calculada con las zonas horarias de cada país
   para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni más
   apodos que los de los tres jefes, de `tarjetas.json` (los textos del Discord, fuera de este repositorio). Si el comprobador
-  encuentra `tarjetas.json` (variable `GARRA_TARJETAS` o `~/Downloads/garra-iberica/tarjetas.json`),
+  encuentra `tarjetas.json` (variable `GARRA_TARJETAS` o `~/Documents/Cosas/garra-iberica/tarjetas.json`),
   comprueba además que el extracto siga al día; si no, lo avisa. Si cambian los textos del
   Discord: actualizar el extracto y la web a la vez.
   La página de normas sale entera de ese extracto (`normas` en `datos_clan.json`): cada norma, con

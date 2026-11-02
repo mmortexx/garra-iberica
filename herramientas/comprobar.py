@@ -29,13 +29,13 @@ from urllib.parse import urljoin, urlparse
 
 # Todas las páginas las genera herramientas/montar_web.py: {fichero: (página, idioma)}.
 PAGINAS = montar_web.FICHEROS
-FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'wiki' / 'fichas.json')
+FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Documents' / 'Cosas' / 'garra-iberica' / 'wiki' / 'fichas.json')
 # Guía de la wiki del Discord: las frases de «Cómo leer las fichas» marcadas como suyas deben seguir diciéndolo.
 FOTOS_ORIGINAL = preparar_galeria.FOTOS_ORIGINAL
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 GUIA_WIKI = 'Cómo usar la wiki'
 GUIA_COMBATE = 'Guía de combate'
-INVITACION = 'https://discord.com/invite/txpBJzXvtK'
+INVITACION = 'https://discord.com/invite/z5mU6a9Kf8'
 VERSIONADOS = montar_web.VERSIONADOS
 MAX_KB_IMAGEN = 120
 # Las fotos de la galería a tamaño grande solo se descargan si alguien abre una; aun así, en el
@@ -58,7 +58,7 @@ SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'ca
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
-TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'tarjetas.json')
+TARJETAS = Path(os.environ.get('GARRA_TARJETAS') or Path.home() / 'Documents' / 'Cosas' / 'garra-iberica' / 'tarjetas.json')
 FRANJA = {'es': r'entre las (\d{2}):00 y las (\d{2}):00', 'en': r'between (\d{2}):00 and (\d{2}):00'}
 # La encuesta y el recordatorio de la Cacería los publican scripts del proyecto del Discord.
 DISCORD = Path(os.environ.get('GARRA_DISCORD') or TARJETAS.parent)
@@ -1068,7 +1068,11 @@ if __name__ == '__main__':
     sys.stdout.reconfigure(encoding='utf-8')
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     raiz = Path(args[0]) if args else Path(__file__).resolve().parent.parent / 'docs'
-    fallos = main(raiz, sin_apodos='--sin-apodos' in sys.argv, avisa=lambda t: print('Aviso:', t))
+    avisos = []
+    fallos = main(raiz, sin_apodos='--sin-apodos' in sys.argv, avisa=lambda t: (print('Aviso:', t), avisos.append(t)))
+    # En GitHub no está el proyecto del Discord; en este PC, que falte es que se ha movido y nadie compara nada.
+    if not os.environ.get('GITHUB_ACTIONS'):
+        fallos += [t for t in avisos if t.startswith('sin ')]
     for f in fallos:
         print('FALLO:', f)
     print(f'{len(fallos)} fallos' if fallos else 'Todo correcto')

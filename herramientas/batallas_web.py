@@ -3,7 +3,7 @@
 La fuente es batallas/batallas.json del proyecto del Discord (el mismo que publica cada batalla en
 #batallas). GitHub no ve ese proyecto, así que la web lee una copia exacta, herramientas/batallas.json:
 montar_web.py la pone al día sola cada vez que encuentra el original (variable GARRA_BATALLAS o
-~/Downloads/garra-iberica/batallas/batallas.json), y comprobar.py falla si la copia y el original
+~/Documents/Cosas/garra-iberica/batallas/batallas.json), y comprobar.py falla si la copia y el original
 difieren. Una batalla nueva se apunta solo en el Discord; aquí no se escribe nada a mano.
 El vídeo de cada batalla (si lo hay) lo genera preparar_videos.py en docs/video/batalla-<clave>.mp4,
 con su portada en docs/img/batalla-<clave>.webp; la lista lo pone solo si el fichero existe.
@@ -17,7 +17,7 @@ from pathlib import Path
 
 COPIA = Path(__file__).resolve().parent / 'batallas.json'
 DOCS = Path(__file__).resolve().parent.parent / 'docs'
-ORIGINAL = Path(os.environ.get('GARRA_BATALLAS') or Path.home() / 'Downloads' / 'garra-iberica' / 'batallas' / 'batallas.json')
+ORIGINAL = Path(os.environ.get('GARRA_BATALLAS') or Path.home() / 'Documents' / 'Cosas' / 'garra-iberica' / 'batallas' / 'batallas.json')
 # Más puntos que estos por bando no caben en una línea del móvil: a partir de ahí, solo la cifra.
 MAX_PUNTOS = 12
 # Batallas que salen en la portada (las últimas); la lista entera está en El clan.

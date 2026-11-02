@@ -1,5 +1,5 @@
 {
-  "_nota": "Extracto sin datos personales de tarjetas.json (los textos del Discord del clan, que viven fuera del repositorio). comprobar.py exige que la web diga lo mismo que este extracto y, si encuentra tarjetas.json (variable GARRA_TARJETAS o ~/Downloads/garra-iberica/tarjetas.json), que el extracto siga al día con el original. Cada «fuente» es una cita literal de tarjetas.json.",
+  "_nota": "Extracto sin datos personales de tarjetas.json (los textos del Discord del clan, que viven fuera del repositorio). comprobar.py exige que la web diga lo mismo que este extracto y, si encuentra tarjetas.json (variable GARRA_TARJETAS o ~/Documents/Cosas/garra-iberica/tarjetas.json), que el extracto siga al día con el original. Cada «fuente» es una cita literal de tarjetas.json.",
   "caceria": {
     "dia_semana": 6,
     "hora": 22,
