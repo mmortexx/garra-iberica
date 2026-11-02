@@ -1217,6 +1217,9 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 }
 @keyframes bruma { to { transform: translate3d(-50%, 0, 0); } }
 .bruma.fuera::before, .bruma.fuera::after, .reposo .bruma::before, .reposo .bruma::after { animation-play-state: paused; }
+/* Fuera de pantalla, y no solo parada: una animación parada en una capa muy lejos de la vista (la llamada final de
+   una portada larga) mantiene al navegador pidiendo fotogramas a 60 por segundo, el doble de lo que gastan las ascuas. */
+.bruma.fuera { content-visibility: hidden; }
 @media (hover: none), (max-width: 700px) { .bruma::after { content: none; } }
 /* En el móvil la foto de la portada va arriba y el texto debajo: la bruma, a los pies de la foto. */
 @media (max-width: 700px) { .portada .bruma { top: 8rem; bottom: auto; height: 15rem; } }

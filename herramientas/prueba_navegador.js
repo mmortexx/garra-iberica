@@ -246,8 +246,9 @@ const efectos = async navegador => {
   }
   // Móvil con la web quieta: las ascuas recalculan 30 veces por segundo; si salen 60, alguna animación se
   // ha salido de la tarjeta gráfica (pasó con dos a la vez en la garra: el procesador, del 13 % al 40 %).
-  for (const r of ['', 'en/', 'clan/', 'galeria/']) {
-    const { ctx, p } = await abrir(r, { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
+  // También en una pantalla baja: la bruma de la llamada final, lejísimos de la vista, no puede mantener frames.
+  for (const [r, alto] of [['', 915], ['en/', 915], ['clan/', 915], ['galeria/', 915], ['', 640], ['en/', 640]]) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 412, height: alto }, isMobile: true, hasTouch: true });
     await p.waitForTimeout(4000);
     const cdp = await ctx.newCDPSession(p);
     await cdp.send('Performance.enable');
@@ -255,7 +256,7 @@ const efectos = async navegador => {
     const antes = await estilos();
     await p.waitForTimeout(3000);
     const porSegundo = (await estilos() - antes) / 3;
-    if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
+    if (porSegundo > 45) fallos.push(`/${r} en el móvil (${alto} px de alto), quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
     await ctx.close();
   }
   // Cada respuesta tiene su dirección: abre esa pregunta y la deja a la vista, entrando de fuera y desde la
