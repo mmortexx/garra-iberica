@@ -3,14 +3,6 @@
 // (?orden=peso&dieta=herbivoros&grupo=5#comparar) para poder pasar el enlace ya filtrado. Con
 // &marca=triceratops, la página de una especie enseña dónde queda esa especie en la lista.
 (() => {
-  // Las fichas van plegadas: un enlace a una (dinosaurios/#triceratops) la abre.
-  const abrirFicha = () => {
-    const destino = location.hash && document.getElementById(location.hash.slice(1));
-    if (destino && destino.matches('details')) { destino.open = true; destino.scrollIntoView(); }
-  };
-  addEventListener('hashchange', abrirFicha);
-  abrirFicha();
-
   const caja = document.querySelector('[data-comparar]');
   const lista = document.querySelector('[data-comparar-lista]');
   if (!caja || !lista) return;

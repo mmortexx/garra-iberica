@@ -258,6 +258,36 @@ const efectos = async navegador => {
     if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
     await ctx.close();
   }
+  // Cada respuesta tiene su dirección: abre esa pregunta y la deja a la vista, entrando de fuera y desde la
+  // portada, que lleva a ellas. Las direcciones circulan: cambiar una rompe enlaces ya compartidos.
+  for (const [r, respuestas] of [['unete/', ['como-entro', 'buscando', 'coste', 'nuevo', 'micro', 'latam', 'es-servidor', 'que-es', 'servidor', 'cuando', 'avisos', 'dietas', 'ranking', 'rangos', 'apoyar']],
+    ['en/join/', ['how-to-join', 'recruiting', 'spanish', 'cost', 'new', 'mic', 'latam', 'is-server', 'what-is', 'server', 'when', 'alerts', 'diets', 'ranking', 'ranks', 'support']]]) {
+    const { ctx, p } = await abrir(r);
+    const ids = await p.evaluate(() => [...document.querySelectorAll('.faq details')].map(d => d.id));
+    if (JSON.stringify(ids) !== JSON.stringify(respuestas)) fallos.push(`/${r} direcciones de las preguntas: ${ids.join(',')}`);
+    await ctx.close();
+  }
+  const respuestaAbierta = () => {
+    const d = document.getElementById(location.hash.slice(1));
+    if (!d || d.tagName !== 'DETAILS') return 'no existe';
+    const b = d.querySelector('summary').getBoundingClientRect();
+    const barra = document.querySelector('.barra').getBoundingClientRect().bottom;
+    return !d.open ? 'plegada' : b.top < barra - 1 || b.bottom > innerHeight ? `fuera de la vista (${Math.round(b.top)})` : '';
+  };
+  for (const [desde, selector, destino] of [['', '.ficha a[href$="#micro"]', 'unete/#micro'], ['', '.datos a[href$="#micro"]', 'unete/#micro'], ['en/', '.ficha a[href$="#server"]', 'en/join/#server'], ['en/', '.datos a[href$="#mic"]', 'en/join/#mic']]) {
+    for (const opts of [{}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]) {
+      const { ctx, p } = await abrir(desde, opts);
+      const enlace = await p.$(selector);
+      if (!enlace) { fallos.push(`/${desde} sin enlace ${selector}`); await ctx.close(); continue; }
+      await enlace.evaluate(a => a.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await enlace.click();
+      await p.waitForURL('**/' + destino);
+      await p.waitForTimeout(1200);
+      const m = await p.evaluate(respuestaAbierta);
+      if (m) fallos.push(`/${desde} → ${destino}: ${m}`);
+      await ctx.close();
+    }
+  }
   // Móvil tumbado: el botón principal se ve sin bajar, el título no se come la pantalla y el menú cabe entero.
   for (const [ancho, alto] of [[844, 390], [667, 375]]) {
     const { ctx, p } = await abrir('', { viewport: { width: ancho, height: alto }, isMobile: true, hasTouch: true });

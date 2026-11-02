@@ -5,6 +5,13 @@
   const viejo = location.hash.slice(1);
   if (movidas && Object.hasOwn(movidas, viejo)) { location.replace(movidas[viejo]); return; }
   const raiz = document.documentElement;
+  // Lo plegado que nombra la dirección (una ficha, dinosaurios/#triceratops, o una respuesta, unete/#micro) se abre.
+  const abrirNombrado = () => {
+    const destino = location.hash && document.getElementById(location.hash.slice(1));
+    if (destino && destino.matches('details')) { destino.open = true; destino.scrollIntoView(); }
+  };
+  addEventListener('hashchange', abrirNombrado);
+  abrirNombrado();
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const punteroFino = matchMedia('(hover: hover) and (pointer: fine)');
   const unaVezPorFotograma = fn => {

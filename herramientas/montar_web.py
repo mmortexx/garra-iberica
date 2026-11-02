@@ -47,7 +47,7 @@ INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js']
 # Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
-REVISADA = '2026-11-01'
+REVISADA = '2026-11-02'
 LANGS = ('es', 'en')
 
 # id, ruta (es, en), nombre en el pie y en las migas (es, en). Arriba solo van las de MENU; en el
