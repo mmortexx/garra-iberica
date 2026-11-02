@@ -531,7 +531,7 @@ def contenido_especie(nombre, lang, d=None):
         lugar, empates = puestos(d)[nombre][criterio]
         texto = t['esp_puesto'].format(n=lugar, total=n, criterio=t['esp_puestos'][criterio]) + (t['esp_empata'](empates) if empates else '')
         return (f'<dd class="dino-puesto" data-puesto="{criterio}">{texto} · '
-                f'<a href="{guia}?orden={criterio}&amp;marca={a}#{t["comp_id"]}">{t["esp_lista"]}</a></dd>')
+                f'<a href="{guia}#{t["comp_id"]}?orden={criterio}&amp;marca={a}">{t["esp_lista"]}</a></dd>')
     otras = [o for o in d['fichas'] if GRUPO[o['dieta']] == g and o is not f]
     otras_h2 = t['esp_otras'].format(grupo=t['grupos'][g].lower())
 
@@ -540,7 +540,7 @@ def contenido_especie(nombre, lang, d=None):
             f'      <p class="entra"><span class="dieta dieta-{g.rstrip("s")}" data-ficha="dieta">{escape(t["dieta"][f["dieta"]])}</span></p>',
             f'      <h1 id="titulo" class="entra especie-nombre">{escape(nombre)}</h1>',
             f'      <p class="guia-revisado entra entra-2">{revisado}</p>',
-            '      <p class="saltos entra entra-3">' + ''.join(f'<a href="{guia}?{q}#{i}">{texto}</a>' for q, i, texto in (
+            '      <p class="saltos entra entra-3">' + ''.join(f'<a href="{guia}#{i}?{q}">{texto}</a>' for q, i, texto in (
                 (f'especie={a}', t['plan_id'], t['plan_corto']), (f'marca={a}', t['comp_id'], t['comp_h2']))) + '</p>',
         ]),
         '  <section class="seccion" id="ficha" aria-labelledby="t-ficha">',

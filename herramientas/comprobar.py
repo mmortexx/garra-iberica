@@ -342,6 +342,11 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         limpia, _, fragmento = ruta.partition('#')
         limpia, _, consulta = limpia.partition('?')
         version = consulta[2:] if consulta.startswith('v=') else ''
+        # Cada dirección con parámetros es para Google una página más que rastrear: lo que se pasa a una
+        # página (la especie, el orden) va en el fragmento (#comparar?orden=peso), que no se rastrea.
+        if consulta and not version:
+            falla(f'{nombre}: enlace interno con parámetros «{ruta}»; ponlos tras el fragmento (#id?clave=valor)')
+        fragmento = fragmento.partition('?')[0]
         destino = (carpeta / (limpia + 'index.html' if limpia.endswith('/') else limpia)).resolve()
         if not destino.is_file():
             falla(f'{nombre}: referencia a un fichero que no existe: {ruta}')
@@ -395,6 +400,16 @@ def revisar_datos(raiz, falla, avisa):
     esperados = ', '.join(f"{a['que']}: [{a['dia_semana']}, {a['hora']}]" for a in cac['avisos'])
     if not avisos_js or avisos_js.group(1).strip() != esperados:
         falla(f'caceria.js: AVISOS no es {{ {esperados} }} como dice {DATOS.name}')
+    # El texto que guarda el sitio de la cuenta atrás hasta que se calcula la fecha no puede traer una fecha
+    # escrita a mano: se quedaría vieja (y mala, como un «sábado, 30 de noviembre» que cae en lunes).
+    reservas = re.findall(r"reserva: '([^']*)'", js)
+    if len(reservas) != 2:
+        falla(f'caceria.js: esperaba una reserva por idioma y hay {len(reservas)}')
+    for r in reservas:
+        if re.search(r'\d', re.sub(r'\d{2}:\d{2}', '', r)):
+            falla(f'caceria.js: la reserva «{r}» lleva una fecha escrita a mano; solo puede decir el día de la semana y la hora')
+        if f'{cac["hora"]:02d}:00' not in r:
+            falla(f'caceria.js: la reserva «{r}» no dice las {cac["hora"]:02d}:00 de {DATOS.name}')
     # El selector «¿A qué hora es en tu país?»: zonas que existen y las mismas en los dos idiomas.
     zonas_selector = {}
     for nombre, (pagina, lang) in PAGINAS.items():
@@ -457,8 +472,15 @@ def revisar_datos(raiz, falla, avisa):
                 falla(f'{nombre}: el enlace a Google Calendar no coincide con {DATOS.name}: ejecuta herramientas/montar_web.py')
         if pagina != 'clan':
             continue
+        # En español, el rango tal cual; en inglés, «Recruit (Recluta)»: primero el idioma de quien lee y, entre
+        # paréntesis, el nombre que verá en el Discord.
+        titulos = [rango if lang == 'es' or rango == ingles else f'{ingles} ({rango})' for rango, ingles in datos['rangos_en'].items()]
+        if re.findall(r'<h4>([^<]*)</h4>', html) != titulos:
+            falla(f'{nombre}: los rangos de la escalera no son {titulos} (datos_clan.json, rangos_en)')
         for a in datos['ascensos']:
-            m = re.search(rf'<h4>{re.escape(a["rango"])}(?: \([^)<]*\))?</h4><p>([^<]*)</p>', html)
+            rango = re.escape(a['rango'])
+            titulo = rango if lang == 'es' else f'[^<(]*[(]{rango}[)]'
+            m = re.search(rf'<h4>{titulo}</h4><p>([^<]*)</p>', html)
             if not m:
                 falla(f'{nombre}: no encuentro la tarjeta del rango {a["rango"]}')
             elif a[f'web_{lang}'] not in m.group(1):
@@ -487,6 +509,21 @@ def revisar_datos(raiz, falla, avisa):
     for lang, clave in (('es', 'texto'), ('en', 'ingles')):
         if datos['alfas'][f'fuente_{lang}'] not in tarjetas['rangos'][clave]:
             falla(f'{DATOS.name} cita «{datos["alfas"][f"fuente_{lang}"]}» y la tarjeta de rangos ya no lo dice: actualiza el extracto')
+
+
+def revisar_nombres_web(raiz, falla):
+    """Las normas en inglés copian la tarjeta del Discord, que deja el rango «Alfa» en español: la página los
+    traduce con nombres_web de datos_clan.json y no puede quedar ninguno sin traducir."""
+    normas = json.loads(DATOS.read_text(encoding='utf-8'))['normas']
+    for lang in montar_web.LANGS:
+        n = normas[lang]
+        html = leer(raiz, RUTA['normas', lang] + 'index.html')
+        cuerpo = html[html.index('<main'):html.index('</main>')]
+        for origen, web in n.get('nombres_web', {}).items():
+            if re.search(rf'\b{re.escape(origen)}\b', plano(cuerpo)):
+                falla(f'{RUTA["normas", lang]}index.html: sale «{origen}» y la web lo escribe «{web}» ({DATOS.name}, nombres_web)')
+            if not re.search(rf'\b{re.escape(web)}\b', plano(cuerpo)):
+                falla(f'{RUTA["normas", lang]}index.html: no sale «{web}» y {DATOS.name} lo declara en nombres_web')
 
 
 def sin_formato(texto):
@@ -946,6 +983,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_privacidad(raiz, falla)
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
+    revisar_nombres_web(raiz, falla)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla, avisa)

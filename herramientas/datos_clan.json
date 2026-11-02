@@ -28,6 +28,8 @@
     "fuente_es": "**Alfa**: los tres jefes del clan, al mismo nivel: **Ray**, **Imaginary** y **Quilez**.",
     "fuente_en": "**Alfa**: the three clan leaders, all equal: **Ray**, **Imaginary** and **Quilez**."
   },
+  "_rangos_en": "Los rangos en el orden de la página El clan, con su nombre en inglés. La página inglesa los titula «inglés (rango en el Discord)»: comprobar.py lo exige.",
+  "rangos_en": {"Recluta": "Recruit", "Miembro": "Member", "Veterano": "Veteran", "Líder de Escuadra": "Squad Leader", "Beta": "Beta", "Alfa": "Alpha", "Aliado": "Ally"},
   "ascensos": [
     {
       "rango": "Miembro",
@@ -92,7 +94,8 @@
       "sanciones": ["Warning", "Temporary mute", "Kick from the clan", "Discord ban"],
       "sanciones_nota": "Depending on how serious it is, the staff may skip steps.",
       "rango": "Breaking the rules can cost you your rank.",
-      "cierre": "By being on this server you accept these rules."
+      "cierre": "By being on this server you accept these rules.",
+      "nombres_web": {"Alfa": "Alpha"}
     }
   }
 }

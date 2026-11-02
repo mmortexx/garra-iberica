@@ -195,10 +195,15 @@ def alfas(lang):
 
 def normas(lang):
     n = json.loads(DATOS_CLAN.read_text(encoding='utf-8'))['normas'][lang]
+    # Las normas copian la tarjeta del Discord, que deja algún rango en español: aquí se escribe en el idioma de la página.
+    nombres = n.get('nombres_web', {})
+
+    def traducir(regla):
+        return re.sub(r'\b(' + '|'.join(map(re.escape, nombres)) + r')\b', lambda m: nombres[m[1]], regla) if nombres else regla
     bloques, numero = [], 1
     for a in n['apartados']:
         ancla = guia_dinos.ancla(a['titulo'])
-        reglas = ''.join(f'<li>{escape(r)}</li>' for r in a['normas'])
+        reglas = ''.join(f'<li>{escape(traducir(r))}</li>' for r in a['normas'])
         bloques.append(
             f'<section class="bloque panel luz revelar" id="{ancla}" aria-labelledby="t-{ancla}">'
             f'<h3 id="t-{ancla}"><img src="@/img/emoji-{a["emoji"]}.webp" alt="" width="42" height="42" loading="lazy">{escape(a["titulo"])}</h3>'

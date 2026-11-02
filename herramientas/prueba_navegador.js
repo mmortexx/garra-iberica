@@ -1416,7 +1416,8 @@ const efectos = async navegador => {
       if (v.grupo !== e.grupo) fallos.push(`${ancla}: grupo ${v.grupo} y la guía dice ${e.grupo}`);
       if (v.sobra > 0) fallos.push(`${ancla}: ${v.sobra} px más ancha que la pantalla`);
       if (v.idioma !== otra) fallos.push(`${ancla}: el idioma lleva a ${v.idioma}`);
-      if (!v.guia.startsWith(`${BASE}${guia}?especie=${ancla}#`)) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
+      // Los valores van tras el fragmento: Google no rastrea los fragmentos y sí cada dirección con parámetros.
+      if (v.guia !== `${BASE}${guia}#${guia === 'dinosaurios/' ? 'planificador' : 'planner'}?especie=${ancla}`) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
       if (await p.evaluate(() => document.querySelector('details.lectura').open)) fallos.push(`${ancla}: «cómo leer» debería empezar plegado`);
     }
     if (lista.length) {
@@ -1434,6 +1435,9 @@ const efectos = async navegador => {
       await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.saltos a').first().click()]);
       const puesta = await p.evaluate(() => { const o = document.querySelector('[data-plan] select').selectedOptions[0]; return o && o.dataset.nombre; });
       if (puesta !== lista[1].nombre) fallos.push(`el planificador abre con ${puesta} y venía de ${lista[1].nombre}`);
+      await p.waitForTimeout(500);
+      const aVista = await p.evaluate(() => { const s = document.querySelector('[data-plan]').closest('section').getBoundingClientRect(); return s.top >= -1 && s.top < innerHeight / 2; });
+      if (!aVista) fallos.push('el enlace al planificador no baja hasta él');
     }
     if (errores.length) fallos.push(`errores: ${JSON.stringify(errores.slice(0, 3))}`);
     if (fallos.length) malos++;
