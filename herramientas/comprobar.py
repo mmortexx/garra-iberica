@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 
 import batallas_web
 import calendario
+import cifras
 import guia_dinos
 import montar_web
 import preparar_galeria
@@ -934,6 +935,34 @@ def revisar_guia(falla, avisa):
         falla(f'{batallas_web.COPIA.name} no es igual que {batallas_web.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
 
 
+# Cuántos días puede llevar la copia de las cifras sin actualizarse antes de avisar.
+MAX_DIAS_CIFRAS = 14
+
+
+def revisar_cifras(falla, avisa):
+    """Las cifras de la portada: copia válida (sin campos de más), igual que el original del Discord si existe y
+    con una fecha creíble. Sin copia la portada sale sin ellas: solo se avisa."""
+    try:
+        datos = cifras.cargar()
+    except SystemExit as e:
+        falla(str(e))
+        return
+    if datos is None:
+        avisa(f'no hay herramientas/{cifras.COPIA.name}: la portada sale sin las cifras del clan')
+    else:
+        hoy = dt.date.today()
+        dias = (hoy - dt.date.fromisoformat(datos['fecha'])).days
+        if dias < -1:
+            falla(f'{cifras.COPIA.name}: la fecha {datos["fecha"]} es futura')
+        elif dias > MAX_DIAS_CIFRAS:
+            avisa(f'las cifras de la portada son del {datos["fecha"]} (hace {dias} días): revisa que el Discord siga escribiendo {cifras.ORIGINAL.name}')
+    # No es un «sin …»: mientras el Discord no escriba el fichero no hay nada que comparar, y la copia vale.
+    if not cifras.ORIGINAL.is_file():
+        avisa(f'aún no existe {cifras.ORIGINAL}: no se comprueba que {cifras.COPIA.name} siga al día')
+    elif not cifras.COPIA.is_file() or cifras.ORIGINAL.read_bytes() != cifras.COPIA.read_bytes():
+        falla(f'{cifras.COPIA.name} no es igual que {cifras.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
+
+
 def main(raiz, sin_apodos=False, avisa=print):
     fallos = []
     falla = fallos.append
@@ -987,6 +1016,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla, avisa)
+    revisar_cifras(falla, avisa)
     permitidos = revisar_alfas(raiz, falla)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
@@ -1087,7 +1117,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
     # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA]:
+    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')

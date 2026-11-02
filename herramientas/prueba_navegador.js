@@ -1458,6 +1458,51 @@ const efectos = async navegador => {
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
   }
+  // Cifras del clan y podio de especies de la portada: lo que dice herramientas/cifras.json (si no hay, ni
+  // cifras ni podio y la portada sigue entera), cada especie con su ficha, sin ningún nombre ni ID y sin salirse
+  // de la pantalla en el móvil más estrecho.
+  {
+    let datos = null;
+    try { datos = JSON.parse(readFileSync(`${__dirname}/cifras.json`, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    for (const [inicio, guia] of [['', 'dinosaurios/'], ['en/', 'en/dinosaurs/']]) {
+      const fallos = [];
+      const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
+      const p = await ctx.newPage();
+      await p.goto(BASE + inicio, { waitUntil: 'load' });
+      const v = await p.evaluate(() => ({
+        cifras: [...document.querySelectorAll('.cifras li:not(.cifras-nota):not(.cifras-enlace) b')].map(b => b.textContent),
+        nota: document.querySelector('.cifras-nota time')?.getAttribute('datetime') || '',
+        podio: [...document.querySelectorAll('.podio-lista li')].map(li => ({ nombre: li.querySelector('.podio-nombre').textContent, bajas: li.querySelector('b').textContent, enlace: li.querySelector('a')?.getAttribute('href') || '' })),
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        batallas: !!document.querySelector('.cifras-enlace'),
+      }));
+      if (!datos) {
+        if (v.podio.length || v.nota) fallos.push('sin cifras.json, la portada enseña cifras');
+      } else {
+        // En inglés, con coma de miles; en español, sin separador hasta 9999 (la prueba de cifras.py cubre más).
+        const esperadas = ['bajas', 'horas', 'misiones', 'jugadores'].map(k => inicio ? Math.round(datos[k]).toLocaleString('en-US') : String(Math.round(datos[k])));
+        if (JSON.stringify(v.cifras.slice(0, 4)) !== JSON.stringify(esperadas)) fallos.push(`cifras ${v.cifras.slice(0, 4)} y cifras.json dice ${esperadas}`);
+        if (v.nota !== datos.fecha) fallos.push(`fecha ${v.nota} y cifras.json dice ${datos.fecha}`);
+        const orden = [...datos.especies].sort((a, b) => b.kills - a.kills);
+        if (JSON.stringify(v.podio.map(e => [e.nombre, e.bajas])) !== JSON.stringify(orden.map(e => [e.name, String(e.kills)]))) fallos.push(`podio ${JSON.stringify(v.podio)}`);
+        for (const e of v.podio) {
+          const ficha = guia + e.nombre.toLowerCase() + '/';
+          if (e.enlace && new URL(e.enlace, BASE + inicio).href !== BASE + ficha) fallos.push(`${e.nombre} enlaza a ${e.enlace}`);
+          if (!e.enlace && ESPECIES.includes(ficha)) fallos.push(`${e.nombre} tiene ficha y el podio no la enlaza`);
+        }
+        const con = v.podio.find(e => e.enlace);
+        if (con) {
+          await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.podio-lista a').first().click()]);
+          if (p.url() !== new URL(con.enlace, BASE + inicio).href) fallos.push(`pulsar ${con.nombre} lleva a ${p.url()}`);
+        }
+      }
+      if (v.sobra > 0) fallos.push(`${v.sobra} px más ancha que la pantalla`);
+      if (!v.batallas) fallos.push('las batallas ya no salen junto a las cifras');
+      await ctx.close();
+      if (fallos.length) malos++;
+      console.log(ruta(inicio), 'cifras y podio de especies:', fallos.length ? fallos.join('; ') : `sí, ${datos ? datos.especies.length : 0} especies`);
+    }
+  }
   // Portada: en un móvil bajo el botón principal se ve sin bajar, y en ancho la guía y la Cacería
   // van lado a lado aunque en el móvil la Cacería vaya primero.
   for (const inicio of ['', 'en/']) {

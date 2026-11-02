@@ -1035,6 +1035,22 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 /* Cada cifra cae con peso desde un poco más grande. */
 .anim .cifras .revelar b { scale: .72; transform-origin: left bottom; transition: scale .5s cubic-bezier(.2, 1.3, .4, 1) calc(var(--i, 0) * 70ms); }
 .anim .cifras .revelar.visible b { scale: 1; }
+/* De dónde salen las cifras y a qué día: una línea bajo ellas, sin la barra de cada cifra. */
+.cifras .cifras-nota { grid-column: 1 / -1; padding-left: 0; border-left: 0; margin-top: -.6rem; }
+.cifras .cifras-nota span { font-size: .9rem; letter-spacing: .04em; text-transform: none; }
+/* Podio de especies bajo las cifras: puesto, nombre (enlace a su ficha) y bajas; toda la fila se pulsa. */
+.podio { padding: clamp(2.2rem, 5vw, 3.4rem) 16px 0; }
+.podio-titulo { margin: 0 0 1.1rem; font: 600 .95rem/1.3 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+.podio-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem 2.2rem; counter-reset: puesto; }
+@media (min-width: 760px) { .podio-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.podio-lista li { position: relative; display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) auto; align-items: baseline; gap: 0 .7rem; padding: .7rem 1rem; border-left: 1px solid var(--linea); counter-increment: puesto; }
+.podio-lista li::before { content: counter(puesto); font: 1.3rem/1 var(--titulos); color: var(--ascua-viva); }
+.podio-nombre { font: 600 1.15rem/1.25 var(--etiquetas); letter-spacing: .04em; overflow-wrap: anywhere; }
+.podio-nombre a { color: var(--texto); text-decoration: none; }
+.podio-nombre a::after { content: ""; position: absolute; inset: 0; }
+.podio-nombre a:hover { color: var(--ascua-viva); text-decoration: underline; }
+.podio-lista b { font: 1.9rem/1 var(--titulos); letter-spacing: .02em; color: var(--texto); }
+@media (max-width: 380px) { .podio-lista li { padding: .7rem .5rem; gap: 0 .5rem; } .podio-nombre { font-size: 1.05rem; letter-spacing: 0; } }
 
 /* Guía de dinosaurios */
 .guia-revisado { margin: 0; font: 600 .95rem/1.4 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }

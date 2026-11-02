@@ -29,6 +29,10 @@ jobs:
         run: node herramientas/prueba_caceria.js
       - name: Prueba de los recortes de la galería
         run: python herramientas/prueba_galeria.py
+      - name: Prueba de las cifras del clan
+        run: python herramientas/prueba_cifras.py
+      - name: Prueba de las batallas
+        run: python herramientas/prueba_batallas.py
       - name: Instalar Playwright y Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.60.0 axe-core@4.14.0

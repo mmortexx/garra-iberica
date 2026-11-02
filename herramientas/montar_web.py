@@ -17,7 +17,8 @@ En los textos de paginas/:
   {{migas}}            «Inicio / página», con enlace al inicio
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
   {{alfas}}            los tres jefes, de la cita de la tarjeta #rangos en datos_clan.json
-  {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
+  {{cifras}}           cifras del clan, victorias y últimas batallas, y el podio de especies, para la portada
+                       (ver cifras.py y batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
   {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a su página
 
@@ -36,6 +37,7 @@ HERRAMIENTAS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERRAMIENTAS))
 import batallas_web  # noqa: E402
 import calendario  # noqa: E402
+import cifras  # noqa: E402
 import guia_dinos  # noqa: E402
 import preparar_galeria  # noqa: E402
 
@@ -252,7 +254,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'migas': lambda: migas(pagina, lang),
         'normas': lambda: normas(lang),
         'alfas': lambda: alfas(lang),
-        'batallas_cifras': lambda: batallas_web.marcador(lang, RUTA['clan', lang]),
+        'cifras': lambda: cifras.portada(lang, RUTA['clan', lang], d['fichas']),
         'batallas': lambda: batallas_web.lista(lang),
     }
 
@@ -554,6 +556,8 @@ def main():
     # Las batallas salen del proyecto del Discord: primero, la copia al día.
     if batallas_web.al_dia():
         print(f'{batallas_web.COPIA.name} puesto al día desde {batallas_web.ORIGINAL}')
+    if cifras.al_dia():
+        print(f'{cifras.COPIA.name} puesto al día desde {cifras.ORIGINAL}')
     # Se monta todo antes de escribir: si algo falla, no queda nada a medias.
     salida = montar()
     for nombre, texto in salida.items():

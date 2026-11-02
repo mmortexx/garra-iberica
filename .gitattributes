@@ -9,3 +9,5 @@
 *.ics -text
 # Copia exacta de las batallas del Discord: comprobar.py la compara byte a byte con el original.
 herramientas/batallas.json -text
+# Copia exacta de las cifras del clan del Discord: comprobar.py la compara byte a byte con el original.
+herramientas/cifras.json -text

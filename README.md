@@ -36,6 +36,8 @@ python herramientas/montar_web.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 python herramientas/prueba_galeria.py
+python herramientas/prueba_cifras.py
+python herramientas/prueba_batallas.py
 ```
 
 - `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
@@ -45,7 +47,7 @@ python herramientas/prueba_galeria.py
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
-  `{{discord}}`, `{{steam}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}` y `{{grupo:Especie}}` se
+  `{{discord}}`, `{{steam}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}`, `{{cifras}}` y `{{grupo:Especie}}` se
   rellenan solos. El menú de arriba lleva solo las siete páginas de `MENU` (Inicio incluida); Normas y el aviso legal
   van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
@@ -72,12 +74,28 @@ python herramientas/prueba_galeria.py
   Los enlaces de cada especie a la guía (el planificador y «ver la lista» de la comparativa) llevan lo
   elegido tras el fragmento (`dinosaurios/#comparar?orden=peso&marca=triceratops`), no en la consulta: así
   Google no cuenta cinco direcciones nuevas por especie. `guia.js` y `caceria.js` leen las dos formas.
-- Las batallas del clan (portada y El clan, marcadores `{{batallas_cifras}}` y `{{batallas}}`) salen
+- Las cifras del clan de la portada (`{{cifras}}`: bajas, horas y misiones totales, jugadores en Asura Nexus y
+  la fecha de los datos, junto a las victorias y las últimas batallas) y el podio de especies (las bajas de
+  cada una, de más a menos, con enlace a su ficha si la hay) salen de `herramientas/cifras.json`, copia
+  exacta de `ranking/cifras.json` del proyecto del Discord, que lo escribe a partir del ranking de todo el
+  tiempo (`historico.json`). El formato es cerrado, sin nombres ni IDs de jugadores:
+  `{"bajas", "horas", "misiones", "jugadores", "especies": [{"name", "kills"}], "fecha": "AAAA-MM-DD"}`.
+  `cifras.py` lo valida y rechaza cualquier campo de más, un nombre de especie que no sea solo letras o un
+  número que no lo sea; `montar_web.py` copia el original (variable `GARRA_CIFRAS` o
+  `~/Documents/Cosas/garra-iberica/ranking/cifras.json`) solo si es válido, y `comprobar.py` falla si la
+  copia no es válida o difiere del original, y avisa si es de hace más de 14 días o si el original aún no
+  existe. Sin `cifras.json`, la portada sale sin cifras del clan ni podio (siguen las batallas).
+  `python herramientas/prueba_cifras.py` prueba qué acepta y qué rechaza, cómo se copia y cómo sale la portada con
+  y sin datos. Las bajas del podio (las de cada especie) no tienen por qué sumar las bajas del clan: son dos
+  recuentos distintos de Asura Nexus.
+- Las batallas del clan (portada y El clan, marcadores `{{cifras}}` y `{{batallas}}`) salen
   de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
   Discord. `montar_web.py` la pone al día sola si encuentra el original (variable
   `GARRA_BATALLAS` o `~/Documents/Cosas/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
   falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
-  web hay que volver a montar y publicar: no aparece sola.
+  web hay que volver a montar y publicar: no aparece sola. Si una batalla trae `fecha` (AAAA-MM-DD) y
+  `nota_es`/`nota_en`, la lista de El clan las enseña (la fecha junto al resultado y la nota debajo);
+  `python herramientas/prueba_batallas.py` lo prueba.
 - La guía de combate (`paginas/<idioma>/combate.html`) es la del canal #wiki del Discord, con otra
   presentación: cada apartado lleva `data-guia-titulo` y cada viñeta (o trozo de viñeta separado
   por « · ») `data-guia`; los canales del Discord van en `<span data-canal>` y el grupo máximo de
