@@ -258,6 +258,48 @@ const efectos = async navegador => {
     if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
     await ctx.close();
   }
+  // Móvil tumbado: el botón principal se ve sin bajar, el título no se come la pantalla y el menú cabe entero.
+  for (const [ancho, alto] of [[844, 390], [667, 375]]) {
+    const { ctx, p } = await abrir('', { viewport: { width: ancho, height: alto }, isMobile: true, hasTouch: true });
+    for (const r of ['', 'en/', 'caceria/', 'en/clan/', 'unete/', 'en/dinosaurs/']) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const m = await p.evaluate(() => {
+        const boton = document.querySelector('.portada .acciones .boton, .cabecera .acciones .boton');
+        return { boton: boton ? boton.getBoundingClientRect().bottom : 0, h1: document.querySelector('h1').getBoundingClientRect().height, alto: innerHeight, sobra: document.documentElement.scrollWidth - innerWidth };
+      });
+      if (m.boton > m.alto) fallos.push(`/${r} tumbado a ${ancho}×${alto}: el botón principal acaba en ${Math.round(m.boton)}, fuera de la pantalla`);
+      if (m.h1 > m.alto * .5) fallos.push(`/${r} tumbado a ${ancho}×${alto}: el título mide ${Math.round(m.h1)} px`);
+      if (m.sobra > 0) fallos.push(`/${r} tumbado a ${ancho}×${alto}: ${m.sobra} px más ancha que la pantalla`);
+    }
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    const menu = await p.evaluate(() => {
+      const fuera = [...document.querySelectorAll('.menu a')].filter(a => { const b = a.getBoundingClientRect(); return b.bottom > innerHeight || b.right > innerWidth || b.top < 0; }).map(a => a.textContent.trim());
+      const caja = document.querySelector('.menu');
+      return { fuera, sube: caja.scrollHeight > caja.clientHeight };
+    });
+    if (menu.fuera.length || menu.sube) fallos.push(`menú tumbado a ${ancho}×${alto}: ${JSON.stringify(menu)}`);
+    await ctx.close();
+  }
+  // Letra del navegador al 150 %: la cabecera sigue cabiendo, con el botón del menú entero en pantalla.
+  {
+    const grande = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), args: ['--blink-settings=defaultFontSize=24'] });
+    const ctx = await grande.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    for (const r of ['', 'en/hunt/']) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const m = await p.evaluate(() => {
+        const nombre = document.querySelector('.barra .marca');
+        return { letra: getComputedStyle(document.documentElement).fontSize, derecha: document.querySelector('.menu-boton').getBoundingClientRect().right, nombre: nombre.getAttribute('aria-label') || nombre.textContent.trim() };
+      });
+      if (m.letra !== '24px') fallos.push(`la prueba de letra grande no ha subido la letra: ${m.letra}`);
+      // Contra el ancho pedido: si algo sobresale, el móvil aleja la página entera y innerWidth crece con ella.
+      if (m.derecha > 390) fallos.push(`/${r} con letra al 150 % el botón del menú acaba en ${Math.round(m.derecha)} de 390`);
+      if (!m.nombre) fallos.push(`/${r} con letra al 150 % la marca se queda sin nombre`);
+    }
+    await grande.close();
+  }
   // Auditoría de accesibilidad. Sin movimiento, para medir los colores finales y no los de media animación.
   const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
   const auditar = async (p, donde) => {

@@ -115,6 +115,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .marca { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--hueso); font: 1.35rem/1 var(--titulos); letter-spacing: .04em; white-space: nowrap; }
 .marca img { width: 36px; height: 36px; transition: transform .6s var(--suave-salida), filter .3s; }
 .marca:hover { color: var(--hueso); }
+/* Con la letra del navegador muy grande (en «em», que sigue a ese ajuste) el nombre no cabe en la barra;
+   se queda el icono, y el enlace conserva su nombre en aria-label. */
+@media (max-width: 18em) { .marca span { display: none; } }
 @media (hover: hover) { .marca:hover img { transform: rotate(-12deg) scale(1.08); filter: drop-shadow(0 0 8px rgba(255, 53, 31, .7)); } }
 .menu { display: flex; gap: 1.4rem; justify-content: center; align-items: center; }
 .menu[popover] { position: static; inset: auto; width: auto; height: auto; margin: 0; padding: 0; border: 0; background: none; color: inherit; overflow: visible; }
@@ -1248,6 +1251,29 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 .cabecera .entrada { max-width: 40rem; }
 .cabecera .acciones { margin-bottom: 0; }
 .anim .cabecera h1.entra { animation: descubrir .6s var(--suave-salida) .08s both; }
+/* Móvil tumbado: sin esto, el título gigante llenaba la pantalla y el botón principal quedaba debajo. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .portada { min-height: 0; padding: .5rem 16px 1.5rem; align-items: center; }
+  .portada-fondo { height: 100%; object-position: 100% 40%; }
+  .portada::before { background: linear-gradient(90deg, rgba(6, 6, 6, .92) 0%, rgba(6, 6, 6, .72) 55%, rgba(6, 6, 6, .2) 100%); }
+  .portada .bruma { top: auto; bottom: 0; height: 8rem; }
+  .portada h1 { margin-bottom: .5rem; }
+  .h1-marca { font-size: min(calc((100vw - 32px) / 5.9), 17vh); }
+  .h1-sub, .h1-sub:lang(en) { font-size: min(1.4rem, calc((100vw - 32px) / 19.8)); }
+  .cabecera { min-height: 0; padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .cabecera-baja { min-height: 0; }
+  .cabecera h1, .cabecera h1.especie-nombre { max-width: none; margin-bottom: .5rem; font-size: min(clamp(2.5rem, 7.4vw, 5.2rem), 14vh); }
+  .entrada, .cabecera .entrada { max-width: 46rem; font-size: 1rem; }
+  .acciones { margin: .6rem 0 1rem; }
+  .acciones .boton { flex: 0 1 auto; }
+  .datos { flex-direction: row; }
+  .bajar { display: none; }
+}
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 1019px) {
+  .menu[popover] { flex-wrap: wrap; align-content: flex-start; justify-content: flex-start; column-gap: 3.5rem; padding: 1rem max(24px, 6vw); }
+  .menu[popover] a { font-size: min(11vh, 2.3rem); }
+  .menu[popover] .menu-idioma { margin-top: .5rem; }
+}
 @media (min-width: 900px) {
   .cabecera-dos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 3rem; align-items: end; }
 }
