@@ -1620,7 +1620,7 @@ const efectos = async navegador => {
     if (pequenos.length) fallos.push(`pequeño para pulsar: ${pequenos.join(', ')}`);
     if (lineas.length) {
       // Sin la hoja de estilos de la página (la política de seguridad no deja estilos sueltos; aquí se salta).
-      await p.addStyleTag({ content: '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; } .boton, .cuenta-grande { visibility: hidden !important; }' });
+      await p.addStyleTag({ content: '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-decoration-color: transparent !important; text-shadow: none !important; } .boton, .cuenta-grande { visibility: hidden !important; }' });
       await p.waitForTimeout(150);
       const foto = (await p.screenshot()).toString('base64');
       const bajos = await p.evaluate(async ({ foto, lineas }) => {
