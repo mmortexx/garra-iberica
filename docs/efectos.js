@@ -356,8 +356,22 @@
     });
   }
 
-  // Vídeos de las batallas: botón grande de reproducir sobre la portada. Le da al play y se aparta;
-  // vuelve al acabar el vídeo. Los controles del navegador siguen ahí (y son lo que queda sin esto).
+  // Vídeos de las batallas: la portada se pide al acercarse, para no competir con la foto de la cabecera.
+  // Sin esto se ve el vídeo sin portada, que se reproduce igual.
+  const conPortada = document.querySelectorAll('video[data-portada]');
+  if (conPortada.length) {
+    const ponerPortada = new IntersectionObserver(entradas => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        e.target.poster = e.target.dataset.portada;
+        ponerPortada.unobserve(e.target);
+      }
+    }, { rootMargin: '600px 0px' });
+    conPortada.forEach(v => ponerPortada.observe(v));
+  }
+
+  // Botón grande de reproducir sobre la portada. Le da al play y se aparta; vuelve al acabar el vídeo.
+  // Los controles del navegador siguen ahí (y son lo que queda sin esto).
   const playTexto = raiz.lang.startsWith('en') ? 'Play:' : 'Reproducir:';
   document.querySelectorAll('.batalla-video video').forEach(v => {
     const boton = document.createElement('button');

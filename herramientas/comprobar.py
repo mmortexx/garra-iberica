@@ -305,7 +305,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
     carpeta = (raiz / nombre).parent
     locales = set()
     for t, a in doc.etiquetas:
-        for attr in ('src', 'href', 'poster'):
+        for attr in ('src', 'href', 'poster', 'data-portada'):
             v = a.get(attr)
             if v and not re.match(r'(https?:|#|mailto:)', v):
                 locales.add(v)
@@ -316,8 +316,8 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         if t in ('img', 'link', 'source') and AMPLIADA in ' '.join(a.get(x) or '' for x in ('src', 'srcset', 'href', 'imagesrcset')):
             falla(f'{nombre}: <{t}> carga una foto ampliada al abrir la página; solo se enlazan')
         if t == 'video':
-            if a.get('preload') != 'none' or not a.get('poster'):
-                falla(f'{nombre}: <video> sin preload="none" y portada: bajaría el vídeo al abrir la página')
+            if a.get('preload') != 'none' or a.get('poster') or not a.get('data-portada'):
+                falla(f'{nombre}: <video> sin preload="none" y data-portada: bajaría el vídeo o su portada al abrir la página')
             if "media-src 'self'" not in csp:
                 falla(f'{nombre}: <video> y la política de seguridad no deja cargar vídeos (media-src)')
         if t == 'img':

@@ -44,6 +44,47 @@ const efectos = async navegador => {
     await p.goto(BASE + r, { waitUntil: 'load' });
     return { ctx, p };
   };
+  // Móvil lento: bajo el velo oscuro de la cabecera, 600–800 px de foto no se distinguen de 1000 y pesan
+  // un tercio menos, y es lo que tarda en pintarse la página.
+  for (const r of ['clan/', 'en/clan/', 'caceria/', 'dinosaurios/', 'combate/', 'galeria/', 'unete/', 'normas/', 'legal/']) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const foto = await p.evaluate(() => document.querySelector('.cabecera-fondo').currentSrc.split('/').pop());
+    if (+foto.match(/-(\d+)\.webp$/)[1] > 800) fallos.push(`/${r} en el móvil la cabecera pide ${foto}`);
+    await ctx.close();
+  }
+  // Las portadas de los vídeos quedan más abajo: no pueden competir con la cabecera al abrir, pero tienen
+  // que salir al llegar. Con los estilos retenidos no hay maquetación: lo que se pida ya, se pide «a ciegas».
+  for (const r of ['clan/', 'en/clan/']) {
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    const pedidas = [];
+    p.on('request', q => pedidas.push(q.url()));
+    let soltar;
+    const retenidos = new Promise(z => { soltar = z; });
+    await p.route('**/estilos.css*', async ruta => { await retenidos; await ruta.continue(); });
+    const cargando = p.goto(BASE + r, { waitUntil: 'load' });
+    await p.waitForSelector('.batalla-video video', { state: 'attached' });
+    await p.waitForTimeout(400);
+    const aCiegas = pedidas.filter(u => /batalla-[^/]+\.webp/.test(u));
+    if (aCiegas.length) fallos.push(`/${r} pide las portadas de los vídeos al abrir: ${aCiegas.map(u => u.split('/').pop()).join(', ')}`);
+    soltar();
+    await cargando;
+    const portadas = await p.evaluate(async () => {
+      const res = [];
+      for (const v of document.querySelectorAll('.batalla-video video')) {
+        v.scrollIntoView({ block: 'center', behavior: 'instant' });
+        await new Promise(z => setTimeout(z, 300));
+        if (!v.poster) { res.push(0); continue; }
+        const img = new Image();
+        img.src = v.poster;
+        await img.decode().catch(() => {});
+        res.push(img.naturalWidth);
+      }
+      return res;
+    });
+    if (!portadas.length || portadas.some(a => !a)) fallos.push(`/${r} vídeos sin portada al llegar: ${JSON.stringify(portadas)}`);
+    await ctx.close();
+  }
   // Menú del móvil: mientras se funde al cerrar sigue maquetado a pantalla completa (si no, los enlaces
   // salen un instante en fila arriba) y al acabar no queda nada encima de la página.
   for (const r of ['', 'en/']) {

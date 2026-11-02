@@ -122,8 +122,9 @@ def video(b, lang):
     # En pantallas pequeñas, la versión ligera (-movil) si existe; la primera que encaja es la que vale.
     movil = (f'<source src="@/video/{nombre}-movil.mp4" type="video/mp4" media="(max-width: 700px)">'
              if (DOCS / 'video' / f'{nombre}-movil.mp4').is_file() else '')
+    # poster= se pediría al abrir la página, aunque quede lejos: efectos.js lo pone al acercarse.
     return (f'<div class="batalla-video"><video controls preload="none" playsinline width="1280" height="536" '
-            f'poster="@/img/{nombre}.webp" aria-label="{t["video"].format(r=r)}">'
+            f'data-portada="@/img/{nombre}.webp" aria-label="{t["video"].format(r=r)}">'
             f'{movil}<source src="@/video/{nombre}.mp4" type="video/mp4">'
             f'<a href="@/video/{nombre}.mp4">{t["bajar"].format(r=r)}</a></video></div>')
 
