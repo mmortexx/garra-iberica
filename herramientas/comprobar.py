@@ -651,6 +651,85 @@ def revisar_asura(raiz, falla):
             falla(f'{nombre}: el apartado de Asura no dice a qué día son los datos')
 
 
+# Borradores sin publicar (borradores/): fuera de la web hasta que se compruebe cada dato. Solo lo que viene de la fuente
+# que cada uno cita; el resto de la ficha, marcado como pendiente.
+BORRADORES = Path(__file__).resolve().parent.parent / 'borradores'
+PENDIENTE = {'es': 'pendiente de comprobar', 'en': 'pending check'}
+# Lo único que el borrador de Oviraptor puede decir con datos (DevBlog #74, 31/10/2026).
+OVIRAPTOR_HAB = {
+    'es': ['Come huevos: por ahora es el único dino que puede (DevBlog #74, 31/10/2026)'],
+    'en': ['Eats eggs: for now it is the only dino that can (DevBlog #74, 31 Oct 2026)'],
+}
+OVIRAPTOR_CONSEJO = {
+    'es': 'Aún en pruebas: según el DevBlog #74 (31/10/2026) está cerca de salir de ellas, sin fecha. El resto, pendiente de comprobar.',
+    'en': 'Still in testing: according to DevBlog #74 (31 Oct 2026) it is close to leaving it, with no date. The rest is pending check.',
+}
+# Frases que, si salen en docs/, es que un borrador se ha publicado.
+FRASES_BORRADOR = ['Oviraptor', 'pendiente de comprobar', 'pending check', 'zona de migración', 'migration zone', 'zonas compartidas', 'shared zones']
+EXTENSIONES_WEB = ('.html', '.css', '.js', '.txt', '.xml', '.json', '.ics')
+
+
+def revisar_borradores(raiz, falla, carpeta=BORRADORES):
+    """Los borradores existen, son lo que dicen ser y no están en la web: ni en las fichas ni en ningún fichero de docs/."""
+    try:
+        d = guia_dinos.datos()
+        fichas = d['fichas']
+    except SystemExit as e:
+        falla(f'{guia_dinos.FICHAS.name}: {e}')
+        return
+    ruta = carpeta / 'oviraptor.json'
+    try:
+        borrador = json.loads(ruta.read_text(encoding='utf-8'))
+        ficha = borrador['ficha']
+        if set(borrador) != {'_estado', '_fuente', 'ficha'}:
+            falla(f'{ruta.name}: debe llevar solo _estado, _fuente y ficha')
+        if 'SIN PUBLICAR' not in borrador['_estado'] or 'DevBlog #74' not in borrador['_fuente'] or '31/10/2026' not in borrador['_fuente']:
+            falla(f'{ruta.name}: _estado debe decir «SIN PUBLICAR» y _fuente citar el DevBlog #74 del 31/10/2026')
+        # Mismo formato que las fichas de fichas_dinos.json, claves y tipos.
+        if set(ficha) != set(fichas[0]) or set(ficha['en']) != set(fichas[0]['en']):
+            falla(f'{ruta.name}: la ficha no tiene las claves de {guia_dinos.FICHAS.name}')
+        if ficha['nombre'] != 'Oviraptor' or ficha['mut'] != []:
+            falla(f'{ruta.name}: la ficha es de «Oviraptor» y sin mutaciones (no hay ninguna comprobada)')
+        for lang, datos in (('es', ficha), ('en', ficha['en'])):
+            pendiente = PENDIENTE[lang]
+            for campo in ('peso', 'crece', 'mutfuente') + (('dieta', 'grupo') if lang == 'es' else ()):
+                if datos[campo] != pendiente:
+                    falla(f'{ruta.name} ({lang}): «{campo}» debe decir «{pendiente}» hasta que se compruebe, y dice «{datos[campo]}»')
+            if datos['hab'] != OVIRAPTOR_HAB[lang]:
+                falla(f'{ruta.name} ({lang}): «hab» solo puede decir lo del DevBlog #74: {OVIRAPTOR_HAB[lang]}')
+            if datos['consejo'] != OVIRAPTOR_CONSEJO[lang]:
+                falla(f'{ruta.name} ({lang}): «consejo» solo puede decir lo del DevBlog #74: «{OVIRAPTOR_CONSEJO[lang]}»')
+        if any(f['nombre'] == 'Oviraptor' for f in fichas):
+            falla(f'Oviraptor ya está en {guia_dinos.FICHAS.name}: borra borradores/{ruta.name}')
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        falla(f'borradores/{ruta.name}: no es el borrador esperado ({e!r})')
+
+    ruta = carpeta / 'zonas-compartidas.md'
+    try:
+        texto = ruta.read_text(encoding='utf-8')
+    except OSError as e:
+        falla(f'borradores/{ruta.name}: no se puede leer ({e})')
+    else:
+        es, _, en = texto.partition('## English')
+        if 'BORRADOR' not in texto.split('## Español')[0] or 'Aún no está en el juego' not in texto.split('## Español')[0]:
+            falla(f'borradores/{ruta.name}: la cabecera debe decir que es un BORRADOR y que aún no está en el juego')
+        for lang, cuerpo, frases in (('es', es.partition('## Español')[2], ['15 minutos', 'menú del personaje', 'tiempo de espera', 'zona de migración', 'aún no están en el juego']),
+                                     ('en', en, ['15 minutes', 'character menu', 'cooldown', 'migration zone', 'not in the game yet'])):
+            cuerpo = ' '.join(cuerpo.split())
+            for frase in frases:
+                if frase not in cuerpo:
+                    falla(f'borradores/{ruta.name} ({lang}): no dice «{frase}»')
+            if set(re.findall(r'\d+', cuerpo)) != {'15'}:
+                falla(f'borradores/{ruta.name} ({lang}): solo puede traer una cifra, los 15 minutos; trae {sorted(set(re.findall(r"[0-9]+", cuerpo)))}')
+
+    for fichero in sorted(raiz.rglob('*')):
+        if fichero.suffix in EXTENSIONES_WEB and fichero.is_file():
+            contenido = fichero.read_text(encoding='utf-8').casefold()
+            for frase in FRASES_BORRADOR:
+                if frase.casefold() in contenido:
+                    falla(f'{fichero.relative_to(raiz).as_posix()}: dice «{frase}»; es de un borrador sin publicar (borradores/)')
+
+
 def revisar_alfas(raiz, falla):
     """Los jefes de El clan son los de la cita de la tarjeta #rangos y justo los de JEFES. Devuelve,
     por fichero, el único texto en el que pueden salir sus nombres sin que salte «sin apodos»."""
@@ -1081,6 +1160,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_especies(raiz, base, falla)
     revisar_busquedas(raiz, base, falla)
     revisar_asura(raiz, falla)
+    revisar_borradores(raiz, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_estilos(raiz, falla)

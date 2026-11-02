@@ -1,0 +1,26 @@
+{
+  "_estado": "BORRADOR SIN PUBLICAR. No está en fichas_dinos.json ni en la web: montar_web.py solo lee fichas_dinos.json. Para publicarla, comprobar cada «pendiente de comprobar» con una fuente, pasar «ficha» a fichas_dinos.json (en el orden de la guía) y borrar este fichero.",
+  "_fuente": "DevBlog #74 de The Isle, 31/10/2026. Es lo único que se ha tomado de ahí: está en pruebas y cerca de salir de ellas, sin fecha, y por ahora es el único dino que come huevos. Todo lo demás está sin comprobar.",
+  "ficha": {
+    "nombre": "Oviraptor",
+    "dieta": "pendiente de comprobar",
+    "peso": "pendiente de comprobar",
+    "crece": "pendiente de comprobar",
+    "grupo": "pendiente de comprobar",
+    "hab": [
+      "Come huevos: por ahora es el único dino que puede (DevBlog #74, 31/10/2026)"
+    ],
+    "consejo": "Aún en pruebas: según el DevBlog #74 (31/10/2026) está cerca de salir de ellas, sin fecha. El resto, pendiente de comprobar.",
+    "mut": [],
+    "mutfuente": "pendiente de comprobar",
+    "en": {
+      "peso": "pending check",
+      "crece": "pending check",
+      "hab": [
+        "Eats eggs: for now it is the only dino that can (DevBlog #74, 31 Oct 2026)"
+      ],
+      "consejo": "Still in testing: according to DevBlog #74 (31 Oct 2026) it is close to leaving it, with no date. The rest is pending check.",
+      "mutfuente": "pending check"
+    }
+  }
+}

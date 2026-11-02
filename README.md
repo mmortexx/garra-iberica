@@ -39,6 +39,7 @@ python herramientas/prueba_galeria.py
 python herramientas/prueba_calendario.py
 python herramientas/prueba_cifras.py
 python herramientas/prueba_batallas.py
+python herramientas/prueba_borradores.py
 ```
 
 - `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
@@ -103,6 +104,13 @@ python herramientas/prueba_batallas.py
   web hay que volver a montar y publicar: no aparece sola. Si una batalla trae `fecha` (AAAA-MM-DD) y
   `nota_es`/`nota_en`, la lista de El clan las enseña (la fecha junto al resultado y la nota debajo);
   `python herramientas/prueba_batallas.py` lo prueba.
+- `borradores/` guarda lo que aún no se puede publicar, y `montar_web.py` no lo lee (solo lee `paginas/` y
+  `fichas_dinos.json`): la ficha de Oviraptor (`oviraptor.json`, con el formato de `fichas_dinos.json`) y el texto de
+  la guía de zonas compartidas (`zonas-compartidas.md`), que aún no está en el juego. De Oviraptor solo se ha
+  tomado lo del DevBlog #74 (31/10/2026); lo demás dice «pendiente de comprobar». Para publicarlo: comprobar cada
+  dato con una fuente, pasar la ficha a `fichas_dinos.json` y borrar el borrador. `comprobar.py` falla si un
+  borrador dice algo más que lo permitido, si Oviraptor ya está en las fichas o si algo de un borrador aparece en
+  `docs/`; `python herramientas/prueba_borradores.py` lo prueba.
 - La guía de combate (`paginas/<idioma>/combate.html`) es la del canal #wiki del Discord, con otra
   presentación: cada apartado lleva `data-guia-titulo` y cada viñeta (o trozo de viñeta separado
   por « · ») `data-guia`; los canales del Discord van en `<span data-canal>` y el grupo máximo de
