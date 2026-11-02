@@ -9,6 +9,7 @@ import json
 import re
 from pathlib import Path
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 RAIZ = Path(__file__).resolve().parent.parent
 DOCS = RAIZ / 'docs'
@@ -17,6 +18,7 @@ FICHEROS = {'es': 'caceria.ics', 'en': 'en/caceria.ics'}
 # Página de la Cacería en cada idioma (montar_web.PAGINAS la toma de aquí).
 RUTAS = {'es': 'caceria/', 'en': 'en/hunt/'}
 DIAS_ICS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
+DIAS_SCHEMA = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 TEXTOS = {
     'es': {
         'titulo': 'Cacería del clan · GARRA IBÉRICA',
@@ -58,6 +60,15 @@ def tramo(cac):
     inicio = dt.datetime.combine(dt.date.fromisoformat(cac['primera']), dt.time(cac['hora']))
     if inicio.isoweekday() % 7 != cac['dia_semana']:
         raise ValueError(f'«primera» ({cac["primera"]}) no cae en el día de la Cacería')
+    return inicio, inicio + dt.timedelta(minutes=cac['duracion_min'])
+
+
+def proxima(cac, desde):
+    """Inicio y fin de la primera Cacería que empieza el día «desde» o después (nunca antes de la primera),
+    en hora de pared de la zona del clan."""
+    primera, _ = tramo(cac)
+    semanas = max(0, -(-(desde - primera.date()).days // 7))
+    inicio = primera + dt.timedelta(weeks=semanas)
     return inicio, inicio + dt.timedelta(minutes=cac['duracion_min'])
 
 
@@ -130,6 +141,28 @@ def enlace_google(lang, base=None):
         ('location', TEXTOS[lang]['lugar']),
     ]
     return 'https://calendar.google.com/calendar/render?' + '&amp;'.join(f'{k}={quote(v, safe="")}' for k, v in partes)
+
+
+def evento(lang, base, invitacion, desde):
+    """El Event de schema.org de la página de la Cacería: la próxima desde la fecha «desde» y, aparte, el horario
+    que se repite cada semana. La web es estática: la fecha que sale aquí es la de cuando se monta y caduca; caceria.js la
+    renueva en el navegador (y en Google al renderizar), y comprobar.py avisa si la que lleva la página ya pasó."""
+    cac = datos()
+    inicio, fin = proxima(cac, desde)
+    zona = ZoneInfo(cac['zona'])
+    t = TEXTOS[lang]
+    return {
+        '@type': 'Event', '@id': base + RUTAS[lang] + '#evento', 'url': base + RUTAS[lang],
+        'name': t['titulo'], 'description': descripcion(lang, cac, base), 'inLanguage': lang,
+        'startDate': inicio.replace(tzinfo=zona).isoformat(), 'endDate': fin.replace(tzinfo=zona).isoformat(),
+        'eventSchedule': {'@type': 'Schedule', 'repeatFrequency': 'P1W', 'byDay': f'https://schema.org/{DIAS_SCHEMA[cac["dia_semana"]]}',
+                          'startTime': f'{cac["hora"]:02d}:00:00', 'duration': f'PT{cac["duracion_min"]}M', 'scheduleTimezone': cac['zona']},
+        'eventStatus': 'https://schema.org/EventScheduled',
+        'eventAttendanceMode': 'https://schema.org/OnlineEventAttendanceMode',
+        'location': {'@type': 'VirtualLocation', 'name': t['lugar'], 'url': invitacion},
+        'isAccessibleForFree': True,
+        'organizer': {'@id': base + '#clan'},
+    }
 
 
 if __name__ == '__main__':

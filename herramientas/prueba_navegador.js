@@ -1861,6 +1861,35 @@ const efectos = async navegador => {
       if (await p.locator('[data-horas]').isVisible()) fallos.push('sin JavaScript se ve el selector');
       await ctx.close();
     }
+    // El Event de los datos estructurados lleva la fecha de la próxima Cacería de cuando se montó la web, que
+    // caduca: caceria.js la cambia por la de verdad, siempre en hora de Madrid (con su desfase de invierno o de
+    // verano) aunque el dispositivo esté en otra zona, y deja lo demás del JSON-LD como estaba.
+    for (const [r, zona, ahora, inicio, fin] of [
+      ['caceria/', 'Europe/Madrid', JUEVES, '2026-11-07T22:00:00+01:00', '2026-11-07T23:00:00+01:00'],
+      ['en/hunt/', 'Asia/Tokyo', JUEVES, '2026-11-07T22:00:00+01:00', '2026-11-07T23:00:00+01:00'],
+      ['caceria/', 'America/Bogota', '2027-03-30T10:00:00Z', '2027-04-03T22:00:00+02:00', '2027-04-03T23:00:00+02:00'],
+      ['en/hunt/', 'Europe/Madrid', '2026-11-07T21:30:00Z', '2026-11-07T22:00:00+01:00', '2026-11-07T23:00:00+01:00'],
+      ['caceria/', 'Europe/Madrid', '2026-11-07T22:30:00Z', '2026-11-14T22:00:00+01:00', '2026-11-14T23:00:00+01:00'],
+    ]) {
+      const { ctx, p, ir } = await abrir(r, zona, ahora);
+      await ir();
+      const ev = await p.evaluate(() => {
+        const grafo = JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)['@graph'];
+        const e = grafo.find(n => n['@type'] === 'Event');
+        return { startDate: e.startDate, endDate: e.endDate, schedule: e.eventSchedule && e.eventSchedule.byDay, nodos: grafo.map(n => n['@type']), eventos: grafo.filter(n => n['@type'] === 'Event').length };
+      });
+      if (ev.startDate !== inicio || ev.endDate !== fin) fallos.push(`${r} ${zona} a ${ahora}: el Event dice ${ev.startDate} – ${ev.endDate} y debía ser ${inicio} – ${fin}`);
+      if (ev.schedule !== 'https://schema.org/Saturday' || ev.eventos !== 1 || !ev.nodos.includes('Organization') || !ev.nodos.includes('WebPage')) fallos.push(`${r}: el JSON-LD queda mal tras renovarlo: ${JSON.stringify(ev)}`);
+      await ctx.close();
+    }
+    // Sin JavaScript no hay renovación: queda la fecha de montar y el horario semanal, que no caduca.
+    {
+      const { ctx, p, ir } = await abrir('caceria/', 'Europe/Madrid', '2028-06-01T12:00:00Z', { javaScriptEnabled: false });
+      await ir();
+      const ev = await p.evaluate(() => JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)['@graph'].find(n => n['@type'] === 'Event'));
+      if (!/^\d{4}-\d\d-\d\dT22:00:00[+-]\d\d:00$/.test(ev.startDate) || ev.eventSchedule.repeatFrequency !== 'P1W') fallos.push(`sin JavaScript, el Event: ${JSON.stringify(ev)}`);
+      await ctx.close();
+    }
     // Al abrir: ningún formateador de hora antes de que la página esté lista. La cuenta atrás y el
     // selector los crean después, cada uno en su tarea.
     {

@@ -90,8 +90,34 @@
     }
   };
 
-  const api = { proximaCaceria, restante, planCrecer, semana, enZona, ZONA };
+  // Un instante como lo pide schema.org: la hora de pared de Madrid con su desfase («2026-11-07T22:00:00+01:00»).
+  const aIso = ms => {
+    const p = partes(ms);
+    const dos = n => String(n).padStart(2, '0');
+    const minutos = desfase(ms) / 60000;
+    const signo = minutos < 0 ? '-' : '+';
+    return `${p.y}-${dos(p.m)}-${dos(p.d)}T${dos(p.h)}:${dos(p.mi)}:${dos(p.s)}${signo}${dos(Math.floor(Math.abs(minutos) / 60))}:${dos(Math.abs(minutos) % 60)}`;
+  };
+
+  const api = { proximaCaceria, restante, planCrecer, semana, enZona, aIso, ZONA };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
+
+  // El Event de la página (datos estructurados) lleva la próxima Cacería tal como estaba al montar la web, y esa
+  // fecha caduca. Aquí se cambia por la de verdad: quien ejecuta JavaScript, Google al renderizar incluido, ve
+  // siempre una próxima. Sin JavaScript queda la de montar y el horario semanal (eventSchedule), que no caduca.
+  for (const guion of document.querySelectorAll('script[type="application/ld+json"]')) {
+    try {
+      const datos = JSON.parse(guion.textContent);
+      const evento = (datos['@graph'] || []).find(n => n['@type'] === 'Event');
+      if (!evento) continue;
+      const { inicio } = proximaCaceria(Date.now());
+      evento.startDate = aIso(inicio);
+      evento.endDate = aIso(inicio + DURACION_MIN * 60000);
+      guion.textContent = JSON.stringify(datos, null, 2);
+    } catch (e) {
+      console.error('No se pudo renovar el Event de la Cacería:', e);
+    }
+  }
 
   // ¿A qué hora es en tu país? Cambia el resultado y las horas de «Así va cada semana». Los países
   // y los textos vienen en la página, en su idioma; sin JavaScript se quedan las horas de España.

@@ -450,6 +450,8 @@ def revisar_datos(raiz, falla, avisa):
         # una menos todo el año, o la de un aviso en la página de la Cacería): si cambia en
         # datos_clan.json, ningún texto se queda en la vieja.
         resto = re.sub(FRANJA[lang], '', plano(html))
+        # Las horas con segundos (la del Event, «22:00:00» o «…T22:00:00+01:00») las revisa revisar_evento().
+        resto = re.sub(r'\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?', '', resto)
         if pagina == 'caceria':
             for a in cac['avisos']:
                 cita = f'{DIAS[lang][a["dia_semana"] - 1]}, {a["hora"]:02d}:00'
@@ -935,6 +937,44 @@ def revisar_guia(falla, avisa):
         falla(f'{batallas_web.COPIA.name} no es igual que {batallas_web.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
 
 
+def revisar_evento(raiz, base, falla, avisa):
+    """El marcado Event de la página de la Cacería (y solo de ella): el horario semanal sale de datos_clan.json y la
+    fecha de la próxima Cacería es un sábado a esa hora. La fecha caduca (la web es estática y se monta sin mirar el
+    reloj): caceria.js la renueva en el navegador y aquí solo se avisa, sin fallar, de que la de la página ya pasó."""
+    cac = json.loads(DATOS.read_text(encoding='utf-8'))['caceria']
+    for nombre, (pagina, lang) in PAGINAS.items():
+        html = leer(raiz, nombre)
+        grafo = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S).group(1))['@graph']
+        eventos = [n for n in grafo if n.get('@type') == 'Event']
+        if pagina != 'caceria':
+            if eventos:
+                falla(f'{nombre}: lleva un Event y solo la página de la Cacería debe llevarlo')
+            continue
+        if len(eventos) != 1:
+            falla(f'{nombre}: tiene {len(eventos)} Event en JSON-LD y debe tener 1')
+            continue
+        e = eventos[0]
+        try:
+            inicio, fin = dt.datetime.fromisoformat(e['startDate']), dt.datetime.fromisoformat(e['endDate'])
+            zona = ZoneInfo(cac['zona'])
+            local = inicio.astimezone(zona)
+            if inicio.utcoffset() != local.utcoffset() or (local.isoweekday() % 7, local.hour, local.minute) != (cac['dia_semana'], cac['hora'], 0):
+                falla(f'{nombre}: el Event empieza el {e["startDate"]} y la Cacería es el día {cac["dia_semana"]} a las {cac["hora"]:02d}:00 de {cac["zona"]} ({DATOS.name})')
+            if fin - inicio != dt.timedelta(minutes=cac['duracion_min']):
+                falla(f'{nombre}: el Event dura {fin - inicio} y la Cacería {cac["duracion_min"]} min ({DATOS.name})')
+            horario = e['eventSchedule']
+            if (horario['startTime'], horario['duration'], horario['scheduleTimezone'], horario['repeatFrequency']) != (
+                    f'{cac["hora"]:02d}:00:00', f'PT{cac["duracion_min"]}M', cac['zona'], 'P1W') \
+                    or horario['byDay'] != 'https://schema.org/' + calendario.DIAS_SCHEMA[cac['dia_semana']]:
+                falla(f'{nombre}: el horario semanal del Event no es el de {DATOS.name}')
+            if e['url'] != base + RUTA[pagina, lang] or e['location'].get('url') != INVITACION or not e.get('image'):
+                falla(f'{nombre}: el Event sin su dirección, el Discord como lugar o su imagen')
+            if fin < dt.datetime.now(dt.timezone.utc):
+                avisa(f'{nombre}: la próxima Cacería del Event ({e["startDate"]}) ya pasó; caceria.js la renueva en el navegador, y se pone al día al volver a montar y publicar')
+        except (KeyError, TypeError, ValueError) as err:
+            falla(f'{nombre}: Event incompleto o con datos que no se entienden: {err!r}')
+
+
 # Cuántos días puede llevar la copia de las cifras sin actualizarse antes de avisar.
 MAX_DIAS_CIFRAS = 14
 
@@ -1013,6 +1053,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_nombres_web(raiz, falla)
+    revisar_evento(raiz, base, falla, avisa)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla, avisa)
