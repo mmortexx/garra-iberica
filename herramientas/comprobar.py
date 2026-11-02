@@ -58,7 +58,7 @@ AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new ta
 MESES = {n: i for i, nombres in enumerate(zip(
     'enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre'.split(),
     'january february march april may june july august september october november december'.split()), 1) for n in nombres}
-SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
@@ -644,7 +644,7 @@ ASURA = {
            'Always safelog before using any buy, request, storage save/load, or skin change', '45-second', 'free lottery ticket',
            'live map', 'Check the rules there']),
 }
-WEB_ASURA = 'https://asura-evrima.com/'
+WEB_ASURA = 'https://www.asura-evrima.com/'
 
 
 def revisar_asura(raiz, falla):
