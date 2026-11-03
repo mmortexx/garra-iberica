@@ -779,18 +779,21 @@ const efectos = async navegador => {
     await s.goto(BASE, { waitUntil: 'load' });
     if (await s.locator('.niebla').isVisible()) fallos.push('la página llega con la niebla encendida');
     await sinScripts.close();
-    // Al cambiar de página: con ambiente hay zarpazo, y en modo ligero no (es a pantalla completa).
-    for (const [conTarjeta, esperada] of [[true, true], [false, false]]) {
+    // Al cambiar de página, en modo ligero se salta el zarpazo (es a pantalla completa); con ambiente, no.
+    for (const [conTarjeta, esperada] of [[true, false], [false, true]]) {
       const c = await contexto(conTarjeta);
-      await c.addInitScript(() => addEventListener('pagereveal', e => { sessionStorage.setItem('revelada', String(!!e.viewTransition)); }));
+      await c.addInitScript(() => {
+        const saltar = ViewTransition.prototype.skipTransition;
+        ViewTransition.prototype.skipTransition = function () { sessionStorage.setItem('saltada', 'true'); return saltar.call(this); };
+      });
       const r = await c.newPage();
       await r.goto(BASE + 'clan/', { waitUntil: 'load' });
       await r.waitForTimeout(800);
       await r.click('.barra .marca');
       await r.waitForURL(BASE);
       await r.waitForLoadState('load');
-      const hubo = await r.evaluate(() => sessionStorage.getItem('revelada') === 'true');
-      if (hubo !== esperada) fallos.push(`${conTarjeta ? 'con' : 'sin'} aceleración, zarpazo al cambiar de página: ${hubo}`);
+      const saltada = await r.evaluate(() => sessionStorage.getItem('saltada') === 'true');
+      if (saltada !== esperada) fallos.push(`${conTarjeta ? 'con' : 'sin'} aceleración, se salta el zarpazo: ${saltada}`);
       await c.close();
     }
     if (fallos.length) malos++;
@@ -821,7 +824,7 @@ const efectos = async navegador => {
     const fallos = [];
     const esperar = (cuando, e, quieto) => {
       // El pulso de la garra son varias animaciones: todas a la vez.
-      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso.split(', ').some(s => s !== (quieto ? 'paused' : 'running')) || e.niebla !== (quieto ? 'paused' : 'running') || e.acercar !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
+      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso.split(', ').some(s => s !== (quieto ? 'paused' : 'running')) || e.niebla !== (quieto ? 'paused' : 'running') || e.acercar.split(', ').some(s => s !== (quieto ? 'paused' : 'running'))) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
     };
     esperar('al cargar', await estado(), false);
     await p.evaluate(() => dispatchEvent(new Event('blur')));
