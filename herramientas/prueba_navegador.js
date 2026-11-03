@@ -1446,7 +1446,9 @@ const efectos = async navegador => {
       if (vista.cerradas !== vista.total - (js ? 1 : 0)) fallos.push(`fichas abiertas al entrar: ${vista.total - vista.cerradas}`);
       await ficha.close();
       const alto = await p.evaluate(() => document.documentElement.scrollHeight);
-      if (alto > 13000) fallos.push(`la guía mide ${alto} px en el móvil (máximo 13 000: las fichas se leen plegadas o en su página)`);
+      // El apartado de dieta (unos 2500 px) es contenido real y debe coincidir con el Discord: no se pliega. Lo que
+      // este tope vigila son las fichas: con todas abiertas la guía pasa de 32 000 px.
+      if (alto > 13500) fallos.push(`la guía mide ${alto} px en el móvil (máximo 13 500: las fichas se leen plegadas o en su página)`);
       await p.locator('details.dino summary .dieta').first().click();
       await p.waitForTimeout(100);
       if (await p.evaluate(() => !document.querySelector('details.dino').open)) fallos.push('pulsar una ficha no la abre');
