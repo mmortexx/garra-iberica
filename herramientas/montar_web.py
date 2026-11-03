@@ -49,7 +49,7 @@ INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
 VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js']
 # Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
-REVISADA = '2026-11-02'
+REVISADA = '2026-11-03'
 LANGS = ('es', 'en')
 
 # id, ruta (es, en), nombre en el pie y en las migas (es, en). Arriba solo van las de MENU; en el
@@ -98,7 +98,7 @@ T = {
         'legal': 'Web de fans hecha por el clan. No estamos afiliados a los creadores de The Isle ni a Discord. Las marcas pertenecen a sus dueños.',
         'og_alt': 'Cartel del clan GARRA IBÉRICA de The Isle Evrima: tres arañazos de garra al rojo vivo sobre una roca en la selva',
         'org': {
-            'alternateName': ['Garra Ibérica', 'Garra Iberica', 'Clan GARRA IBÉRICA', 'GARRA IBÉRICA clan'],
+            'alternateName': ['Garra Ibérica', 'Garra Iberica', 'Clan GARRA IBÉRICA', 'Clan Garra Iberica', 'GARRA IBÉRICA clan'],
             'description': 'Clan español de The Isle Evrima abierto a jugadores de España y Latinoamérica. Jugamos en manada en un servidor no oficial, con canales de voz en Discord y una cacería del clan cada sábado a las 22:00 (hora peninsular española).',
             'disambiguatingDescription': 'Clan de jugadores del videojuego de supervivencia de dinosaurios The Isle (versión Evrima). No es un servidor de juego.',
             'areaServed': ['España', 'Latinoamérica'],

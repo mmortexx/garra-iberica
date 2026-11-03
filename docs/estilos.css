@@ -1235,6 +1235,7 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .ligera { --cristal-desenfoque: none; }
 .ligera .niebla, .ligera .bruma, .ligera canvas.ascuas { display: none; }
 .ligera .portada::after { animation: none; opacity: .38; will-change: auto; }
+.ligera :is(.portada-in, .cabecera-in, .baldosa-fondo, .marco img), .ligera .seccion + .seccion::before, .ligera .seccion + .seccion::after { animation: none; }
 html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.ligera .latido::after { animation: none; }
 .ligera .barra.compacta { background: #080808; }
 .ligera .menu[popover]:popover-open { backdrop-filter: none; background: radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 48, 25, .22), transparent 70%), var(--fondo); }

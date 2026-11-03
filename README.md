@@ -1,7 +1,8 @@
-# Web de GARRA IBÉRICA
+# Código de la web
 
-Web estática del clan GARRA IBÉRICA (clan español de The Isle Evrima), publicada con GitHub Pages
-desde la carpeta `docs/`. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+**La web está en https://mmortexx.github.io/garra-iberica/**. Esto es solo su código.
+
+Web estática publicada con GitHub Pages desde la carpeta `docs/`. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
 
 Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 

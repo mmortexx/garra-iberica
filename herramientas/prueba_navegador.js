@@ -755,12 +755,14 @@ const efectos = async navegador => {
         brasa: getComputedStyle(document.querySelector('.portada'), '::after').animationName,
         foto: getComputedStyle(document.querySelector('.portada-fondo')).animationName,
         marca: getComputedStyle(document.querySelector('.h1-marca')).animationName,
+        baldosa: getComputedStyle(document.querySelector('.baldosa-fondo')).animationName,
       };
     });
     if (estado.niebla !== 'none' || estado.bruma !== 'none' || estado.lienzo !== 'none') fallos.push(`sigue el ambiente: ${JSON.stringify(estado)}`);
     if (estado.pinta) fallos.push('las ascuas siguen pintándose');
     if (estado.cristal !== 'none') fallos.push(`la barra sigue con cristal: ${estado.cristal}`);
     if (estado.brasa !== 'none') fallos.push(`la brasa sigue latiendo: ${estado.brasa}`);
+    if (estado.baldosa !== 'none') fallos.push(`las baldosas siguen animadas con el scroll: ${estado.baldosa}`);
     if (estado.foto !== 'none' || estado.marca !== 'none') fallos.push(`la foto o el título siguen animados: ${estado.foto}, ${estado.marca}`);
     await ctx.close();
     const sinTarjeta = await contexto(false);
