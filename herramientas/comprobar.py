@@ -577,10 +577,17 @@ def revisar_normas(normas, tarjetas, falla):
 # Cómo buscan un clan quienes no lo conocen. Tiene que estar en el texto que se lee, no escondido: Google
 # ignora el campo keywords y el texto oculto penaliza.
 BUSQUEDAS = {
-    'index.html': ['clan español', 'comunidad hispana', 'servidor de Discord', 'España y Latinoamérica', 'gente para jugar', 'en manada', 'Asura'],
-    'unete/index.html': ['servidor de Discord', 'gente para jugar', 'clan, grupo, tribu o comunidad', 'España y Latinoamérica', 'en manada', 'Asura'],
-    'en/index.html': ['Spanish-speaking', 'Hispanic community', 'Discord server', 'Spain and Latin America', 'people to play', 'as a pack', 'Asura'],
-    'en/join/index.html': ['Discord server', 'people to play', 'clan, group, tribe or community', 'Spain and Latin America', 'as a pack', 'Asura'],
+    'index.html': ['clan español', 'comunidad hispana', 'servidor de Discord', 'España y Latinoamérica', 'LATAM', 'comunidad o gente para jugar', 'en manada', 'Asura'],
+    'unete/index.html': ['servidor de Discord', 'gente para jugar', 'clan, grupo, tribu o comunidad', 'España y Latinoamérica', 'LATAM', 'en manada', 'Asura'],
+    'en/index.html': ['Spanish-speaking', 'Hispanic community', 'Discord server', 'Spain and Latin America', 'LATAM', 'community or people to play', 'as a pack', 'Asura'],
+    'en/join/index.html': ['Discord server', 'people to play', 'clan, group, tribe or community', 'Spain and Latin America', 'LATAM', 'as a pack', 'Asura'],
+}
+# Lo mismo en el título, que es lo que más pesa y lo que se ve en el resultado.
+BUSQUEDAS_TITULO = {
+    'unete/index.html': ['clan', 'Discord', 'The Isle', 'español'],
+    'en/join/index.html': ['Spanish', 'The Isle', 'Clan', 'Discord'],
+    'dinosaurios/index.html': ['dinosaurios', 'mutaciones', 'The Isle'],
+    'en/dinosaurs/index.html': ['Dinosaur', 'Mutations', 'The Isle'],
 }
 
 
@@ -596,6 +603,11 @@ def revisar_busquedas(raiz, base, falla):
         for frase in frases:
             if frase not in visible:
                 falla(f'{nombre}: el texto visible no dice «{frase}», que es como lo buscan')
+    for nombre, palabras in BUSQUEDAS_TITULO.items():
+        titulo = re.search(r'<title>(.*?)</title>', leer(raiz, nombre), re.S).group(1)
+        for palabra in palabras:
+            if palabra not in titulo:
+                falla(f'{nombre}: el título «{titulo}» no dice «{palabra}», que es como lo buscan')
     for fichero in raiz.rglob('index.html'):
         nombre = fichero.relative_to(raiz).as_posix()
         pie = montar_web.T['en' if nombre.startswith('en/') else 'es']['pie_enlace']

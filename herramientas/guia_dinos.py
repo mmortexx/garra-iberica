@@ -22,7 +22,7 @@ GRUPO = {'Carnívoro': 'carnivoros', 'Carnívoro (pescador)': 'carnivoros', 'Her
 
 T = {
     'es': {
-        'titulo': 'Guía de dinosaurios de The Isle en español – GARRA IBÉRICA',
+        'titulo': 'Guía de dinosaurios y mutaciones de The Isle – GARRA IBÉRICA',
         'h1': 'Guía de dinosaurios de The Isle Evrima',
         'desc': 'Las {n} especies jugables de The Isle Evrima en español: compara peso, crecimiento y grupo máximo, '
                 'con controles, consejos y mutaciones recomendadas.',
@@ -96,7 +96,7 @@ T = {
         'esp_cta_h2': '¿Vas a jugar {nombre}?', 'esp_volver': 'Volver a la guía',
     },
     'en': {
-        'titulo': 'The Isle Evrima Dinosaur Guide – GARRA IBÉRICA',
+        'titulo': 'The Isle Evrima Dinosaur Guide and Mutations – GARRA IBÉRICA',
         'h1': 'The Isle Evrima dinosaur guide',
         'desc': 'All {n} playable species in The Isle Evrima: compare weight, growth and max group, plus controls, '
                 'tips and recommended mutations. By clan GARRA IBÉRICA.',
