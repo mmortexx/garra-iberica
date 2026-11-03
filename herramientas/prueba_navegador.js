@@ -451,29 +451,22 @@ const ventana = async navegador => {
     }
     await ctx.close();
   }
-  // Al arrastrar el borde: el contenido y la letra crecen sin saltos y nada se sale; el portátil y el móvil, igual que siempre.
+  // Cada ancho en una página recién abierta: el contenido y la letra crecen sin saltos y nada se sale; el portátil, igual
+  // que siempre. Nada de esperar un rato tras cambiar el tamaño: en una máquina lenta se leería el ancho anterior.
   {
     const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' });
     const p = await ctx.newPage();
     for (const r of ['', 'dinosaurios/', 'galeria/']) {
-      await p.setViewportSize({ width: 1300, height: 1000 });
-      await p.goto(BASE + r, { waitUntil: 'load' });
-      const previo = {};
+      const previo = {}, medidas = {};
       for (let w = 1300; w <= 3600; w += 100) {
         await p.setViewportSize({ width: w, height: 1000 });
+        await p.goto(BASE + r, { waitUntil: 'load' });
         await p.waitForFunction(a => innerWidth === a, w);
-        // El cambio de tamaño llega a la maquetación un poco después; hasta que dos lecturas coincidan.
-        let m, previa;
-        for (let i = 0; i < 25; i++) {
-          await p.waitForTimeout(120);
-          m = await p.evaluate(() => ({
-            letra: parseFloat(getComputedStyle(document.documentElement).fontSize),
-            ancho: document.querySelector('main .envoltura').clientWidth,
-            sobra: document.documentElement.scrollWidth - innerWidth,
-          }));
-          if (previa && previa.ancho === m.ancho && previa.letra === m.letra && (w > 1440 || m.ancho === 1120)) break;
-          previa = m;
-        }
+        const m = medidas[w] = await p.evaluate(() => ({
+          letra: parseFloat(getComputedStyle(document.documentElement).fontSize),
+          ancho: document.querySelector('main .envoltura').clientWidth,
+          sobra: document.documentElement.scrollWidth - innerWidth,
+        }));
         if (m.sobra > 0) fallos.push(`/${r} a ${w}: se sale ${m.sobra} px`);
         if (w <= 1440 && (m.letra !== 16 || m.ancho !== 1120)) fallos.push(`/${r} a ${w}: el portátil cambia (letra ${m.letra}, ancho ${m.ancho})`);
         if (previo.letra && (m.letra < previo.letra || m.letra - previo.letra > .5)) fallos.push(`/${r} a ${w}: la letra salta de ${previo.letra} a ${m.letra}`);
@@ -482,6 +475,18 @@ const ventana = async navegador => {
       }
       if (previo.ancho < 3000) fallos.push(`/${r}: a 3600 px el contenido solo mide ${previo.ancho} px`);
       if (previo.letra <= 16) fallos.push(`/${r}: la letra no crece con la ventana`);
+      // Y al arrastrar el borde, sin recargar, acaba igual que recién abierta: puede tardar, pero no quedarse atrás.
+      await p.setViewportSize({ width: 1300, height: 1000 });
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      for (let w = 1400; w <= 3600; w += 100) {
+        await p.setViewportSize({ width: w, height: 1000 });
+        const llega = await p.waitForFunction(({ letra, ancho }) => parseFloat(getComputedStyle(document.documentElement).fontSize) === letra
+          && document.querySelector('main .envoltura').clientWidth === ancho, medidas[w], { timeout: 8000 }).then(() => true, () => false);
+        if (llega) continue;
+        const visto = await p.evaluate(() => ({ ancho: document.querySelector('main .envoltura').clientWidth, ventana: innerWidth }));
+        fallos.push(`/${r} a ${w}: al cambiar el tamaño se queda en ${JSON.stringify(visto)}; recién abierta mide ${medidas[w].ancho}`);
+        break;
+      }
     }
     await ctx.close();
   }
