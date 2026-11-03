@@ -8,7 +8,7 @@
 // botón principal de la portada a la vista en móviles bajos,
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
-// contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows,
+// contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
@@ -360,6 +360,212 @@ const efectos = async navegador => {
   console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll, procesador, auditoría):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
+// Ventanas grandes: cada página crece con la ventana y no se queda en una columna con márgenes vacíos,
+// el texto corrido sigue legible, ninguna foto se enseña borrosa ni más alta que la pantalla, y portátil y
+// móvil se quedan como estaban. SOLO=ventana prueba solo esto.
+const ventana = async navegador => {
+  const fallos = [];
+  const IDIOMAS = [
+    ['', 'clan/', 'dinosaurios/', 'dinosaurios/triceratops/', 'caceria/', 'combate/', 'galeria/', 'unete/', 'normas/', 'legal/'],
+    ['en/', 'en/clan/', 'en/dinosaurs/', 'en/dinosaurs/triceratops/', 'en/hunt/', 'en/combat/', 'en/gallery/', 'en/join/', 'en/rules/', 'en/legal/'],
+  ];
+  const TAMANOS = [[390, 844], [1366, 768], [1920, 1080], [2560, 1440], [3440, 1221]];
+  // Cuánto se puede ampliar una foto: de fondo, bajo el velo oscuro, se nota menos que entre el contenido.
+  const AMPLIAR = { fondo: 1.45, contenido: 1.26, video: 1.26 };
+  const LETRAS_POR_LINEA = 90;
+  const medir = lim => {
+    const salida = { ancha: document.documentElement.scrollWidth - innerWidth, largas: [], borrosas: [], altas: [], sinUsar: [] };
+    document.querySelectorAll('details').forEach(d => { d.open = true; });
+    const visible = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+    for (const el of document.querySelectorAll('main p, main li, main dd')) {
+      if (el.querySelector('p, ul, ol, dl, div, h3, h4, img') || !visible(el) || el.closest('.cuenta')) continue;
+      if (el.textContent.trim().length <= lim.letras) continue;
+      // Letra a letra: la línea más larga de verdad, no una media que la última línea, corta, rebaja.
+      const alto = parseFloat(getComputedStyle(el).lineHeight) || 20;
+      const rango = document.createRange();
+      const nodos = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const lineas = [0];
+      let antes = null;
+      for (let n; (n = nodos.nextNode());) for (let i = 0; i < n.length; i++) {
+        rango.setStart(n, i); rango.setEnd(n, i + 1);
+        const r = rango.getClientRects()[0];
+        if (!r || !r.width) continue;
+        // Línea nueva: vuelve a la izquierda o cambia de altura (también al saltar de columna).
+        if (antes && (r.left < antes.left - 1 || Math.abs(r.top - antes.top) > alto / 2)) lineas.push(0);
+        antes = r;
+        lineas[lineas.length - 1]++;
+      }
+      // La media de las líneas llenas: la última suele ser corta, y una suelta con muchas íes no dice nada.
+      const llenas = lineas.length > 1 ? lineas.slice(0, -1) : lineas;
+      const media = Math.round(llenas.reduce((a, b) => a + b) / llenas.length);
+      salida.mayor = Math.max(salida.mayor || 0, media);
+      if (media > lim.letras) salida.largas.push(`${el.className || el.parentElement.className || el.tagName} ${media}`);
+    }
+    const fotos = [['.portada-fondo, .cabecera-fondo', lim.ampliar.fondo], ['.foto img, .baldosa-fondo, .tira img, .marco img', lim.ampliar.contenido]];
+    for (const [sel, max] of fotos) for (const img of document.querySelectorAll(sel)) {
+      if (!img.naturalWidth || !visible(img)) continue;
+      // naturalWidth con srcset no es el ancho del fichero, sino el que dice «sizes»: el de verdad está en el srcset.
+      const real = parseInt(img.srcset.split(',').map(s => s.trim().split(/\s+/)).find(([u]) => new URL(u, location).href === img.currentSrc)?.[1]) || img.naturalWidth;
+      const a = Math.max(img.clientWidth / real, img.clientHeight / (real * img.naturalHeight / img.naturalWidth)) * devicePixelRatio;
+      if (a > max) salida.borrosas.push(`${img.currentSrc.split('/').pop()} a ${a.toFixed(2)}×`);
+    }
+    for (const v of document.querySelectorAll('.batalla-video video')) {
+      if (visible(v) && v.clientWidth * devicePixelRatio / v.getAttribute('width') > lim.ampliar.video) salida.borrosas.push(`vídeo de ${v.clientWidth} px`);
+      if (v.clientHeight > innerHeight) salida.altas.push(`vídeo de ${v.clientHeight} px`);
+    }
+    for (const f of document.querySelectorAll('.foto, .marco')) if (f.clientHeight > innerHeight) salida.altas.push(`${f.id || f.className} de ${f.clientHeight} px`);
+    // Lo que ocupa cada sección de lado a lado, sin contar las llamadas finales, que van centradas a propósito.
+    for (const s of document.querySelectorAll('main .seccion')) {
+      if (!s.querySelector('h2') || (s.querySelector('.saltos') && !s.querySelector('.dinos, .bloque, .plan, .faq, .tarjetas, .pasos, .galeria, .mosaico, dl'))) continue;
+      let izq = Infinity, der = -Infinity;
+      for (const el of s.querySelectorAll('h2, h3, h4, p, li, dt, dd, summary, img, video, select')) {
+        if (!visible(el)) continue;
+        const rango = document.createRange();
+        rango.selectNodeContents(el);
+        const r = el.matches('img, video, select') ? el.getBoundingClientRect() : rango.getBoundingClientRect();
+        if (r.width) { izq = Math.min(izq, r.left); der = Math.max(der, r.right); }
+      }
+      if (der > izq && (der - izq) / innerWidth < lim.uso) salida.sinUsar.push(`#${s.id || s.querySelector('h2')?.id || '?'} ${Math.round((der - izq) / innerWidth * 100)} %`);
+    }
+    return salida;
+  };
+  let mayorMedia = 0;
+  for (const [w, h] of TAMANOS) {
+    const ctx = await navegador.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    for (const r of IDIOMAS.flat()) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      await p.evaluate(async () => {
+        document.querySelectorAll('img[loading=lazy]').forEach(i => { i.loading = 'eager'; });
+        await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+      });
+      // En el portátil y el móvil se mira que nada se salga; lo demás, donde sobra sitio (el texto corrido de
+      // antes, un poco más largo en algún aviso, se queda a 1366 tal como estaba).
+      const m = await p.evaluate(medir, { letras: w > 1440 ? LETRAS_POR_LINEA : 200, ampliar: w > 1440 ? AMPLIAR : { fondo: 9, contenido: 9, video: 9 }, uso: w >= 2560 ? .6 : 0 });
+      if (m.ancha > 0) fallos.push(`/${r} a ${w}: la página se sale ${m.ancha} px`);
+      if (m.largas.length) fallos.push(`/${r} a ${w}: de media más de ${LETRAS_POR_LINEA} letras por línea: ${m.largas.slice(0, 3).join(', ')}`);
+      if (w > 1440) mayorMedia = Math.max(mayorMedia, m.mayor || 0);
+      if (m.borrosas.length) fallos.push(`/${r} a ${w}: fotos borrosas: ${m.borrosas.slice(0, 3).join(', ')}`);
+      if (m.altas.length) fallos.push(`/${r} a ${w}: más alto que la ventana: ${m.altas.slice(0, 3).join(', ')}`);
+      if (m.sinUsar.length) fallos.push(`/${r} a ${w}: secciones que no aprovechan el ancho: ${m.sinUsar.slice(0, 3).join(', ')}`);
+    }
+    await ctx.close();
+  }
+  // Al arrastrar el borde: el contenido y la letra crecen sin saltos y nada se sale; el portátil y el móvil, igual que siempre.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    for (const r of ['', 'dinosaurios/', 'galeria/']) {
+      await p.setViewportSize({ width: 1300, height: 1000 });
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const previo = {};
+      for (let w = 1300; w <= 3600; w += 100) {
+        await p.setViewportSize({ width: w, height: 1000 });
+        await p.waitForFunction(a => innerWidth === a, w);
+        // El cambio de tamaño llega a la maquetación un poco después; hasta que dos lecturas coincidan.
+        let m, previa;
+        for (let i = 0; i < 25; i++) {
+          await p.waitForTimeout(120);
+          m = await p.evaluate(() => ({
+            letra: parseFloat(getComputedStyle(document.documentElement).fontSize),
+            ancho: document.querySelector('main .envoltura').clientWidth,
+            sobra: document.documentElement.scrollWidth - innerWidth,
+          }));
+          if (previa && previa.ancho === m.ancho && previa.letra === m.letra && (w > 1440 || m.ancho === 1120)) break;
+          previa = m;
+        }
+        if (m.sobra > 0) fallos.push(`/${r} a ${w}: se sale ${m.sobra} px`);
+        if (w <= 1440 && (m.letra !== 16 || m.ancho !== 1120)) fallos.push(`/${r} a ${w}: el portátil cambia (letra ${m.letra}, ancho ${m.ancho})`);
+        if (previo.letra && (m.letra < previo.letra || m.letra - previo.letra > .5)) fallos.push(`/${r} a ${w}: la letra salta de ${previo.letra} a ${m.letra}`);
+        if (previo.ancho && (m.ancho < previo.ancho || m.ancho - previo.ancho > 120)) fallos.push(`/${r} a ${w}: el ancho salta de ${previo.ancho} a ${m.ancho}`);
+        Object.assign(previo, m);
+      }
+      if (previo.ancho < 3000) fallos.push(`/${r}: a 3600 px el contenido solo mide ${previo.ancho} px`);
+      if (previo.letra <= 16) fallos.push(`/${r}: la letra no crece con la ventana`);
+    }
+    await ctx.close();
+  }
+  // Lo que se reparte en columnas, a 3440: la galería, las fichas, la tira de la portada y el cálculo de la garra.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 3440, height: 1221 }, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    await p.goto(BASE + 'galeria/', { waitUntil: 'load' });
+    const fotos = await p.evaluate(() => {
+      const c = [...document.querySelectorAll('.galeria .foto')].map(f => f.getBoundingClientRect());
+      const filas = new Map();
+      for (const r of c) filas.set(Math.round(r.top), (filas.get(Math.round(r.top)) || []).concat(r));
+      return { porFila: [...filas.values()].map(f => f.length), desiguales: [...filas.values()].filter(f => Math.max(...f.map(r => r.height)) - Math.min(...f.map(r => r.height)) > 2).length,
+        recortadas: [...document.querySelectorAll('.foto-entera img, .foto-fila img, .foto-atardecer img')].filter(i => { const b = i.parentElement.getBoundingClientRect(); return Math.abs(b.width / b.height - i.width / i.height) > .05 && i.naturalWidth && Math.abs(b.width / b.height - i.naturalWidth / i.naturalHeight) > .05; }).length };
+    });
+    if (Math.max(...fotos.porFila) < 3) fallos.push(`galería a 3440: como mucho ${Math.max(...fotos.porFila)} fotos por fila`);
+    if (fotos.desiguales) fallos.push(`galería a 3440: ${fotos.desiguales} filas con fotos de distinto alto`);
+    if (fotos.recortadas) fallos.push(`galería a 3440: ${fotos.recortadas} fotos que iban enteras salen recortadas`);
+    await p.goto(BASE + 'dinosaurios/', { waitUntil: 'load' });
+    // Ordenar con la lista en dos columnas: la más pesada, arriba de la primera; y sigue en dos columnas.
+    await p.selectOption('[data-comparar] label:first-child select', { index: 1 });
+    await p.waitForTimeout(100);
+    const orden = await p.evaluate(() => {
+      const f = [...document.querySelectorAll('.comparar-lista > div:not([hidden])')].map(d => d.getBoundingClientRect());
+      return { izq: Math.min(...f.map(r => Math.round(r.left))), primera: Math.round(f[0].left), columnas: new Set(f.map(r => Math.round(r.left))).size, sobra: document.documentElement.scrollWidth - innerWidth };
+    });
+    if (orden.primera !== orden.izq || orden.columnas !== 2 || orden.sobra > 0) fallos.push(`comparativa a 3440 al ordenar: ${JSON.stringify(orden)}`);
+    const dinos = await p.evaluate(() => {
+      const f = [...document.querySelector('.dinos-plegadas').children].map(d => Math.round(d.getBoundingClientRect().top));
+      const filas = [...document.querySelectorAll('.comparar-lista > div')].map(d => d.getBoundingClientRect());
+      return { porFila: f.filter(t => t === f[0]).length, anchoFila: filas[0].width, columnasComparar: new Set(filas.map(r => Math.round(r.left))).size };
+    });
+    if (dinos.porFila < 4) fallos.push(`guía a 3440: ${dinos.porFila} fichas por fila`);
+    if (dinos.columnasComparar < 2 || dinos.anchoFila > 1800) fallos.push(`comparativa a 3440: ${dinos.columnasComparar} columnas de ${Math.round(dinos.anchoFila)} px: una fila tan ancha no se sigue con la vista`);
+    // Donde acaba la foto de la cabecera, con tope, no se puede ver un corte: el velo empieza en negro.
+    for (const r of ['unete/', 'caceria/', 'combate/']) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const borde = await p.evaluate(() => {
+        const c = document.querySelector('.cabecera'), f = c.querySelector('.cabecera-fondo');
+        return { x: Math.round(f.getBoundingClientRect().left), y: Math.round(c.getBoundingClientRect().top + 40), alto: Math.round(c.clientHeight * .4), ancho: f.clientWidth };
+      });
+      if (borde.x <= 8) { fallos.push(`/${r} a 3440: la foto de cabecera ocupa toda la ventana (${borde.ancho} px): sin tope`); continue; }
+      const png = await p.screenshot({ clip: { x: borde.x - 6, y: borde.y, width: 12, height: borde.alto } });
+      // En una página en blanco: la de la web no deja pedir nada que no sea suyo.
+      const blanca = await ctx.newPage();
+      const salto = await blanca.evaluate(async b => {
+        const bm = await createImageBitmap(await (await fetch('data:image/png;base64,' + b)).blob());
+        const g = new OffscreenCanvas(bm.width, bm.height).getContext('2d');
+        g.drawImage(bm, 0, 0);
+        const d = g.getImageData(0, 0, bm.width, bm.height).data;
+        const luz = x => { let t = 0; for (let y = 0; y < bm.height; y++) { const i = (y * bm.width + x) * 4; t += d[i] + d[i + 1] + d[i + 2]; } return t / 3 / bm.height; };
+        return Math.abs(luz(1) - luz(bm.width - 2));
+      }, png.toString('base64'));
+      await blanca.close();
+      if (salto > 1.5) fallos.push(`/${r} a 3440: se ve el borde de la foto de cabecera (salto de luz ${salto.toFixed(1)})`);
+    }
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForTimeout(200);
+    const portada = await p.evaluate(() => {
+      const f = document.querySelector('.portada-fondo'), t = document.querySelector('.tira'), m = document.querySelector('.tira-marco');
+      const brasa = getComputedStyle(document.querySelector('.portada'), '::after');
+      const caja = f.getBoundingClientRect();
+      const izq = document.querySelector('.portada').getBoundingClientRect().left + parseFloat(brasa.left) + parseFloat(getComputedStyle(document.querySelector('.portada')).getPropertyValue('--garra-x'));
+      const esc = Math.max(f.clientWidth / f.naturalWidth, f.clientHeight / f.naturalHeight), iw = f.naturalWidth * esc;
+      return { centro: izq, esperado: f.offsetLeft + (f.clientWidth - iw) * .72 + iw * .785, tira: t.getBoundingClientRect().width / m.getBoundingClientRect().width, alto: document.querySelector('.portada').clientHeight, anchoFoto: caja.width };
+    });
+    if (Math.abs(portada.centro - portada.esperado) > 8) fallos.push(`portada a 3440: la brasa cae a ${Math.round(portada.centro)} px y los arañazos a ${Math.round(portada.esperado)} px`);
+    if (portada.tira < .85) fallos.push(`portada a 3440: la tira de fotos llena solo el ${Math.round(portada.tira * 100)} % de su sitio`);
+    if (portada.alto < 900) fallos.push(`portada a 3440: mide ${portada.alto} px de alto con 1221 de ventana`);
+    await ctx.close();
+  }
+  // Móvil: lo que hay arriba de cada página, con su medida de siempre.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    await p.goto(BASE, { waitUntil: 'load' });
+    const letra = await p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+    if (letra !== 16) fallos.push(`móvil: la letra base cambia a ${letra} px`);
+    await ctx.close();
+  }
+  console.log(`Ventanas grandes: media de letras por línea, como mucho ${mayorMedia}.`);
+  console.log('Ventanas grandes:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  return fallos.length;
+};
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   // La web mide su fluidez al cargar y una máquina cargada la pondría en modo ligero al azar: se deja
@@ -372,6 +578,11 @@ const efectos = async navegador => {
   };
   if (process.env.SOLO === 'efectos') {
     const n = await efectos(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'ventana') {
+    const n = await ventana(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -524,7 +735,9 @@ const efectos = async navegador => {
         const sobra = document.documentElement.scrollWidth - document.documentElement.clientWidth;
         hoja.remove();
         const izq = sel => Math.round(document.querySelector(sel).getBoundingClientRect().left);
-        const titulos = [...document.querySelectorAll('main .seccion h2')].map(h => [h.id, Math.round(h.getBoundingClientRect().left)]);
+        // El aviso legal, de 1441 px en adelante, puede ir en dos columnas: basta con que el primer título vaya alineado.
+        const enColumna = h => innerWidth > 1440 && h.closest('.texto-legal') && h !== document.querySelector('.texto-legal h2');
+        const titulos = [...document.querySelectorAll('main .seccion h2')].filter(h => !enColumna(h)).map(h => [h.id, Math.round(h.getBoundingClientRect().left)]);
         const peldanos = [...document.querySelectorAll('.escalera > .peldano')];
         const columnas = peldanos.length > 1 && new Set(peldanos.map(el => el.offsetLeft)).size === peldanos.length;
         const escalera = columnas ? peldanos.map(el => ({ titulo: el.offsetTop + el.querySelector('.nivel-titulo').offsetTop, linea: el.offsetTop + el.offsetHeight })) : [];
@@ -2003,6 +2216,7 @@ const efectos = async navegador => {
     console.log(ruta('caceria/'), 'hora de cada zona:', fallos.length ? fallos.join('; ') : 'sí');
   }
   malos += await efectos(navegador);
+  malos += await ventana(navegador);
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);

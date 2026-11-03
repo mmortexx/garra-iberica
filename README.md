@@ -180,6 +180,10 @@ python herramientas/prueba_borradores.py
   y se aparta al reproducir, las filas de la comparativa viajan, salvo con «reducir movimiento», y todo lo
   ligado al scroll depende de la página y avanza al bajar y vuelve al subir: un `overflow: hidden` en la caja
   de fuera lo dejaría clavado sin ningún aviso (usad `overflow: clip`).
+  Ventanas grandes (`SOLO=ventana` prueba solo esto), de 390 a 3440 px en las páginas de ambos idiomas: sin
+  desbordes, de media 90 letras por línea como mucho, ninguna foto borrosa ni más alta que la ventana, secciones
+  que usan el ancho, galería en filas sin recortar, y un barrido de 1300 a 3600 px sin saltos bruscos; hasta
+  1440 px, letra y ancho no se mueven. La letra y el ancho salen de `html` y `--ancho` en `estilos.css`.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con

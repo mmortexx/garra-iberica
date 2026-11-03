@@ -468,7 +468,9 @@ def comparativa(d, lang):
         '        <p class="comparar-fila comparar-cabeza" aria-hidden="true">'
         f'<span>{t["comp_cols"][0]}</span><span class="comparar-cifras">'
         + ''.join(f'<span class="c-{k}">{col}</span>' for k, col in zip(('peso', 'crece', 'grupo'), t['comp_cols'][1:]))
-        + '</span></p>',
+        + f'</span><span class="comparar-repite"><span>{t["comp_cols"][0]}</span><span class="comparar-cifras">'
+        + ''.join(f'<span class="c-{k}">{col}</span>' for k, col in zip(('peso', 'crece', 'grupo'), t['comp_cols'][1:]))
+        + '</span></span></p>',
         '        <dl class="comparar-lista" data-comparar-lista>',
         *filas,
         '        </dl>',
