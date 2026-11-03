@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Isle Evrima Dinosaur Guide and Mutations – GARRA IBÉRICA</title>
-<meta name="description" content="All 22 playable species in The Isle Evrima: compare weight, growth and max group, plus controls, tips and recommended mutations. By clan GARRA IBÉRICA.">
+<title>The Isle Evrima Guide: Dinosaurs, Mutations and Diet</title>
+<meta name="description" content="All 22 playable species in The Isle Evrima: weight, growth times, max group, controls, recommended mutations and how diet and nutrients work.">
 <meta name="robots" content="max-image-preview:large, max-snippet:-1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -27,8 +27,8 @@
 <meta property="og:locale" content="en_GB">
 <meta property="og:locale:alternate" content="es_ES">
 <meta property="og:site_name" content="GARRA IBÉRICA">
-<meta property="og:title" content="The Isle Evrima Dinosaur Guide and Mutations – GARRA IBÉRICA">
-<meta property="og:description" content="All 22 playable species in The Isle Evrima: compare weight, growth and max group, plus controls, tips and recommended mutations. By clan GARRA IBÉRICA.">
+<meta property="og:title" content="The Isle Evrima Guide: Dinosaurs, Mutations and Diet">
+<meta property="og:description" content="All 22 playable species in The Isle Evrima: weight, growth times, max group, controls, recommended mutations and how diet and nutrients work.">
 <meta property="og:url" content="https://mmortexx.github.io/garra-iberica/en/dinosaurs/">
 <meta property="og:image" content="https://mmortexx.github.io/garra-iberica/img/og-dinosaurios.jpg">
 <meta property="og:image:type" content="image/jpeg">
@@ -90,8 +90,8 @@
       "@type": "WebPage",
       "@id": "https://mmortexx.github.io/garra-iberica/en/dinosaurs/#pagina",
       "url": "https://mmortexx.github.io/garra-iberica/en/dinosaurs/",
-      "name": "The Isle Evrima Dinosaur Guide and Mutations – GARRA IBÉRICA",
-      "description": "All 22 playable species in The Isle Evrima: compare weight, growth and max group, plus controls, tips and recommended mutations. By clan GARRA IBÉRICA.",
+      "name": "The Isle Evrima Guide: Dinosaurs, Mutations and Diet",
+      "description": "All 22 playable species in The Isle Evrima: weight, growth times, max group, controls, recommended mutations and how diet and nutrients work.",
       "inLanguage": "en",
       "isPartOf": {
         "@id": "https://mmortexx.github.io/garra-iberica/#web"
@@ -320,7 +320,7 @@
       <h1 id="titulo" class="entra">The Isle Evrima dinosaur guide</h1>
       <p class="entrada entra entra-2">The 22 cards we use on the clan Discord, so nobody starts blind: weight, growth, max group size, controls, a tip and the mutations the community recommends.</p>
       <p class="guia-revisado entra entra-3">Reviewed 30 Oct 2026 · patch 0.21.772</p>
-      <p class="saltos entra entra-3"><a href="#planner">Adult for the hunt?</a><a href="#carnivores">All the cards</a><a href="#how-to-read">How to read the cards</a><a href="#mutations">Mutations</a></p>
+      <p class="saltos entra entra-3"><a href="#planner">Adult for the hunt?</a><a href="#carnivores">All the cards</a><a href="#how-to-read">How to read the cards</a><a href="#diet">How diet works</a><a href="#mutations">Mutations</a></p>
     </div>
   </section>
 
@@ -328,7 +328,7 @@
     <div class="envoltura">
       <div class="revelar">
         <p class="antetitulo">At a glance</p>
-        <h2 id="t-compare">Compare species</h2>
+        <h2 id="t-compare">List of playable dinosaurs</h2>
         <p class="intro">All 22 species with their top weight, how long they take to grow up (1×) and their max group. Sort them, filter by how many of you will play together and tap one to open its page. The page link keeps your choice: share it with your group.</p>
       </div>
       <div class="plan plan-tres" data-comparar hidden data-recuento="{n} of {total} species" data-ninguna="No species matches both.">
@@ -453,7 +453,7 @@
     <div class="envoltura">
       <div class="revelar">
         <p class="antetitulo">11 species</p>
-        <h2 id="t-carnivores">Carnivores</h2>
+        <h2 id="t-carnivores">Carnivorous dinosaurs</h2>
       </div>
       <div class="dinos dinos-plegadas">
         <details class="dino plegable panel luz revelar" id="tyrannosaurus">
@@ -731,7 +731,7 @@
     <div class="envoltura">
       <div class="revelar">
         <p class="antetitulo">9 species</p>
-        <h2 id="t-herbivores">Herbivores</h2>
+        <h2 id="t-herbivores">Herbivorous dinosaurs</h2>
       </div>
       <div class="dinos dinos-plegadas">
         <details class="dino plegable panel luz revelar" id="diabloceratops">
@@ -946,7 +946,7 @@
     <div class="envoltura">
       <div class="revelar">
         <p class="antetitulo">2 species</p>
-        <h2 id="t-omnivores">Omnivores</h2>
+        <h2 id="t-omnivores">Omnivorous dinosaurs</h2>
       </div>
       <div class="dinos dinos-plegadas">
         <details class="dino plegable panel luz revelar" id="beipiaosaurus">
@@ -1010,6 +1010,7 @@
             <li><b>Frail</b>: adult that did not reach Prime; from 87.5% it slowly gets weaker.</li>
             <li><b>Growth</b>: the game's base time (1×). On servers with a multiplier it is shorter.</li>
             <li><b>Max group</b>: the largest group size for the species.</li>
+            <li><b>Perfect diet</b>: all 3 nutrients at once. <a href="#diet">What each one gives and what to eat</a>.</li>
           </ul>
         </div>
         <div class="bloque panel luz revelar">
@@ -1033,11 +1034,73 @@
     </div>
   </section>
 
+  <section class="seccion" id="diet" aria-labelledby="t-diet">
+    <div class="envoltura">
+      <div class="revelar">
+        <p class="antetitulo">What to eat</p>
+        <h2 id="t-diet">The Isle Evrima diet: proteins, lipids and carbohydrates</h2>
+        <p class="intro">"Proteins" are just one of the 3 nutrients: the 3 hexagons next to the hunger bar (also in Tab). You don't need them full: the fuller they are the bigger the bonus, up to a cap. At 0% they give nothing.</p>
+      </div>
+      <div class="normas escalonado">
+        <div class="bloque panel luz revelar">
+          <h3>What each one gives</h3>
+          <ul role="list">
+            <li><b>β Proteins:</b> you regenerate health (up to 10%).</li>
+            <li><b>γ Lipids:</b> fractures heal faster (up to 10%).</li>
+            <li><b>α Carbohydrates:</b> bleeding stops faster (up to 10%).</li>
+          </ul>
+        </div>
+        <div class="bloque panel luz revelar">
+          <h3>Two at once (the cap of those two goes up +10%)</h3>
+          <ul role="list">
+            <li><b>β + α:</b> you resist bleeding (up to 10%).</li>
+            <li><b>β + γ:</b> you resist fractures (up to 10%).</li>
+            <li><b>α + γ:</b> you regenerate locked health (up to 10%).</li>
+          </ul>
+        </div>
+        <div class="bloque panel luz revelar">
+          <h3>Perfect diet: all 3 at once</h3>
+          <ul role="list">
+            <li>Some of each is enough (the minimum amount: not confirmed).</li>
+            <li>You regenerate stamina (up to 15%), add the 3 bonuses above and the caps go up +20%.</li>
+            <li>It counts as a requirement for <b>Prime</b>. If a bar hits 0, you lose it until you refill it.</li>
+          </ul>
+        </div>
+        <div class="bloque panel luz revelar">
+          <h3>Growing faster</h3>
+          <ul role="list">
+            <li>Each nutrient raises the cap: 100%, 200% and 300%. How many hours it really saves: not confirmed.</li>
+            <li>As an adult it no longer speeds you up; the other bonuses stay.</li>
+            <li>How long each species takes is in the <a href="#compare">list of dinosaurs</a>; whether you will be an adult for the hunt, in the <a href="#planner">planner</a>.</li>
+          </ul>
+        </div>
+        <div class="bloque panel luz revelar">
+          <h3>What to eat (your list is in Tab)</h3>
+          <ul role="list">
+            <li><b>Carnivores:</b> in a fresh carcass of any species, heart β, lungs α and intestines γ; the stomach varies with the animal. Cerato: bones give all 3.</li>
+            <li><b>Herbivores:</b> each species has its own plants; anything not on the list only fills hunger. As a juvenile, the sanctuary mushrooms give all 3.</li>
+            <li><b>Omnivores:</b> their list mixes plants and small prey.</li>
+            <li><b>Example:</b> a Carnotaurus with no lipids: eat the intestines of any fresh carcass. With heart and lungs too, you have a perfect diet.</li>
+          </ul>
+        </div>
+        <div class="bloque panel luz revelar">
+          <h3>Tips</h3>
+          <ul role="list">
+            <li>Salt: cures vomiting, but lowers the nutrient you mark in Tab.</li>
+            <li>Gastroliths: empty your stomach faster so you can keep eating; they don't remove nutrients.</li>
+            <li>Young you feed receive your diet.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="nota revelar"><span>Reviewed 3 Nov 2026 · latest announced patch: 0.21.772. The figures come from community guides; there is no official table. Sources: official Steam news, Evrima Quick Guide, theisle.info.</span></p>
+    </div>
+  </section>
+
   <section class="seccion" id="mutations" aria-labelledby="t-mutations">
     <div class="envoltura">
       <div class="revelar">
         <p class="antetitulo">Glossary</p>
-        <h2 id="t-mutations">Mutations</h2>
+        <h2 id="t-mutations">Recommended The Isle Evrima mutations</h2>
         <p class="intro">The ones the cards recommend and what each one does. They are only a rough guide: they come from community guides.</p>
       </div>
       <dl class="glosario revelar">

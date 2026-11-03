@@ -35,6 +35,7 @@ FICHAS_ORIGINAL = Path(os.environ.get('GARRA_FICHAS') or Path.home() / 'Document
 FOTOS_ORIGINAL = preparar_galeria.FOTOS_ORIGINAL
 POSTS_ORIGINAL = Path(os.environ.get('GARRA_POSTS') or FICHAS_ORIGINAL.with_name('posts.json'))
 GUIA_WIKI = 'Cómo usar la wiki'
+GUIA_DIETA = 'Dieta:'
 GUIA_COMBATE = 'Guía de combate'
 INVITACION = 'https://discord.com/invite/z5mU6a9Kf8'
 VERSIONADOS = montar_web.VERSIONADOS
@@ -577,17 +578,23 @@ def revisar_normas(normas, tarjetas, falla):
 # Cómo buscan un clan quienes no lo conocen. Tiene que estar en el texto que se lee, no escondido: Google
 # ignora el campo keywords y el texto oculto penaliza.
 BUSQUEDAS = {
-    'index.html': ['clan español', 'comunidad hispana', 'servidor de Discord', 'España y Latinoamérica', 'LATAM', 'comunidad o gente para jugar', 'en manada', 'Asura'],
-    'unete/index.html': ['servidor de Discord', 'gente para jugar', 'clan, grupo, tribu o comunidad', 'España y Latinoamérica', 'LATAM', 'en manada', 'Asura'],
-    'en/index.html': ['Spanish-speaking', 'Hispanic community', 'Discord server', 'Spain and Latin America', 'LATAM', 'community or people to play', 'as a pack', 'Asura'],
-    'en/join/index.html': ['Discord server', 'people to play', 'clan, group, tribe or community', 'Spain and Latin America', 'LATAM', 'as a pack', 'Asura'],
+    'index.html': ['clan español', 'comunidad hispana', 'servidor de Discord', 'España y Latinoamérica', 'LATAM', 'comunidad o gente para jugar', 'hispanohablante', 'cómo funciona la dieta', 'en manada', 'Asura'],
+    'unete/index.html': ['servidor de Discord', 'gente para jugar', 'clan, grupo, tribu o comunidad', 'España y Latinoamérica', 'LATAM', 'hago grupo', 'servidor español o latino', 'qué comer', 'en manada', 'Asura'],
+    'en/index.html': ['Spanish-speaking', 'Hispanic community', 'Discord server', 'Spain and Latin America', 'LATAM', 'community or people to play', 'how diet works', 'as a pack', 'Asura'],
+    'en/join/index.html': ['Discord server', 'people to play', 'clan, group, tribe or community', 'Spain and Latin America', 'LATAM', 'group up', 'Spanish or Latin American', 'what to eat', 'as a pack', 'Asura'],
+    'dinosaurios/index.html': ['proteínas', 'lípidos', 'carbohidratos', 'Dieta perfecta', 'no confirmado', 'Lista de dinosaurios jugables', 'Dinosaurios carnívoros', 'Mutaciones recomendadas de The Isle Evrima'],
+    'en/dinosaurs/index.html': ['proteins', 'lipids', 'carbohydrates', 'Perfect diet', 'not confirmed', 'List of playable dinosaurs', 'Carnivorous dinosaurs', 'Recommended The Isle Evrima mutations'],
+    'dinosaurios/tyrannosaurus/index.html': ['Rex o T-Rex', 'Cómo se juega Tyrannosaurus', 'Cómo funciona la dieta'],
+    'en/dinosaurs/tyrannosaurus/index.html': ['Rex or T-Rex', 'How to play Tyrannosaurus', 'How diet works'],
 }
 # Lo mismo en el título, que es lo que más pesa y lo que se ve en el resultado.
 BUSQUEDAS_TITULO = {
     'unete/index.html': ['clan', 'Discord', 'The Isle', 'español'],
     'en/join/index.html': ['Spanish', 'The Isle', 'Clan', 'Discord'],
-    'dinosaurios/index.html': ['dinosaurios', 'mutaciones', 'The Isle'],
-    'en/dinosaurs/index.html': ['Dinosaur', 'Mutations', 'The Isle'],
+    'dinosaurios/index.html': ['dinosaurios', 'mutaciones', 'dieta', 'The Isle'],
+    'en/dinosaurs/index.html': ['Dinosaur', 'Mutations', 'Diet', 'The Isle'],
+    'dinosaurios/tyrannosaurus/index.html': ['Tyrannosaurus', 'mutaciones', 'The Isle Evrima'],
+    'en/dinosaurs/tyrannosaurus/index.html': ['Tyrannosaurus', 'mutations', 'The Isle Evrima'],
 }
 
 
@@ -1068,6 +1075,17 @@ def revisar_guia(falla, avisa):
                     frase = re.sub(r'<[^>]+>', '', frase)
                     if frase not in original:
                         falla(f'guia_dinos.py ({lang}) dice «{frase}» y la guía del Discord ya no: copia el texto nuevo')
+    if POSTS_ORIGINAL.is_file():
+        if not (guia := guia_del_discord(POSTS_ORIGINAL, GUIA_DIETA)):
+            falla(f'{POSTS_ORIGINAL.name}: no encuentro la guía «{GUIA_DIETA}» (¿ha cambiado su formato?)')
+        else:
+            for lang, campo in (('es', 'texto'), ('en', 'ingles')):
+                t = guia_dinos.T[lang]
+                original = ' '.join(guia[campo].replace('**', '').split())
+                for frase in [t['nutri_intro'], t['nutri_nota'], *[f for _, del_discord, _ in t['nutri_bloques'] for f in del_discord]]:
+                    frase = re.sub(r'<[^>]+>', '', frase)
+                    if frase not in original:
+                        falla(f'guia_dinos.py ({lang}), dieta: dice «{frase}» y la guía de dieta del Discord ya no: copia el texto nuevo')
     if not FICHAS_ORIGINAL.is_file():
         avisa(f'sin {FICHAS_ORIGINAL}: no se comprueba que {guia_dinos.FICHAS.name} siga al día con las fichas del Discord')
     elif FICHAS_ORIGINAL.read_bytes() != guia_dinos.FICHAS.read_bytes():
