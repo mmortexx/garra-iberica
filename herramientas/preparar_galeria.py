@@ -43,9 +43,10 @@ ANCHOS_AMPLIADA = (1600, 2400, 3080)
 CALIDAD_AMPLIADA = 78
 # Las de mucho follaje pesan más: bajan de calidad hasta caber (máximo de comprobar.py: 750 KB).
 PESO_AMPLIADA = 740 * 1024
-# Por debajo del máximo de comprobar.py (120 KB) con algo de margen.
+# Por debajo del máximo de comprobar.py (120 KB) con algo de margen. Sin pasar de 78, como las ampliadas: más
+# calidad no se ve y hacía que las medianas pesaran casi como las grandes.
 PESO_GALERIA = 115 * 1024
-CALIDADES = range(90, 59, -2)
+CALIDADES = range(78, 59, -2)
 # nombre: (captura, recorte (x0, y0, x1, y1), anchos a generar)
 FOTOS = {
     'galeria-cielo': ('Captura de pantalla 2026-10-30 120745.png', (200, 0, 3078, 1439), (600, 1000, 1500)),
@@ -54,15 +55,15 @@ FOTOS = {
     'galeria-rugido': ('Captura de pantalla 2026-10-30 120652.png', (500, 0, 2419, 1439), (400, 800)),
     'galeria-valle': ('Captura de pantalla 2026-10-30 120933.png', (800, 0, 2719, 1439), (400, 800)),
     'galeria-charca': ('Captura de pantalla 2026-10-30 144319.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
-    'galeria-secuoyas': ('Captura de pantalla 2026-10-30 144346.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
-    'galeria-pareja': ('Captura de pantalla 2026-10-30 144646.png', (430, 330, 2648, 1439), (600, 1000, 1300)),
+    'galeria-secuoyas': ('Captura de pantalla 2026-10-30 144346.png', (1221, 330, 3439, 1439), (400, 600, 1000, 1500)),
+    'galeria-pareja': ('Captura de pantalla 2026-10-30 144646.png', (430, 330, 2648, 1439), (400, 600, 1000, 1300)),
     'galeria-espesura': ('Captura de pantalla 2026-10-30 144625.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
     'galeria-noche': ('Captura de pantalla 2026-10-30 145144.png', (0, 150, 3080, 1439), (800, 1200, 1600)),
     'galeria-tarde': ('Captura de pantalla 2026-10-30 175817.png', (560, 200, 3080, 1439), (600, 1000, 1300)),
-    'galeria-cuernos': ('Captura de pantalla 2026-10-30 175839.png', (500, 40, 3080, 1439), (600, 1000, 1300)),
+    'galeria-cuernos': ('Captura de pantalla 2026-10-30 175839.png', (500, 40, 3080, 1439), (400, 600, 1000, 1300)),
     'galeria-desfiladero': ('Captura de pantalla 2026-10-30 210612.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
     'galeria-colina': ('Captura de pantalla 2026-10-30 210254.png', (0, 200, 3080, 1439), (600, 1000, 1300)),
-    'galeria-manada': ('Captura de pantalla 2026-10-30 210318.png', (0, 200, 3080, 1439), (600, 1000, 1300)),
+    'galeria-manada': ('Captura de pantalla 2026-10-30 210318.png', (0, 200, 3080, 1439), (400, 600, 1000, 1300)),
     'galeria-descanso': ('Captura de pantalla 2026-10-30 190521.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
     'galeria-brasas': ('Captura de pantalla 2026-10-30 213422.png', (300, 150, 2900, 1439), (800, 1200, 1600)),
     'galeria-deino-acecho': ('Captura de pantalla 2026-10-31 161713.png', (870, 330, 2980, 1220), (800, 1200, 1600)),

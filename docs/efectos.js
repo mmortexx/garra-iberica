@@ -482,6 +482,7 @@
     medicion = requestAnimationFrame(paso);
   };
   alCambiarReposo.push(() => { if (pendiente && !enReposo) medirFluidez(); });
+  addEventListener('pageswap', e => { if (ligera) e.viewTransition?.skipTransition(); });
   addEventListener('resize', () => { clearTimeout(cambioVentana); cambioVentana = setTimeout(medirFluidez, 400); });
 
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer

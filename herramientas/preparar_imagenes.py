@@ -26,7 +26,7 @@ EMOJIS = ['garra', 'caza', 'voz', 'sinmicro',
 SIN_PALETA = {'alfa', 'beta', 'lider', 'veterano', 'miembro', 'recluta', 'aliado', 'trofeo'}
 ROJO_LAVA = 6  # grados; el mismo tono que --ascua en estilos.css
 CARACTERES = (''.join(chr(c) for c in range(0x20, 0x7f))
-              + 'áéíóúüñÁÉÍÓÚÜÑ¡¿«»–—·‘’“”…➜•ºª€')
+              + 'áéíóúüñÁÉÍÓÚÜÑ¡¿«»–—·‘’“”…➜•ºª€×°↑')
 
 
 def ancho(im, w):
@@ -106,6 +106,17 @@ def main(origen):
     tactil.alpha_composite(garra.resize((160, 160), Image.LANCZOS), (10, 10))
     tactil.convert('RGB').save(WEB / 'apple-touch-icon.png', optimize=True)
 
+    fuentes(origen)
+
+    for p in sorted(list(IMG.iterdir()) + list(FONTS.glob('*.woff2'))):
+        extra = ''
+        if p.suffix in ('.webp', '.jpg', '.png'):
+            with Image.open(p) as im:
+                extra = f'{im.width}x{im.height}'
+        print(f'{p.relative_to(WEB)}\t{p.stat().st_size // 1024} KB\t{extra}')
+
+
+def fuentes(origen):
     ofl = (origen / 'fonts' / 'fontsource-metal-mania-5.3.0' / 'package' / 'LICENSE').read_text(encoding='utf-8')
     avisos = []
     for ttf, salida in (('anton.ttf', 'anton'), ('barlow-600.ttf', 'barlow-600')):
@@ -125,13 +136,6 @@ def main(origen):
     (FONTS / 'LICENCIA-OFL.txt').write_text(
         '\n'.join(avisos) + '\n\nAmbas fuentes se distribuyen bajo la SIL Open Font License 1.1:\n\n'
         + ofl[ofl.index('This Font Software is licensed'):], encoding='utf-8', newline='\n')
-
-    for p in sorted(list(IMG.iterdir()) + list(FONTS.glob('*.woff2'))):
-        extra = ''
-        if p.suffix in ('.webp', '.jpg', '.png'):
-            with Image.open(p) as im:
-                extra = f'{im.width}x{im.height}'
-        print(f'{p.relative_to(WEB)}\t{p.stat().st_size // 1024} KB\t{extra}')
 
 
 if __name__ == '__main__':

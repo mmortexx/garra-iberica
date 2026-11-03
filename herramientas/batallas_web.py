@@ -48,6 +48,7 @@ T = {
 # Cuándo se publicó cada vídeo en la web (no cuándo fue la batalla). Montar la web no puede deducirlo y salir
 # siempre igual; comprobar.py avisa si un vídeo nuevo no está aquí.
 VIDEOS_PUBLICADOS = {'smoke-1': '2026-10-31T13:04:35Z', 'delta-1': '2026-10-31T13:04:35Z'}
+DURACION_VIDEOS = {'smoke-1': 'PT1M12S', 'delta-1': 'PT2M8S'}
 
 
 def al_dia():
@@ -152,7 +153,7 @@ def videos_declarados(lang, base, batallas=None):
             nodos.append({'@type': 'VideoObject', 'name': f'GARRA IBÉRICA: {t["video"].format(r=b["rival"])}',
                           'description': t['video_texto'].format(frase=frase(b, lang), n=b['nosotros'], m=b['ellos']),
                           'thumbnailUrl': f'{base}img/{nombre}.webp', 'contentUrl': f'{base}video/{nombre}.mp4',
-                          'uploadDate': VIDEOS_PUBLICADOS.get(b['clave'], ''), 'creator': {'@id': base + '#clan'}})
+                          'uploadDate': VIDEOS_PUBLICADOS.get(b['clave'], ''), 'duration': DURACION_VIDEOS.get(b['clave'], ''), 'creator': {'@id': base + '#clan'}})
     return nodos
 
 

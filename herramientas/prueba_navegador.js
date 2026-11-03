@@ -770,6 +770,20 @@ const efectos = async navegador => {
       .catch(() => fallos.push('sin aceleración gráfica no pasa a modo ligero'));
     if (await q.locator('canvas.ascuas').count()) fallos.push('sin aceleración gráfica crea ascuas');
     await sinTarjeta.close();
+    // Al cambiar de página: con ambiente hay zarpazo, y en modo ligero no (es a pantalla completa).
+    for (const [conTarjeta, esperada] of [[true, true], [false, false]]) {
+      const c = await contexto(conTarjeta);
+      await c.addInitScript(() => addEventListener('pagereveal', e => { sessionStorage.setItem('revelada', String(!!e.viewTransition)); }));
+      const r = await c.newPage();
+      await r.goto(BASE + 'clan/', { waitUntil: 'load' });
+      await r.waitForTimeout(800);
+      await r.click('.barra .marca');
+      await r.waitForURL(BASE);
+      await r.waitForLoadState('load');
+      const hubo = await r.evaluate(() => sessionStorage.getItem('revelada') === 'true');
+      if (hubo !== esperada) fallos.push(`${conTarjeta ? 'con' : 'sin'} aceleración, zarpazo al cambiar de página: ${hubo}`);
+      await c.close();
+    }
     if (fallos.length) malos++;
     console.log('modo ligero:', fallos.length ? fallos.join('; ') : 'se enciende sin aceleración y al dejar de dar imágenes, y apaga el ambiente');
   }
@@ -792,12 +806,13 @@ const efectos = async navegador => {
         ascuas: foto() !== antes,
         pulso: getComputedStyle(document.querySelector('.portada'), '::after').animationPlayState,
         niebla: getComputedStyle(document.querySelector('.niebla'), '::before').animationPlayState,
+        acercar: getComputedStyle(document.querySelector('.portada-fondo')).animationPlayState,
       };
     });
     const fallos = [];
     const esperar = (cuando, e, quieto) => {
       // El pulso de la garra son varias animaciones: todas a la vez.
-      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso.split(', ').some(s => s !== (quieto ? 'paused' : 'running')) || e.niebla !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
+      if (e.reposo !== quieto || e.ascuas === quieto || e.pulso.split(', ').some(s => s !== (quieto ? 'paused' : 'running')) || e.niebla !== (quieto ? 'paused' : 'running') || e.acercar !== (quieto ? 'paused' : 'running')) fallos.push(`${cuando}: ${JSON.stringify(e)}`);
     };
     esperar('al cargar', await estado(), false);
     await p.evaluate(() => dispatchEvent(new Event('blur')));
@@ -1491,7 +1506,9 @@ const efectos = async navegador => {
       if (v.idioma !== otra) fallos.push(`${ancla}: el idioma lleva a ${v.idioma}`);
       // Los valores van tras el fragmento: Google no rastrea los fragmentos y sí cada dirección con parámetros.
       if (v.guia !== `${BASE}${guia}#${guia === 'dinosaurios/' ? 'planificador' : 'planner'}?especie=${ancla}`) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
-      if (await p.evaluate(() => document.querySelector('details.lectura').open)) fallos.push(`${ancla}: «cómo leer» debería empezar plegado`);
+      const leer = guia === 'dinosaurios/' ? 'como-leer' : 'how-to-read';
+      if (await p.locator(`#${leer}`).count()) fallos.push(`${ancla}: repite «cómo leer» en vez de enlazarlo`);
+      if (!await p.locator(`.saltos a[href$="${guia}#${leer}"]`).count()) fallos.push(`${ancla}: sin enlace a «cómo leer»`);
     }
     if (lista.length) {
       await p.goto(lista[0].url, { waitUntil: 'load' });
@@ -1673,6 +1690,23 @@ const efectos = async navegador => {
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta(''), 'entrada visible al llegar desde otra página:', fallos.length ? fallos.join('; ') : 'sí');
+  }
+  // Enlaces sueltos: en un móvil, 44 px de alto para el dedo, con la capa invisible si la llevan.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    const pequenos = new Set();
+    for (const r of ['', 'dinosaurios/', 'dinosaurios/triceratops/', 'en/dinosaurs/triceratops/']) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      for (const x of await p.evaluate(() => [...document.querySelectorAll('.marca, .saltos a, .indice-grupo li a, .pie-menu a, .pie-enlaces a')].map(e => {
+        const capa = getComputedStyle(e, '::before');
+        const alto = Math.max(e.getBoundingClientRect().height, capa.position === 'absolute' ? parseFloat(capa.height) || 0 : 0);
+        return alto < 43.5 ? `${e.parentElement.className || e.parentElement.tagName} ${Math.round(alto)}` : '';
+      }).filter(Boolean))) pequenos.add(x);
+    }
+    await ctx.close();
+    if (pequenos.size) malos++;
+    console.log('enlaces para el dedo:', pequenos.size ? `pequeños: ${[...pequenos].join(', ')}` : '44 px o más');
   }
   // Botones: en un móvil táctil, tocar no los deja levantados (el hover se quedaba pegado), y con
   // teclado el botón rojo lleva un anillo que se distingue del rojo del botón.

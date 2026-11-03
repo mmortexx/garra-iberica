@@ -139,8 +139,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .idioma:hover { color: var(--hueso); }
 /* Enlaces sueltos de texto pequeño: una capa invisible les da 44 px de alto para el dedo sin
    cambiar cómo se ven. Solo donde no hay otro enlace encima o debajo a menos de esa distancia. */
-.idioma, .migas a, .enlace-cal, .menu-idioma, .cifras-enlace a { position: relative; }
-.idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before, .cifras-enlace a::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
+.marca, .idioma, .migas a, .enlace-cal, .menu-idioma, .cifras-enlace a { position: relative; }
+.marca::before, .idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before, .cifras-enlace a::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
 /* El menú en una fila (siete enlaces) necesita ~1000 px. Por debajo, un botón lo abre a pantalla completa. Sin
    popover (navegadores antiguos) baja a su propia fila y se parte en líneas si no cabe: nunca queda
    cortado. La prueba de navegador recorre los anchos y avisa de solapes y de enlaces fuera. */
@@ -1078,12 +1078,6 @@ details.dino > summary { margin: 0; padding: .95rem 2.4rem .95rem 0; color: inhe
 details.dino[open] > summary { padding-left: 0; color: inherit; }
 @media (hover: hover) { details.dino > summary:hover { padding-left: 0; } }
 /* «Cómo leer las fichas» en la página de cada especie: un título que se abre. */
-details.lectura { border-top: 1px solid var(--linea); }
-details.lectura[open] { box-shadow: none; background: none; }
-details.lectura > summary, details.lectura[open] > summary { padding: 1.1rem 2.4rem 1.1rem 0; }
-details.lectura h2 { margin: 0; font-size: clamp(1.5rem, 4vw, 2.1rem); }
-details.lectura h2::after { content: none; }
-details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 /* Comparativa: una fila por especie, con las cifras en columnas. En el móvil, el nombre encima. */
 .comparar { margin-top: 1.4rem; }
 .comparar-fila, .comparar-lista > div { display: grid; gap: .35rem 1.2rem; }
@@ -1230,6 +1224,7 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
    visor tapando la página): el ambiente se queda quieto donde esté. Así el cristal del menú no
    tiene que volver a desenfocar lo de detrás en cada fotograma. */
 .reposo .niebla::before, .reposo .niebla::after, .reposo .portada::after,
+.reposo :is(.portada-fondo, .cabecera-fondo, .latido), .reposo .latido::after,
 :is(.reposo, .ligera) .bajar::before, :is(.reposo, .ligera) .tira, :is(.reposo, .ligera) .llamada::before,
 :is(.reposo, .ligera) .cuenta.en-curso .cuenta-falta { animation-play-state: paused; }
 
@@ -1331,6 +1326,10 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   background: var(--cristal); box-shadow: var(--cristal-brillo); transition: color .2s, border-color .2s, background-color .2s;
 }
 .saltos a:hover { border-color: var(--ascua); background: rgba(255, 53, 31, .1); color: var(--hueso); }
+@media (pointer: coarse) {
+  .saltos a, .indice-grupo li a { padding-block: .75rem; }
+  .pie-menu a, .pie-enlaces a { display: inline-block; padding-block: .5rem; }
+}
 
 /* Mosaico de la portada: cada baldosa lleva a una página. */
 .mosaico { display: grid; gap: 1rem; margin-top: 2.4rem; }

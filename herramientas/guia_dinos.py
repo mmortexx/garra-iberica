@@ -440,31 +440,16 @@ def planificador(d, lang):
     ]
 
 
-def lectura(t, revisado, plegada=False):
-    """«Cómo leer las fichas»: en la guía y, plegado (se repetiría 44 veces), en la página de cada especie."""
+def lectura(t, revisado):
+    """«Cómo leer las fichas», en la guía; la página de cada especie enlaza aquí."""
     bloques = []
-    revelar = '' if plegada else ' revelar'
     for titulo, del_discord, propias in t['bloques']:
-        bloques += [f'        <div class="bloque panel luz{revelar}">',
+        bloques += [f'        <div class="bloque panel luz revelar">',
                     f'          <h3>{titulo}</h3>',
                     '          <ul role="list">',
                     *[f'            <li>{i.format(revisado=revisado)}</li>' for i in del_discord + propias],
                     '          </ul>',
                     '        </div>']
-    if plegada:
-        return [
-            f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
-            '    <div class="envoltura">',
-            '      <details class="plegable lectura revelar">',
-            f'        <summary><h2 id="t-leer">{t["leer_h2"]}</h2></summary>',
-            '      <div class="normas">',
-            *bloques,
-            '      </div>',
-            '      </details>',
-            '    </div>',
-            '  </section>',
-            '',
-        ]
     return [
         f'  <section class="seccion" id="{t["leer_id"]}" aria-labelledby="t-leer">',
         '    <div class="envoltura">',
@@ -580,7 +565,10 @@ def contenido_especie(nombre, lang, d=None):
             '  </section>',
             '',
         ]
-    lineas += [*lectura(t, revisado, plegada=True), *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
+    lineas += ['  <section class="seccion">', '    <div class="envoltura">',
+               f'      <p class="saltos revelar"><a href="{guia}#{t["leer_id"]}">{t["leer_h2"]}</a></p>',
+               '    </div>', '  </section>', '',
+               *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
     resto = t['esp_resto'][0 if f['mut'] else 1]
     pagina = {'titulo': t['esp_titulo'].format(nombre=nombre), 'h1': nombre,
               'descripcion': t['esp_desc'].format(nombre=nombre, peso=peso, crece=crece, grupo=f['grupo'], resto=resto)}

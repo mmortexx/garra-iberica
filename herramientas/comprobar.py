@@ -628,6 +628,8 @@ def revisar_busquedas(raiz, base, falla):
                 falla(f'{clan}: el vídeo {fichero} declara otra portada: {nodo.get("thumbnailUrl")}')
             if not re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ', nodo.get('uploadDate') or ''):
                 falla(f'{clan}: el vídeo {fichero} sin fecha de publicación válida: {nodo.get("uploadDate")} (ponla en batallas_web.VIDEOS_PUBLICADOS)')
+            if not re.fullmatch(r'PT(\d+M)?\d+S', nodo.get('duration') or ''):
+                falla(f'{clan}: el vídeo {fichero} sin duración válida: {nodo.get("duration")} (ponla en batallas_web.DURACION_VIDEOS)')
             if not nodo.get('name') or not nodo.get('description'):
                 falla(f'{clan}: el vídeo {fichero} sin nombre o descripción')
         if declarados:
