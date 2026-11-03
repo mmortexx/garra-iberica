@@ -445,6 +445,45 @@
   addEventListener('blur', () => { clearTimeout(reloj); reloj = 0; ponerReposo(true); });
   actividad();
 
+  // Modo ligero: si el navegador no llega a unas 33 imágenes por segundo, se apaga el ambiente. Sin
+  // aceleración gráfica se sabe al momento (no da un WebGL «sin pegas»); con una tarjeta floja se mide al
+  // cargar y al cambiar el tamaño de la ventana, nunca en reposo: con todo quieto la medida no dice nada. Un
+  // salto de más de un segundo es que la pestaña estuvo oculta, y se empieza de nuevo. No se guarda nada:
+  // cada página decide por su cuenta. Las pruebas ponen garraModoFijo, para que una máquina cargada no
+  // cambie la web al azar.
+  const MS_MEDIDA = 1500, MS_LENTO = 30;
+  let ligera = false, pendiente = false, medicion = 0, cambioVentana = 0;
+  const ponerLigera = () => {
+    ligera = true;
+    raiz.classList.add('ligera');
+    alCambiarReposo.forEach(fn => fn());
+  };
+  const sinAceleracion = () => {
+    const gl = document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
+    if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return !gl;
+  };
+  const medirFluidez = () => {
+    cancelAnimationFrame(medicion);
+    pendiente = false;
+    if (ligera || window.garraModoFijo) return;
+    if (enReposo) { pendiente = true; return; }
+    const tiempos = [];
+    let inicio = 0, antes = 0;
+    const paso = t => {
+      if (enReposo) { pendiente = true; return; }
+      if (antes && t - antes > 1000) { tiempos.length = 0; antes = 0; }
+      if (antes) tiempos.push(t - antes); else inicio = t;
+      antes = t;
+      if (t - inicio < MS_MEDIDA) { medicion = requestAnimationFrame(paso); return; }
+      tiempos.sort((a, b) => a - b);
+      if (tiempos[tiempos.length >> 1] > MS_LENTO) ponerLigera();
+    };
+    medicion = requestAnimationFrame(paso);
+  };
+  alCambiarReposo.push(() => { if (pendiente && !enReposo) medirFluidez(); });
+  addEventListener('resize', () => { clearTimeout(cambioVentana); cambioVentana = setTimeout(medirFluidez, 400); });
+
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer
   // fotograma para que no parpadee.
   const revelables = [...document.querySelectorAll('.revelar')];
@@ -473,6 +512,7 @@
     // Paralaje suave de la portada con el ratón.
     if (portada) {
       portada.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        if (ligera) return;
         const r = portada.getBoundingClientRect();
         portada.style.setProperty('--px', ((ev.clientX - r.left) / r.width - 0.5).toFixed(3));
         portada.style.setProperty('--py', ((ev.clientY - r.top) / r.height - 0.5).toFixed(3));
@@ -486,6 +526,7 @@
     document.querySelectorAll('.luz').forEach(el => {
       let r = null, medidoEn = -1;
       el.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        if (ligera) return;
         if (!r || medidoEn !== desplazamientos) { r = el.getBoundingClientRect(); medidoEn = desplazamientos; }
         const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
         el.style.setProperty('--mx', `${x * 100}%`);
@@ -576,7 +617,7 @@
       espera = setTimeout(() => { id = requestAnimationFrame(pintar); }, ESPERA_MS);
     };
     const arrancar = () => {
-      if (activo || document.hidden || enReposo) return;
+      if (activo || document.hidden || enReposo || ligera) return;
       activo = true; ultimo = 0; id = requestAnimationFrame(pintar);
     };
     const parar = () => { activo = false; clearTimeout(espera); cancelAnimationFrame(id); };
@@ -589,11 +630,15 @@
       visible ? arrancar() : parar();
     }).observe(contenedor);
     document.addEventListener('visibilitychange', () => (document.hidden ? parar() : visible && arrancar()));
-    alCambiarReposo.push(() => (enReposo ? parar() : visible && arrancar()));
+    alCambiarReposo.push(() => (enReposo || ligera ? parar() : visible && arrancar()));
     requestAnimationFrame(() => { lienzo.classList.add('encendido'); bruma.classList.add('encendido'); });
   };
-  const iniciarAscuas = () => document.querySelectorAll('[data-ascuas]').forEach(ascuas);
+  const iniciarAmbiente = () => {
+    if (!window.garraModoFijo && sinAceleracion()) { ponerLigera(); return; }
+    document.querySelectorAll('[data-ascuas]').forEach(ascuas);
+    medirFluidez();
+  };
   const cuandoLibre = window.requestIdleCallback || (fn => setTimeout(fn, 200));
-  if (document.readyState === 'complete') cuandoLibre(iniciarAscuas);
-  else addEventListener('load', () => cuandoLibre(iniciarAscuas), { once: true });
+  if (document.readyState === 'complete') cuandoLibre(iniciarAmbiente);
+  else addEventListener('load', () => cuandoLibre(iniciarAmbiente), { once: true });
 })();

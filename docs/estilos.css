@@ -1164,10 +1164,11 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 /* Niebla de fondo: dos capas de luz que derivan muy despacio (solo transform: no repinta).
    Avanza a saltos de unas 8 veces por segundo, de un píxel o dos sobre manchas sin bordes:
    no se nota, y el navegador no tiene que pintar la pantalla entera a cada fotograma. Los
-   puntos de «deriva» siguen la curva ease-in-out. */
+   puntos de «deriva» siguen la curva ease-in-out. Solo se desplaza, sin girar ni crecer: así cada capa
+   mide el 118 % de la pantalla y no el 150 %, y en una pantalla muy grande son millones de píxeles menos. */
 .niebla { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .niebla::before, .niebla::after {
-  content: ""; position: absolute; inset: -25%;
+  content: ""; position: absolute; inset: -9%;
   background: radial-gradient(ellipse 40% 32% at 30% 40%, rgba(255, 61, 40, .07), transparent 70%),
     radial-gradient(ellipse 34% 28% at 72% 70%, rgba(123, 123, 123, .06), transparent 70%);
   animation: deriva 46s steps(36) infinite alternate; will-change: transform;
@@ -1178,17 +1179,17 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
   animation-duration: 63s; animation-direction: alternate-reverse;
 }
 @keyframes deriva {
-  0% { transform: translate3d(-7%, -4%, 0) rotate(-3deg) scale(1); }
-  10% { transform: translate3d(-6.724%, -3.822%, 0) rotate(-2.862deg) scale(1.002); }
-  20% { transform: translate3d(-5.857%, -3.265%, 0) rotate(-2.428deg) scale(1.01); }
-  30% { transform: translate3d(-4.376%, -2.313%, 0) rotate(-1.688deg) scale(1.022); }
-  40% { transform: translate3d(-2.354%, -1.013%, 0) rotate(-.677deg) scale(1.04); }
-  50% { transform: translate3d(0%, .5%, 0) rotate(.5deg) scale(1.06); }
-  60% { transform: translate3d(2.354%, 2.013%, 0) rotate(1.677deg) scale(1.08); }
-  70% { transform: translate3d(4.376%, 3.313%, 0) rotate(2.688deg) scale(1.098); }
-  80% { transform: translate3d(5.857%, 4.265%, 0) rotate(3.428deg) scale(1.11); }
-  90% { transform: translate3d(6.724%, 4.822%, 0) rotate(3.862deg) scale(1.118); }
-  100% { transform: translate3d(7%, 5%, 0) rotate(4deg) scale(1.12); }
+  0% { transform: translate3d(-7%, -4%, 0); }
+  10% { transform: translate3d(-6.724%, -3.822%, 0); }
+  20% { transform: translate3d(-5.857%, -3.265%, 0); }
+  30% { transform: translate3d(-4.376%, -2.313%, 0); }
+  40% { transform: translate3d(-2.354%, -1.013%, 0); }
+  50% { transform: translate3d(0%, .5%, 0); }
+  60% { transform: translate3d(2.354%, 2.013%, 0); }
+  70% { transform: translate3d(4.376%, 3.313%, 0); }
+  80% { transform: translate3d(5.857%, 4.265%, 0); }
+  90% { transform: translate3d(6.724%, 4.822%, 0); }
+  100% { transform: translate3d(7%, 5%, 0); }
 }
 
 /* Bruma rasante en portada, cabeceras y llamadas (la crea efectos.js junto a las ascuas): bancos de
@@ -1228,8 +1229,25 @@ details.lectura .normas { margin-top: .4rem; padding-bottom: 1.6rem; }
 /* Reposo (lo pone efectos.js tras 20 s sin actividad, con otra ventana delante o con el menú o el
    visor tapando la página): el ambiente se queda quieto donde esté. Así el cristal del menú no
    tiene que volver a desenfocar lo de detrás en cada fotograma. */
-.reposo .niebla::before, .reposo .niebla::after, .reposo .portada::after, .reposo .bajar::before,
-.reposo .tira, .reposo .llamada::before, .reposo .cuenta.en-curso .cuenta-falta { animation-play-state: paused; }
+.reposo .niebla::before, .reposo .niebla::after, .reposo .portada::after,
+:is(.reposo, .ligera) .bajar::before, :is(.reposo, .ligera) .tira, :is(.reposo, .ligera) .llamada::before,
+:is(.reposo, .ligera) .cuenta.en-curso .cuenta-falta { animation-play-state: paused; }
+
+/* Modo ligero (lo pone efectos.js si el navegador no llega a unas 33 imágenes por segundo): sin niebla,
+   bruma, ascuas, latidos, cristal ni zoom de la foto, que sin aceleración gráfica se repintan con el
+   procesador a cada fotograma (el zoom de la foto, un núcleo entero en una pantalla muy grande). Sin
+   desenfoque detrás, lo que lleva texto encima pasa a fondo opaco. */
+.ligera { --cristal-desenfoque: none; }
+.ligera .niebla, .ligera .bruma, .ligera canvas.ascuas { display: none; }
+.ligera .portada::after { animation: none; opacity: .38; will-change: auto; }
+html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.ligera .latido::after { animation: none; }
+.ligera .barra.compacta { background: #080808; }
+.ligera .menu[popover]:popover-open { backdrop-filter: none; background: radial-gradient(ellipse 80% 60% at 100% 100%, rgba(255, 48, 25, .22), transparent 70%), var(--fondo); }
+.ligera .visor::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 8, 8, .85); }
+.ligera .comparar-cabeza { background: #0c0c0c; }
+.ligera .cuenta-grande { background: #101010; }
+/* Con :where, para no pisar el color de esos botones al pasar el ratón. */
+:where(.ligera) :is(.visor-cuenta, .visor-boton, .subir) { background: #101010; }
 
 /* Quien pide menos transparencias en su sistema ve el cristal opaco y sin desenfoque. */
 @media (prefers-reduced-transparency: reduce) {

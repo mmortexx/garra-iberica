@@ -2,7 +2,7 @@
 // movimiento», sin errores en consola, ningún texto cortado en móviles de 320 a 412 px, cabecera
 // sin solapes, menú (en fila o a pantalla completa) que lleva a cada página, enlaces viejos de la
 // portada a su sitio nuevo, página nunca más ancha que la pantalla, marca alineada con los títulos,
-// rangos en escalera, ambiente que se para en reposo, visor de la galería, fuentes sin saltos al
+// rangos en escalera, ambiente que se para en reposo, modo ligero, visor de la galería, fuentes sin saltos al
 // llegar tarde, sanciones en escalera, fotos del mosaico a su tamaño, planificador de crecimiento,
 // comparativa de especies, página de cada especie, batallas de la portada enlazadas a El clan,
 // botón principal de la portada a la vista en móviles bajos,
@@ -362,6 +362,14 @@ const efectos = async navegador => {
 };
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+  // La web mide su fluidez al cargar y una máquina cargada la pondría en modo ligero al azar: se deja
+  // fijo el modo normal, salvo en la prueba de ese modo.
+  const contextoSinFijar = navegador.newContext.bind(navegador);
+  navegador.newContext = async (...a) => {
+    const ctx = await contextoSinFijar(...a);
+    await ctx.addInitScript(() => { window.garraModoFijo = true; });
+    return ctx;
+  };
   if (process.env.SOLO === 'efectos') {
     const n = await efectos(navegador);
     await navegador.close();
@@ -700,6 +708,70 @@ const efectos = async navegador => {
     if (hay !== esperada) malos++;
     console.log(ruta(''), `transición entre páginas (${nombre}):`, hay === esperada ? 'bien' : `${hay ? 'la hay' : 'no la hay'} y ${esperada ? 'debe haberla' : 'no debe'}`);
     await ctx.close();
+  }
+  // Modo ligero: la web mira si hay aceleración gráfica y mide sus propias imágenes por segundo. Si no
+  // llega, sobre todo con la ventana muy grande, apaga el ambiente. La tarjeta y la pantalla son simuladas:
+  // la prueba decide si hay WebGL «sin pegas» y la marca de tiempo de cada fotograma.
+  {
+    const fallos = [];
+    const contexto = async conTarjeta => {
+      const ctx = await contextoSinFijar({ viewport: { width: 1366, height: 850 } });
+      await ctx.addInitScript(tarjeta => {
+        window.__dt = 16;
+        let t = 0, fotograma = -1;
+        const raf = window.requestAnimationFrame.bind(window);
+        window.requestAnimationFrame = f => raf(real => {
+          if (real !== fotograma) { fotograma = real; t += window.__dt; }
+          f(t);
+        });
+        const original = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (tipo, opciones) {
+          return tipo === 'webgl' ? (tarjeta ? { getExtension: () => null } : null) : original.call(this, tipo, opciones);
+        };
+      }, conTarjeta);
+      return ctx;
+    };
+    const ctx = await contexto(true);
+    const p = await ctx.newPage();
+    const esLigera = () => p.evaluate(() => document.documentElement.classList.contains('ligera'));
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForSelector('canvas.ascuas');
+    await p.waitForTimeout(2500);
+    if (await esLigera()) fallos.push('fluida y aun así en modo ligero');
+    await p.evaluate(() => { window.__dt = 50; });
+    await p.setViewportSize({ width: 1700, height: 900 });
+    await p.waitForFunction(() => document.documentElement.classList.contains('ligera'), null, { timeout: 8000 })
+      .catch(() => fallos.push('la ventana crece, deja de dar imágenes y no pasa a modo ligero'));
+    const estado = await p.evaluate(async () => {
+      const lienzo = document.querySelector('canvas.ascuas');
+      const antes = lienzo.toDataURL();
+      await new Promise(z => setTimeout(z, 400));
+      return {
+        niebla: getComputedStyle(document.querySelector('.niebla')).display,
+        bruma: getComputedStyle(document.querySelector('.bruma')).display,
+        lienzo: getComputedStyle(lienzo).display,
+        pinta: lienzo.toDataURL() !== antes,
+        cristal: getComputedStyle(document.querySelector('.barra')).backdropFilter,
+        brasa: getComputedStyle(document.querySelector('.portada'), '::after').animationName,
+        foto: getComputedStyle(document.querySelector('.portada-fondo')).animationName,
+        marca: getComputedStyle(document.querySelector('.h1-marca')).animationName,
+      };
+    });
+    if (estado.niebla !== 'none' || estado.bruma !== 'none' || estado.lienzo !== 'none') fallos.push(`sigue el ambiente: ${JSON.stringify(estado)}`);
+    if (estado.pinta) fallos.push('las ascuas siguen pintándose');
+    if (estado.cristal !== 'none') fallos.push(`la barra sigue con cristal: ${estado.cristal}`);
+    if (estado.brasa !== 'none') fallos.push(`la brasa sigue latiendo: ${estado.brasa}`);
+    if (estado.foto !== 'none' || estado.marca !== 'none') fallos.push(`la foto o el título siguen animados: ${estado.foto}, ${estado.marca}`);
+    await ctx.close();
+    const sinTarjeta = await contexto(false);
+    const q = await sinTarjeta.newPage();
+    await q.goto(BASE + 'clan/', { waitUntil: 'load' });
+    await q.waitForFunction(() => document.documentElement.classList.contains('ligera'), null, { timeout: 3000 })
+      .catch(() => fallos.push('sin aceleración gráfica no pasa a modo ligero'));
+    if (await q.locator('canvas.ascuas').count()) fallos.push('sin aceleración gráfica crea ascuas');
+    await sinTarjeta.close();
+    if (fallos.length) malos++;
+    console.log('modo ligero:', fallos.length ? fallos.join('; ') : 'se enciende sin aceleración y al dejar de dar imágenes, y apaga el ambiente');
   }
   // Reposo: con otra ventana delante, tras 20 s sin actividad o con el menú o el visor encima, el
   // ambiente se para (las ascuas dejan de pintarse y las animaciones de ambiente quedan en pausa) y
