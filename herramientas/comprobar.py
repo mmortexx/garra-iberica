@@ -219,6 +219,8 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
 
     if doc.lang != lang:
         falla(f'{nombre}: <html lang="{doc.lang}"> y debe ser «{lang}»')
+    if 'ligera' not in (next((x.get('class') or '' for t, x in doc.etiquetas if t == 'html'), '')).split():
+        falla(f'{nombre}: <html> sin class="ligera": pintaría los efectos caros antes de saber si hay aceleración')
     if doc.textos['title'].strip() != titulo:
         falla(f'{nombre}: <title> es «{doc.textos["title"].strip()}» y debe ser «{titulo}»')
     if doc.h1 != 1:

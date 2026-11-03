@@ -769,7 +769,14 @@ const efectos = async navegador => {
     await q.waitForFunction(() => document.documentElement.classList.contains('ligera'), null, { timeout: 3000 })
       .catch(() => fallos.push('sin aceleración gráfica no pasa a modo ligero'));
     if (await q.locator('canvas.ascuas').count()) fallos.push('sin aceleración gráfica crea ascuas');
+    if (await q.evaluate(() => document.documentElement.classList.contains('anim'))) fallos.push('sin aceleración gráfica hay animaciones de entrada');
     await sinTarjeta.close();
+    // Lo caro no se pinta ni un instante: la página ya llega ligera, antes de que corra ningún script.
+    const sinScripts = await navegador.newContext({ viewport: { width: 1366, height: 850 }, javaScriptEnabled: false });
+    const s = await sinScripts.newPage();
+    await s.goto(BASE, { waitUntil: 'load' });
+    if (await s.locator('.niebla').isVisible()) fallos.push('la página llega con la niebla encendida');
+    await sinScripts.close();
     // Al cambiar de página: con ambiente hay zarpazo, y en modo ligero no (es a pantalla completa).
     for (const [conTarjeta, esperada] of [[true, true], [false, false]]) {
       const c = await contexto(conTarjeta);

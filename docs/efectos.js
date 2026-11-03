@@ -5,6 +5,15 @@
   const viejo = location.hash.slice(1);
   if (movidas && Object.hasOwn(movidas, viejo)) { location.replace(movidas[viejo]); return; }
   const raiz = document.documentElement;
+  // La página llega en modo ligero (sin JavaScript se queda así) y sale de él solo si hay aceleración
+  // gráfica: pintar los efectos con el procesador es lo que traba la carga y la ventana grande.
+  const sinAceleracion = () => {
+    const gl = document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
+    if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return !gl;
+  };
+  let ligera = !window.garraModoFijo && sinAceleracion();
+  if (!ligera) raiz.classList.remove('ligera');
   // Lo plegado que nombra la dirección (una ficha, dinosaurios/#triceratops, o una respuesta, unete/#micro) se abre.
   const abrirNombrado = () => {
     const destino = location.hash && document.getElementById(location.hash.slice(1));
@@ -452,16 +461,11 @@
   // cada página decide por su cuenta. Las pruebas ponen garraModoFijo, para que una máquina cargada no
   // cambie la web al azar.
   const MS_MEDIDA = 1500, MS_LENTO = 30;
-  let ligera = false, pendiente = false, medicion = 0, cambioVentana = 0;
+  let pendiente = false, medicion = 0, cambioVentana = 0;
   const ponerLigera = () => {
     ligera = true;
     raiz.classList.add('ligera');
     alCambiarReposo.forEach(fn => fn());
-  };
-  const sinAceleracion = () => {
-    const gl = document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
-    if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return !gl;
   };
   const medirFluidez = () => {
     cancelAnimationFrame(medicion);
@@ -490,7 +494,7 @@
   const revelables = [...document.querySelectorAll('.revelar')];
   const enPantalla = el => el.getBoundingClientRect().top < innerHeight * 0.92;
   revelables.forEach(el => { if (enPantalla(el)) el.classList.add('visible'); });
-  raiz.classList.add('anim');
+  if (!ligera) raiz.classList.add('anim');
   if (portada) portada.addEventListener('animationend', ev => { if (ev.animationName === 'encender') portada.classList.add('encendida'); });
   const observador = new IntersectionObserver(entradas => {
     for (const e of entradas) {
@@ -635,7 +639,7 @@
     requestAnimationFrame(() => { lienzo.classList.add('encendido'); bruma.classList.add('encendido'); });
   };
   const iniciarAmbiente = () => {
-    if (!window.garraModoFijo && sinAceleracion()) { ponerLigera(); return; }
+    if (ligera) return;
     document.querySelectorAll('[data-ascuas]').forEach(ascuas);
     medirFluidez();
   };

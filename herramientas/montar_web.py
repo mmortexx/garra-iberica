@@ -455,7 +455,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         cuerpo_attrs = f' data-movidas="{escape(json.dumps(MOVIDAS[lang], separators=(",", ":")))}"'
     lineas = [
         '<!doctype html>',
-        f'<html lang="{lang}">',
+        f'<html lang="{lang}" class="ligera">',
         '<head>',
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
