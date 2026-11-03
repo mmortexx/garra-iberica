@@ -13,7 +13,7 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 | `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas y bruma rasante (portada, cabeceras y llamadas), paralaje, apariciones al hacer scroll, fotos que se funden al llegar, portada de los vídeos de las batallas al acercarse (como `poster` se pediría al abrir la página y competiría con la cabecera en un móvil lento), botón grande de reproducir en ellos, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva, lo plegado que nombre la dirección (una ficha, `dinosaurios/#triceratops`, o una respuesta, `unete/#micro`: esas direcciones circulan y la prueba de navegador falla si cambian) y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
-| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). |
+| `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). Los enlaces de la web a él llevan los valores tras el fragmento (`#planificador?especie=triceratops`): Google no rastrea los fragmentos y sí cada dirección con parámetros, y `comprobar.py` falla si un enlace interno lleva parámetros. Las direcciones con `?` siguen funcionando. Mientras se calcula la fecha, el sitio de la cuenta atrás lleva un texto sin fecha escrita a mano (`reserva`). |
 | `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos); las filas viajan a su sitio nuevo. Sin él, la lista se ve entera en el orden de las fichas. |
 | `docs/404.html` | Página de «no encontrada», con enlace al inicio y al Discord. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
@@ -36,16 +36,19 @@ python herramientas/montar_web.py
 python herramientas/comprobar.py
 node herramientas/prueba_caceria.js
 python herramientas/prueba_galeria.py
+python herramientas/prueba_cifras.py
+python herramientas/prueba_batallas.py
+python herramientas/prueba_borradores.py
 ```
 
 - `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
-  `titulo:`, `descripcion:` (70–160 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
+  `titulo:` (60 como mucho), `descripcion:` (70–155 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
   compartir el enlace), luego una línea `---` y después lo que va dentro de la página. Al cambiar el
   contenido, sube la fecha `REVISADA` de `montar_web.py` (es la que ven los buscadores en el mapa
   del sitio). En esos ficheros, `@/` es el principio de la web (el script pone la ruta que toque) y
-  `{{discord}}`, `{{steam}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}` y `{{grupo:Especie}}` se
+  `{{discord}}`, `{{steam}}`, `{{n_fichas}}`, `{{especies}}`, `{{google_calendar}}`, `{{migas}}`, `{{normas}}`, `{{cifras}}` y `{{grupo:Especie}}` se
   rellenan solos. El menú de arriba lleva solo las siete páginas de `MENU` (Inicio incluida); Normas y el aviso legal
   van en el pie, y Normas además desde El clan y Cómo entrar. También pone a `estilos.css`, `efectos.js` y `caceria.js` una marca (`?v=…`) que cambia con
   el fichero, para que nadie vea la página nueva con estilos viejos guardados en su navegador.
@@ -69,12 +72,44 @@ python herramientas/prueba_galeria.py
   o sobra alguna, si la española y la inglesa no se enlazan entre sí, si no está en el mapa del sitio
   o si un dato (marcado con `data-ficha` / `data-mut`) no es el de `fichas_dinos.json`. Cambiar el
   nombre de una especie cambia su dirección: los enlaces que ya circulen a la vieja dejan de funcionar.
-- Las batallas del clan (portada y El clan, marcadores `{{batallas_cifras}}` y `{{batallas}}`) salen
+  Los enlaces de cada especie a la guía (el planificador y «ver la lista» de la comparativa) llevan lo
+  elegido tras el fragmento (`dinosaurios/#comparar?orden=peso&marca=triceratops`), no en la consulta: así
+  Google no cuenta cinco direcciones nuevas por especie. `guia.js` y `caceria.js` leen las dos formas.
+- Las cifras del clan de la portada (`{{cifras}}`: bajas, horas y misiones totales, jugadores en Asura Nexus y
+  la fecha de los datos, junto a las victorias y las últimas batallas) y el podio de especies (las bajas de
+  cada una, de más a menos, con enlace a su ficha si la hay) salen de `herramientas/cifras.json`, copia
+  exacta de `ranking/cifras.json` del proyecto del Discord, que lo escribe a partir del ranking de todo el
+  tiempo (`historico.json`). El formato es cerrado, sin nombres ni IDs de jugadores:
+  `{"bajas", "horas", "misiones", "jugadores", "especies": [{"name", "kills"}], "fecha": "AAAA-MM-DD"}`.
+  `cifras.py` lo valida y rechaza cualquier campo de más, un nombre de especie que no sea solo letras o un
+  número que no lo sea; `montar_web.py` copia el original (variable `GARRA_CIFRAS` o
+  `~/Documents/Cosas/garra-iberica/ranking/cifras.json`) solo si es válido, y `comprobar.py` falla si la
+  copia no es válida o difiere del original, y avisa si es de hace más de 14 días o si el original aún no
+  existe. Sin `cifras.json`, la portada sale sin cifras del clan ni podio (siguen las batallas).
+  `python herramientas/prueba_cifras.py` prueba qué acepta y qué rechaza, cómo se copia y cómo sale la portada con
+  y sin datos. Las bajas del podio (las de cada especie) no tienen por qué sumar las bajas del clan: son dos
+  recuentos distintos de Asura Nexus.
+- «Empezar en Asura» (`unete/` y `en/join/`, apartado `#empezar-asura` / `#start-asura`) resume lo que decía la web
+  oficial de Asura el 2 de noviembre de 2026 (los dos servidores, el boleto de lotería diario, el plan gratis de
+  Nexus con mapa en vivo y el aviso de hacer safelog, con su temporizador de 45 s) y manda a comprobar allí las
+  normas. Solo dice eso: ninguna promesa más. Si la web de Asura cambia, hay que cambiar el texto en los dos
+  idiomas y la fecha; `comprobar.py` (`ASURA`) falla si falta el apartado, una de esas frases, la fecha o si enlaza a
+  algo que no sea su web, y el aviso legal nombra Asura entre los sitios a los que sacan los enlaces.
+- Las batallas del clan (portada y El clan, marcadores `{{cifras}}` y `{{batallas}}`) salen
   de `herramientas/batallas.json`, copia exacta de `batallas/batallas.json` del proyecto del
   Discord. `montar_web.py` la pone al día sola si encuentra el original (variable
   `GARRA_BATALLAS` o `~/Documents/Cosas/garra-iberica/batallas/batallas.json`); `comprobar.py` avisa si
   falta el original y falla si la copia se ha quedado atrás. Para que una batalla nueva salga en la
-  web hay que volver a montar y publicar: no aparece sola.
+  web hay que volver a montar y publicar: no aparece sola. Si una batalla trae `fecha` (AAAA-MM-DD) y
+  `nota_es`/`nota_en`, la lista de El clan las enseña (la fecha junto al resultado y la nota debajo);
+  `python herramientas/prueba_batallas.py` lo prueba.
+- `borradores/` guarda lo que aún no se puede publicar, y `montar_web.py` no lo lee (solo lee `paginas/` y
+  `fichas_dinos.json`): la ficha de Oviraptor (`oviraptor.json`, con el formato de `fichas_dinos.json`) y el texto de
+  la guía de zonas compartidas (`zonas-compartidas.md`), que aún no está en el juego. De Oviraptor solo se ha
+  tomado lo del DevBlog #74 (31/10/2026); lo demás dice «pendiente de comprobar». Para publicarlo: comprobar cada
+  dato con una fuente, pasar la ficha a `fichas_dinos.json` y borrar el borrador. `comprobar.py` falla si un
+  borrador dice algo más que lo permitido, si Oviraptor ya está en las fichas o si algo de un borrador aparece en
+  `docs/`; `python herramientas/prueba_borradores.py` lo prueba.
 - La guía de combate (`paginas/<idioma>/combate.html`) es la del canal #wiki del Discord, con otra
   presentación: cada apartado lleva `data-guia-titulo` y cada viñeta (o trozo de viñeta separado
   por « · ») `data-guia`; los canales del Discord van en `<span data-canal>` y el grupo máximo de

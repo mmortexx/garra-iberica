@@ -17,7 +17,8 @@ En los textos de paginas/:
   {{migas}}            «Inicio / página», con enlace al inicio
   {{normas}}           las normas del clan, de datos_clan.json (copiadas de la tarjeta #normas)
   {{alfas}}            los tres jefes, de la cita de la tarjeta #rangos en datos_clan.json
-  {{batallas_cifras}}  victorias y últimas batallas, para la portada (ver batallas_web.py)
+  {{cifras}}           cifras del clan, victorias y últimas batallas, y el podio de especies, para la portada
+                       (ver cifras.py y batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
   {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a su página
 
@@ -36,6 +37,7 @@ HERRAMIENTAS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERRAMIENTAS))
 import batallas_web  # noqa: E402
 import calendario  # noqa: E402
+import cifras  # noqa: E402
 import guia_dinos  # noqa: E402
 import preparar_galeria  # noqa: E402
 
@@ -195,10 +197,15 @@ def alfas(lang):
 
 def normas(lang):
     n = json.loads(DATOS_CLAN.read_text(encoding='utf-8'))['normas'][lang]
+    # Las normas copian la tarjeta del Discord, que deja algún rango en español: aquí se escribe en el idioma de la página.
+    nombres = n.get('nombres_web', {})
+
+    def traducir(regla):
+        return re.sub(r'\b(' + '|'.join(map(re.escape, nombres)) + r')\b', lambda m: nombres[m[1]], regla) if nombres else regla
     bloques, numero = [], 1
     for a in n['apartados']:
         ancla = guia_dinos.ancla(a['titulo'])
-        reglas = ''.join(f'<li>{escape(r)}</li>' for r in a['normas'])
+        reglas = ''.join(f'<li>{escape(traducir(r))}</li>' for r in a['normas'])
         bloques.append(
             f'<section class="bloque panel luz revelar" id="{ancla}" aria-labelledby="t-{ancla}">'
             f'<h3 id="t-{ancla}"><img src="@/img/emoji-{a["emoji"]}.webp" alt="" width="42" height="42" loading="lazy">{escape(a["titulo"])}</h3>'
@@ -247,7 +254,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'migas': lambda: migas(pagina, lang),
         'normas': lambda: normas(lang),
         'alfas': lambda: alfas(lang),
-        'batallas_cifras': lambda: batallas_web.marcador(lang, RUTA['clan', lang]),
+        'cifras': lambda: cifras.portada(lang, RUTA['clan', lang], d['fichas']),
         'batallas': lambda: batallas_web.lista(lang),
     }
 
@@ -431,8 +438,10 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
     datos, cuerpo, fecha = contenido(pagina, lang, d)
     cuerpo = rellenar(cuerpo, pagina, lang, base, d)
     desc = datos['descripcion']
-    if not 70 <= len(desc) <= 160:
-        sys.exit(f'{pagina} ({lang}): la descripción mide {len(desc)} caracteres (70–160)')
+    if not 70 <= len(desc) <= 155:
+        sys.exit(f'{pagina} ({lang}): la descripción mide {len(desc)} caracteres (70–155)')
+    if len(datos['titulo']) > 60:
+        sys.exit(f'{pagina} ({lang}): el título mide {len(datos["titulo"])} caracteres (máximo 60)')
     v = {n: huella(docs / n) for n in VERSIONADOS}
     url = base + desde
     scripts = [f'<script src="{pre}efectos.js?v={v["efectos.js"]}" defer></script>']
@@ -549,6 +558,8 @@ def main():
     # Las batallas salen del proyecto del Discord: primero, la copia al día.
     if batallas_web.al_dia():
         print(f'{batallas_web.COPIA.name} puesto al día desde {batallas_web.ORIGINAL}')
+    if cifras.al_dia():
+        print(f'{cifras.COPIA.name} puesto al día desde {cifras.ORIGINAL}')
     # Se monta todo antes de escribir: si algo falla, no queda nada a medias.
     salida = montar()
     for nombre, texto in salida.items():

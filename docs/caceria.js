@@ -173,10 +173,14 @@
       primera = false;
     };
     // Lo elegido va en la dirección (?especie=triceratops&ritmo=2&horas=4#planificador): así se pasa el
-    // enlace y la página de cada especie abre el planificador con ella ya puesta.
+    // enlace. La página de cada especie abre el planificador con ella ya puesta con un enlace que lleva los
+    // valores tras el fragmento (#planificador?especie=triceratops): Google no rastrea los fragmentos y sí
+    // cada dirección con parámetros.
     const claves = { especie: o => o.dataset.ancla, ritmo: o => o.value, horas: o => o.value };
     const campos = { especie, ritmo, horas };
     const pedidos = new URLSearchParams(location.search);
+    const enFragmento = location.hash.indexOf('?');
+    if (enFragmento >= 0) for (const [clave, valor] of new URLSearchParams(location.hash.slice(enFragmento))) pedidos.set(clave, valor);
     for (const [nombre, sel] of Object.entries(campos)) {
       const elegida = [...sel.options].find(o => claves[nombre](o) === pedidos.get(nombre));
       if (elegida) sel.value = elegida.value;
@@ -194,6 +198,15 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) calcular(); });
     calcular();
     plan.hidden = false;
+    // Con los valores tras el fragmento, el navegador no encuentra la sección y no baja solo hasta ella.
+    // Al terminar de cargar: antes, lo que hay encima aún puede moverla.
+    if (enFragmento >= 0) {
+      const seccion = plan.closest('section');
+      if (location.hash.slice(1, enFragmento) === seccion.id) {
+        const irAella = () => seccion.scrollIntoView({ behavior: 'instant' });
+        if (document.readyState === 'complete') irAella(); else addEventListener('load', irAella, { once: true });
+      }
+    }
   }
 
   const caja = document.querySelector('[data-cuenta]');
@@ -205,11 +218,11 @@
   const tituloNormal = nodoTitulo.textContent;
   const TEXTOS = {
     es: {
-      locale: 'es-ES', enCurso: 'Ya ha empezado: entra en Cacería 1.', tituloEnCurso: 'Cacería en marcha', faltan: 'Faltan ', espana: ' en España', reserva: 'sábado, 30 de noviembre, 22:00',
+      locale: 'es-ES', enCurso: 'Ya ha empezado: entra en Cacería 1.', tituloEnCurso: 'Cacería en marcha', faltan: 'Faltan ', espana: ' en España', reserva: 'sábado, 28 de noviembre, 22:00',
       unidades: { d: ['día', 'días'], h: ['hora', 'horas'], m: ['min', 'min'], s: ['seg', 'seg'] },
     },
     en: {
-      locale: 'en-GB', enCurso: 'It has started: join the Cacería 1 voice channel.', tituloEnCurso: 'Hunt under way', faltan: 'Starts in ', espana: ' in Spain', reserva: 'Saturday 30 November at 22:00',
+      locale: 'en-GB', enCurso: 'It has started: join the Cacería 1 voice channel.', tituloEnCurso: 'Hunt under way', faltan: 'Starts in ', espana: ' in Spain', reserva: 'Saturday 28 November at 22:00',
       unidades: { d: ['day', 'days'], h: ['hour', 'hours'], m: ['min', 'min'], s: ['sec', 'sec'] },
     },
   };

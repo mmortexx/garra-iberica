@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 
 import batallas_web
 import calendario
+import cifras
 import guia_dinos
 import montar_web
 import preparar_galeria
@@ -54,7 +55,10 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
-SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
+MESES = {n: i for i, nombres in enumerate(zip(
+    'enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre'.split(),
+    'january february march april may june july august september october november december'.split()), 1) for n in nombres}
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
@@ -342,6 +346,11 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         limpia, _, fragmento = ruta.partition('#')
         limpia, _, consulta = limpia.partition('?')
         version = consulta[2:] if consulta.startswith('v=') else ''
+        # Cada dirección con parámetros es para Google una página más que rastrear: lo que se pasa a una
+        # página (la especie, el orden) va en el fragmento (#comparar?orden=peso), que no se rastrea.
+        if consulta and not version:
+            falla(f'{nombre}: enlace interno con parámetros «{ruta}»; ponlos tras el fragmento (#id?clave=valor)')
+        fragmento = fragmento.partition('?')[0]
         destino = (carpeta / (limpia + 'index.html' if limpia.endswith('/') else limpia)).resolve()
         if not destino.is_file():
             falla(f'{nombre}: referencia a un fichero que no existe: {ruta}')
@@ -395,6 +404,30 @@ def revisar_datos(raiz, falla, avisa):
     esperados = ', '.join(f"{a['que']}: [{a['dia_semana']}, {a['hora']}]" for a in cac['avisos'])
     if not avisos_js or avisos_js.group(1).strip() != esperados:
         falla(f'caceria.js: AVISOS no es {{ {esperados} }} como dice {DATOS.name}')
+    # El texto que guarda el sitio de la cuenta atrás hasta que se calcula la fecha es invisible, pero si trae una
+    # fecha escrita a mano tiene que ser del día de la Cacería (antes salía un «sábado, 30 de noviembre» que cae en
+    # lunes) y del año de REVISADA: al cambiar de año, esta comprobación avisa de que hay que ponerla al día.
+    reservas = re.findall(r"reserva: '([^']*)'", js)
+    if len(reservas) != 2:
+        falla(f'caceria.js: esperaba una reserva por idioma y hay {len(reservas)}')
+    for r in reservas:
+        if f'{cac["hora"]:02d}:00' not in r:
+            falla(f'caceria.js: la reserva «{r}» no dice las {cac["hora"]:02d}:00 de {DATOS.name}')
+        resto = re.sub(r'\d{2}:\d{2}', '', r)
+        numeros = re.findall(r'\d+', resto)
+        if not numeros:
+            continue
+        meses = [n for palabra in re.findall(r'[^\W\d]+', resto.lower()) for n in [MESES.get(palabra)] if n]
+        if len(numeros) != 1 or len(meses) != 1:
+            falla(f'caceria.js: la reserva «{r}» solo puede llevar un día y un mes además de la hora')
+            continue
+        try:
+            dia = dt.date(int(montar_web.REVISADA[:4]), meses[0], int(numeros[0]))
+        except ValueError:
+            falla(f'caceria.js: la reserva «{r}» lleva una fecha que no existe')
+            continue
+        if (dia.weekday() + 1) % 7 != cac['dia_semana']:
+            falla(f'caceria.js: la reserva «{r}» pone el {dia} y la Cacería es el día {cac["dia_semana"]} de la semana (0 = domingo)')
     # El selector «¿A qué hora es en tu país?»: zonas que existen y las mismas en los dos idiomas.
     zonas_selector = {}
     for nombre, (pagina, lang) in PAGINAS.items():
@@ -457,8 +490,15 @@ def revisar_datos(raiz, falla, avisa):
                 falla(f'{nombre}: el enlace a Google Calendar no coincide con {DATOS.name}: ejecuta herramientas/montar_web.py')
         if pagina != 'clan':
             continue
+        # En español, el rango tal cual; en inglés, «Recruit (Recluta)»: primero el idioma de quien lee y, entre
+        # paréntesis, el nombre que verá en el Discord.
+        titulos = [rango if lang == 'es' or rango == ingles else f'{ingles} ({rango})' for rango, ingles in datos['rangos_en'].items()]
+        if re.findall(r'<h4>([^<]*)</h4>', html) != titulos:
+            falla(f'{nombre}: los rangos de la escalera no son {titulos} (datos_clan.json, rangos_en)')
         for a in datos['ascensos']:
-            m = re.search(rf'<h4>{re.escape(a["rango"])}(?: \([^)<]*\))?</h4><p>([^<]*)</p>', html)
+            rango = re.escape(a['rango'])
+            titulo = rango if lang == 'es' else f'[^<(]*[(]{rango}[)]'
+            m = re.search(rf'<h4>{titulo}</h4><p>([^<]*)</p>', html)
             if not m:
                 falla(f'{nombre}: no encuentro la tarjeta del rango {a["rango"]}')
             elif a[f'web_{lang}'] not in m.group(1):
@@ -487,6 +527,21 @@ def revisar_datos(raiz, falla, avisa):
     for lang, clave in (('es', 'texto'), ('en', 'ingles')):
         if datos['alfas'][f'fuente_{lang}'] not in tarjetas['rangos'][clave]:
             falla(f'{DATOS.name} cita «{datos["alfas"][f"fuente_{lang}"]}» y la tarjeta de rangos ya no lo dice: actualiza el extracto')
+
+
+def revisar_nombres_web(raiz, falla):
+    """Las normas en inglés copian la tarjeta del Discord, que deja el rango «Alfa» en español: la página los
+    traduce con nombres_web de datos_clan.json y no puede quedar ninguno sin traducir."""
+    normas = json.loads(DATOS.read_text(encoding='utf-8'))['normas']
+    for lang in montar_web.LANGS:
+        n = normas[lang]
+        html = leer(raiz, RUTA['normas', lang] + 'index.html')
+        cuerpo = html[html.index('<main'):html.index('</main>')]
+        for origen, web in n.get('nombres_web', {}).items():
+            if re.search(rf'\b{re.escape(origen)}\b', plano(cuerpo)):
+                falla(f'{RUTA["normas", lang]}index.html: sale «{origen}» y la web lo escribe «{web}» ({DATOS.name}, nombres_web)')
+            if not re.search(rf'\b{re.escape(web)}\b', plano(cuerpo)):
+                falla(f'{RUTA["normas", lang]}index.html: no sale «{web}» y {DATOS.name} lo declara en nombres_web')
 
 
 def sin_formato(texto):
@@ -577,6 +632,117 @@ def revisar_busquedas(raiz, base, falla):
                 falla(f'{clan}: el vídeo {fichero} sin nombre o descripción')
         if declarados:
             falla(f'{clan}: declara vídeos que la página no enseña: {sorted(declarados)}')
+
+
+# «Empezar en Asura» (Cómo entrar): lo que la web oficial de Asura decía el 2/11/2026 y la frase de que las normas se
+# comprueban allí. Es lo único que la fuente dice: ninguna promesa más.
+ASURA = {
+    'es': ('unete/index.html', 'empezar-asura', ['Asura 1', 'Asura 2', 'Start here if you’re new', 'Built for big fights', 'Dino Lab',
+           'Always safelog before using any buy, request, storage save/load, or skin change', '45 segundos', 'lotería gratis',
+           'mapa en vivo', 'Comprueba las normas allí']),
+    'en': ('en/join/index.html', 'start-asura', ['Asura 1', 'Asura 2', 'Start here if you’re new', 'Built for big fights', 'Dino Lab',
+           'Always safelog before using any buy, request, storage save/load, or skin change', '45-second', 'free lottery ticket',
+           'live map', 'Check the rules there']),
+}
+WEB_ASURA = 'https://www.asura-evrima.com/'
+
+
+def revisar_asura(raiz, falla):
+    for lang, (nombre, ancla, frases) in ASURA.items():
+        html = leer(raiz, nombre)
+        m = re.search(rf'<section class="seccion" id="{ancla}".*?</section>', html, re.S)
+        if not m:
+            falla(f'{nombre}: falta el apartado «Empezar en Asura» (id="{ancla}")')
+            continue
+        seccion = m.group(0)
+        visible = texto_visible('<body>' + seccion)
+        for frase in frases:
+            if frase not in visible:
+                falla(f'{nombre}: el apartado de Asura no dice «{frase}»')
+        enlaces = re.findall(r'<a [^>]*href="(https?://[^"]+)"', seccion)
+        if not enlaces or set(enlaces) != {WEB_ASURA}:
+            falla(f'{nombre}: el apartado de Asura debe enlazar solo a su web oficial ({WEB_ASURA}) y enlaza a {sorted(set(enlaces))}')
+        if not re.search(r'<time datetime="\d{4}-\d\d-\d\d">', seccion):
+            falla(f'{nombre}: el apartado de Asura no dice a qué día son los datos')
+
+
+# Borradores sin publicar (borradores/): fuera de la web hasta que se compruebe cada dato. Solo lo que viene de la fuente
+# que cada uno cita; el resto de la ficha, marcado como pendiente.
+BORRADORES = Path(__file__).resolve().parent.parent / 'borradores'
+PENDIENTE = {'es': 'pendiente de comprobar', 'en': 'pending check'}
+# Lo único que el borrador de Oviraptor puede decir con datos (DevBlog #74, 31/10/2026).
+OVIRAPTOR_HAB = {
+    'es': ['Come huevos: por ahora es el único dino que puede (DevBlog #74, 31/10/2026)'],
+    'en': ['Eats eggs: for now it is the only dino that can (DevBlog #74, 31 Oct 2026)'],
+}
+OVIRAPTOR_CONSEJO = {
+    'es': 'Aún en pruebas: según el DevBlog #74 (31/10/2026) está cerca de salir de ellas, sin fecha. El resto, pendiente de comprobar.',
+    'en': 'Still in testing: according to DevBlog #74 (31 Oct 2026) it is close to leaving it, with no date. The rest is pending check.',
+}
+# Frases que, si salen en docs/, es que un borrador se ha publicado.
+FRASES_BORRADOR = ['Oviraptor', 'pendiente de comprobar', 'pending check', 'zona de migración', 'migration zone', 'zonas compartidas', 'shared zones']
+EXTENSIONES_WEB = ('.html', '.css', '.js', '.txt', '.xml', '.json', '.ics')
+
+
+def revisar_borradores(raiz, falla, carpeta=BORRADORES):
+    """Los borradores existen, son lo que dicen ser y no están en la web: ni en las fichas ni en ningún fichero de docs/."""
+    try:
+        d = guia_dinos.datos()
+        fichas = d['fichas']
+    except SystemExit as e:
+        falla(f'{guia_dinos.FICHAS.name}: {e}')
+        return
+    ruta = carpeta / 'oviraptor.json'
+    try:
+        borrador = json.loads(ruta.read_text(encoding='utf-8'))
+        ficha = borrador['ficha']
+        if set(borrador) != {'_estado', '_fuente', 'ficha'}:
+            falla(f'{ruta.name}: debe llevar solo _estado, _fuente y ficha')
+        if 'SIN PUBLICAR' not in borrador['_estado'] or 'DevBlog #74' not in borrador['_fuente'] or '31/10/2026' not in borrador['_fuente']:
+            falla(f'{ruta.name}: _estado debe decir «SIN PUBLICAR» y _fuente citar el DevBlog #74 del 31/10/2026')
+        # Mismo formato que las fichas de fichas_dinos.json, claves y tipos.
+        if set(ficha) != set(fichas[0]) or set(ficha['en']) != set(fichas[0]['en']):
+            falla(f'{ruta.name}: la ficha no tiene las claves de {guia_dinos.FICHAS.name}')
+        if ficha['nombre'] != 'Oviraptor' or ficha['mut'] != []:
+            falla(f'{ruta.name}: la ficha es de «Oviraptor» y sin mutaciones (no hay ninguna comprobada)')
+        for lang, datos in (('es', ficha), ('en', ficha['en'])):
+            pendiente = PENDIENTE[lang]
+            for campo in ('peso', 'crece', 'mutfuente') + (('dieta', 'grupo') if lang == 'es' else ()):
+                if datos[campo] != pendiente:
+                    falla(f'{ruta.name} ({lang}): «{campo}» debe decir «{pendiente}» hasta que se compruebe, y dice «{datos[campo]}»')
+            if datos['hab'] != OVIRAPTOR_HAB[lang]:
+                falla(f'{ruta.name} ({lang}): «hab» solo puede decir lo del DevBlog #74: {OVIRAPTOR_HAB[lang]}')
+            if datos['consejo'] != OVIRAPTOR_CONSEJO[lang]:
+                falla(f'{ruta.name} ({lang}): «consejo» solo puede decir lo del DevBlog #74: «{OVIRAPTOR_CONSEJO[lang]}»')
+        if any(f['nombre'] == 'Oviraptor' for f in fichas):
+            falla(f'Oviraptor ya está en {guia_dinos.FICHAS.name}: borra borradores/{ruta.name}')
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        falla(f'borradores/{ruta.name}: no es el borrador esperado ({e!r})')
+
+    ruta = carpeta / 'zonas-compartidas.md'
+    try:
+        texto = ruta.read_text(encoding='utf-8')
+    except OSError as e:
+        falla(f'borradores/{ruta.name}: no se puede leer ({e})')
+    else:
+        es, _, en = texto.partition('## English')
+        if 'BORRADOR' not in texto.split('## Español')[0] or 'Aún no está en el juego' not in texto.split('## Español')[0]:
+            falla(f'borradores/{ruta.name}: la cabecera debe decir que es un BORRADOR y que aún no está en el juego')
+        for lang, cuerpo, frases in (('es', es.partition('## Español')[2], ['15 minutos', 'menú del personaje', 'tiempo de espera', 'zona de migración', 'aún no están en el juego']),
+                                     ('en', en, ['15 minutes', 'character menu', 'cooldown', 'migration zone', 'not in the game yet'])):
+            cuerpo = ' '.join(cuerpo.split())
+            for frase in frases:
+                if frase not in cuerpo:
+                    falla(f'borradores/{ruta.name} ({lang}): no dice «{frase}»')
+            if set(re.findall(r'\d+', cuerpo)) != {'15'}:
+                falla(f'borradores/{ruta.name} ({lang}): solo puede traer una cifra, los 15 minutos; trae {sorted(set(re.findall(r"[0-9]+", cuerpo)))}')
+
+    for fichero in sorted(raiz.rglob('*')):
+        if fichero.suffix in EXTENSIONES_WEB and fichero.is_file():
+            contenido = fichero.read_text(encoding='utf-8').casefold()
+            for frase in FRASES_BORRADOR:
+                if frase.casefold() in contenido:
+                    falla(f'{fichero.relative_to(raiz).as_posix()}: dice «{frase}»; es de un borrador sin publicar (borradores/)')
 
 
 def revisar_alfas(raiz, falla):
@@ -897,6 +1063,34 @@ def revisar_guia(falla, avisa):
         falla(f'{batallas_web.COPIA.name} no es igual que {batallas_web.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
 
 
+# Cuántos días puede llevar la copia de las cifras sin actualizarse antes de avisar.
+MAX_DIAS_CIFRAS = 14
+
+
+def revisar_cifras(falla, avisa):
+    """Las cifras de la portada: copia válida (sin campos de más), igual que el original del Discord si existe y
+    con una fecha creíble. Sin copia la portada sale sin ellas: solo se avisa."""
+    try:
+        datos = cifras.cargar()
+    except SystemExit as e:
+        falla(str(e))
+        return
+    if datos is None:
+        avisa(f'no hay herramientas/{cifras.COPIA.name}: la portada sale sin las cifras del clan')
+    else:
+        hoy = dt.date.today()
+        dias = (hoy - dt.date.fromisoformat(datos['fecha'])).days
+        if dias < -1:
+            falla(f'{cifras.COPIA.name}: la fecha {datos["fecha"]} es futura')
+        elif dias > MAX_DIAS_CIFRAS:
+            avisa(f'las cifras de la portada son del {datos["fecha"]} (hace {dias} días): revisa que el Discord siga escribiendo {cifras.ORIGINAL.name}')
+    # No es un «sin …»: mientras el Discord no escriba el fichero no hay nada que comparar, y la copia vale.
+    if not cifras.ORIGINAL.is_file():
+        avisa(f'aún no existe {cifras.ORIGINAL}: no se comprueba que {cifras.COPIA.name} siga al día')
+    elif not cifras.COPIA.is_file() or cifras.ORIGINAL.read_bytes() != cifras.COPIA.read_bytes():
+        falla(f'{cifras.COPIA.name} no es igual que {cifras.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
+
+
 def main(raiz, sin_apodos=False, avisa=print):
     fallos = []
     falla = fallos.append
@@ -942,13 +1136,17 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_montaje(raiz, d, falla)
     revisar_especies(raiz, base, falla)
     revisar_busquedas(raiz, base, falla)
+    revisar_asura(raiz, falla)
+    revisar_borradores(raiz, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
+    revisar_nombres_web(raiz, falla)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla, avisa)
+    revisar_cifras(falla, avisa)
     permitidos = revisar_alfas(raiz, falla)
 
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
@@ -1049,7 +1247,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
     # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA]:
+    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')

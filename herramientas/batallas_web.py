@@ -28,7 +28,7 @@ T = {
         'resultado': {'victoria': 'Victoria', 'derrota': 'Derrota', 'empate': 'Empate', None: 'En curso'},
         'ante': {'victoria': 'Victoria ante {r}', 'derrota': 'Derrota ante {r}', 'empate': 'Empate con {r}', None: 'En curso contra {r}'},
         'inferioridad': ', en inferioridad', 'contra': 'contra', 'de': 'de', 'ganadas': ['batalla ganada', 'batallas ganadas'],
-        'aria': 'Batallas del clan', 'todas': 'Todas las batallas', 'nuestros': 'de los nuestros', 'suyos': 'de {r}',
+        'todas': 'Todas las batallas', 'nuestros': 'de los nuestros', 'suyos': 'de {r}',
         'con_video': 'Batallas y vídeos', 'video': 'Vídeo de la batalla contra {r}', 'bajar': 'Descargar el vídeo de la batalla contra {r}',
         'video_texto': '{frase}: {n} contra {m} en The Isle Evrima. Vídeo del clan GARRA IBÉRICA.',
         'mes': ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
@@ -37,7 +37,7 @@ T = {
         'resultado': {'victoria': 'Victory', 'derrota': 'Defeat', 'empate': 'Draw', None: 'In progress'},
         'ante': {'victoria': 'Victory over {r}', 'derrota': 'Defeat against {r}', 'empate': 'Draw with {r}', None: 'In progress against {r}'},
         'inferioridad': ', outnumbered', 'contra': 'vs', 'de': 'of', 'ganadas': ['battle won', 'battles won'],
-        'aria': 'Clan battles', 'todas': 'All battles', 'nuestros': 'of ours', 'suyos': 'from {r}',
+        'todas': 'All battles', 'nuestros': 'of ours', 'suyos': 'from {r}',
         'con_video': 'Battles and videos', 'video': 'Video of the battle against {r}', 'bajar': 'Download the video of the battle against {r}',
         'video_texto': '{frase}: {n} against {m} in The Isle Evrima. Video by the GARRA IBÉRICA clan.',
         'mes': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
@@ -95,23 +95,29 @@ def frase(b, lang):
     return texto
 
 
-def marcador(lang, ruta_clan, batallas=None):
-    """Tira de cifras de la portada: victorias y las últimas batallas. Vacía si no hay ninguna."""
+def fecha_larga(d, lang):
+    """«2 de noviembre de 2026» / «2 November 2026»."""
+    mes = T[lang]['mes'][d.month - 1]
+    return f'{d.day} de {mes} de {d.year}' if lang == 'es' else f'{d.day} {mes} {d.year}'
+
+
+def filas(lang, ruta_clan, batallas=None):
+    """Elementos de la tira de cifras de la portada: victorias y las últimas batallas. Vacía si no hay ninguna."""
     batallas = cargar() if batallas is None else batallas
     if not batallas:
-        return ''
+        return []
     t = T[lang]
     terminadas = [b for b in batallas if b.get('resultado')]
     ganadas = sum(b['resultado'] == 'victoria' for b in terminadas)
-    filas = []
+    lis = []
     if terminadas:
-        filas.append(f'<li class="revelar"><b>{ganadas} {t["de"]} {len(terminadas)}</b>'
+        lis.append(f'<li class="revelar"><b>{ganadas} {t["de"]} {len(terminadas)}</b>'
                      f'<span>{t["ganadas"][len(terminadas) != 1]}</span></li>')
     for b in reversed(batallas[-EN_PORTADA:]):
-        filas.append(f'<li class="revelar"><b>{b["nosotros"]} vs {b["ellos"]}</b><span>{escape(frase(b, lang))}</span></li>')
+        lis.append(f'<li class="revelar"><b>{b["nosotros"]} vs {b["ellos"]}</b><span>{escape(frase(b, lang))}</span></li>')
     enlace = t['con_video'] if any(video(b, lang) for b in batallas) else t['todas']
-    filas.append(f'<li class="revelar cifras-enlace"><a href="@/{ruta_clan}#{ANCLA[lang]}">{enlace}</a></li>')
-    return f'<ul class="cifras escalonado" role="list" aria-label="{t["aria"]}">' + ''.join(filas) + '</ul>'
+    lis.append(f'<li class="revelar cifras-enlace"><a href="@/{ruta_clan}#{ANCLA[lang]}">{enlace}</a></li>')
+    return lis
 
 
 def bando(n, quien, clase):
@@ -161,8 +167,7 @@ def lista(lang, batallas=None):
         fecha = ''
         if 'fecha' in b:
             d = datetime.date.fromisoformat(b['fecha'])
-            dia = f'{d.day} de {t["mes"][d.month - 1]} de {d.year}' if lang == 'es' else f'{d.day} {t["mes"][d.month - 1]} {d.year}'
-            fecha = f'<time datetime="{d.isoformat()}">{dia}</time>'
+            fecha = f'<time datetime="{d.isoformat()}">{fecha_larga(d, lang)}</time>'
         nota = f'<p class="batalla-nota">{escape(b["nota_" + lang])}</p>' if b.get('nota_es') else ''
         filas.append(
             f'<li class="batalla revelar">'

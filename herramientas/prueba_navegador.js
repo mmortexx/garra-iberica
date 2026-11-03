@@ -246,8 +246,9 @@ const efectos = async navegador => {
   }
   // Móvil con la web quieta: las ascuas recalculan 30 veces por segundo; si salen 60, alguna animación se
   // ha salido de la tarjeta gráfica (pasó con dos a la vez en la garra: el procesador, del 13 % al 40 %).
-  for (const r of ['', 'en/', 'clan/', 'galeria/']) {
-    const { ctx, p } = await abrir(r, { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
+  // También en una pantalla baja: la bruma de la llamada final, lejísimos de la vista, no puede mantener frames.
+  for (const [r, alto] of [['', 915], ['en/', 915], ['clan/', 915], ['galeria/', 915], ['', 640], ['en/', 640]]) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 412, height: alto }, isMobile: true, hasTouch: true });
     await p.waitForTimeout(4000);
     const cdp = await ctx.newCDPSession(p);
     await cdp.send('Performance.enable');
@@ -255,7 +256,7 @@ const efectos = async navegador => {
     const antes = await estilos();
     await p.waitForTimeout(3000);
     const porSegundo = (await estilos() - antes) / 3;
-    if (porSegundo > 45) fallos.push(`/${r} en el móvil, quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
+    if (porSegundo > 45) fallos.push(`/${r} en el móvil (${alto} px de alto), quieta, recalcula ${porSegundo.toFixed(0)} veces por segundo`);
     await ctx.close();
   }
   // Cada respuesta tiene su dirección: abre esa pregunta y la deja a la vista, entrando de fuera y desde la
@@ -1416,7 +1417,8 @@ const efectos = async navegador => {
       if (v.grupo !== e.grupo) fallos.push(`${ancla}: grupo ${v.grupo} y la guía dice ${e.grupo}`);
       if (v.sobra > 0) fallos.push(`${ancla}: ${v.sobra} px más ancha que la pantalla`);
       if (v.idioma !== otra) fallos.push(`${ancla}: el idioma lleva a ${v.idioma}`);
-      if (!v.guia.startsWith(`${BASE}${guia}?especie=${ancla}#`)) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
+      // Los valores van tras el fragmento: Google no rastrea los fragmentos y sí cada dirección con parámetros.
+      if (v.guia !== `${BASE}${guia}#${guia === 'dinosaurios/' ? 'planificador' : 'planner'}?especie=${ancla}`) fallos.push(`${ancla}: «¿llegas a la cacería?» lleva a ${v.guia}`);
       if (await p.evaluate(() => document.querySelector('details.lectura').open)) fallos.push(`${ancla}: «cómo leer» debería empezar plegado`);
     }
     if (lista.length) {
@@ -1434,6 +1436,9 @@ const efectos = async navegador => {
       await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.saltos a').first().click()]);
       const puesta = await p.evaluate(() => { const o = document.querySelector('[data-plan] select').selectedOptions[0]; return o && o.dataset.nombre; });
       if (puesta !== lista[1].nombre) fallos.push(`el planificador abre con ${puesta} y venía de ${lista[1].nombre}`);
+      await p.waitForTimeout(500);
+      const aVista = await p.evaluate(() => { const s = document.querySelector('[data-plan]').closest('section').getBoundingClientRect(); return s.top >= -1 && s.top < innerHeight / 2; });
+      if (!aVista) fallos.push('el enlace al planificador no baja hasta él');
     }
     if (errores.length) fallos.push(`errores: ${JSON.stringify(errores.slice(0, 3))}`);
     if (fallos.length) malos++;
@@ -1453,6 +1458,51 @@ const efectos = async navegador => {
     if (mal) malos++;
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
+  }
+  // Cifras del clan y podio de especies de la portada: lo que dice herramientas/cifras.json (si no hay, ni
+  // cifras ni podio y la portada sigue entera), cada especie con su ficha, sin ningún nombre ni ID y sin salirse
+  // de la pantalla en el móvil más estrecho.
+  {
+    let datos = null;
+    try { datos = JSON.parse(readFileSync(`${__dirname}/cifras.json`, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    for (const [inicio, guia] of [['', 'dinosaurios/'], ['en/', 'en/dinosaurs/']]) {
+      const fallos = [];
+      const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
+      const p = await ctx.newPage();
+      await p.goto(BASE + inicio, { waitUntil: 'load' });
+      const v = await p.evaluate(() => ({
+        cifras: [...document.querySelectorAll('.cifras li:not(.cifras-nota):not(.cifras-enlace) b')].map(b => b.textContent),
+        nota: document.querySelector('.cifras-nota time')?.getAttribute('datetime') || '',
+        podio: [...document.querySelectorAll('.podio-lista li')].map(li => ({ nombre: li.querySelector('.podio-nombre').textContent, bajas: li.querySelector('b').textContent, enlace: li.querySelector('a')?.getAttribute('href') || '' })),
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        batallas: !!document.querySelector('.cifras-enlace'),
+      }));
+      if (!datos) {
+        if (v.podio.length || v.nota) fallos.push('sin cifras.json, la portada enseña cifras');
+      } else {
+        // En inglés, con coma de miles; en español, sin separador hasta 9999 (la prueba de cifras.py cubre más).
+        const esperadas = ['bajas', 'horas', 'misiones', 'jugadores'].map(k => inicio ? Math.round(datos[k]).toLocaleString('en-US') : String(Math.round(datos[k])));
+        if (JSON.stringify(v.cifras.slice(0, 4)) !== JSON.stringify(esperadas)) fallos.push(`cifras ${v.cifras.slice(0, 4)} y cifras.json dice ${esperadas}`);
+        if (v.nota !== datos.fecha) fallos.push(`fecha ${v.nota} y cifras.json dice ${datos.fecha}`);
+        const orden = [...datos.especies].sort((a, b) => b.kills - a.kills);
+        if (JSON.stringify(v.podio.map(e => [e.nombre, e.bajas])) !== JSON.stringify(orden.map(e => [e.name, String(e.kills)]))) fallos.push(`podio ${JSON.stringify(v.podio)}`);
+        for (const e of v.podio) {
+          const ficha = guia + e.nombre.toLowerCase() + '/';
+          if (e.enlace && new URL(e.enlace, BASE + inicio).href !== BASE + ficha) fallos.push(`${e.nombre} enlaza a ${e.enlace}`);
+          if (!e.enlace && ESPECIES.includes(ficha)) fallos.push(`${e.nombre} tiene ficha y el podio no la enlaza`);
+        }
+        const con = v.podio.find(e => e.enlace);
+        if (con) {
+          await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.podio-lista a').first().click()]);
+          if (p.url() !== new URL(con.enlace, BASE + inicio).href) fallos.push(`pulsar ${con.nombre} lleva a ${p.url()}`);
+        }
+      }
+      if (v.sobra > 0) fallos.push(`${v.sobra} px más ancha que la pantalla`);
+      if (!v.batallas) fallos.push('las batallas ya no salen junto a las cifras');
+      await ctx.close();
+      if (fallos.length) malos++;
+      console.log(ruta(inicio), 'cifras y podio de especies:', fallos.length ? fallos.join('; ') : `sí, ${datos ? datos.especies.length : 0} especies`);
+    }
   }
   // Portada: en un móvil bajo el botón principal se ve sin bajar, y en ancho la guía y la Cacería
   // van lado a lado aunque en el móvil la Cacería vaya primero.

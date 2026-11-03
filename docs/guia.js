@@ -1,7 +1,9 @@
 // Guía de dinosaurios: ordenar y filtrar la comparativa de especies. Sin JavaScript la lista se ve
 // entera, en el orden de las fichas, y los selectores no salen. Lo elegido va en la dirección
 // (?orden=peso&dieta=herbivoros&grupo=5#comparar) para poder pasar el enlace ya filtrado. Con
-// &marca=triceratops, la página de una especie enseña dónde queda esa especie en la lista.
+// marca=triceratops, la página de una especie enseña dónde queda esa especie en la lista. Los enlaces de la
+// web llevan esos valores tras el fragmento (#comparar?orden=peso&marca=triceratops): Google no rastrea los
+// fragmentos y sí cada dirección con parámetros.
 (() => {
   const caja = document.querySelector('[data-comparar]');
   const lista = document.querySelector('[data-comparar-lista]');
@@ -51,6 +53,8 @@
   };
   // De la dirección, solo valores que existen en su selector; lo demás se ignora.
   const pedidos = new URLSearchParams(location.search);
+  const enFragmento = location.hash.indexOf('?');
+  if (enFragmento >= 0) for (const [clave, valor] of new URLSearchParams(location.hash.slice(enFragmento))) pedidos.set(clave, valor);
   for (const [nombre, sel] of Object.entries(campos)) {
     const v = pedidos.get(nombre);
     if (v !== null && [...sel.options].some(o => o.value === v)) sel.value = v;
