@@ -48,7 +48,7 @@
     lista.append(...ordenadas);
     lista.parentElement.dataset.orden = orden.value;
     estado.textContent = vistas
-      ? caja.dataset.recuento.replace('{n}', vistas).replace('{total}', filas.length)
+      ? `${caja.dataset.recuento.replace('{n}', vistas).replace('{total}', filas.length)} · ${orden.selectedOptions[0].textContent}`
       : caja.dataset.ninguna;
   };
   // De la dirección, solo valores que existen en su selector; lo demás se ignora.

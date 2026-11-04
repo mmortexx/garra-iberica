@@ -255,6 +255,31 @@ const efectos = async navegador => {
     if ((n > 0) !== esperadas) fallos.push(`/${r} comparativa ${esperadas ? 'sin' : 'con'} movimiento al ordenar (${n} filas, ${JSON.stringify(opts)})`);
     await ctx.close();
   }
+  // Comparativa: al ordenar cambia también lo que se anuncia; si el texto no cambia, un lector de pantalla calla.
+  for (const r of ['dinosaurios/', 'en/dinosaurs/']) {
+    const { ctx, p } = await abrir(r);
+    const m = await p.evaluate(() => {
+      const caja = document.querySelector('[data-comparar]');
+      const orden = caja.querySelector('select');
+      const estado = caja.querySelector('[role="status"]');
+      const antes = estado.textContent;
+      orden.value = 'peso';
+      orden.dispatchEvent(new Event('change', { bubbles: true }));
+      return { antes, despues: estado.textContent, opcion: orden.selectedOptions[0].textContent };
+    });
+    if (m.antes === m.despues || !m.despues.includes(m.opcion)) fallos.push(`/${r} al ordenar no se anuncia: ${JSON.stringify(m)}`);
+    await ctx.close();
+  }
+  // Planificador: sin JavaScript no hay calculadora, y lo dice en vez de dejar un apartado vacío.
+  for (const [r, id] of [['dinosaurios/', 'planificador'], ['en/dinosaurs/', 'planner']]) {
+    for (const [nombre, opts, esperado] of [['sin JavaScript', { javaScriptEnabled: false }, true], ['con JavaScript', {}, false]]) {
+      const { ctx, p } = await abrir(r, opts);
+      const aviso = p.locator(`#${id} noscript p`);
+      const visto = await aviso.count() > 0 && await aviso.first().isVisible();
+      if (visto !== esperado) fallos.push(`/${r} planificador ${nombre}: aviso ${visto ? 'a la vista' : 'sin ver'}`);
+      await ctx.close();
+    }
+  }
   // Al hacer scroll: cada animación ligada al scroll depende de la página, no de una caja suya que no se
   // mueve (un overflow: hidden de más la deja clavada y no da ningún error), y de verdad avanza al bajar
   // y vuelve al subir. Lo que entra acaba entero, también al final de la página.
