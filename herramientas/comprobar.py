@@ -626,7 +626,7 @@ def revisar_busquedas(raiz, base, falla):
         textos = {foto: alt for foto, alt in re.findall(r'class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, galeria))}
         html = leer(raiz, portada)
         tira = re.search(r'<ul class="tira"[^>]*>(.*?)</ul>', html, re.S)
-        fotos = re.findall(r'<li><img src="[^"]*?img/([a-z-]+)-\d+\.webp" alt="([^"]*)"', tira.group(1)) if tira else []
+        fotos = re.findall(r'<li><img src="[^"]*?img/([a-z-]+)-\d+\.webp"[^>]*? alt="([^"]*)"', tira.group(1)) if tira else []
         if not fotos:
             falla(f'{portada}: no encuentro las fotos de la tira')
         for foto, alt in fotos:
