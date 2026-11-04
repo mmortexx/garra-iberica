@@ -70,6 +70,7 @@ T = {
         'cta_p': 'En el Discord tienes estas fichas, una manada con la que jugarlas y una cacería cada sábado.',
         'cta_boton': 'Únete a GARRA IBÉRICA en Discord', 'volver': 'Volver al inicio',
         'inicio': 'inicio', 'ids': ['carnivoros', 'herbivoros', 'omnivoros'], 'mut_id': 'mutaciones', 'leer_id': 'como-leer',
+        'plan_sin_js': 'Esta calculadora necesita JavaScript. Lo que tarda cada especie está en la <a href="#comparar">lista de dinosaurios</a>.',
         'plan_id': 'planificador', 'plan_ante': 'Antes de la cacería', 'plan_h2': '¿Llegas adulto a la cacería?',
         'plan_intro': 'Elige especie, el ritmo de crecimiento del servidor (si no lo sabes, deja 1×, el del juego) y cuánto '
                       'juegas al día. Se calcula con el crecimiento de cada ficha, a partir de ahora.',
@@ -186,6 +187,7 @@ T = {
         'cta_p': 'On Discord you get these cards, a pack to play them with and a hunt every Saturday. The clan speaks Spanish.',
         'cta_boton': 'Join GARRA IBÉRICA on Discord', 'volver': 'Back to the home page',
         'inicio': 'top', 'ids': ['carnivores', 'herbivores', 'omnivores'], 'mut_id': 'mutations', 'leer_id': 'how-to-read',
+        'plan_sin_js': 'This calculator needs JavaScript. How long each species takes is in the <a href="#compare">list of dinosaurs</a>.',
         'plan_id': 'planner', 'plan_ante': 'Before the hunt', 'plan_h2': 'Will you be adult for the hunt?',
         'plan_intro': "Pick a species, the server's growth rate (if you don't know it, leave 1×, the game's own) and how "
                       "much you play each day. It uses each card's growth time, starting from now.",
@@ -523,6 +525,7 @@ def planificador(d, lang):
         '        </label>',
         '        <p class="plan-resultado" data-resultado role="status"></p>',
         '      </div>',
+        f'      <noscript><p class="dino-fuente">{t["plan_sin_js"]}</p></noscript>',
         '    </div>',
         '  </section>',
         '',
