@@ -33,6 +33,8 @@ jobs:
         run: python herramientas/prueba_cifras.py
       - name: Prueba de las batallas
         run: python herramientas/prueba_batallas.py
+      - name: Prueba de la publicación automática de los datos
+        run: python herramientas/prueba_publicar.py
       - name: Prueba de los borradores
         run: python herramientas/prueba_borradores.py
       - name: Instalar Playwright y Chromium
