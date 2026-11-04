@@ -67,7 +67,9 @@ const scrollSinRaton = async navegador => {
     return e.top + e.height / 2 - 650;
   });
   await p.mouse.wheel(0, falta);
-  await p.waitForTimeout(600);
+  // Es el navegador quien vuelve a mirar qué hay bajo el ratón al parar: medido, unos 450 ms y hasta 1 s, con el
+  // equipo libre o cargado. Un plazo fijo de 600 ms fallaba de vez en cuando sin que la página tuviera nada mal.
+  await p.waitForFunction(() => document.querySelector('.baldosa:hover'), null, { timeout: 3000 }).catch(() => {});
   const bajoElRaton = x => p.evaluate(([cx]) => {
     const e = document.elementFromPoint(cx, 650);
     return { dentro: !!e?.closest('.baldosa'), encendida: document.querySelector('.baldosa:hover') !== null };
