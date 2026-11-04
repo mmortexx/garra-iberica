@@ -549,6 +549,12 @@ def montar(docs=DOCS):
     salida = {nombre: pagina_web(p, lang, base, d, docs) for nombre, (p, lang) in FICHEROS.items()}
     fotos = {(p, lang): [grande for grande, _, _ in fotos_galeria(salida[nombre], base + RUTA[p, lang])]
              for nombre, (p, lang) in FICHEROS.items() if p == 'galeria'}
+    for nombre, (p, lang) in FICHEROS.items():
+        if p == 'caceria':
+            cartel = re.search(r'class="marco marco-ancho[^"]*"><img src="([^"]+-1400\.webp)"', salida[nombre])
+            if not cartel:
+                sys.exit(f'{nombre}: no encuentro el cartel de la Cacería para el mapa del sitio')
+            fotos[p, lang] = [urljoin(base + RUTA[p, lang], cartel.group(1))]
     salida['sitemap.xml'] = sitemap(base, d, fotos)
     salida['404.html'] = pagina_404((docs / '404.html').read_bytes().decode('utf-8'), docs)
     return salida

@@ -1212,8 +1212,12 @@ def main(raiz, sin_apodos=False, avisa=print):
             if alt != {'es': base + RUTA[p, 'es'], 'en': base + RUTA[p, 'en'], 'x-default': base + RUTA[p, 'es']}:
                 falla(f'sitemap.xml: {loc} sin las alternativas de idioma correctas')
             fotos = [i.text for i in u.findall('i:image/i:loc', ns)]
-            if (p == 'galeria') != bool(fotos):
-                falla(f'sitemap.xml: {loc} con {len(fotos)} fotos (solo la galería las lista, y todas)')
+            if p == 'caceria':
+                cartel = base + 'img/' + ('evento_caceria-1400.webp' if loc == base + RUTA[p, 'es'] else 'evento_caceria-en-1400.webp')
+                if fotos != [cartel]:
+                    falla(f'sitemap.xml: {loc} lista {fotos} y debe listar solo su cartel, {cartel}')
+            elif (p == 'galeria') != bool(fotos):
+                falla(f'sitemap.xml: {loc} con {len(fotos)} fotos (solo la galería las lista, y todas, y la Cacería su cartel)')
             for f in fotos:
                 if not f.startswith(base) or not (raiz / f[len(base):]).is_file():
                     falla(f'sitemap.xml: la foto {f} no está en la web')
