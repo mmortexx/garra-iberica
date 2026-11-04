@@ -84,7 +84,16 @@ def varias_batallas():
     assert html.count('<time') == 1 and html.count('batalla-nota') == 1, 'la fecha y la nota son de su batalla'
 
 
+def videos_en_el_orden_de_la_lista():
+    lista = cargadas({**BASE, 'clave': 'smoke-1', 'rival': 'Smoke'}, {**BASE, 'clave': 'delta-1', 'rival': 'Delta'})
+    html = b.lista('es', lista)
+    assert html.index('batalla-delta-1.mp4') < html.index('batalla-smoke-1.mp4'), 'la lista, de la última a la primera'
+    urls = [n['contentUrl'] for n in b.videos_declarados('es', 'https://x/', lista)]
+    assert urls == ['https://x/video/batalla-delta-1.mp4', 'https://x/video/batalla-smoke-1.mp4'], urls
+
+
 prueba('la fecha y la nota salen en su idioma, con la nota escapada', con_fecha_y_nota)
+prueba('los vídeos declarados van en el orden de la lista', videos_en_el_orden_de_la_lista)
 prueba('el día de un solo dígito sale sin cero', fecha_de_un_digito)
 prueba('sin fecha ni nota no sale ninguna', sin_fecha_ni_nota)
 prueba('solo la fecha', solo_fecha)

@@ -147,7 +147,7 @@ def videos_declarados(lang, base, batallas=None):
     """Los vídeos de las batallas tal como los pide Google, con el mismo fichero y la misma portada que la página."""
     t = T[lang]
     nodos = []
-    for b in (cargar() if batallas is None else batallas):
+    for b in reversed(cargar() if batallas is None else batallas):
         nombre = f'batalla-{b["clave"]}'
         if (DOCS / 'video' / f'{nombre}.mp4').is_file():
             nodos.append({'@type': 'VideoObject', 'name': f'GARRA IBÉRICA: {t["video"].format(r=b["rival"])}',
