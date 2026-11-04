@@ -1051,6 +1051,10 @@ def revisar_galeria(raiz, falla, avisa):
     for lang, ruta in (('es', 'galeria/'), ('en', 'en/gallery/')):
         fotos = re.findall(r'<li id="([^"]*)" class="foto[^"]*"><a class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, ruta + 'index.html'))
         anclas[lang] = [i for i, _, _ in fotos]
+        # A lo ancho en un móvil 3x bastan 1000 px: sin este primer tramo piden 1500 (el doble de peso) sin que se note.
+        for sizes in re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html')):
+            if not sizes.startswith('(max-width: 500px) 330px, '):
+                falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
         if len(fotos) != len(preparar_galeria.FOTOS) or {n for _, n, _ in fotos} != set(preparar_galeria.FOTOS):
             falla(f'{ruta}: enseña {len(fotos)} fotos con su enlace y preparar_galeria.py tiene {len(preparar_galeria.FOTOS)}')
         for ancla, nombre, alt in fotos:

@@ -458,6 +458,34 @@ const efectos = async navegador => {
   console.log('Efectos (menú, bruma, arañazos, fotos, vídeos, comparativa, scroll, procesador, auditoría):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
+// Galería en móviles de alta densidad: las fotos a lo ancho no piden más de 1200 px (pedían 1500 para 1074
+// píxeles de pantalla, el doble de peso sin que se note) y ninguna se amplía más de lo que aguanta la vista.
+// SOLO=fotos prueba solo esto.
+const fotosMovil = async navegador => {
+  const fallos = [];
+  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [390, 2]]) {
+    const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: d, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    const alto = await p.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < alto; y += 500) { await p.evaluate(v => scrollTo({ top: v, behavior: 'instant' }), y); await p.waitForTimeout(30); }
+    await p.waitForFunction(() => [...document.querySelectorAll('.foto img')].every(i => i.complete && i.naturalWidth), null, { timeout: 15000 }).catch(() => {});
+    const fotos = await p.evaluate(() => [...document.querySelectorAll('.foto img')].map(i => {
+      const real = parseInt(i.srcset.split(',').map(s => s.trim().split(/\s+/)).find(([u]) => new URL(u, location).href === i.currentSrc)?.[1]);
+      return { f: i.currentSrc.split('/').pop(), real, ancha: i.clientWidth > innerWidth * .7,
+        amplia: Math.max(i.clientWidth / real, i.clientHeight / (real * i.naturalHeight / i.naturalWidth)) * devicePixelRatio };
+    }));
+    if (fotos.length < 20) fallos.push(`${r} ${w}×${d}: solo ${fotos.length} fotos`);
+    for (const x of fotos) {
+      if (!x.real) fallos.push(`${r} ${w}×${d}: ${x.f} no está en su srcset`);
+      if (x.ancha && x.real > 1200) fallos.push(`${r} ${w}×${d}: ${x.f} pide más de 1200 px`);
+      if (x.amplia > 1.26) fallos.push(`${r} ${w}×${d}: ${x.f} ampliada ${x.amplia.toFixed(2)}×`);
+    }
+    await ctx.close();
+  }
+  console.log('Galería en móvil de alta densidad (peso y nitidez):', fallos.length ? fallos.join('; ') : 'bien');
+  return fallos.length;
+};
 // Ventanas grandes: cada página crece con la ventana y no se queda en una columna con márgenes vacíos,
 // el texto corrido sigue legible, ninguna foto se enseña borrosa ni más alta que la pantalla, y portátil y
 // móvil se quedan como estaban. SOLO=ventana prueba solo esto.
@@ -692,6 +720,11 @@ const ventana = async navegador => {
   }
   if (process.env.SOLO === 'ventana') {
     const n = await ventana(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'fotos') {
+    const n = await fotosMovil(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2345,6 +2378,7 @@ const ventana = async navegador => {
   }
   malos += await efectos(navegador);
   malos += await ventana(navegador);
+  malos += await fotosMovil(navegador);
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);
