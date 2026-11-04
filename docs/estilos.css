@@ -615,7 +615,6 @@ h2::after {
 .cuenta.en-curso .cuenta-falta { animation: respirar 2s ease-in-out infinite; }
 .cuenta-falta .n { display: inline-block; }
 .cuenta-falta [hidden] { display: none; }
-.calendario { margin-top: 1.4rem; padding-top: 1.3rem; border-top: 1px solid var(--linea); }
 .calendario-botones { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.3rem; }
 .boton-cal::after { content: "+"; content: "+" / ""; font-size: 1.25em; line-height: .8; }
 @media (hover: hover) { .boton-cal:hover::after { transform: rotate(90deg); } }
