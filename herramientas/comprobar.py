@@ -1201,12 +1201,19 @@ def main(raiz, sin_apodos=False, avisa=print):
         falla(f'sitemap.xml no es válido: {e}')
 
     pagina404 = leer(raiz, '404.html')
-    # Fuera de la web, la 404 solo puede llevar a la invitación de Discord, avisando de la pestaña nueva.
-    discord404 = re.findall(r'<a [^>]*href="https://discord\.[^"]*"[^>]*>.*?</a>', pagina404, re.S)
-    if len(discord404) != 1 or f'href="{INVITACION}"' not in discord404[0]:
-        falla(f'404.html debe llevar un enlace, y solo uno, a la invitación de Discord ({INVITACION})')
-    elif 'rel="noopener"' not in discord404[0] or AVISO_PESTANA['es'] not in discord404[0]:
-        falla('404.html: el enlace a Discord abre pestaña nueva sin rel="noopener" o sin avisarlo')
+    # La 404 no puede saber el idioma de quien llega (sin scripts): lleva los dos, cada uno con sus enlaces.
+    ingles404 = re.search(r'<div lang="en"[^>]*>(.*?)</div>', pagina404, re.S)
+    partes404 = {'es': pagina404[:ingles404.start()] if ingles404 else pagina404, 'en': ingles404.group(1) if ingles404 else ''}
+    for lang, destinos in (('es', ('', 'dinosaurios/', 'caceria/')), ('en', ('en/', 'en/dinosaurs/', 'en/hunt/'))):
+        for destino in destinos:
+            if f'href="{base}{destino}"' not in partes404[lang]:
+                falla(f'404.html: la parte en {lang} no enlaza a {destino or "la portada"}')
+        # Fuera de la web, solo a la invitación de Discord, avisando de la pestaña nueva en su idioma.
+        discord404 = re.findall(r'<a [^>]*href="https://discord\.[^"]*"[^>]*>.*?</a>', partes404[lang], re.S)
+        if len(discord404) != 1 or f'href="{INVITACION}"' not in discord404[0]:
+            falla(f'404.html: la parte en {lang} debe llevar un enlace, y solo uno, a la invitación de Discord ({INVITACION})')
+        elif 'rel="noopener"' not in discord404[0] or AVISO_PESTANA[lang] not in discord404[0]:
+            falla(f'404.html: el enlace a Discord en {lang} abre pestaña nueva sin rel="noopener" o sin avisarlo')
     for url in re.findall(r'(?:href|src)="(https://[^"]+)"', pagina404):
         if url == INVITACION:
             continue

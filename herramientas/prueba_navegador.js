@@ -2174,9 +2174,24 @@ const ventana = async navegador => {
       if (!fonts.some(f => f.familyName.startsWith(letra))) fallos.push(`${sel} con ${fonts.map(f => f.familyName).join(', ') || 'nada'} en vez de ${letra}`);
     }
     if (!(await p.locator('.marca').isVisible())) fallos.push('sin la marca del clan');
+    // Los dos idiomas a la vista, sin desbordar, con el tamaño para pulsar y sin nada solapado.
+    for (const ancho of [320, 375, 1366]) {
+      await p.setViewportSize({ width: ancho, height: 812 });
+      const m = await p.evaluate(() => {
+        const enlaces = [...document.querySelectorAll('main a')];
+        return {
+          desborda: document.documentElement.scrollWidth > innerWidth,
+          ingles: !!document.querySelector('[lang="en"] h2')?.getBoundingClientRect().height,
+          pequenos: enlaces.filter(a => a.getBoundingClientRect().height < 24).map(a => a.textContent.trim()),
+        };
+      });
+      if (m.desborda) fallos.push(`${ancho}px: más ancha que la pantalla`);
+      if (!m.ingles) fallos.push(`${ancho}px: sin la parte en inglés`);
+      if (m.pequenos.length) fallos.push(`${ancho}px: enlaces de menos de 24 px: ${m.pequenos.join(', ')}`);
+    }
     await ctx.close();
     if (fallos.length) malos++;
-    console.log(ruta('404.html'), 'letra del clan y marca:', fallos.length ? fallos.join('; ') : 'sí');
+    console.log(ruta('404.html'), 'letra del clan, marca y los dos idiomas:', fallos.length ? fallos.join('; ') : 'sí');
   }
   // Procesador en el móvil: cada fotograma que pide la página la recalcula entera. Las ascuas piden
   // como mucho 30 por segundo (a 60 se llevaban un tercio del procesador de un móvil normal) y, en

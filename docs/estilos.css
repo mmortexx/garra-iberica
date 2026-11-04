@@ -983,8 +983,10 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pagina-404 h1 { font-size: clamp(2.2rem, 7vw, 4rem); text-transform: uppercase; }
 .pagina-404 .marca { display: inline-flex; margin-bottom: 2.4rem; }
 .acciones-404 { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; margin: 1.6rem 0 0; }
-.pagina-404 .pie-legal { margin-top: 1.6rem; }
-.pagina-404 .pie-legal a { color: var(--suave); }
+.pagina-404 h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); text-transform: uppercase; }
+.ingles-404 { margin-top: 2.4rem; padding-top: 2.2rem; border-top: 1px solid var(--linea); }
+.llamada p.enlaces-404 { margin: 1.1rem 0 0; font-size: 1rem; }
+.enlaces-404 a { display: inline-block; padding-block: .3rem; color: var(--suave); }
 
 .pie { position: relative; border-top: 1px solid var(--borde); padding: 3rem 16px 2.4rem; font-size: .95rem; color: var(--suave); background: rgba(6, 6, 6, .7); }
 .pie::before { content: ""; position: absolute; top: -1px; left: 50%; translate: -50% 0; width: min(28rem, 70%); height: 1px; background: linear-gradient(90deg, transparent, var(--ascua-viva), transparent); box-shadow: 0 0 14px rgba(255, 53, 31, .6); pointer-events: none; }
