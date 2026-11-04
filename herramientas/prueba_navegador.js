@@ -463,7 +463,7 @@ const efectos = async navegador => {
 // SOLO=fotos prueba solo esto.
 const fotosMovil = async navegador => {
   const fallos = [];
-  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [390, 2]]) {
+  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [440, 3], [390, 2]]) {
     const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: d, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
@@ -479,7 +479,11 @@ const fotosMovil = async navegador => {
     for (const x of fotos) {
       if (!x.real) fallos.push(`${r} ${w}×${d}: ${x.f} no está en su srcset`);
       if (x.ancha && x.real > 1200) fallos.push(`${r} ${w}×${d}: ${x.f} pide más de 1200 px`);
-      if (x.amplia > 1.26) fallos.push(`${r} ${w}×${d}: ${x.f} ampliada ${x.amplia.toFixed(2)}×`);
+      // Las medias baldosas apaisadas, en su caja cuadrada, llegan a 1,33× en los móviles más grandes: comparadas
+      // a tamaño real con la de 800 px solo se nota al hacer zoom, y pesan la mitad.
+      const media = /^galeria-(roca|bosque|rugido|valle)-/.test(x.f);
+      if (x.amplia > (media ? 1.34 : 1.26)) fallos.push(`${r} ${w}×${d}: ${x.f} ampliada ${x.amplia.toFixed(2)}×`);
+      if (d === 3 && media && !x.f.endsWith('-600.webp')) fallos.push(`${r} ${w}×${d}: media baldosa baja ${x.f}, no la de 600 px`);
     }
     await ctx.close();
   }

@@ -1040,6 +1040,8 @@ def revisar_galeria(raiz, falla, avisa):
                 esperado, real = (w, round(ch * w / cw)), medidas_webp(fichero)
                 if real != esperado:
                     falla(f'img/{fichero.name} mide {real} y su recorte da {esperado}: regenérala con preparar_galeria.py')
+                if not sufijo and fichero.stat().st_size > preparar_galeria.tope_galeria(w):
+                    falla(f'img/{fichero.name} pesa {fichero.stat().st_size // 1024} KB y su tope es {preparar_galeria.tope_galeria(w) // 1024} KB: regenérala con preparar_galeria.py')
     # Cada foto se puede enlazar (galeria/#foto-colina): dirección fija a partir del nombre del fichero, en
     # los dos idiomas igual, porque esos enlaces se pasan por Discord. Y dice lo que dice galeria/fotos.json.
     original = None
@@ -1055,6 +1057,13 @@ def revisar_galeria(raiz, falla, avisa):
         for sizes in re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html')):
             if not sizes.startswith('(max-width: 500px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
+        # Un ancho generado que la página no ofrece no sirve de nada: el móvil bajaría el siguiente, más pesado.
+        # Los de 400 px pueden faltar: algunas fotos solo los tienen para la tira de la portada.
+        for nombre, srcset in re.findall(r'<img src="[^"]*?img/([a-z-]+)-\d+\.webp" srcset="([^"]*)"', leer(raiz, ruta + 'index.html')):
+            ofrece = {int(a) for a in re.findall(r'(\d+)w', srcset)}
+            faltan = sorted(w for w in preparar_galeria.FOTOS.get(nombre, (0, 0, ()))[2] if w > 400 and w not in ofrece)
+            if faltan:
+                falla(f'{ruta}: {nombre} no ofrece en su srcset los anchos {faltan}')
     # El canal de voz se llama así de verdad: en inglés no se traduce, se aclara.
     if '<b>Cacería 1</b> voice channel (that’s its real name: “cacería” is Spanish for “hunt”)' not in leer(raiz, 'en/hunt/index.html'):
         falla('en/hunt/: falta aclarar que «Cacería 1» es el nombre real del canal de voz')

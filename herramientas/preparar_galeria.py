@@ -9,7 +9,7 @@ partir de las vistas ampliadas ya generadas; no necesita las capturas.
 Solo lee las capturas; escribe docs/img/galeria-*.webp. Ningún recorte toca la marca de agua del
 juego (arriba a la derecha). Por cada captura salen dos juegos de ficheros:
 - las fotos de la galería, encuadradas en el dinosaurio, con la mejor calidad que cabe en
-  PESO_GALERIA (las carga la página);
+  el tope de su ancho, tope_galeria (las carga la página);
 - la vista ampliada, la captura entera menos la franja de la marca, en varios anchos hasta la
   resolución original (solo se descargan al abrir una foto).
 Una imagen propia que no es captura (PROPIAS) se saca igual, pero de la «carpeta» que le da
@@ -46,14 +46,17 @@ PESO_AMPLIADA = 740 * 1024
 # Por debajo del máximo de comprobar.py (120 KB) con algo de margen. Sin pasar de 78, como las ampliadas: más
 # calidad no se ve y hacía que las medianas pesaran casi como las grandes.
 PESO_GALERIA = 115 * 1024
+# Los anchos que bajan los móviles pesan menos: comparadas al tamaño al que se pintan, no se distinguen, y la
+# galería abre mucho más ligera. comprobar.py vigila estos topes.
+PESO_MOVIL = {600: 60 * 1024, 1000: 78 * 1024, 1200: 78 * 1024}
 CALIDADES = range(78, 59, -2)
 # nombre: (captura, recorte (x0, y0, x1, y1), anchos a generar)
 FOTOS = {
     'galeria-cielo': ('Captura de pantalla 2026-10-30 120745.png', (200, 0, 3078, 1439), (600, 1000, 1500)),
-    'galeria-roca': ('Captura de pantalla 2026-10-30 120711.png', (1000, 0, 2439, 1439), (400, 800)),
-    'galeria-bosque': ('Captura de pantalla 2026-10-30 120523.png', (820, 0, 2739, 1439), (400, 800)),
-    'galeria-rugido': ('Captura de pantalla 2026-10-30 120652.png', (500, 0, 2419, 1439), (400, 800)),
-    'galeria-valle': ('Captura de pantalla 2026-10-30 120933.png', (800, 0, 2719, 1439), (400, 800)),
+    'galeria-roca': ('Captura de pantalla 2026-10-30 120711.png', (1000, 0, 2439, 1439), (400, 600, 800)),
+    'galeria-bosque': ('Captura de pantalla 2026-10-30 120523.png', (820, 0, 2739, 1439), (400, 600, 800)),
+    'galeria-rugido': ('Captura de pantalla 2026-10-30 120652.png', (500, 0, 2419, 1439), (400, 600, 800)),
+    'galeria-valle': ('Captura de pantalla 2026-10-30 120933.png', (800, 0, 2719, 1439), (400, 600, 800)),
     'galeria-charca': ('Captura de pantalla 2026-10-30 144319.png', (1221, 330, 3439, 1439), (600, 1000, 1500)),
     'galeria-secuoyas': ('Captura de pantalla 2026-10-30 144346.png', (1221, 330, 3439, 1439), (400, 600, 1000, 1500)),
     'galeria-pareja': ('Captura de pantalla 2026-10-30 144646.png', (430, 330, 2648, 1439), (400, 600, 1000, 1300)),
@@ -90,6 +93,10 @@ OG = {
 }
 OG_TAMANO = (1200, 630)
 PESO_OG = 115 * 1024
+
+
+def tope_galeria(ancho):
+    return PESO_MOVIL.get(ancho, PESO_GALERIA)
 
 
 def medidas(nombre):
@@ -164,10 +171,10 @@ def main(origen, nombres):
             reducida = a_ancho(recorte, w)
             for calidad in CALIDADES:
                 datos = webp(reducida, calidad)
-                if len(datos) <= PESO_GALERIA:
+                if len(datos) <= tope_galeria(w):
                     break
             else:
-                sys.exit(f'{nombre}-{w}: ni con calidad {calidad} baja de {PESO_GALERIA // 1024} KB')
+                sys.exit(f'{nombre}-{w}: ni con calidad {calidad} baja de {tope_galeria(w) // 1024} KB')
             salida = IMG / f'{nombre}-{w}.webp'
             salida.write_bytes(datos)
             print(f'{salida.name}: {len(datos) / 1024:.0f} KB (calidad {calidad})')

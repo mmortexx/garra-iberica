@@ -250,7 +250,7 @@ ningún recorte puede salirse de él (`python herramientas/prueba_galeria.py` lo
 que no es captura va en `PROPIAS` con sus medidas: su original sale de la `carpeta` de su entrada en
 `galeria/fotos.json` y ningún tamaño pasa de su ancho original.
 Saca de cada una la foto de la galería (encuadrada en el dinosaurio, la mejor calidad que cabe en
-120 KB) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
+su tope: 60 KB a 600 px, 78 KB a 1000 y 1200 px y 115 KB en los demás tamaños, `comprobar.py` lo vigila) y la versión ampliada (la captura entera menos la franja de la marca de agua, hasta la
 resolución original), todo en WebP de varios tamaños (`docs/img/galeria-*.webp`). Qué captura y
 qué recorte va en cada foto está al principio del script. Las de noche que salen casi negras se aclaran
 en el mismo script (`ACLARAR`). Si una captura lleva chat con nombres de otros jugadores, interfaz o
