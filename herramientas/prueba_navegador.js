@@ -517,6 +517,34 @@ const fotosMovil = async navegador => {
   }
   return malos;
 };
+// «Ver la lista» de cada dato de una ficha: en una sola línea y con 44 px de alto para el dedo, de
+// verdad (se pulsa arriba y abajo del texto), sin pisar el enlace de al lado. SOLO=puesto prueba solo esto.
+const enlacesPuesto = async navegador => {
+  const fallos = [];
+  for (const r of ['dinosaurios/triceratops/', 'en/dinosaurs/triceratops/', 'dinosaurios/gallimimus/']) for (const [w, h, movil] of [[320, 700, true], [390, 844, true], [1366, 850, false]]) {
+    const ctx = await navegador.newContext({ viewport: { width: w, height: h }, isMobile: movil, hasTouch: movil, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    const mal = await p.evaluate(() => {
+      const fuera = [];
+      const enlaces = [...document.querySelectorAll('.dino-puesto a')];
+      if (!enlaces.length) fuera.push('no hay enlaces');
+      enlaces.forEach((a, n) => {
+        if (a.getClientRects().length !== 1) fuera.push(`el ${n + 1} se parte en dos líneas`);
+        a.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const q = a.getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
+        for (const d of [-21, 21]) if (document.elementFromPoint(x, y + d) !== a) fuera.push(`el ${n + 1} no responde a ${d} px del centro`);
+        const sig = enlaces[n + 1];
+        if (sig && Math.abs(sig.getBoundingClientRect().top - q.top) < 44) fuera.push(`el ${n + 1} pisa al siguiente`);
+      });
+      return fuera;
+    });
+    for (const m of mal) fallos.push(`${r} ${w}px: ${m}`);
+    await ctx.close();
+  }
+  console.log('«Ver la lista» de las fichas, para el dedo:', fallos.length ? fallos.join('; ') : 'bien');
+  return fallos.length;
+};
 // Ventanas grandes: cada página crece con la ventana y no se queda en una columna con márgenes vacíos,
 // el texto corrido sigue legible, ninguna foto se enseña borrosa ni más alta que la pantalla, y portátil y
 // móvil se quedan como estaban. SOLO=ventana prueba solo esto.
@@ -751,6 +779,11 @@ const ventana = async navegador => {
   }
   if (process.env.SOLO === 'ventana') {
     const n = await ventana(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'puesto') {
+    const n = await enlacesPuesto(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2394,6 +2427,7 @@ const ventana = async navegador => {
   malos += await efectos(navegador);
   malos += await ventana(navegador);
   malos += await fotosMovil(navegador);
+  malos += await enlacesPuesto(navegador);
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);
