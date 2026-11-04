@@ -184,6 +184,8 @@ python herramientas/prueba_borradores.py
   desbordes, de media 90 letras por línea como mucho, ninguna foto borrosa ni más alta que la ventana, secciones
   que usan el ancho, galería en filas sin recortar, y un barrido de 1300 a 3600 px sin saltos bruscos; hasta
   1440 px, letra y ancho no se mueven. La letra y el ancho salen de `html` y `--ancho` en `estilos.css`.
+  Scroll con ratón (`SOLO=scroll` prueba solo esto): mientras se desplaza, lo que pasa bajo el ratón quieto no
+  se enciende ni se apaga; al parar, al moverlo o con un botón pulsado responde como siempre.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
 

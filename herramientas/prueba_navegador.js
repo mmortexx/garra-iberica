@@ -9,6 +9,7 @@
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
+// scroll sin reaccionar al ratón,
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
@@ -38,8 +39,68 @@ const CON_GALERIA = ['galeria'];
 const MOVIDAS = [['#normas', 'normas/'], ['en/#rules', 'en/rules/'], ['#guia', 'dinosaurios/'], ['en/#faq', 'en/join/#faq'], ['en/#hunt', 'en/hunt/']];
 const ruta = r => ('/' + r).padEnd(15);
 // Efectos: lo que, roto, no da ningún error y solo se nota mirando. SOLO=efectos prueba solo esto.
-const efectos = async navegador => {
+// Con el ratón quieto, lo que pasa por debajo al hacer scroll no se enciende: repintarlo es lo que más
+// cuesta al desplazarse a pantalla completa. Al parar, moverlo o tener un botón pulsado, responde como
+// siempre; en el móvil no cambia nada. SOLO=scroll prueba solo esto.
+const scrollSinRaton = async navegador => {
   const fallos = [];
+  const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE, { waitUntil: 'load' });
+  const sitio = await p.evaluate(() => {
+    const r = document.querySelector('.baldosa').getBoundingClientRect();
+    scrollTo({ top: r.top + scrollY - 800, behavior: 'instant' });
+    return { x: r.left + r.width / 2, alto: r.height };
+  });
+  await p.mouse.move(sitio.x, 650);
+  await p.waitForTimeout(600);
+  let encendidas = 0, muestras = 0;
+  for (let i = 0; i < 12; i++) {
+    await p.mouse.wheel(0, 110);
+    await p.waitForTimeout(50);
+    muestras++;
+    if (await p.evaluate(() => document.querySelector('.baldosa:hover') !== null)) encendidas++;
+  }
+  if (encendidas) fallos.push(`se encienden baldosas durante el scroll (${encendidas} de ${muestras})`);
+  const falta = await p.evaluate(() => {
+    const e = [...document.querySelectorAll('.baldosa')].map(b => b.getBoundingClientRect()).sort((a, b) => Math.abs(a.top + a.height / 2 - 650) - Math.abs(b.top + b.height / 2 - 650))[0];
+    return e.top + e.height / 2 - 650;
+  });
+  await p.mouse.wheel(0, falta);
+  await p.waitForTimeout(600);
+  const bajoElRaton = x => p.evaluate(([cx]) => {
+    const e = document.elementFromPoint(cx, 650);
+    return { dentro: !!e?.closest('.baldosa'), encendida: document.querySelector('.baldosa:hover') !== null };
+  }, [x]);
+  const quieto = await bajoElRaton(sitio.x);
+  if (!quieto.dentro || !quieto.encendida) fallos.push(`al parar, el ratón no vuelve a responder: ${JSON.stringify(quieto)}`);
+  await p.mouse.wheel(0, 40);
+  await p.waitForTimeout(90);
+  await p.mouse.move(sitio.x + 6, 650);
+  const movido = await bajoElRaton(sitio.x + 6);
+  if (!movido.dentro) fallos.push('al mover el ratón nada más parar, sigue sin responder');
+  await p.waitForTimeout(500);
+  await p.mouse.down();
+  await p.mouse.wheel(0, 40);
+  await p.waitForTimeout(60);
+  if (!(await bajoElRaton(sitio.x + 6)).dentro) fallos.push('con un botón pulsado (seleccionar, arrastrar) el scroll corta el arrastre');
+  await p.mouse.up();
+  await ctx.close();
+  const tacto = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const m = await tacto.newPage();
+  await m.goto(BASE, { waitUntil: 'load' });
+  await m.evaluate(() => {
+    window.__cortado = false;
+    addEventListener('scroll', () => { setTimeout(() => { if (getComputedStyle(document.body).pointerEvents === 'none') window.__cortado = true; }); });
+    scrollTo(0, 400);
+  });
+  await m.waitForTimeout(200);
+  if (await m.evaluate(() => window.__cortado)) fallos.push('en el móvil también corta el tacto');
+  await tacto.close();
+  return fallos;
+};
+const efectos = async navegador => {
+  const fallos = await scrollSinRaton(navegador);
   const abrir = async (r, opts = {}) => {
     const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
     const p = await ctx.newPage();
@@ -585,6 +646,12 @@ const ventana = async navegador => {
     const n = await efectos(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'scroll') {
+    const f = await scrollSinRaton(navegador);
+    console.log('Scroll sin reaccionar al ratón:', f.length ? f.join('; ') : 'bien');
+    await navegador.close();
+    process.exit(f.length ? 1 : 0);
   }
   if (process.env.SOLO === 'ventana') {
     const n = await ventana(navegador);
