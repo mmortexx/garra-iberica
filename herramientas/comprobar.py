@@ -55,6 +55,18 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 # más, o estos mismos en cualquier otro sitio, sigue fallando.
 JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
+
+
+def dentro_del_div(html, inicio):
+    """Lo que hay dentro del <div> que abre en `inicio`, contando los <div> anidados."""
+    nivel = 0
+    for etiqueta in re.finditer(r'<(/?)div\b', html[inicio:]):
+        nivel += -1 if etiqueta.group(1) else 1
+        if not nivel:
+            return html[inicio:inicio + etiqueta.start()]
+    return html[inicio:]
+
+
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
 SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
@@ -607,10 +619,10 @@ def revisar_busquedas(raiz, base, falla):
     for caceria in ('caceria/index.html', 'en/hunt/index.html'):
         html = leer(raiz, caceria)
         cabecera = re.search(r'<section class="cabecera.*?</section>', html, re.S)
-        oculto = re.search(r'<div [^>]*data-cuenta[^>]*\bhidden\b[^>]*>.*?</div>', cabecera.group(0), re.S) if cabecera else None
+        cuenta = re.search(r'<div\b[^>]*\bdata-cuenta\b[^>]*>', cabecera.group(0)) if cabecera else None
         if not cabecera or INVITACION not in cabecera.group(0):
             falla(f'{caceria}: la cabecera no lleva botón al Discord')
-        elif oculto and INVITACION in oculto.group(0):
+        elif cuenta and re.search(r'\shidden\b', cuenta.group(0)) and INVITACION in dentro_del_div(cabecera.group(0), cuenta.start()):
             falla(f'{caceria}: el botón del Discord de la cabecera va dentro de la cuenta atrás oculta y sin JavaScript no se ve')
     for portada, galeria, clan in (('index.html', 'galeria/index.html', 'clan/index.html'),
                                    ('en/index.html', 'en/gallery/index.html', 'en/clan/index.html')):
@@ -619,8 +631,8 @@ def revisar_busquedas(raiz, base, falla):
         html = leer(raiz, portada)
         tira = re.search(r'<ul class="tira"[^>]*>(.*?)</ul>', html, re.S)
         fotos = re.findall(r'<li><img src="[^"]*?img/([a-z-]+)-\d+\.webp"[^>]*? alt="([^"]*)"', tira.group(1)) if tira else []
-        if not fotos:
-            falla(f'{portada}: no encuentro las fotos de la tira')
+        if not fotos or len(fotos) != tira.group(1).count('<li'):
+            falla(f'{portada}: no encuentro todas las fotos de la tira ({len(fotos)} leídas)')
         for foto, alt in fotos:
             if not alt or alt != textos.get(foto):
                 falla(f'{portada}: la foto {foto} de la tira no lleva el texto de la galería (lleva «{alt}»)')
@@ -1208,6 +1220,10 @@ def main(raiz, sin_apodos=False, avisa=print):
         for destino in destinos:
             if f'href="{base}{destino}"' not in partes404[lang]:
                 falla(f'404.html: la parte en {lang} no enlaza a {destino or "la portada"}')
+        # El logo también enlaza a la portada: la salida que cuenta es el botón de cada idioma.
+        acciones404 = re.search(r'<p class="acciones-404">(.*?)</p>', partes404[lang], re.S)
+        if not acciones404 or f'href="{base}{destinos[0]}"' not in acciones404.group(1):
+            falla(f'404.html: la parte en {lang} no lleva el botón de vuelta a su portada')
         # Fuera de la web, solo a la invitación de Discord, avisando de la pestaña nueva en su idioma.
         discord404 = re.findall(r'<a [^>]*href="https://discord\.[^"]*"[^>]*>.*?</a>', partes404[lang], re.S)
         if len(discord404) != 1 or f'href="{INVITACION}"' not in discord404[0]:

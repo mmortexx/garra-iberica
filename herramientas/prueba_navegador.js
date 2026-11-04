@@ -2204,15 +2204,19 @@ const ventana = async navegador => {
       await p.setViewportSize({ width: ancho, height: 812 });
       const m = await p.evaluate(() => {
         const enlaces = [...document.querySelectorAll('main a')];
+        const cajas = enlaces.map(a => a.getBoundingClientRect());
+        const pisa = (u, v) => u.left < v.right && v.left < u.right && u.top < v.bottom && v.top < u.bottom;
         return {
           desborda: document.documentElement.scrollWidth > innerWidth,
           ingles: !!document.querySelector('[lang="en"] h2')?.getBoundingClientRect().height,
           pequenos: enlaces.filter(a => a.getBoundingClientRect().height < 24).map(a => a.textContent.trim()),
+          solapados: enlaces.filter((a, i) => cajas.some((c, j) => j > i && pisa(cajas[i], c))).map(a => a.textContent.trim()),
         };
       });
       if (m.desborda) fallos.push(`${ancho}px: más ancha que la pantalla`);
       if (!m.ingles) fallos.push(`${ancho}px: sin la parte en inglés`);
       if (m.pequenos.length) fallos.push(`${ancho}px: enlaces de menos de 24 px: ${m.pequenos.join(', ')}`);
+      if (m.solapados.length) fallos.push(`${ancho}px: enlaces solapados: ${m.solapados.join(', ')}`);
     }
     await ctx.close();
     if (fallos.length) malos++;
