@@ -484,7 +484,38 @@ const fotosMovil = async navegador => {
     await ctx.close();
   }
   console.log('Galería en móvil de alta densidad (peso y nitidez):', fallos.length ? fallos.join('; ') : 'bien');
-  return fallos.length;
+  // Mosaico de la portada: a cada ancho, el fichero que elige cada foto no es más estrecho que lo que se
+  // pinta. Se mira el ancho del fichero en su srcset: naturalWidth solo repite lo que dice «sizes», y la
+  // baldosa de la guía dice menos en el móvil a propósito (bajo su velo oscuro, 600 px no se distinguen de
+  // 1500 y pesan 86 KB menos).
+  let malos = fallos.length;
+  for (const r of ['', 'en/']) {
+    const borrosas = [];
+    for (const w of [400, 760, 900, 960, 999, 1000, 1200, 1440]) {
+      const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
+      await p.waitForFunction(() => [...document.querySelectorAll('.baldosa-fondo')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 });
+      const fotos = await p.evaluate(() => [...document.querySelectorAll('.baldosa-fondo')].map(i => ({
+        foto: i.currentSrc.split('/').pop(), pinta: i.getBoundingClientRect().width,
+        trae: parseInt(i.srcset.split(',').map(s => s.trim().split(/\s+/)).find(([u]) => new URL(u, location).href === i.currentSrc)?.[1]) })));
+      for (const f of fotos) if (!(f.trae >= f.pinta * 0.98)) borrosas.push(`${w}px: ${f.foto} de ${f.trae} px pintada a ${Math.round(f.pinta)}`);
+      await ctx.close();
+    }
+    // Y en un móvil 3x la baldosa de la guía no baja más de lo que se ve bajo su velo.
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('.baldosa-dinos').scrollIntoView({ behavior: 'instant' }));
+    await p.waitForFunction(() => { const i = document.querySelector('.baldosa-dinos .baldosa-fondo'); return i.complete && i.naturalWidth; }, null, { timeout: 10000 });
+    const guia = await p.evaluate(() => document.querySelector('.baldosa-dinos .baldosa-fondo').currentSrc.split('/').pop());
+    if (!guia.endsWith('-600.webp')) borrosas.push(`móvil 3x: la baldosa de la guía baja ${guia}`);
+    await ctx.close();
+    if (borrosas.length) malos++;
+    console.log(ruta(r), 'fotos del mosaico a su tamaño:', borrosas.length ? borrosas.join('; ') : 'sí');
+  }
+  return malos;
 };
 // Ventanas grandes: cada página crece con la ventana y no se queda en una columna con márgenes vacíos,
 // el texto corrido sigue legible, ninguna foto se enseña borrosa ni más alta que la pantalla, y portátil y
@@ -1687,24 +1718,8 @@ const ventana = async navegador => {
     if (fallos.length) malos++;
     console.log(ruta(r), 'sanciones en escalera a 1440, 1024, 390 y 320 px:', fallos.length ? fallos.join('; ') : 'sí');
   }
-  // Mosaico de la portada: a cada ancho, el tamaño que declara cada foto (sizes, que es lo que da
-  // naturalWidth con srcset) no es menor que el que se pinta; si lo es, el navegador elige una
-  // versión pequeña y sale borrosa. Y la tira de la galería tiene todas sus fotos al llegar.
+  // La tira de la galería tiene todas sus fotos al llegar.
   for (const r of ['', 'en/']) {
-    const borrosas = [];
-    for (const w of [400, 760, 900, 960, 999, 1000, 1200, 1440]) {
-      const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
-      const p = await ctx.newPage();
-      await p.goto(BASE + r, { waitUntil: 'load' });
-      await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
-      await p.waitForFunction(() => [...document.querySelectorAll('.baldosa-fondo')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 });
-      const fotos = await p.evaluate(() => [...document.querySelectorAll('.baldosa-fondo')].map(i => ({
-        foto: i.currentSrc.split('/').pop(), pinta: i.getBoundingClientRect().width, trae: i.naturalWidth })));
-      for (const f of fotos) if (f.trae < f.pinta * 0.98) borrosas.push(`${w}px: ${f.foto} de ${f.trae} px pintada a ${Math.round(f.pinta)}`);
-      await ctx.close();
-    }
-    if (borrosas.length) malos++;
-    console.log(ruta(r), 'fotos del mosaico a su tamaño:', borrosas.length ? borrosas.join('; ') : 'sí');
     const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });

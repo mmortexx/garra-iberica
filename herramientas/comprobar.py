@@ -1055,6 +1055,10 @@ def revisar_galeria(raiz, falla, avisa):
         for sizes in re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html')):
             if not sizes.startswith('(max-width: 500px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
+    # La baldosa de la guía, bajo su velo oscuro: en el móvil, 600 px no se distinguen de 1500.
+    for ruta in ('index.html', 'en/index.html'):
+        if not re.search(r'class="baldosa-fondo" src="[^"]*galeria-espesura-[^>]* sizes="\(max-width: 500px\) 190px, ', leer(raiz, ruta)):
+            falla(f'{ruta}: la baldosa de la guía sin el tramo de móvil en «sizes»')
         if len(fotos) != len(preparar_galeria.FOTOS) or {n for _, n, _ in fotos} != set(preparar_galeria.FOTOS):
             falla(f'{ruta}: enseña {len(fotos)} fotos con su enlace y preparar_galeria.py tiene {len(preparar_galeria.FOTOS)}')
         for ancla, nombre, alt in fotos:
