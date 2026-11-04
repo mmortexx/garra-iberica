@@ -77,8 +77,8 @@ T = {
         'plan_especie': 'Especie', 'plan_ritmo': 'Crecimiento del servidor', 'plan_base': 'base', 'plan_coma': ',',
         'plan_horas': 'Horas de juego al día', 'plan_sin_parar': 'Sin parar', 'plan_h': '{n} h',
         'plan_si_t': 'Llegas', 'plan_no_t': 'No llegas',
-        'plan_si': 'Con {dino} serías adulto el {adulto}: {tiempo} antes de la cacería del {caceria} (hora de España).',
-        'plan_no': 'Con {dino} serías adulto el {adulto}: {tiempo} después de que empiece la cacería del {caceria} (hora de España). Llegarías a la del {alcanza}.',
+        'plan_si': 'Con {dino} serías adulto el {adulto} (hora de España): {tiempo} antes de la cacería del {caceria}.',
+        'plan_no': 'Con {dino} serías adulto el {adulto} (hora de España): {tiempo} después de que empiece la cacería del {caceria}. Llegarías a la del {alcanza}.',
         'plan_locale': 'es-ES', 'plan_unidades': {'d': ['día', 'días'], 'h': 'h', 'm': 'min'},
         'comp_id': 'comparar', 'comp_ante': 'De un vistazo', 'comp_h2': 'Lista de dinosaurios jugables', 'comp_corto': 'Comparar especies',
         'comp_intro': 'Las {n} especies con su peso máximo, lo que tardan en ser adultas (1×) y su grupo máximo. '
@@ -189,13 +189,13 @@ T = {
         'inicio': 'top', 'ids': ['carnivores', 'herbivores', 'omnivores'], 'mut_id': 'mutations', 'leer_id': 'how-to-read',
         'plan_sin_js': 'This calculator needs JavaScript. How long each species takes is in the <a href="#compare">list of dinosaurs</a>.',
         'plan_id': 'planner', 'plan_ante': 'Before the hunt', 'plan_h2': 'Will you be adult for the hunt?',
-        'plan_intro': "Pick a species, the server's growth rate (if you don't know it, leave 1×, the game's own) and how "
-                      "much you play each day. It uses each card's growth time, starting from now.",
+        'plan_intro': "Pick a species, the server’s growth rate (if you don’t know it, leave 1×, the game’s own) and how "
+                      "much you play each day. It uses each card’s growth time, starting from now.",
         'plan_especie': 'Species', 'plan_ritmo': 'Server growth rate', 'plan_base': 'base', 'plan_coma': '.',
         'plan_horas': 'Hours played per day', 'plan_sin_parar': 'Non-stop', 'plan_h': '{n} h',
-        'plan_si_t': 'You make it', 'plan_no_t': "You don't make it",
-        'plan_si': 'With {dino} you would be adult on {adulto}: {tiempo} before the hunt on {caceria} (Spanish time).',
-        'plan_no': 'With {dino} you would be adult on {adulto}: {tiempo} after the hunt on {caceria} starts (Spanish time). You would make the one on {alcanza}.',
+        'plan_si_t': 'You make it', 'plan_no_t': "You don’t make it",
+        'plan_si': 'With {dino} you would be adult on {adulto} (Spanish time): {tiempo} before the hunt on {caceria}.',
+        'plan_no': 'With {dino} you would be adult on {adulto} (Spanish time): {tiempo} after the hunt on {caceria} starts. You would make the one on {alcanza}.',
         'plan_locale': 'en-GB', 'plan_unidades': {'d': ['day', 'days'], 'h': 'h', 'm': 'min'},
         'comp_id': 'compare', 'comp_ante': 'At a glance', 'comp_h2': 'List of playable dinosaurs', 'comp_corto': 'Compare species',
         'comp_intro': 'All {n} species with their top weight, how long they take to grow up (1×) and their max group. '

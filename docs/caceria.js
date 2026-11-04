@@ -108,7 +108,7 @@
       const v = Object.fromEntries(Object.entries(s).map(([k, ms]) => [k, enZona(ms, zona, textos.locale)]));
       if (Object.values(v).includes(null)) { horas.hidden = true; return; }
       const cuando = k => `${v[k].dia[0].toUpperCase()}${v[k].dia.slice(1)}, ${v[k].hora}`;
-      const pais = lista.selectedOptions[0].text.replace(/ \(.*/, '');
+      const pais = lista.selectedOptions[0].text;
       for (const t of titulos) t.textContent = cuando(t.dataset.aviso);
       rotulo.textContent = zona ? textos.rotulo.replace('{pais}', pais) : textos.rotuloPropio;
       const titulo = document.createElement('b');
