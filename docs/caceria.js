@@ -218,11 +218,11 @@
   const tituloNormal = nodoTitulo.textContent;
   const TEXTOS = {
     es: {
-      locale: 'es-ES', enCurso: 'Ya ha empezado: entra en Cacería 1.', tituloEnCurso: 'Cacería en marcha', faltan: 'Faltan ', espana: ' en España', reserva: 'sábado, 28 de noviembre, 22:00',
+      locale: 'es-ES', enCurso: 'Ya ha empezado: entra en Cacería 1.', tituloEnCurso: 'Cacería en marcha', faltan: 'Faltan ', espana: ' en España', reserva: 'sábado de cada semana, 22:00',
       unidades: { d: ['día', 'días'], h: ['hora', 'horas'], m: ['min', 'min'], s: ['seg', 'seg'] },
     },
     en: {
-      locale: 'en-GB', enCurso: 'It has started: join the Cacería 1 voice channel.', tituloEnCurso: 'Hunt under way', faltan: 'Starts in ', espana: ' in Spain', reserva: 'Saturday 28 November at 22:00',
+      locale: 'en-GB', enCurso: 'It has started: join the Cacería 1 voice channel.', tituloEnCurso: 'Hunt under way', faltan: 'Starts in ', espana: ' in Spain', reserva: 'Saturday of every week at 22:00',
       unidades: { d: ['day', 'days'], h: ['hour', 'hours'], m: ['min', 'min'], s: ['sec', 'sec'] },
     },
   };

@@ -56,9 +56,6 @@ VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 JEFES = ('Imaginary', 'Quilez', 'Ray')
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
-MESES = {n: i for i, nombres in enumerate(zip(
-    'enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre'.split(),
-    'january february march april may june july august september october november december'.split()), 1) for n in nombres}
 SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
@@ -407,30 +404,16 @@ def revisar_datos(raiz, falla, avisa):
     esperados = ', '.join(f"{a['que']}: [{a['dia_semana']}, {a['hora']}]" for a in cac['avisos'])
     if not avisos_js or avisos_js.group(1).strip() != esperados:
         falla(f'caceria.js: AVISOS no es {{ {esperados} }} como dice {DATOS.name}')
-    # El texto que guarda el sitio de la cuenta atrás hasta que se calcula la fecha es invisible, pero si trae una
-    # fecha escrita a mano tiene que ser del día de la Cacería (antes salía un «sábado, 30 de noviembre» que cae en
-    # lunes) y del año de REVISADA: al cambiar de año, esta comprobación avisa de que hay que ponerla al día.
+    # El texto que guarda el sitio de la cuenta atrás mientras se calcula la fecha es invisible, pero no puede
+    # traer una fecha escrita a mano: se queda vieja sola (antes salía un «sábado, 30 de noviembre» que cae en lunes).
     reservas = re.findall(r"reserva: '([^']*)'", js)
     if len(reservas) != 2:
         falla(f'caceria.js: esperaba una reserva por idioma y hay {len(reservas)}')
     for r in reservas:
         if f'{cac["hora"]:02d}:00' not in r:
             falla(f'caceria.js: la reserva «{r}» no dice las {cac["hora"]:02d}:00 de {DATOS.name}')
-        resto = re.sub(r'\d{2}:\d{2}', '', r)
-        numeros = re.findall(r'\d+', resto)
-        if not numeros:
-            continue
-        meses = [n for palabra in re.findall(r'[^\W\d]+', resto.lower()) for n in [MESES.get(palabra)] if n]
-        if len(numeros) != 1 or len(meses) != 1:
-            falla(f'caceria.js: la reserva «{r}» solo puede llevar un día y un mes además de la hora')
-            continue
-        try:
-            dia = dt.date(int(montar_web.REVISADA[:4]), meses[0], int(numeros[0]))
-        except ValueError:
-            falla(f'caceria.js: la reserva «{r}» lleva una fecha que no existe')
-            continue
-        if (dia.weekday() + 1) % 7 != cac['dia_semana']:
-            falla(f'caceria.js: la reserva «{r}» pone el {dia} y la Cacería es el día {cac["dia_semana"]} de la semana (0 = domingo)')
+        if re.search(r'\d', re.sub(r'\d{2}:\d{2}', '', r)):
+            falla(f'caceria.js: la reserva «{r}» lleva una fecha escrita a mano')
     # El selector «¿A qué hora es en tu país?»: zonas que existen y las mismas en los dos idiomas.
     zonas_selector = {}
     for nombre, (pagina, lang) in PAGINAS.items():
