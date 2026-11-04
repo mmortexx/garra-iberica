@@ -207,13 +207,21 @@ def portada_sin_copia():
 
 
 def portada_con_copia():
-    html = montar_web.pagina_web('inicio', 'es')
-    assert '<b>587</b><span>bajas del clan</span>' in html and 'class="podio"' in html
-    assert html.index('<ul class="cifras') < html.index('class="podio"') < html.index('id="quienes"')
-    assert html.count('<ul class="cifras') == 1, 'las cifras del clan y las batallas van en la misma tira'
-    en = montar_web.pagina_web('inicio', 'en')
-    assert '<a href="../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a>' in en, 'en inglés, el enlace va a la ficha inglesa'
-    assert 'Kills by species' in en and 'dinosaurios/tyrannosaurus' not in en.split('Kills by species')[1].split('id="quienes"')[0]
+    # Con datos propios de la prueba: las cifras reales cambian cada noche al publicarse.
+    with tempfile.TemporaryDirectory() as d:
+        antes = cifras.COPIA
+        cifras.COPIA = Path(d) / 'cifras.json'
+        cifras.COPIA.write_text(json.dumps(BUENAS), encoding='utf-8')
+        try:
+            html = montar_web.pagina_web('inicio', 'es')
+            assert '<b>587</b><span>bajas del clan</span>' in html and 'class="podio"' in html
+            assert html.index('<ul class="cifras') < html.index('class="podio"') < html.index('id="quienes"')
+            assert html.count('<ul class="cifras') == 1, 'las cifras del clan y las batallas van en la misma tira'
+            en = montar_web.pagina_web('inicio', 'en')
+            assert '<a href="../en/dinosaurs/tyrannosaurus/">Tyrannosaurus</a>' in en, 'en inglés, el enlace va a la ficha inglesa'
+            assert 'Kills by species' in en and 'dinosaurios/tyrannosaurus' not in en.split('Kills by species')[1].split('id="quienes"')[0]
+        finally:
+            cifras.COPIA = antes
 
 
 prueba('la portada sale sin romperse si no hay cifras', portada_sin_copia)
