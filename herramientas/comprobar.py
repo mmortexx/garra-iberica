@@ -1054,23 +1054,23 @@ def revisar_galeria(raiz, falla, avisa):
         fotos = re.findall(r'<li id="([^"]*)" class="foto[^"]*"><a class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, ruta + 'index.html'))
         anclas[lang] = [i for i, _, _ in fotos]
         # A lo ancho en un móvil 3x bastan 1000 px: sin este primer tramo piden 1500 (el doble de peso) sin que se note.
-        for sizes in re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html')):
-            if not sizes.startswith('(max-width: 500px) 330px, '):
+        anchas = re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html'))
+        medias = [n for n, (_, _, a) in preparar_galeria.FOTOS.items() if max(a) == 800]
+        if len(anchas) != len(preparar_galeria.FOTOS) - len(medias):
+            falla(f'{ruta}: {len(anchas)} fotos a lo ancho con su «sizes», y son {len(preparar_galeria.FOTOS) - len(medias)}')
+        for sizes in anchas:
+            if not sizes.startswith('(max-width: 450px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
         # Un ancho generado que la página no ofrece no sirve de nada: el móvil bajaría el siguiente, más pesado.
         # Los de 400 px pueden faltar: algunas fotos solo los tienen para la tira de la portada.
-        for nombre, srcset in re.findall(r'<img src="[^"]*?img/([a-z-]+)-\d+\.webp" srcset="([^"]*)"', leer(raiz, ruta + 'index.html')):
+        ofertas = re.findall(r'<img src="[^"]*?img/([a-z-]+)-\d+\.webp" srcset="([^"]*)"', leer(raiz, ruta + 'index.html'))
+        if not set(preparar_galeria.FOTOS) <= {n for n, _ in ofertas}:
+            falla(f'{ruta}: no encuentro el «srcset» de {sorted(set(preparar_galeria.FOTOS) - {n for n, _ in ofertas})}')
+        for nombre, srcset in ofertas:
             ofrece = {int(a) for a in re.findall(r'(\d+)w', srcset)}
             faltan = sorted(w for w in preparar_galeria.FOTOS.get(nombre, (0, 0, ()))[2] if w > 400 and w not in ofrece)
             if faltan:
                 falla(f'{ruta}: {nombre} no ofrece en su srcset los anchos {faltan}')
-    # El canal de voz se llama así de verdad: en inglés no se traduce, se aclara.
-    if '<b>Cacería 1</b> voice channel (that’s its real name: “cacería” is Spanish for “hunt”)' not in leer(raiz, 'en/hunt/index.html'):
-        falla('en/hunt/: falta aclarar que «Cacería 1» es el nombre real del canal de voz')
-    # La baldosa de la guía, bajo su velo oscuro: en el móvil, 600 px no se distinguen de 1500.
-    for ruta in ('index.html', 'en/index.html'):
-        if not re.search(r'class="baldosa-fondo" src="[^"]*galeria-espesura-[^>]* sizes="\(max-width: 500px\) 190px, ', leer(raiz, ruta)):
-            falla(f'{ruta}: la baldosa de la guía sin el tramo de móvil en «sizes»')
         if len(fotos) != len(preparar_galeria.FOTOS) or {n for _, n, _ in fotos} != set(preparar_galeria.FOTOS):
             falla(f'{ruta}: enseña {len(fotos)} fotos con su enlace y preparar_galeria.py tiene {len(preparar_galeria.FOTOS)}')
         for ancla, nombre, alt in fotos:
@@ -1083,6 +1083,35 @@ def revisar_galeria(raiz, falla, avisa):
                 falla(f'{ruta}: {nombre} dice «{unescape(alt)}» y {FOTOS_ORIGINAL.name}, «{f[lang]}»')
     if anclas['es'] != anclas['en']:
         falla('la galería no tiene las mismas fotos en el mismo orden en español y en inglés')
+
+
+def revisar_detalles(raiz, falla):
+    """Detalles de texto y de fotos de varias páginas."""
+    # Una hora sin zona la lee cada uno como suya.
+    if 'el sábado a las 22:00 (hora peninsular española), en el canal' not in leer(raiz, 'combate/index.html'):
+        falla('combate/: la hora de la próxima cacería sin su zona horaria')
+    # Lo que está en español dentro de una página en inglés se marca: el lector de pantalla cambia de voz.
+    def visible(ruta):
+        cuerpo = leer(raiz, ruta).split('<main', 1)[1].split('</main>', 1)[0]
+        return re.sub(r'<script.*?</script>', '', cuerpo, flags=re.S)
+    for ruta in ('en/hunt/', 'en/join/', 'en/combat/'):
+        html = visible(ruta + 'index.html')
+        for texto in ('Canales y roles', 'avisadme', 'contacto en'):
+            for m in re.finditer(re.escape(texto), html):
+                if not re.search(r'lang="es"[^<]*$', html[max(0, m.start() - 40):m.start()]):
+                    falla(f'{ruta}: «{texto}» sin marcar como español')
+    # Las páginas en inglés con texto propio llevan el apóstrofo tipográfico. Las demás (combate, galería,
+    # rangos) copian el texto del Discord tal cual, y este apartado no las mira.
+    for ruta in ('en/index.html', 'en/legal/index.html', 'en/join/index.html'):
+        for m in re.findall(r"(?<=>)[^<]*\w'\w[^<]*", visible(ruta)):
+            falla(f'{ruta}: apóstrofo recto en «{m[:70]}»')
+    # El canal de voz se llama así de verdad: en inglés no se traduce, se aclara.
+    if '<b>Cacería 1</b> voice channel (that’s its real name: “cacería” is Spanish for “hunt”)' not in leer(raiz, 'en/hunt/index.html'):
+        falla('en/hunt/: falta aclarar que «Cacería 1» es el nombre real del canal de voz')
+    # La baldosa de la guía, bajo su velo oscuro: en el móvil, 600 px no se distinguen de 1500.
+    for ruta in ('index.html', 'en/index.html'):
+        if not re.search(r'class="baldosa-fondo" src="[^"]*galeria-espesura-[^>]* sizes="\(max-width: 500px\) 190px, ', leer(raiz, ruta)):
+            falla(f'{ruta}: la baldosa de la guía sin el tramo de móvil en «sizes»')
 
 
 def revisar_guia(falla, avisa):
@@ -1204,6 +1233,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
     revisar_galeria(raiz, falla, avisa)
+    revisar_detalles(raiz, falla)
     revisar_cifras(falla, avisa)
     permitidos = revisar_alfas(raiz, falla)
 

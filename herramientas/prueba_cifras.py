@@ -179,8 +179,8 @@ prueba('sin especies no hay podio', podio_sin_especies)
 
 
 def fichas_del_podio_existen():
-    """Las seis especies de las cifras iniciales tienen ficha: cada una enlaza a su página."""
-    inicial = cifras.leer((Path(cifras.__file__).parent / 'cifras.json').read_bytes(), 'cifras.json')
+    """Con datos de la prueba, no con los de cada noche: una especie nueva sin ficha sigue siendo válida."""
+    inicial = cifras.leer(json.dumps(BUENAS).encode('utf-8'), 'cifras.json')
     nombres = {f['nombre'] for f in guia_dinos.datos()['fichas']}
     html = cifras.podio('en', inicial, guia_dinos.datos()['fichas'])
     for e in inicial['especies']:

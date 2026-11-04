@@ -187,7 +187,7 @@ python herramientas/prueba_borradores.py
   Scroll con ratón (`SOLO=scroll` prueba solo esto): mientras se desplaza, lo que pasa bajo el ratón quieto no
   se enciende ni se apaga; al parar, al moverlo o con un botón pulsado responde como siempre.
   Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las de la galería a lo ancho no piden más de 1200 px, ninguna se
-  amplía más de 1,26×, las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
+  amplía más de 1,26× (las medias baldosas apaisadas, hasta 1,34×: se ve igual y pesan la mitad), las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
   «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.

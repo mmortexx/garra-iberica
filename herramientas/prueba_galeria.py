@@ -78,5 +78,20 @@ for foto, (_, caja, _) in g.FOTOS.items():
         fallos += 1
         print('FALLO', foto, '→', hay)
 
-print(f'{fallos} fallos' if fallos else f'Todo correcto ({len(CASOS) + 4} casos y {len(g.FOTOS)} fotos)')
+# comprobar.py mira la galería en los dos idiomas: cambiar el enlace de una foto salta en el suyo.
+import comprobar  # noqa: E402
+
+leer_de_verdad = comprobar.leer
+for ruta in ('galeria/', 'en/gallery/'):
+    comprobar.leer = lambda raiz, nombre, r=ruta: leer_de_verdad(raiz, nombre).replace('id="foto-roca"', 'id="foto-otra"') if nombre == r + 'index.html' else leer_de_verdad(raiz, nombre)
+    mensajes = []
+    comprobar.revisar_galeria(Path(__file__).resolve().parent.parent / 'docs', mensajes.append, lambda _: None)
+    if any(m.startswith(f'{ruta}: la foto galeria-roca tiene el enlace') for m in mensajes):
+        print('ok    comprobar.py mira las fotos de', ruta)
+    else:
+        fallos += 1
+        print('FALLO comprobar.py no mira las fotos de', ruta, '→', mensajes)
+comprobar.leer = leer_de_verdad
+
+print(f'{fallos} fallos' if fallos else f'Todo correcto ({len(CASOS) + 6} casos y {len(g.FOTOS)} fotos)')
 sys.exit(1 if fallos else 0)

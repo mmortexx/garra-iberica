@@ -461,9 +461,65 @@ const efectos = async navegador => {
 // Galería en móviles de alta densidad: las fotos a lo ancho no piden más de 1200 px (pedían 1500 para 1074
 // píxeles de pantalla, el doble de peso sin que se note) y ninguna se amplía más de lo que aguanta la vista.
 // SOLO=fotos prueba solo esto.
+// El mismo formato que cifras.numero al montar: la mitad redondea al par (como Python), en inglés con coma de
+// miles y en español con espacio fino desde 10 000. SOLO=cifras prueba solo las cifras de la portada.
+const numeroWeb = (valor, ingles) => {
+  const abajo = Math.floor(valor), resto = valor - abajo;
+  const n = resto > .5 || (resto === .5 && abajo % 2) ? abajo + 1 : abajo;
+  const conComa = n.toLocaleString('en-US');
+  return ingles ? conComa : n >= 10000 ? conComa.replaceAll(',', '\u202f') : String(n);
+};
+const cifrasPortada = async (navegador, ESPECIES) => {
+  let malos = 0;
+  // Cifras del clan y podio de especies de la portada: lo que dice herramientas/cifras.json (si no hay, ni
+  // cifras ni podio y la portada sigue entera), cada especie con su ficha, sin ningún nombre ni ID y sin salirse
+  // de la pantalla en el móvil más estrecho.
+  {
+    let datos = null;
+    try { datos = JSON.parse(readFileSync(`${__dirname}/cifras.json`, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    for (const [inicio, guia] of [['', 'dinosaurios/'], ['en/', 'en/dinosaurs/']]) {
+      const fallos = [];
+      const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
+      const p = await ctx.newPage();
+      await p.goto(BASE + inicio, { waitUntil: 'load' });
+      const v = await p.evaluate(() => ({
+        cifras: [...document.querySelectorAll('.cifras li:not(.cifras-nota):not(.cifras-enlace) b')].map(b => b.textContent),
+        nota: document.querySelector('.cifras-nota time')?.getAttribute('datetime') || '',
+        podio: [...document.querySelectorAll('.podio-lista li')].map(li => ({ nombre: li.querySelector('.podio-nombre').textContent, bajas: li.querySelector('b').textContent, enlace: li.querySelector('a')?.getAttribute('href') || '' })),
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        batallas: !!document.querySelector('.cifras-enlace'),
+      }));
+      if (!datos) {
+        if (v.podio.length || v.nota) fallos.push('sin cifras.json, la portada enseña cifras');
+      } else {
+        const esperadas = ['bajas', 'horas', 'misiones', 'jugadores'].map(k => numeroWeb(datos[k], inicio));
+        if (JSON.stringify(v.cifras.slice(0, 4)) !== JSON.stringify(esperadas)) fallos.push(`cifras ${v.cifras.slice(0, 4)} y cifras.json dice ${esperadas}`);
+        if (v.nota !== datos.fecha) fallos.push(`fecha ${v.nota} y cifras.json dice ${datos.fecha}`);
+        const orden = [...datos.especies].sort((a, b) => b.kills - a.kills);
+        if (JSON.stringify(v.podio.map(e => [e.nombre, e.bajas])) !== JSON.stringify(orden.map(e => [e.name, numeroWeb(e.kills, inicio)]))) fallos.push(`podio ${JSON.stringify(v.podio)}`);
+        for (const e of v.podio) {
+          const ficha = guia + e.nombre.toLowerCase() + '/';
+          if (e.enlace && new URL(e.enlace, BASE + inicio).href !== BASE + ficha) fallos.push(`${e.nombre} enlaza a ${e.enlace}`);
+          if (!e.enlace && ESPECIES.includes(ficha)) fallos.push(`${e.nombre} tiene ficha y el podio no la enlaza`);
+        }
+        const con = v.podio.find(e => e.enlace);
+        if (con) {
+          await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.podio-lista a').first().click()]);
+          if (p.url() !== new URL(con.enlace, BASE + inicio).href) fallos.push(`pulsar ${con.nombre} lleva a ${p.url()}`);
+        }
+      }
+      if (v.sobra > 0) fallos.push(`${v.sobra} px más ancha que la pantalla`);
+      if (!v.batallas) fallos.push('las batallas ya no salen junto a las cifras');
+      await ctx.close();
+      if (fallos.length) malos++;
+      console.log(ruta(inicio), 'cifras y podio de especies:', fallos.length ? fallos.join('; ') : `sí, ${datos ? datos.especies.length : 0} especies`);
+    }
+  }
+  return malos;
+};
 const fotosMovil = async navegador => {
   const fallos = [];
-  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [440, 3], [390, 2]]) {
+  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [440, 3], [480, 3], [390, 2]]) {
     const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: d, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
@@ -478,12 +534,12 @@ const fotosMovil = async navegador => {
     if (fotos.length < 20) fallos.push(`${r} ${w}×${d}: solo ${fotos.length} fotos`);
     for (const x of fotos) {
       if (!x.real) fallos.push(`${r} ${w}×${d}: ${x.f} no está en su srcset`);
-      if (x.ancha && x.real > 1200) fallos.push(`${r} ${w}×${d}: ${x.f} pide más de 1200 px`);
+      if (x.ancha && w <= 450 && x.real > 1200) fallos.push(`${r} ${w}×${d}: ${x.f} pide más de 1200 px`);
       // Las medias baldosas apaisadas, en su caja cuadrada, llegan a 1,33× en los móviles más grandes: comparadas
       // a tamaño real con la de 800 px solo se nota al hacer zoom, y pesan la mitad.
       const media = /^galeria-(roca|bosque|rugido|valle)-/.test(x.f);
       if (x.amplia > (media ? 1.34 : 1.26)) fallos.push(`${r} ${w}×${d}: ${x.f} ampliada ${x.amplia.toFixed(2)}×`);
-      if (d === 3 && media && !x.f.endsWith('-600.webp')) fallos.push(`${r} ${w}×${d}: media baldosa baja ${x.f}, no la de 600 px`);
+      if (d === 3 && w <= 440 && media && !x.f.endsWith('-600.webp')) fallos.push(`${r} ${w}×${d}: media baldosa baja ${x.f}, no la de 600 px`);
     }
     await ctx.close();
   }
@@ -800,6 +856,11 @@ const ventana = async navegador => {
   // la de nombre más largo y la de más corto. Todas pasan por la prueba de especies, más abajo.
   const mapa = await (await fetch(BASE + 'sitemap.xml')).text();
   const ESPECIES = [...mapa.matchAll(/<loc>[^<]*?\/((?:en\/dinosaurs|dinosaurios)\/[a-z0-9-]+\/)<\/loc>/g)].map(m => m[1]);
+  if (process.env.SOLO === 'cifras') {
+    const n = await cifrasPortada(navegador, ESPECIES);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
   for (const guia of ['dinosaurios/', 'en/dinosaurs/']) {
     const suyas = ESPECIES.filter(r => r.startsWith(guia)).sort((a, b) => a.length - b.length);
     if (suyas.length) PAGINAS.push([suyas.at(-1), 'especie'], [suyas[0], 'especie']);
@@ -1969,51 +2030,7 @@ const ventana = async navegador => {
     console.log(ruta(inicio), 'batallas enlazadas a El clan:', mal ? `no (enlace «${destino}», ${n} batallas)` : `sí, ${n}`);
     await ctx.close();
   }
-  // Cifras del clan y podio de especies de la portada: lo que dice herramientas/cifras.json (si no hay, ni
-  // cifras ni podio y la portada sigue entera), cada especie con su ficha, sin ningún nombre ni ID y sin salirse
-  // de la pantalla en el móvil más estrecho.
-  {
-    let datos = null;
-    try { datos = JSON.parse(readFileSync(`${__dirname}/cifras.json`, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
-    for (const [inicio, guia] of [['', 'dinosaurios/'], ['en/', 'en/dinosaurs/']]) {
-      const fallos = [];
-      const ctx = await navegador.newContext({ viewport: { width: 320, height: 700 }, isMobile: true, hasTouch: true });
-      const p = await ctx.newPage();
-      await p.goto(BASE + inicio, { waitUntil: 'load' });
-      const v = await p.evaluate(() => ({
-        cifras: [...document.querySelectorAll('.cifras li:not(.cifras-nota):not(.cifras-enlace) b')].map(b => b.textContent),
-        nota: document.querySelector('.cifras-nota time')?.getAttribute('datetime') || '',
-        podio: [...document.querySelectorAll('.podio-lista li')].map(li => ({ nombre: li.querySelector('.podio-nombre').textContent, bajas: li.querySelector('b').textContent, enlace: li.querySelector('a')?.getAttribute('href') || '' })),
-        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        batallas: !!document.querySelector('.cifras-enlace'),
-      }));
-      if (!datos) {
-        if (v.podio.length || v.nota) fallos.push('sin cifras.json, la portada enseña cifras');
-      } else {
-        // En inglés, con coma de miles; en español, sin separador hasta 9999 (la prueba de cifras.py cubre más).
-        const esperadas = ['bajas', 'horas', 'misiones', 'jugadores'].map(k => inicio ? Math.round(datos[k]).toLocaleString('en-US') : String(Math.round(datos[k])));
-        if (JSON.stringify(v.cifras.slice(0, 4)) !== JSON.stringify(esperadas)) fallos.push(`cifras ${v.cifras.slice(0, 4)} y cifras.json dice ${esperadas}`);
-        if (v.nota !== datos.fecha) fallos.push(`fecha ${v.nota} y cifras.json dice ${datos.fecha}`);
-        const orden = [...datos.especies].sort((a, b) => b.kills - a.kills);
-        if (JSON.stringify(v.podio.map(e => [e.nombre, e.bajas])) !== JSON.stringify(orden.map(e => [e.name, String(e.kills)]))) fallos.push(`podio ${JSON.stringify(v.podio)}`);
-        for (const e of v.podio) {
-          const ficha = guia + e.nombre.toLowerCase() + '/';
-          if (e.enlace && new URL(e.enlace, BASE + inicio).href !== BASE + ficha) fallos.push(`${e.nombre} enlaza a ${e.enlace}`);
-          if (!e.enlace && ESPECIES.includes(ficha)) fallos.push(`${e.nombre} tiene ficha y el podio no la enlaza`);
-        }
-        const con = v.podio.find(e => e.enlace);
-        if (con) {
-          await Promise.all([p.waitForEvent('load', { timeout: 5000 }).catch(() => {}), p.locator('.podio-lista a').first().click()]);
-          if (p.url() !== new URL(con.enlace, BASE + inicio).href) fallos.push(`pulsar ${con.nombre} lleva a ${p.url()}`);
-        }
-      }
-      if (v.sobra > 0) fallos.push(`${v.sobra} px más ancha que la pantalla`);
-      if (!v.batallas) fallos.push('las batallas ya no salen junto a las cifras');
-      await ctx.close();
-      if (fallos.length) malos++;
-      console.log(ruta(inicio), 'cifras y podio de especies:', fallos.length ? fallos.join('; ') : `sí, ${datos ? datos.especies.length : 0} especies`);
-    }
-  }
+  malos += await cifrasPortada(navegador, ESPECIES);
   // Portada: en un móvil bajo el botón principal se ve sin bajar, y en ancho la guía y la Cacería
   // van lado a lado aunque en el móvil la Cacería vaya primero.
   for (const inicio of ['', 'en/']) {
@@ -2356,7 +2373,7 @@ const ventana = async navegador => {
     }));
     const zonas = [
       // [página, zona del dispositivo, país que queda elegido, hora en la cuenta atrás, línea de España, hora de la cacería, encuesta, aviso, rótulo]
-      ['caceria/', 'Europe/Madrid', 'Europe/Madrid', '22:00', null, 'Sábado, 22:00', 'Miércoles, 20:00', 'Sábado, 20:00', 'Horas en España'],
+      ['caceria/', 'Europe/Madrid', 'Europe/Madrid', '22:00', null, 'Sábado, 22:00', 'Miércoles, 20:00', 'Sábado, 20:00', 'Horas en España (península y Baleares)'],
       ['caceria/', 'America/Bogota', 'America/Bogota', '16:00', '22:00 en España', 'Sábado, 16:00', 'Miércoles, 14:00', 'Sábado, 14:00', 'Horas en Colombia'],
       ['caceria/', 'Asia/Tokyo', '', '06:00', '22:00 en España', 'Domingo, 06:00', 'Jueves, 04:00', 'Domingo, 04:00', 'Tu hora'],
       ['en/hunt/', 'Europe/London', 'Europe/London', '21:00', '22:00 in Spain', 'Saturday, 21:00', 'Wednesday, 19:00', 'Saturday, 19:00', 'Times in United Kingdom'],
@@ -2387,7 +2404,11 @@ const ventana = async navegador => {
       await p.waitForFunction(() => document.querySelector('[data-resultado] b'), null, { timeout: 5000 }).catch(() => {});
       await p.locator('[data-horas] select').selectOption('Europe/Madrid');
       const h = await horario(p).catch(() => null);
-      if (!h || h.caceria !== 'Sábado, 22:00' || h.encuesta !== 'Miércoles, 20:00' || h.rotulo !== 'Horas en España') fallos.push(`al elegir España: ${JSON.stringify(h)}`);
+      if (!h || h.caceria !== 'Sábado, 22:00' || h.encuesta !== 'Miércoles, 20:00' || h.rotulo !== 'Horas en España (península y Baleares)') fallos.push(`al elegir España: ${JSON.stringify(h)}`);
+      // Con varias zonas en un país, el rótulo dice cuál: Canarias lleva otra hora que la península.
+      await p.locator('[data-horas] select').selectOption('Atlantic/Canary');
+      const c = await horario(p).catch(() => null);
+      if (!c || c.caceria !== 'Sábado, 21:00' || c.rotulo !== 'Horas en España (Canarias)') fallos.push(`al elegir Canarias: ${JSON.stringify(c)}`);
       await ctx.close();
     }
     // En plena cacería, la cuenta atrás lo dice y no da una hora que no sería la de quien mira.
