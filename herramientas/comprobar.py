@@ -1055,6 +1055,9 @@ def revisar_galeria(raiz, falla, avisa):
         for sizes in re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html')):
             if not sizes.startswith('(max-width: 500px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
+    # El canal de voz se llama así de verdad: en inglés no se traduce, se aclara.
+    if '<b>Cacería 1</b> voice channel (that’s its real name: “cacería” is Spanish for “hunt”)' not in leer(raiz, 'en/hunt/index.html'):
+        falla('en/hunt/: falta aclarar que «Cacería 1» es el nombre real del canal de voz')
     # La baldosa de la guía, bajo su velo oscuro: en el móvil, 600 px no se distinguen de 1500.
     for ruta in ('index.html', 'en/index.html'):
         if not re.search(r'class="baldosa-fondo" src="[^"]*galeria-espesura-[^>]* sizes="\(max-width: 500px\) 190px, ', leer(raiz, ruta)):
