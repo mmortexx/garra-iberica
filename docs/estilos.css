@@ -1410,6 +1410,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 @supports (backdrop-filter: blur(1px)) { .cuenta-grande { background: var(--cristal); backdrop-filter: var(--cristal-desenfoque); } }
 @media (min-width: 900px) { .cuenta-grande { margin: 0; } }
 .cuenta-grande .cuenta-falta .n { font-size: clamp(2.5rem, 5.5vw, 3.6rem); }
+.cuenta-grande > .cuenta { margin: 0; padding: 0; border: 0; }
 
 /* Preguntas en dos columnas independientes: abrir una no mueve la otra. */
 .faq { display: grid; gap: 0 3rem; margin-top: 1.6rem; }
@@ -1592,7 +1593,8 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 }
 
 /* Cacería: botón en la cuenta atrás, selector de hora junto a la semana, ranking y formas de apuntarse. */
-.cuenta-accion { margin-top: 1.1rem !important; }
+.cuenta-accion { margin: 1.1rem 0 0 !important; }
+.cuenta[hidden] + .cuenta-accion { margin-top: 0 !important; }
 .cuenta.cargando time, .cuenta.cargando .t { visibility: hidden; }
 [data-horas] { margin-top: 1.6rem; }
 @media (min-width: 760px) { [data-horas] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; } [data-horas] .plan-resultado { grid-column: auto; } }

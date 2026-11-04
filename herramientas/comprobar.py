@@ -620,6 +620,15 @@ def revisar_busquedas(raiz, base, falla):
         pie = montar_web.T['en' if nombre.startswith('en/') else 'es']['pie_enlace']
         if not re.search(rf'<footer.*?<a href="[^"]+">{re.escape(pie)}</a>', fichero.read_text(encoding='utf-8'), re.S):
             falla(f'{nombre}: el pie no enlaza a la portada con «{pie}»')
+    # Sin JavaScript no hay cuenta atrás, pero el botón del Discord de la cabecera tiene que seguir ahí.
+    for caceria in ('caceria/index.html', 'en/hunt/index.html'):
+        html = leer(raiz, caceria)
+        cabecera = re.search(r'<section class="cabecera.*?</section>', html, re.S)
+        oculto = re.search(r'<div [^>]*data-cuenta[^>]*\bhidden\b[^>]*>.*?</div>', cabecera.group(0), re.S) if cabecera else None
+        if not cabecera or INVITACION not in cabecera.group(0):
+            falla(f'{caceria}: la cabecera no lleva botón al Discord')
+        elif oculto and INVITACION in oculto.group(0):
+            falla(f'{caceria}: el botón del Discord de la cabecera va dentro de la cuenta atrás oculta y sin JavaScript no se ve')
     for portada, galeria, clan in (('index.html', 'galeria/index.html', 'clan/index.html'),
                                    ('en/index.html', 'en/gallery/index.html', 'en/clan/index.html')):
         # La tira de fotos de la portada se describe con el texto de la galería.

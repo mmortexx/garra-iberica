@@ -193,6 +193,18 @@ const efectos = async navegador => {
     if (await p.locator('.bruma').count()) fallos.push('con «reducir movimiento» hay bruma');
     await ctx.close();
   }
+  // Cabecera de la Cacería: el botón del Discord se ve siempre, también sin JavaScript, cuando no hay
+  // cuenta atrás que enseñar; con JavaScript, la cuenta atrás y el botón van en la misma tarjeta.
+  for (const r of ['caceria/', 'en/hunt/']) {
+    for (const [nombre, opts] of [['con JavaScript', {}], ['sin JavaScript', { javaScriptEnabled: false }]]) {
+      const { ctx, p } = await abrir(r, opts);
+      const boton = p.locator('.cabecera a.boton[href*="discord.com/invite"]');
+      if (!(await boton.isVisible())) fallos.push(`/${r} ${nombre}: el botón del Discord de la cabecera no se ve`);
+      const cuenta = await p.locator('.cabecera [data-cuenta]').isVisible();
+      if (cuenta !== !opts.hasOwnProperty('javaScriptEnabled')) fallos.push(`/${r} ${nombre}: cuenta atrás ${cuenta ? 'a la vista' : 'oculta'}`);
+      await ctx.close();
+    }
+  }
   // Arañazos de los títulos: acaban enteros, con animación y sin JavaScript.
   for (const [nombre, opts] of [['normal', {}], ['sin JavaScript', { javaScriptEnabled: false }], ['sin movimiento', { reducedMotion: 'reduce' }]]) {
     const { ctx, p } = await abrir('', opts);
