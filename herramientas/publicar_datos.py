@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 HERRAMIENTAS = Path(__file__).resolve().parent
@@ -35,6 +36,9 @@ APODOS = HERRAMIENTAS / 'vigilar.local.txt'
 PERMITIDOS = re.compile(r'herramientas/(cifras|batallas)\.json|docs/(en/)?(clan/)?index\.html')
 # Una baja mayor de esto no es gente que se va, sino datos a medias.
 CAIDA_MAXIMA = 0.2
+# Y una subida así tampoco es gente que llega, sino un dato equivocado.
+SUBIDA_MAXIMA = 3
+HUERFANA = 86400
 AUTOR = ['-c', 'user.name=mmortexx', '-c', 'user.email=261957469+mmortexx@users.noreply.github.com']
 FIRMA = 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'
 
@@ -62,6 +66,8 @@ def sospecha(antes, ahora):
     for k in ('bajas', 'horas', 'misiones', 'jugadores'):
         if ahora[k] < antes[k] * (1 - CAIDA_MAXIMA):
             return f'«{k}» baja de {antes[k]} a {ahora[k]}: parecen datos a medias'
+        if ahora[k] > antes[k] * SUBIDA_MAXIMA + 100:
+            return f'«{k}» sube de {antes[k]} a {ahora[k]}: parece un dato equivocado'
     return None
 
 
@@ -107,15 +113,32 @@ def entorno():
             'VIGILAR_APODOS': APODOS.read_text(encoding='utf-8')}
 
 
+def sin_apodos(texto, lista):
+    """Este mensaje acaba en registros y avisos: nombra el fichero, nunca a la persona."""
+    for apodo in sorted((a.strip() for a in lista.splitlines() if a.strip()), key=len, reverse=True):
+        texto = re.sub(re.escape(apodo), '«…»', texto, flags=re.I)
+    return texto
+
+
 def ejecutar(copia, env, script):
     r = subprocess.run([sys.executable, str(Path('herramientas') / script)], cwd=copia, env=env, capture_output=True,
                        encoding='utf-8', errors='replace', timeout=600)
     if r.returncode:
         fallos = [l for l in r.stdout.splitlines() if l.startswith('FALLO')] or (r.stdout + r.stderr).strip().splitlines()[-3:]
-        raise NoPublico(f'{script} no da el visto bueno: ' + ' · '.join(fallos[:5]))
+        raise NoPublico(sin_apodos(f'{script} no da el visto bueno: ' + ' · '.join(fallos[:5]), env['VIGILAR_APODOS']))
+
+
+def limpiar_huerfanas():
+    """Si matan la tarea a mitad, el finally de publicar no llega a limpiar su copia."""
+    limite = time.time() - HUERFANA
+    for carpeta in Path(tempfile.gettempdir()).glob('garra-datos-*'):
+        if carpeta.is_dir() and carpeta.stat().st_mtime < limite:
+            shutil.rmtree(carpeta, ignore_errors=True)
+    git('worktree', 'prune', comprobar=False)
 
 
 def publicar(vista=False):
+    limpiar_huerfanas()
     git('fetch', '--quiet', 'origin', RAMA)
     nuevos = novedades()
     if not nuevos:

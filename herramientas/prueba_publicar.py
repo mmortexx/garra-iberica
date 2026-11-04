@@ -10,6 +10,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -33,6 +34,12 @@ if pathlib.Path('herramientas/ensuciar').exists():
 COMPROBAR = """import os, pathlib, sys
 if os.environ.get('VIGILAR_APODOS', '').strip() != 'Fulano':
     print('FALLO: sin apodos'); sys.exit(1)
+if os.environ.get('GITHUB_ACTIONS') != 'true':
+    print('FALLO: un texto sin copiar pararía las cifras de esta noche'); sys.exit(1)
+if pathlib.Path(os.environ.get('GARRA_TARJETAS', 'tarjetas.json')).exists() or 'GARRA_TARJETAS' not in os.environ:
+    print('FALLO: compara con el Discord'); sys.exit(1)
+if pathlib.Path('herramientas/chivar').exists():
+    print('FALLO: docs/index.html lleva el apodo de un miembro (fulano), de Fulano'); sys.exit(1)
 if pathlib.Path('herramientas/romper').exists():
     print('FALLO: docs/index.html está mal'); sys.exit(1)
 print('Todo correcto')
@@ -190,6 +197,49 @@ def push_rechazado(m):
     se_niega(m, 'push')
 
 
+def apodo_en_el_error(m):
+    nuevas(m, bajas=600)
+    try:
+        P.publicar()
+    except P.NoPublico as e:
+        assert 'fulano' not in str(e).lower(), f'el error enseña el apodo: {e}'
+        assert 'docs/index.html' in str(e), f'no dice dónde: {e}'
+    else:
+        raise AssertionError('ha publicado')
+
+
+def otro_subio_antes(m):
+    otro = m.repo.parent / 'otro'
+    cmd('git', 'clone', '--quiet', str(m.origin), str(otro), cwd=m.repo.parent)
+    (otro / 'docs' / 'guia.html').write_text('de otra persona', encoding='utf-8')
+    cmd('git', 'add', '-A', cwd=otro)
+    cmd('git', '-c', 'user.name=x', '-c', 'user.email=x@x', 'commit', '--quiet', '-m', 'otra', cwd=otro)
+    cmd('git', 'push', '--quiet', 'origin', 'HEAD:refs/heads/main', cwd=otro)
+    nuevas(m, bajas=600)
+    P.publicar()
+    assert m.subido('docs/guia.html') == 'de otra persona', 'se ha basado en lo viejo'
+    assert json.loads(m.subido('herramientas/cifras.json'))['bajas'] == 600
+
+
+def copias_huerfanas(m):
+    temporal = Path(tempfile.gettempdir())
+    vieja, reciente = Path(tempfile.mkdtemp(prefix='garra-datos-')), Path(tempfile.mkdtemp(prefix='garra-datos-'))
+    ajena = Path(tempfile.mkdtemp(prefix='garra-prueba-ajena-'))
+    try:
+        hace = time.time() - 2 * 86400
+        os.utime(vieja, (hace, hace))
+        os.utime(ajena, (hace, hace))
+        assert vieja.parent == temporal
+        P.publicar()
+        assert not vieja.exists(), 'la copia de una tarea que murió se queda para siempre'
+        assert reciente.exists(), 'ha borrado una copia que puede estar en uso'
+        assert ajena.exists(), 'ha borrado algo que no es suyo'
+    finally:
+        for carpeta in (vieja, reciente, ajena):
+            if carpeta.exists():
+                borrar(carpeta)
+
+
 prueba('sin nada nuevo no publica ni crea copias', al_dia)
 prueba('cifras nuevas: suben datos y portada, una vez', sube)
 prueba('batallas nuevas también suben', batallas_nuevas)
@@ -199,6 +249,8 @@ prueba('no toca la carpeta de trabajo aunque esté a medias', carpeta_de_trabajo
 prueba('caída fuerte de las bajas: datos a medias', lambda m: (nuevas(m, bajas=100), se_niega(m, 'bajas')))
 prueba('caída fuerte de los jugadores', lambda m: (nuevas(m, jugadores=2), se_niega(m, 'jugadores')))
 prueba('una baja pequeña sí vale (alguien se va)', lambda m: (nuevas(m, bajas=500), P.publicar(), m.limpio()))
+prueba('subida disparatada de las bajas', lambda m: (nuevas(m, bajas=58700), se_niega(m, 'bajas')))
+prueba('una subida normal sí vale', lambda m: (nuevas(m, bajas=700), P.publicar(), m.limpio()))
 prueba('cifras más viejas que las de la web', lambda m: (nuevas(m, fecha='2026-10-01'), se_niega(m, '2026-10-01')))
 prueba('un campo de más (un apodo) en las cifras', lambda m: (nuevas(m, apodo='Fulano'), se_niega(m, 'apodo')))
 prueba('un fichero roto', lambda m: (m.cifras.write_text('<html>'), se_niega(m, 'no se puede leer')))
@@ -208,6 +260,9 @@ prueba('si al montar cambia algo ajeno no lo arrastra', lambda m: (nuevas(m, baj
 prueba('sin la lista de apodos no sube', lambda m: (nuevas(m, bajas=600), P.APODOS.unlink(), se_niega(m, 'vigilar')))
 prueba('la lista de apodos vacía tampoco', lambda m: (nuevas(m, bajas=600), P.APODOS.write_text('\n'), se_niega(m, 'vigilar')))
 prueba('GitHub rechaza la subida: lo dice y no deja nada', push_rechazado)
+prueba('el error nunca enseña un apodo', apodo_en_el_error, extra=['chivar'])
+prueba('si otro subió antes, se basa en lo último', otro_subio_antes)
+prueba('la copia de una tarea que murió se limpia sola', copias_huerfanas)
 
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)
