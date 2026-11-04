@@ -186,6 +186,9 @@ python herramientas/prueba_borradores.py
   1440 px, letra y ancho no se mueven. La letra y el ancho salen de `html` y `--ancho` en `estilos.css`.
   Scroll con ratón (`SOLO=scroll` prueba solo esto): mientras se desplaza, lo que pasa bajo el ratón quieto no
   se enciende ni se apaga; al parar, al moverlo o con un botón pulsado responde como siempre.
+  Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las de la galería a lo ancho no piden más de 1200 px, ninguna se
+  amplía más de 1,26×, las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
+  «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
 
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
 
@@ -233,7 +236,8 @@ garra y el nombre del clan (`og-galeria.jpg`, `og-dinosaurios.jpg`); el resto de
 del clan. Qué foto y qué recorte, y su texto alternativo, está en `OG` de `preparar_galeria.py`; se
 regeneran con `python herramientas/preparar_galeria.py --compartir`. La galería lleva además en sus
 datos estructurados y en el mapa del sitio cada foto con su descripción, para Google Imágenes, y la
-guía, la lista de especies. `comprobar.py` falla si algo de eso no coincide con lo que se ve.
+guía, la lista de especies. La página de la Cacería lista en el mapa del sitio su cartel, cada idioma el suyo.
+`comprobar.py` falla si algo de eso no coincide con lo que se ve.
 
 Las fotos de la galería salen de capturas del juego a 3439x1439 (los originales no se tocan):
 
