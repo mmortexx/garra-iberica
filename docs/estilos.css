@@ -1226,6 +1226,9 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 @media (max-width: 700px) { .portada .bruma { top: 8rem; bottom: auto; height: 15rem; } }
 @media (max-width: 700px) and (max-height: 720px) { .portada .bruma { top: 3rem; height: 12rem; } }
 
+/* Mientras se desplaza (lo pone efectos.js), nada reacciona al ratón: es lo que más repinta el scroll. */
+.desplazando body { pointer-events: none; }
+
 /* Reposo (lo pone efectos.js tras 20 s sin actividad, con otra ventana delante o con el menú o el
    visor tapando la página): el ambiente se queda quieto donde esté. Así el cristal del menú no
    tiene que volver a desenfocar lo de detrás en cada fotograma. */

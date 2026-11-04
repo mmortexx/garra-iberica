@@ -56,6 +56,26 @@
   addEventListener('scroll', unaVezPorFotograma(alDesplazar), { passive: true });
   alDesplazar();
 
+  // Con el ratón quieto, lo que pasa por debajo al hacer scroll se encendía y apagaba a cada momento:
+  // repintarlo es lo que más cuesta al desplazarse a pantalla completa. Mientras dura, nada reacciona
+  // a él; al parar, al moverlo o con un botón pulsado (seleccionar, arrastrar) responde como siempre.
+  if (punteroFino.matches) {
+    let ultimoScroll = 0, soltar = 0, pulsado = false;
+    const responder = () => { clearTimeout(soltar); raiz.classList.remove('desplazando'); };
+    addEventListener('scroll', () => {
+      ultimoScroll = performance.now();
+      if (pulsado) return;
+      raiz.classList.add('desplazando');
+      clearTimeout(soltar);
+      soltar = setTimeout(responder, 150);
+    }, { passive: true });
+    addEventListener('pointermove', ev => {
+      if ((ev.movementX || ev.movementY) && performance.now() - ultimoScroll > 60) responder();
+    }, { passive: true });
+    addEventListener('pointerdown', () => { pulsado = true; responder(); }, { passive: true });
+    for (const fin of ['pointerup', 'pointercancel']) addEventListener(fin, () => { pulsado = false; }, { passive: true });
+  }
+
   // Menú a pantalla completa (móvil): mientras está abierto, el foco no se escapa a la página de
   // detrás y entra por el primer enlace. Se cierra al pasar a escritorio (allí va en la barra) y
   // al volver con «Atrás» a una página que se fue con él abierto.
