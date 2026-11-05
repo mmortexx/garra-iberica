@@ -35,6 +35,7 @@ const GUARDAS = [
   ['avisar al salir', 'if (frenarSalida()) return;\n    try { await pedir', 'try { await pedir', 'salir: avisa'],
   ['avisar al salir de todos', 'async function salirDeTodos() {\n    if (frenarSalida()) return;', 'async function salirDeTodos() {', 'también avisa'],
   ['tras bajar, lo último se fija', ' || Object.hasOwn(almacen.bajadas, id)', '', 'bajar y volver'],
+  ['los tramos de más no cuentan', 'Math.min(almacen.marcas[id] || 0, MAXIMOS.get(id) || 0)', 'almacen.marcas[id] || 0', 'si cambia la lista'],
   ['una respuesta vieja no pisa', 'if (acusesAntes !== acuses) return refrescar();', '', 'una lectura lenta'],
   ['lo pendiente solo sube a su cuenta', ' || almacen.tokenDe !== almacen.cuenta', '', 'lo pendiente de una cuenta'],
   ['la copia espera al límite', 'if (r.status === 429 && frenazos++ < 5) {', 'if (false) {', 'la copia espera'],

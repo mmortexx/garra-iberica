@@ -1,15 +1,15 @@
 # Con mil veces más datos
 
 Hoy el clan son unos 13 jugadores. Medido el 5 de noviembre de 2026 con `npm run medir`: 13.000 miembros con los 535 tramos
-marcados, el peor caso posible (6.955.000 filas), en local con el motor de Cloudflare. Tres pasadas de 50 peticiones cada
-una; se da el rango entre pasadas.
+marcados, el peor caso posible (6.955.000 filas), en local con el motor de Cloudflare. Dos ejecuciones de tres pasadas de 50
+peticiones cada una; se da el rango entre todas.
 
 | Petición | Mediana | Peor 5 % |
 | --- | --- | --- |
-| Abrir la página con sesión (`GET /yo`, 535 filas) | 4,8 ms | 5,7–5,9 ms |
-| Guardar 50 logros (`PUT /yo/progreso`) | 8,8–9,0 ms | 10,2–11,9 ms |
-| Una sesión inventada (`GET /yo`) | 2,5–2,7 ms | 2,9–4,3 ms |
-| Una página de la copia, a mitad de tabla (1000 filas) | 5,8–6,9 ms | 7,4–8,8 ms |
+| Abrir la página con sesión (`GET /yo`, 535 filas) | 4,8–6,4 ms | 5,7–8,3 ms |
+| Guardar 50 logros (`PUT /yo/progreso`) | 8,8–11,0 ms | 10,2–14,1 ms |
+| Una sesión inventada (`GET /yo`) | 2,5–3,3 ms | 2,9–6,3 ms |
+| Una página de la copia, a mitad de tabla (1000 filas) | 5,8–8,3 ms | 7,4–9,9 ms |
 
 Tamaño de la base: 310 MB. Ninguna petición recorre la tabla entera: todas van por la clave de cada miembro.
 

@@ -190,11 +190,17 @@ test('entrar: sabe quién eres, guarda en tu cuenta y otro dispositivo lo ve', a
 test('en inglés: vuelve a la página en inglés y habla inglés', async () => {
   const { ctx, abrir } = await dispositivo({ ancho: 375, alto: 812 });
   const p = await abrir('/en/route/');
+  assert.match(await texto(p, '[data-fuera]'), /Clan server members only/);
   await capturar(p, 'en-375-fuera');
   await entrar(p);
   await p.locator('[data-dentro]').waitFor({ state: 'visible' });
   assert.ok(p.url().endsWith('/en/route/'));
   assert.match(await texto(p, '[data-estado]'), /account/);
+  await pulsar(p, 'allo-exp');
+  await subido('ana', 'allo-exp', 1);
+  await p.reload();
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  assert.equal(await p.locator('.ruta-grupo[data-bloque="allo"] [data-contador]').innerText(), '1/17');
   await capturar(p, 'en-375-dentro');
   await capturar(p, 'en-375-ruta', '#the-route');
   const q = await (await dispositivo()).abrir('/en/route/');
@@ -229,6 +235,67 @@ test('Discord caído: lo dice sin culpar a quien entra', async () => {
   await hasta(() => visible(p, '[data-mensaje]'), 'el aviso');
   assert.match(await texto(p, '[data-mensaje]'), /Discord no responde/);
   await ctx.close();
+});
+
+test('dos miembros a la vez: cada uno ve lo suyo y ninguno pisa al otro', async () => {
+  const una = await dispositivo();
+  const otra = await dispositivo();
+  const a = await una.abrir();
+  const b = await otra.abrir('/en/route/');
+  await dentro(a, 'ana');
+  await dentro(b, 'bea');
+  await pulsar(a, 'addict', 3);
+  await pulsar(b, 'addict', 1);
+  await pulsar(b, 'carno-exp');
+  await subido('ana', 'addict', 3);
+  await subido('bea', 'carno-exp', 1);
+  await pulsar(a, 'addict', 1);
+  await hasta(async () => (await filasDe('ana')).length === 1, 'bajar lo de Ana');
+  await a.reload();
+  await b.reload();
+  await hasta(async () => (await texto(a, '[data-nombre-miembro]')) === 'Ana del clan', 'Ana');
+  await hasta(async () => (await texto(b, '[data-nombre-miembro]')) === 'Bea', 'Bea');
+  await hasta(async () => /account/.test(await texto(b, '[data-estado]')), 'leer la cuenta de Bea');
+  assert.equal(await pulsado(a, 'carno-exp'), 'false');
+  assert.equal(await pulsado(b, 'carno-exp'), 'true');
+  assert.deepEqual((await filasDe('ana')).map(f => f.logro), ['addict']);
+  assert.deepEqual((await filasDe('bea')).map(f => f.logro), ['addict', 'carno-exp']);
+  await una.ctx.close();
+  await otra.ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('si cambia la lista de logros, lo guardado sigue, no descuadra la página y se puede restaurar', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'allo-exp');
+  await subido('ana', 'allo-exp', 1);
+  // Lo que deja un cambio de lista: un logro que ya no existe y otro con menos tramos que antes.
+  const id = USUARIOS.ana.id;
+  for (const [logro, nivel] of [['retirado-1', 1], ['allo-grow', 1], ['allo-grow', 2], ['allo-grow', 3], ['allo-grow', 4], ['allo-grow', 9]]) {
+    await s.db.prepare("INSERT INTO progreso (discord_id, logro, nivel, fecha) VALUES (?1, ?2, ?3, '2026-01-01')").bind(id, logro, nivel).run();
+  }
+  await p.reload();
+  await hasta(async () => /Guardado en tu cuenta/.test(await texto(p, '[data-estado]')), 'leer la cuenta');
+  await hasta(async () => /^5 de /.test(await texto(p, '[data-total]')), `contar solo lo que existe: ${await texto(p, '[data-total]')}`);
+  assert.equal(await pulsado(p, 'allo-grow', 4), 'true');
+  await pulsar(p, 'carno-exp');
+  await subido('ana', 'carno-exp', 1);
+  await pulsar(p, 'allo-exp');
+  await hasta(async () => !(await filasDe('ana')).some(f => f.logro === 'allo-exp'), 'quitar una marca');
+  const filas = await filasDe('ana');
+  assert.ok(filas.some(f => f.logro === 'retirado-1'), 'lo retirado no se borra al guardar otra cosa');
+  assert.ok(filas.some(f => f.logro === 'allo-grow' && f.nivel === 9), 'ni los tramos de más');
+  const [descarga] = await Promise.all([p.waitForEvent('download'), p.click('[data-descargar]')]);
+  assert.ok(JSON.parse(readFileSync(await descarga.path(), 'utf8')).progreso.some(f => f.logro === 'retirado-1'), 'y sale en la descarga');
+  const copia = { formato: 'garra-copia-1', miembros: await s.filas('SELECT * FROM miembros'), progreso: await s.filas('SELECT * FROM progreso') };
+  const antes = copia.progreso.length;
+  await s.limpiar();
+  for (const linea of sqlDeCopia(copia).trim().split('\n')) await s.db.exec(linea);
+  assert.equal((await s.filas('SELECT * FROM progreso')).length, antes, 'y vuelve al restaurar');
+  await ctx.close();
+  assert.deepEqual(errores, []);
 });
 
 test('un nombre con código se enseña como texto y no se ejecuta', async () => {
@@ -314,6 +381,28 @@ test('bajar y volver a subir sin conexión deja lo último que marcaste', async 
   await hasta(async () => (await filasDe('ana')).length === 2, 'quedarse en 2');
   await p.reload();
   await hasta(async () => /Guardado en tu cuenta/.test(await texto(p, '[data-estado]')), 'leer la cuenta');
+  assert.equal(await pulsado(p, 'addict', 2), 'true');
+  assert.equal(await pulsado(p, 'addict', 3), 'false');
+  await ctx.close();
+});
+
+test('bajar y volver a subir sin poder guardar: al recargar sigue lo último que marcaste', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'addict', 3);
+  await subido('ana', 'addict', 3);
+  let intentos = 0;
+  await ctx.route(`${URL_API}/yo/progreso`, r => {
+    if (r.request().method() === 'PUT') intentos++;
+    return r.abort();
+  });
+  await pulsar(p, 'addict', 1);
+  await pulsar(p, 'addict', 2);
+  await hasta(async () => /Sin conexión/.test(await texto(p, '[data-estado]')), 'el aviso');
+  await p.reload();
+  const antes = intentos;
+  await hasta(async () => intentos > antes, 'leer la cuenta e intentar subir');
   assert.equal(await pulsado(p, 'addict', 2), 'true');
   assert.equal(await pulsado(p, 'addict', 3), 'false');
   await ctx.close();

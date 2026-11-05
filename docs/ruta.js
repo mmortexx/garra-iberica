@@ -136,7 +136,8 @@
     } catch { hayAlmacen = false; }
     pintarEstado();
   }
-  const nivel = id => almacen.marcas[id] || 0;
+  // Si la lista de logros cambia, en la cuenta puede haber tramos de más: se guardan, pero no cuentan.
+  const nivel = id => Math.min(almacen.marcas[id] || 0, MAXIMOS.get(id) || 0);
   const porSubir = () => new Set([...Object.keys(almacen.subidas), ...Object.keys(almacen.bajadas)]).size;
   const sinSubir = () => new Set([...Object.keys(almacen.subidas), ...Object.keys(almacen.bajadas), ...Object.keys(almacen.porImportar)]).size;
 
