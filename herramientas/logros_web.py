@@ -139,16 +139,16 @@ def filas_especie(e, lang):
     """[(logro, nombre, [(texto del tramo, nombre para el lector de pantalla)])] de una especie."""
     t = T[lang]
     sp = e['id']
-    filas = [(f'{sp}-exp', f'{t["explorador"]} · {_sitio(e, lang)}', [(t['hecho'], f'{t["explorador"]} · {_sitio(e, lang)}')]),
+    filas = [(f'{sp}-exp', f'{t["explorador"]} · {_sitio(e, lang)}', [(t['hecho'], f'{t["explorador"]} · {_sitio(e, lang)}: {t["hecho"]}')]),
              (f'{sp}-grow', t['crecer'], [(c, f'{t["crecer"]} {c}') for c in CRECER]),
-             (f'{sp}-prime', t['prime'], [(t['hecho'], t['prime'])])]
+             (f'{sp}-prime', t['prime'], [(t['hecho'], f'{t["prime"]}: {t["hecho"]}')])]
     for i, c in enumerate(e['cazas']):
         nombre = t['herb' if c['tipo'] == 'H' else 'carn'] + (f' ≥{c["min"]}%' if c['min'] else '')
         filas.append((f'{sp}-h{i}', nombre, [(str(n), f'{nombre}: {n} {_unidad(n, t["bajas"])}') for n in c['tramos']]))
     filas.append((f'{sp}-add', t['horas'], [(f'{n} h', f'{t["horas"]}: {n} h') for n in e['horas']]))
     if e['fauna']:
         nombre = f'{t["fauna"]} · {e["fauna"]} {t["muertes"][1]}'
-        filas.append((f'{sp}-unl', nombre, [(t['hecho'], nombre)]))
+        filas.append((f'{sp}-unl', nombre, [(t['hecho'], f'{nombre}: {t["hecho"]}')]))
     return filas
 
 
@@ -184,7 +184,7 @@ def lista(lang, d=None):
             continue
         filas = [_fila(*f) for f in filas_especie(e, lang)]
         bloques.append(_grupo(e['id'], e['grupo'], e['nombre'], t['grupos'][e['grupo']], filas, especie=True))
-    mapa = [_fila(k, f'{t[tipo]} {cod}', [(t['hecho'], f'{t[tipo]} {cod}')], (x, y)) for k, tipo, cod, x, y, _ in puntos_mapa(d)]
+    mapa = [_fila(k, f'{t[tipo]} {cod}', [(t['hecho'], f'{t[tipo]} {cod}: {t["hecho"]}')], (x, y)) for k, tipo, cod, x, y, _ in puntos_mapa(d)]
     bloques.append(_grupo('mapa', 'G', t['mapa'], t['mapa_nota'], mapa))
     bloques.append(_grupo('horas', 'G', t['totales'], t['totales_nota'],
                           [_fila('addict', t['total'], [(f'{n} h', f'{t["total"]}: {n} h') for n in d['horas_totales']])]))

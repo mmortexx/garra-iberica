@@ -36,6 +36,7 @@ const GUARDAS = [
   ['el id de /yo sale de la sesión', 'return json(200, await misDatos(env, id));', "return json(200, await misDatos(env, new URL(req.url).searchParams.get('id') ?? id));", 'cambiando un id'],
   ['el id al guardar sale de la sesión', "const { cambios, modo = 'fijar' } = await leerJson(req);", "const { cambios, modo = 'fijar', discord_id } = await leerJson(req); if (discord_id) { await env.DB.prepare('INSERT OR IGNORE INTO progreso VALUES (?1,?2,1,?3)').bind(discord_id, 'dilo-exp', hoy()).run(); }", 'cambiando un id'],
   ['el id al borrar sale de la sesión', "const { confirmar } = await leerJson(req);", "const { confirmar, discord_id } = await leerJson(req); if (discord_id) await env.DB.prepare('DELETE FROM progreso WHERE discord_id = ?1').bind(discord_id).run();", 'borrar lo propio'],
+  ['bajar solo el logro pedido', "WHERE j.value ->> '$[0]' = progreso.logro)", 'LIMIT 1)', 'bajar un logro no toca'],
   ['lista de logros', "if (maximo === undefined) rechazados.push({ logro, motivo: 'desconocido' });\n    else if", 'if (maximo === undefined) validos.set(logro ?? "x", 1);\n    else if', 'solo acepta'],
   ['nivel posible', "else if (!Number.isInteger(c.nivel) || c.nivel < 0 || c.nivel > maximo) rechazados.push({ logro, motivo: 'nivel' });", '', 'solo acepta'],
   ['subir nunca baja', "if (modo === 'fijar') {", 'if (true) {', 'nunca baja'],

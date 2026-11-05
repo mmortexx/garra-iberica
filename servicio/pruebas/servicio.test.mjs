@@ -312,6 +312,15 @@ describe('cada uno, lo suyo', () => {
 });
 
 describe('guardar logros', () => {
+  test('bajar un logro no toca los demás', async () => {
+    const t = await s.entrar('ana');
+    await marcar(t, [{ logro: 'allo-grow', nivel: 3 }, { logro: 'carno-grow', nivel: 3 }]);
+    await marcar(t, [{ logro: 'allo-grow', nivel: 1 }], 'fijar');
+    const filas = await miProgreso(t);
+    assert.equal(nivel(filas, 'allo-grow'), 1);
+    assert.equal(nivel(filas, 'carno-grow'), 3);
+  });
+
   test('recuerda lo marcado en cualquier dispositivo, con la fecha de cada tramo', async () => {
     const movil = await s.entrar('ana');
     const pc = await s.entrar('ana');
@@ -382,6 +391,15 @@ describe('guardar logros', () => {
 });
 
 describe('descargar y borrar', () => {
+  test('la descarga lleva todo lo que se guarda de la persona', async () => {
+    const t = await s.entrar('ana');
+    await marcar(t, [{ logro: 'addict', nivel: 1 }]);
+    const { cuenta, progreso } = await (await s.pedir('/yo/datos', { token: t })).json();
+    const [fila] = await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', USUARIOS.ana.id);
+    assert.deepEqual(cuenta, fila);
+    assert.deepEqual(progreso.map(p => Object.keys(p).sort()), [['fecha', 'logro', 'nivel']]);
+  });
+
   test('descarga sus datos completos en un fichero', async () => {
     const t = await s.entrar('ana');
     await marcar(t, [{ logro: 'addict', nivel: 2 }]);
@@ -631,6 +649,22 @@ describe('limpieza nocturna', () => {
 });
 
 describe('copia de seguridad', () => {
+  test('restaurar sobre una base con datos no pierde lo que ya había', async () => {
+    const { sqlDeCopia } = await import('../scripts/restaurar.mjs');
+    const t = await s.entrar('ana');
+    await marcar(t, [{ logro: 'addict', nivel: 2 }]);
+    const sql = sqlDeCopia({
+      formato: 'garra-copia-1',
+      miembros: [{ discord_id: USUARIOS.ana.id, nombre: 'Ana vieja', desde: '2026-01-01', ultimo_acceso: '2026-01-02' }],
+      progreso: [{ discord_id: USUARIOS.ana.id, logro: 'allo-exp', nivel: 1, fecha: '2026-01-01' }],
+    });
+    for (const linea of sql.trim().split('\n')) await s.db.exec(linea);
+    const filas = await miProgreso(t);
+    assert.equal(nivel(filas, 'addict'), 2, 'se conserva lo que ya estaba');
+    assert.equal(nivel(filas, 'allo-exp'), 1, 'se añade lo de la copia');
+    assert.equal((await s.pedir('/yo', { token: t })).status, 200, 'la sesión sigue');
+  });
+
   test('una copia se restaura entera en una base vacía, nombres raros incluidos', async () => {
     const { sqlDeCopia } = await import('../scripts/restaurar.mjs');
     const admin = await s.entrar('admin');
@@ -662,6 +696,9 @@ describe('copia de seguridad', () => {
 
 describe('configuración', () => {
   const toml = readFileSync(join(SERVICIO, 'wrangler.toml'), 'utf8');
+  test('no guarda registros de cada petición: llevan direcciones y códigos', () => {
+    assert.match(toml, /\[observability\]\s+enabled = false/);
+  });
   test('la página pública y el servicio aceptan la misma lista de logros', () => {
     for (const ruta of ['ruta', 'en/route']) {
       const html = readFileSync(join(SERVICIO, '..', 'docs', ruta, 'index.html'), 'utf8');

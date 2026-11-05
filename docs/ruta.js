@@ -39,6 +39,7 @@
     falloDescarga: 'It could not be downloaded now. Try again in a while.',
     falloCopia: 'The backup could not be completed: no file was created. Try again in a while.',
     copiaEnCurso: n => `Downloading the backup… ${n} rows`,
+    copiaFrenada: n => `Downloading the backup… ${n} rows. Waiting a minute for the request limit: keep this page open.`,
     copiaHecha: (m, p) => `Backup downloaded: ${m} members, ${p} rows of progress. Keep it somewhere safe: it has personal data.`,
     coord: c => `Copied: ${c}. Paste it into the Nexus map`,
     errores: {
@@ -79,6 +80,7 @@
     falloDescarga: 'No se ha podido descargar ahora. Prueba otra vez dentro de un rato.',
     falloCopia: 'La copia no se ha completado: no se ha creado ningún fichero. Prueba otra vez dentro de un rato.',
     copiaEnCurso: n => `Descargando la copia… ${n} filas`,
+    copiaFrenada: n => `Descargando la copia… ${n} filas. Esperando un minuto por el límite de peticiones: no cierres la página.`,
     copiaHecha: (m, p) => `Copia descargada: ${m} miembros, ${p} filas de progreso. Guárdala en lugar seguro: lleva datos personales.`,
     coord: c => `Copiado: ${c}. Pégalo en el mapa de Nexus`,
     errores: {
@@ -98,7 +100,7 @@
   const ver = (sel, visible) => { $(sel).hidden = !visible; };
 
   // ---------- lo guardado en este navegador ----------
-  const vacio = () => ({ marcas: {}, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, caduca: 0 });
+  const vacio = () => ({ marcas: {}, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 });
   let almacen = vacio();
   let hayAlmacen = true;
   const sano = o => {
@@ -120,6 +122,7 @@
           cuenta: typeof s.cuenta === 'string' ? s.cuenta : null,
           nombre: typeof s.nombre === 'string' ? s.nombre : '',
           token: typeof s.token === 'string' ? s.token : null,
+          tokenDe: typeof s.tokenDe === 'string' ? s.tokenDe : null,
           caduca: Number(s.caduca) || 0,
         };
         if (almacen.token && almacen.caduca < Date.now()) almacen.token = null;
@@ -272,6 +275,7 @@
   function alCaducar() {
     caducada = true;
     almacen.token = null;
+    almacen.tokenDe = null;
     almacen.caduca = 0;
     cuenta = null;
     historial = [];
@@ -292,6 +296,7 @@
     pintarTrayectoria();
   }
 
+  let acuses = 0;
   let temporizador = null;
   let intentos = 0;
   function programarSubida(espera = 600) {
@@ -310,7 +315,8 @@
 
   // Lo que se baja a propósito y lo que sube van aparte: subir nunca pisa lo que otro dispositivo marcó de más.
   async function subir() {
-    if (enVuelo || !almacen.token || !SERVICIO || !porSubir()) return;
+    // Lo pendiente es de almacen.cuenta: no sale hasta saber que esta sesión es suya.
+    if (enVuelo || !almacen.token || !SERVICIO || !porSubir() || almacen.tokenDe !== almacen.cuenta) return;
     enVuelo = true;
     const bajadas = { ...almacen.bajadas };
     const subidas = { ...almacen.subidas };
@@ -318,6 +324,7 @@
       const rechazados = [...await enviarLote(bajadas, 'fijar'), ...await enviarLote(subidas, 'subir')];
       for (const [k, v] of Object.entries(bajadas)) if (almacen.bajadas[k] === v) delete almacen.bajadas[k];
       for (const [k, v] of Object.entries(subidas)) if (almacen.subidas[k] === v) delete almacen.subidas[k];
+      acuses++;
       if (rechazados.length) aviso(T.rechazadas(rechazados.length));
       anotarHistorial(bajadas, subidas, rechazados);
       intentos = 0;
@@ -336,20 +343,21 @@
     if (almacen.token && !servicioCaido && porSubir()) programarSubida();
   }
 
-  function marcar(id, n) {
+  // Subir nunca baja lo que otro dispositivo marcó de más; por eso, tras bajar algo, lo último que se marque ahí se fija.
+  function apuntar(id, n) {
     const antes = nivel(id);
-    if (n === antes) return;
     if (n > 0) almacen.marcas[id] = n;
     else delete almacen.marcas[id];
-    if (almacen.cuenta) {
-      if (n > antes) {
-        almacen.subidas[id] = n;
-        delete almacen.bajadas[id];
-      } else {
-        almacen.bajadas[id] = n;
-        delete almacen.subidas[id];
-      }
-    }
+    if (!almacen.cuenta) return;
+    if (n < antes || Object.hasOwn(almacen.bajadas, id)) {
+      almacen.bajadas[id] = n;
+      delete almacen.subidas[id];
+    } else almacen.subidas[id] = n;
+  }
+
+  function marcar(id, n) {
+    if (n === nivel(id)) return;
+    apuntar(id, n);
     guardar();
     pintarMarcas();
     if (almacen.token) programarSubida();
@@ -375,11 +383,14 @@
   async function refrescar() {
     if (!almacen.token || !SERVICIO) return;
     ultimaLectura = Date.now();
+    const acusesAntes = acuses;
     try {
       const r = await pedir('/yo');
       if (r.status === 401) return alCaducar();
       if (!r.ok) throw new Error(String(r.status));
       const datos = await r.json();
+      // Se ha guardado algo mientras venía esta respuesta: ya es vieja y borraría lo guardado de la pantalla.
+      if (acusesAntes !== acuses) return refrescar();
       servicioCaido = false;
       caducada = false;
       // Otra cuenta en este navegador: lo que no había subido no se manda a esta sin preguntar.
@@ -392,6 +403,7 @@
       // Aquí y no al entrar: si esta lectura falla, sigue sin cuenta y se pregunta en la siguiente.
       const anonimas = almacen.cuenta ? {} : { ...almacen.marcas };
       almacen.cuenta = datos.cuenta.discord_id;
+      almacen.tokenDe = datos.cuenta.discord_id;
       aplicarServidor(datos);
       const nuevas = {};
       for (const [k, v] of Object.entries(anonimas)) if (v > nivel(k)) nuevas[k] = v;
@@ -464,6 +476,9 @@
       if (!r.ok) return aviso(T.errores[r.status === 429 ? 'demasiadas' : 'canje']);
       const { token, caduca } = await r.json();
       almacen.token = token;
+      almacen.tokenDe = null;
+      almacen.nombre = '';
+      cuenta = null;
       almacen.caduca = caduca;
       caducada = false;
       guardar();
@@ -504,11 +519,7 @@
     let nuevas = 0;
     for (const [k, v] of Object.entries(validas)) {
       if (v > nivel(k)) {
-        almacen.marcas[k] = v;
-        if (almacen.cuenta) {
-          almacen.subidas[k] = v;
-          delete almacen.bajadas[k];
-        }
+        apuntar(k, v);
         nuevas++;
       }
     }
@@ -550,21 +561,25 @@
     return undefined;
   }
 
-  let avisadoSalir = false;
-  async function salir() {
+  // true si hay algo que se perdería y aún no se ha avisado de esa cantidad: el segundo intento ya sale.
+  let avisadoCon = 0;
+  function frenarSalida() {
     const n = sinSubir();
-    if (n && !avisadoSalir) {
-      avisadoSalir = true;
-      aviso(T.salirConPendientes(n));
-      return;
-    }
-    avisadoSalir = false;
+    if (!n || avisadoCon === n) return false;
+    avisadoCon = n;
+    aviso(T.salirConPendientes(n));
+    return true;
+  }
+
+  async function salir() {
+    if (frenarSalida()) return;
     try { await pedir('/sesion', { metodo: 'DELETE' }); } catch { /* la clave local se borra igual; caduca sola */ }
     limpiarLocal();
     aviso(T.salido);
   }
 
   async function salirDeTodos() {
+    if (frenarSalida()) return;
     try {
       const r = await pedir('/sesiones', { metodo: 'DELETE' });
       if (!r.ok && r.status !== 401) throw new Error(String(r.status));
@@ -580,6 +595,7 @@
     cuenta = null;
     caducada = false;
     historial = [];
+    avisadoCon = 0;
     ver('[data-importar]', false);
     ver('[data-confirmar]', false);
     ver('[data-trayectoria-caja]', false);
@@ -609,15 +625,24 @@
     try {
       for (const tabla of ['miembros', 'progreso']) {
         let desde = null;
-        do {
+        let frenazos = 0;
+        for (;;) {
           const r = await pedir(`/admin/copia?tabla=${tabla}${desde ? `&desde=${encodeURIComponent(desde)}` : ''}`);
           if (r.status === 401) return alCaducar();
+          // Una copia grande llega al límite de peticiones: se espera lo que pide y se sigue por donde iba.
+          if (r.status === 429 && frenazos++ < 5) {
+            aviso(T.copiaFrenada(copia.miembros.length + copia.progreso.length));
+            await new Promise(hecho => { setTimeout(hecho, (Number(r.headers.get('Retry-After')) || 60) * 1000); });
+            continue;
+          }
           if (!r.ok) throw new Error(String(r.status));
+          frenazos = 0;
           const pagina = await r.json();
-          copia[tabla].push(...pagina.filas);
+          for (const fila of pagina.filas) copia[tabla].push(fila);
           desde = pagina.siguiente;
           aviso(T.copiaEnCurso(copia.miembros.length + copia.progreso.length));
-        } while (desde);
+          if (!desde) break;
+        }
       }
       bajarFichero(`garra-iberica-copia-${copia.hecha.slice(0, 10)}.json`, JSON.stringify(copia));
       aviso(T.copiaHecha(copia.miembros.length, copia.progreso.length));
@@ -666,11 +691,7 @@
     } else if ('importarSi' in b.dataset) {
       const lista = Object.entries(almacen.porImportar);
       for (const [k, v] of lista) {
-        if (v > nivel(k)) {
-          almacen.marcas[k] = v;
-          almacen.subidas[k] = v;
-          delete almacen.bajadas[k];
-        }
+        if (v > nivel(k)) apuntar(k, v);
       }
       aviso(T.importadas(lista.length));
       almacen.porImportar = {};
@@ -719,9 +740,4 @@
   if (!SERVICIO) return;
   if (codigoEntrada) canjear(codigoEntrada);
   else if (almacen.token) refrescar();
-  else {
-    fetch(`${SERVICIO}/salud`, { referrerPolicy: 'no-referrer', credentials: 'omit', cache: 'no-store' })
-      .then(r => { if (!r.ok) throw new Error(String(r.status)); })
-      .catch(() => { servicioCaido = true; pintarEstado(); });
-  }
 })();

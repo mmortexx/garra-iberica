@@ -231,7 +231,7 @@ const esAdmin = (env, id) => (env.ADMIN_IDS ?? '').split(',').map(a => a.trim())
 
 async function misDatos(env, id) {
   const [miembro, progreso] = await env.DB.batch([
-    env.DB.prepare('SELECT discord_id, nombre, desde FROM miembros WHERE discord_id = ?1').bind(id),
+    env.DB.prepare('SELECT discord_id, nombre, desde, ultimo_acceso FROM miembros WHERE discord_id = ?1').bind(id),
     env.DB.prepare('SELECT logro, nivel, fecha FROM progreso WHERE discord_id = ?1 ORDER BY logro, nivel').bind(id),
   ]);
   return { cuenta: { ...miembro.results[0], admin: esAdmin(env, id) }, progreso: progreso.results };

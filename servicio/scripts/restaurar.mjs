@@ -1,7 +1,8 @@
 // Convierte una copia de seguridad descargada de la web en órdenes SQL para volver a cargarla.
 // Uso: node scripts/restaurar.mjs garra-iberica-copia.json > restaurar.sql
 //      npx wrangler d1 execute garra-cuentas --remote --file=restaurar.sql
-// Las sesiones no se copian: cada miembro vuelve a entrar. Ojo: lo borrado después de hacer la copia vuelve con ella.
+// Las sesiones no se copian: cada miembro vuelve a entrar. Solo añade: lo que ya esté en la base se queda como está
+// (sustituir a un miembro borraría en cascada su progreso). Ojo: lo borrado después de hacer la copia vuelve con ella.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -22,11 +23,11 @@ export function sqlDeCopia(copia) {
   const lineas = [];
   for (const m of copia.miembros) {
     if (!ID.test(m.discord_id ?? '') || !FECHA.test(m.desde ?? '') || !FECHA.test(m.ultimo_acceso ?? '')) throw new Error('copia no válida: miembro');
-    lineas.push(`INSERT OR REPLACE INTO miembros (discord_id, nombre, desde, ultimo_acceso) VALUES ('${m.discord_id}', ${texto(m.nombre, 'nombre')}, '${m.desde}', '${m.ultimo_acceso}');`);
+    lineas.push(`INSERT OR IGNORE INTO miembros (discord_id, nombre, desde, ultimo_acceso) VALUES ('${m.discord_id}', ${texto(m.nombre, 'nombre')}, '${m.desde}', '${m.ultimo_acceso}');`);
   }
   for (const p of copia.progreso) {
     if (!ID.test(p.discord_id ?? '') || !LOGRO.test(p.logro ?? '') || !Number.isInteger(p.nivel) || p.nivel < 1 || !FECHA.test(p.fecha ?? '')) throw new Error('copia no válida: progreso');
-    lineas.push(`INSERT OR REPLACE INTO progreso (discord_id, logro, nivel, fecha) VALUES ('${p.discord_id}', '${p.logro}', ${p.nivel}, '${p.fecha}');`);
+    lineas.push(`INSERT OR IGNORE INTO progreso (discord_id, logro, nivel, fecha) VALUES ('${p.discord_id}', '${p.logro}', ${p.nivel}, '${p.fecha}');`);
   }
   return `${lineas.join('\n')}\n`;
 }

@@ -299,6 +299,83 @@ test('leer del servicio no pisa lo que aún no ha subido, ni al marcar ni al des
   await ctx.close();
 });
 
+test('bajar y volver a subir sin conexión deja lo último que marcaste', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'addict', 3);
+  await subido('ana', 'addict', 3);
+  await caer(ctx);
+  await pulsar(p, 'addict', 1);
+  await pulsar(p, 'addict', 2);
+  await hasta(async () => /Sin conexión/.test(await texto(p, '[data-estado]')), 'el aviso');
+  await volver(ctx);
+  await avisar(p);
+  await hasta(async () => (await filasDe('ana')).length === 2, 'quedarse en 2');
+  await p.reload();
+  await hasta(async () => /Guardado en tu cuenta/.test(await texto(p, '[data-estado]')), 'leer la cuenta');
+  assert.equal(await pulsado(p, 'addict', 2), 'true');
+  assert.equal(await pulsado(p, 'addict', 3), 'false');
+  await ctx.close();
+});
+
+test('una lectura lenta no borra lo que se acaba de guardar', async () => {
+  const { ctx, abrir } = await dispositivo();
+  let p = await abrir();
+  await dentro(p);
+  let soltar;
+  const espera = new Promise(r => { soltar = r; });
+  await ctx.route(`${URL_API}/yo`, async r => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    // La foto de los datos se hace ahora; llega al navegador después.
+    const respuesta = await r.fetch();
+    await espera;
+    return r.fulfill({ response: respuesta });
+  });
+  await p.close();
+  p = await abrir();
+  await pulsar(p, 'allo-exp');
+  await subido('ana', 'allo-exp', 1);
+  await hasta(async () => Object.keys((await guardado(p)).subidas).length === 0, 'el acuse');
+  soltar();
+  await hasta(async () => /Ana del clan/.test(await texto(p, '[data-nombre-miembro]')), 'la lectura');
+  await new Promise(r => { setTimeout(r, 600); });
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  assert.equal((await guardado(p)).marcas['allo-exp'], 1);
+  await ctx.close();
+});
+
+test('lo pendiente de una cuenta no sube a otra aunque falle la primera lectura', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  await s.db.prepare('DELETE FROM sesiones').run();
+  await pulsar(p, 'allo-prime');
+  await hasta(async () => /caducado/.test(await texto(p, '[data-estado]')), 'la sesión caducada');
+  await ctx.route(`${URL_API}/yo`, r => r.abort());
+  await entrar(p, 'bea');
+  await hasta(async () => /no responde|Sin conexión/.test(await texto(p, '[data-estado]')), 'el aviso');
+  await avisar(p);
+  await new Promise(r => { setTimeout(r, 1500); });
+  assert.deepEqual(await filasDe('bea'), [], 'nada de la otra cuenta');
+  await ctx.unroute(`${URL_API}/yo`);
+  await p.reload();
+  await hasta(() => visible(p, '[data-importar]'), 'la pregunta');
+  assert.deepEqual(await filasDe('bea'), []);
+  await ctx.close();
+});
+
+test('sin entrar, abrir la página y marcar no habla con el servicio', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const pedidas = [];
+  ctx.on('request', r => { if (r.url().startsWith(URL_API)) pedidas.push(r.url()); });
+  const p = await abrir();
+  await pulsar(p, 'allo-exp');
+  await new Promise(r => { setTimeout(r, 800); });
+  assert.deepEqual(pedidas, []);
+  await ctx.close();
+});
+
 test('los reintentos no dependen de que el navegador avise', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
@@ -535,6 +612,19 @@ test('si borrar falla, lo dice y no finge haberlo hecho', async () => {
   await p.click('[data-borrar-si]');
   await hasta(async () => /No se ha podido borrar/.test(await texto(p, '[data-mensaje]')), 'el aviso');
   assert.ok((await guardado(p)).token);
+  await volver(ctx);
+
+  // Y si responde con un error, igual.
+  await ctx.route(`${URL_API}/yo/borrar`, r => (r.request().method() === 'POST'
+    ? r.fulfill({ status: 503, headers: { 'access-control-allow-origin': URL_WEB }, body: '{}' })
+    : r.fallback()));
+  await p.evaluate(() => { document.querySelector('[data-mensaje]').hidden = true; });
+  await p.click('[data-borrar]');
+  await p.click('[data-borrar-si]');
+  await hasta(() => visible(p, '[data-mensaje]'), 'el aviso');
+  assert.match(await texto(p, '[data-mensaje]'), /No se ha podido borrar/);
+  assert.ok((await guardado(p)).token);
+  assert.equal((await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', USUARIOS.ana.id)).length, 1);
   await ctx.close();
 });
 
@@ -557,6 +647,21 @@ test('salir: avisa si queda algo sin subir, y después no deja nada en ese naveg
   const local = await guardado(p);
   assert.equal(local.token, null);
   assert.deepEqual(local.marcas, {});
+  await ctx.close();
+});
+
+test('salir en todos los dispositivos también avisa de lo que se perdería', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await pulsar(p, 'allo-exp');
+  await dentro(p);
+  await hasta(() => visible(p, '[data-importar]'), 'la pregunta');
+  await p.click('[data-salir-todos]');
+  assert.match(await texto(p, '[data-mensaje]'), /Marcas sin guardar: 1/);
+  assert.equal(await visible(p, '[data-dentro]'), true);
+  assert.equal((await guardado(p)).porImportar['allo-exp'], 1);
+  await p.click('[data-salir-todos]');
+  await hasta(() => visible(p, '[data-entrar]'), 'salir');
   await ctx.close();
 });
 
@@ -633,6 +738,23 @@ test('la copia del administrador: solo le sale a quien toca, por páginas, y se 
   await quien.ctx.close();
 });
 
+test('la copia espera y sigue si el límite de peticiones la frena', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p, 'admin');
+  await hasta(() => visible(p, '[data-copia]'), 'el botón');
+  let frenadas = 0;
+  await ctx.route(`${URL_API}/admin/copia**`, r => {
+    if (r.request().method() !== 'GET' || frenadas++) return r.fallback();
+    return r.fulfill({ status: 429, headers: { 'access-control-allow-origin': URL_WEB, 'access-control-expose-headers': 'Retry-After', 'retry-after': '1' }, body: '{}' });
+  });
+  const [descarga] = await Promise.all([p.waitForEvent('download', { timeout: 20000 }), p.click('[data-copia]')]);
+  const copia = JSON.parse(readFileSync(await descarga.path(), 'utf8'));
+  assert.equal(copia.miembros.length, 1);
+  assert.ok(frenadas >= 2);
+  await ctx.close();
+});
+
 test('la ruta: la sesión que toca sale abierta y salta lo hecho', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
@@ -655,8 +777,11 @@ test('los filtros enseñan lo que dicen', async () => {
   assert.equal(await p.locator('.ruta-grupo[data-bloque="allo"]').isVisible(), true);
   await p.click('.ruta-filtro[data-filtro="todos"]');
   await pulsar(p, 'addict', 7);
+  await pulsar(p, 'allo-exp');
   await p.click('.ruta-filtro[data-pendientes]');
   assert.equal(await p.locator('.ruta-grupo[data-bloque="horas"]').isVisible(), false);
+  assert.equal(await p.locator('[data-fila="allo-exp"]').isVisible(), false);
+  assert.equal(await p.locator('[data-fila="allo-grow"]').isVisible(), true);
   await ctx.close();
 });
 

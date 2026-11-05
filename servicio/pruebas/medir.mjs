@@ -30,6 +30,8 @@ for (let i = 0; i < MIEMBROS; i += LOTE) {
   tamano = r.meta.size_after ?? tamano;
 }
 console.log(`Lleno en ${Math.round((Date.now() - t0) / 1000)} s. Tamaño de la base: ${(tamano / 1048576).toFixed(0)} MB`);
+const { n } = await db.prepare('SELECT COUNT(*) AS n FROM progreso').first();
+if (n !== MIEMBROS * tramos.length) throw new Error(`faltan filas: ${n}`);
 
 const quien = idDe(Math.floor(MIEMBROS / 2));
 const token = aleatorio();

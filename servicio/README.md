@@ -36,7 +36,10 @@ Se hace una vez. Los comandos se ejecutan dentro de `servicio/`, con Node 22 o s
   datos personales: guárdala en lugar seguro y sustituye las viejas.
 - **Cargarla:** `node scripts/restaurar.mjs COPIA.json > restaurar.sql` y
   `npx wrangler d1 execute garra-cuentas --remote --file=restaurar.sql`. Las sesiones no se copian: cada uno vuelve a entrar.
-  Lo que alguien haya borrado después de hacer esa copia vuelve con ella: hay que volver a borrarlo.
+  Solo añade lo que falte: lo que ya esté en la base se queda como está. Lo que alguien haya borrado después de hacer esa
+  copia vuelve con ella: hay que volver a borrarlo.
+- **Con muchísimos datos:** la copia desde la página espera al límite de peticiones (unas 120.000 filas por minuto) y carga
+  todo en el navegador, así que deja de servir hacia el millón de filas. Entonces, `npx wrangler d1 export garra-cuentas --remote --output=copia.sql`.
 - **Un error de los últimos días:** D1 guarda 7 días de vuelta atrás (30 en el plan de pago),
   `npx wrangler d1 time-travel restore garra-cuentas --timestamp=FECHA`.
 
@@ -66,4 +69,4 @@ Cámbialas, y vuelve a publicar el servicio.
 Probarlo a mano en local: copia `.dev.vars.ejemplo` a `.dev.vars`, `npx wrangler d1 migrations apply garra-cuentas --local`
 y `npx wrangler dev`.
 
-Para ver lo que pasa en producción: `npx wrangler tail`. Los registros no llevan datos de nadie.
+Para ver lo que pasa en producción: `npx wrangler tail`, en directo. Cloudflare no guarda registros de cada petición porque están apagados en `wrangler.toml`; los mensajes de error del servicio no llevan datos de nadie.
