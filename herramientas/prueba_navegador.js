@@ -567,10 +567,17 @@ const fotosMovil = async navegador => {
       if (x.ancha && d === 2 && w > 400 && x.real <= 600) fallos.push(`${r} ${w}×${d}: a lo ancho baja ${x.f}, y a este ancho la de 600 px no llega`);
       if (x.ancha && d === 3 && w <= 450 && x.real < 1000) fallos.push(`${r} ${w}×${d}: a lo ancho baja ${x.f}, menos de 1000 px`);
     }
+    // La foto de la cabecera de la galería también está en la galería: en un móvil 3x tiene que ser el mismo
+    // fichero que ya baja la galería. Una variante más pequeña se ve más blanda y suma una descarga.
+    if (d === 3 && w <= 450) {
+      const cab = await p.evaluate(() => document.querySelector('.cabecera-fondo').currentSrc.split('/').pop());
+      if (!fotos.some(x => x.f === cab)) fallos.push(`${r} ${w}×3: la cabecera baja ${cab}, que la galería no usa a este ancho`);
+    }
     await ctx.close();
   }
   // Cabeceras interiores en un móvil 3x: bajo el velo oscuro basta la variante más pequeña de su srcset, 26–47 KB menos por página.
-  for (const r of ['clan/', 'caceria/', 'combate/', 'dinosaurios/', 'galeria/', 'legal/', 'normas/', 'ruta/', 'unete/', 'en/clan/', 'en/hunt/', 'en/combat/', 'en/dinosaurs/', 'en/gallery/', 'en/legal/', 'en/route/', 'en/rules/', 'en/join/']) {
+  // La de la galería, no: se mira arriba.
+  for (const r of ['clan/', 'caceria/', 'combate/', 'dinosaurios/', 'legal/', 'normas/', 'ruta/', 'unete/', 'en/clan/', 'en/hunt/', 'en/combat/', 'en/dinosaurs/', 'en/legal/', 'en/route/', 'en/rules/', 'en/join/']) {
     for (const w of [390, 430]) {
       const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
       const p = await ctx.newPage();

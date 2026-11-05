@@ -194,7 +194,7 @@ python herramientas/prueba_comprobar.py
   1440 px, letra y ancho no se mueven. La letra y el ancho salen de `html` y `--ancho` en `estilos.css`.
   Scroll con ratón (`SOLO=scroll` prueba solo esto): mientras se desplaza, lo que pasa bajo el ratón quieto no
   se enciende ni se apaga; al parar, al moverlo o con un botón pulsado responde como siempre.
-  Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las cabeceras interiores en un móvil 3x bajan su variante más pequeña, las de la galería a lo ancho bajan la de 600 px en densidad 2 hasta 400 px, y no piden más de 1200 px; ninguna se
+  Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las cabeceras interiores en un móvil 3x bajan su variante más pequeña, salvo la de la galería, que baja el mismo fichero que ya usa la galería (más nítido y sin descarga de más); las fotos de la galería a lo ancho bajan la de 600 px en densidad 2 hasta 400 px, y no piden más de 1200 px; ninguna se
   amplía más de 1,26× (las medias baldosas apaisadas, hasta 1,34×: se ve igual y pesan la mitad), las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
   Cifras y podio de la portada, con su formato de miles y su redondeo (`SOLO=cifras` prueba solo esto).
   «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
