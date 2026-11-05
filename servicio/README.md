@@ -151,6 +151,10 @@ cambio (logro quitado, tramos recortados o logro nuevo), para que alguien decida
 retirar (lo guardado se queda de más y no cuenta, o se borra a mano). Solo entonces se actualiza la lista congelada.
 `ids_antiguos` recoge cómo se llamaban antes (por posición) los 46 logros de caza y de muerte, y no se edita.
 
+La página también trae los logros que un miembro pega desde Asura Nexus: un logro nuevo necesita además su nombre en Nexus
+(`nexus()` en `herramientas/logros_web.py`), y `prueba_logros.py` falla hasta decidirlo. Lo pegado nunca llega al servicio:
+solo las marcas, en un guardado normal. Con 184 logros, una importación cabe entera en un guardado (`MAX_CAMBIOS`, 500).
+
 ## Cambiar de dirección de la web
 
 `wrangler.toml` guarda las direcciones de la página (`PAGINA_ES`, `PAGINA_EN`): si no coinciden, `comprobar.py` falla.

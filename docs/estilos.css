@@ -1030,7 +1030,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 /* Al imprimir nadie ha recorrido la página: sin esto faltan secciones enteras y los títulos con la letra
    recortada sobre el fondo salen huecos. Rojo, porque se lee igual con los fondos impresos y sin ellos. */
 @media print {
-  .subir, .barra, .ascuas, .bruma, .niebla { display: none; }
+  .subir, .barra, .ascuas, .bruma, .niebla, .ruta-nexus { display: none; }
   *, *::before, *::after { animation: none !important; transition: none !important; text-shadow: none !important; }
   .revelar, .revelar :is(h2, img, li, b, i, div), .entra, .h1-sub, img.por-llegar {
     opacity: 1 !important; visibility: visible !important; translate: none !important; scale: none !important; rotate: none !important; clip-path: none !important;
@@ -1753,6 +1753,14 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .ruta-confirmar p + p { margin-top: .8rem; }
 .ruta-campo { box-sizing: border-box; width: 100%; min-height: 44px; padding: .5rem .8rem; border: 1px solid var(--borde); border-radius: 8px; background: rgba(15, 15, 15, .55); color: var(--hueso); font: inherit; }
 .ruta-campo::placeholder { color: var(--suave); }
+textarea.ruta-campo { display: block; resize: vertical; }
+.ruta-pasos { margin: .4rem 0 1rem; padding-left: 1.4rem; }
+.ruta-pasos li + li { margin-top: .4rem; }
+.ruta-etiqueta { display: block; margin-bottom: .3rem; color: var(--hueso); font-weight: 600; }
+.ruta-aviso-abajo { margin: .8rem 0 0; }
+.ruta-aviso-mal { border-color: var(--ascua); border-left-width: 5px; }
+/* Al llegar aquí con el teclado o por programa, el título no se queda bajo la barra fija. */
+.ruta-nexus, .ruta-nexus textarea { scroll-margin-top: 6.5rem; }
 .ruta-trayectoria { margin: 0; padding: 0; list-style: none; }
 .ruta-trayectoria li { display: flex; flex-wrap: wrap; gap: 0 .8rem; padding: .4rem 0; border-bottom: 1px solid var(--linea); }
 .ruta-trayectoria time { min-width: 7rem; color: var(--suave); }

@@ -73,7 +73,7 @@ def dentro_del_div(html, inicio):
 
 
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
-SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub', 'www.cloudflare.com': 'Cloudflare'}
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'nexus.asura-theisle.com': 'Asura Nexus', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub', 'www.cloudflare.com': 'Cloudflare'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'

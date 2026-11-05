@@ -8,6 +8,7 @@ import json
 from html import escape
 from math import hypot
 from pathlib import Path
+import re
 
 HERRAMIENTAS = Path(__file__).resolve().parent
 LOGROS = HERRAMIENTAS / 'logros.json'
@@ -265,3 +266,69 @@ def antiguos_pagina(d=None):
 def datos_pagina(d=None):
     """Lo que ruta.js necesita saber de la lista: los tramos de cada logro, ocultos incluidos."""
     return escape(json.dumps(maximos(d or datos()), separators=(',', ':')))
+
+
+# Cómo se llama cada logro en Asura Nexus: por categoría y nombre, no por sus ids. Lo que no sale de una regla se decide aquí.
+# prueba_logros.py lo compara uno a uno con la respuesta real (nexus_muestra.json).
+NEXUS_GRUPO = {'C': 'Carnivores', 'H': 'Herbivores', 'O': 'Omnivores'}
+NEXUS_PRIME = {'C': 'Apex predator', 'H': 'King of the herd', 'O': 'Master of both worlds'}
+NEXUS_CAZA = {'H': 'Herbivores', 'C': 'Carnivores'}
+NEXUS_SITIO = {'ptera': 'The Dome', 'troo': 'Shallow Beach Island', 'dryo': 'The Pit Buildings', 'pachy': 'South-West Sanctuary'}
+NEXUS_ADICTO = {'troo': 'Troodon', 'teno': 'Tenonto', 'trice': 'Trike'}
+# Nexus cuenta el tiempo en «minutos» de 20 segundos: 180 son una hora.
+NEXUS_HORA = 180
+
+
+def nexus(d=None):
+    """{(categoría, nombre) en Nexus: (logro, tramo por el que empieza, lista de objetivos que debe traer)}, ocultos incluidos."""
+    d = d or datos()
+    tabla = {}
+
+    def poner(categoria, nombre, logro, desde, objetivos):
+        if (categoria, nombre) in tabla:
+            raise SystemExit(f'logros_web.py: dos logros se llaman en Nexus «{categoria} | {nombre}»')
+        tabla[categoria, nombre] = (logro, desde, list(objetivos))
+
+    for e in d['especies']:
+        sp = e['id']
+        categoria = f'{NEXUS_GRUPO[e["grupo"]]} / {e["nombre"]}'
+        for i, c in enumerate(CRECER):
+            poner(categoria, f'Growth {c}', f'{sp}-grow', i, [1])
+        poner(categoria, NEXUS_PRIME[e['grupo']], f'{sp}-prime', 0, [1])
+        poner(categoria, f'Explorer: {NEXUS_SITIO.get(sp, e["sitio"])}', f'{sp}-exp', 0, [1])
+        for c in e['cazas']:
+            poner(categoria, f'Hunter: {NEXUS_CAZA[c["tipo"]]}', id_caza(e, c), 0, c['tramos'])
+        poner(categoria, f'{NEXUS_ADICTO.get(sp, sp.capitalize())} addict', f'{sp}-add', 0, [h * NEXUS_HORA for h in e['horas']])
+        if e['fauna']:
+            poner(categoria, 'Super unlucky', f'{sp}-unl', 0, [e['fauna']])
+    for h in d['huellas']:
+        poner('In the footsteps of the creators', f'Visit site {h["codigo"]}', id_huella(h['codigo']), 0, [1])
+    for p in d['puertas']:
+        poner('The Gatekeepers', f'Gate {p["codigo"]}', id_puerta(p['codigo']), 0, [1])
+    for id_muerte, e in ids_muertes(d):
+        poner('Fed to the food chain', f'Die to {e["nombre"]}', id_muerte, 0, d['muertes']['tramos'])
+    poner('Dino Addict', "It's addicting, isn't it ?", 'addict', 0, [h * NEXUS_HORA for h in d['horas_totales']])
+    return tabla
+
+
+def nexus_ocultas(d=None):
+    """Lo oculto no se nombra en la web: en la tabla de la página su nombre va recortado a su id, y ruta.js recorta igual lo pegado."""
+    ocultas = [e for e in (d or datos())['especies'] if e.get('oculto')]
+    for e in ocultas:
+        if not e['nombre'].startswith(e['id'].capitalize()):
+            raise SystemExit(f'logros_web.py: {e["nombre"]} no empieza por su id, {e["id"]}: no se puede recortar')
+    return [e['id'].capitalize() for e in ocultas]
+
+
+def nexus_clave(categoria, nombre, ocultas):
+    """La clave de la tabla de la página. La misma regla que claveNexus en ruta.js."""
+    clave = f'{categoria}|{nombre}'
+    return re.sub(rf'\b({"|".join(ocultas)})[a-z]*', r'\1', clave) if ocultas else clave
+
+
+def nexus_pagina(d=None):
+    """La correspondencia con Nexus, para ruta.js."""
+    d = d or datos()
+    ocultas = nexus_ocultas(d)
+    logros = {nexus_clave(*k, ocultas): list(v) for k, v in nexus(d).items()}
+    return escape(json.dumps({'ocultas': ocultas, 'logros': logros}, separators=(',', ':'), ensure_ascii=False))

@@ -55,9 +55,42 @@ const GUARDAS = [
   ['lo rechazado no se reintenta sin parar', '.filter(k => !retenidas.has(k))', '', 'rechaza'],
   ['sin servicio no se enseña una cuenta', 'const dentro = Boolean(SERVICIO && almacen.token && cuenta);', 'const dentro = Boolean(almacen.token && cuenta);', 'servicio apagado en la web'],
   ['sin servicio no finge guardar', 'else if (!SERVICIO) texto = T.sinServicio;\n    else if (caducada)', 'else if (caducada)', 'servicio apagado en la web'],
+  ['nexus: se mide antes de interpretar', "if (pegado.length > TOPE_NEXUS) return { fallo: 'grande' };", '', 'nexus: cada mensaje'],
+  ['nexus: sin nada pegado se dice', "if (!texto) return { fallo: 'vacio' };", '', 'nexus: cada mensaje'],
+  ['nexus: una página no es la lista', "if (inicio < 0 || /<(?:html|!doctype|head|body)\\b|^</i.test(texto.slice(0, 2000))) return { fallo: 'pagina' };", "if (inicio < 0) return { fallo: 'roto' };", 'nexus: cada mensaje'],
+  ['nexus: el resumen de Firefox se dice', "if (/(?:^|\\n)snapshot_seconds\\t/.test(texto.slice(0, 2000))) return { fallo: 'firefox' };", '', 'nexus: cada mensaje'],
+  ['nexus: sin haber entrado se dice', "if (typeof datos.error === 'string' && !Array.isArray(datos.achievements)) return { fallo: 'sesion' };", '', 'nexus: cada mensaje'],
+  ['nexus: cortada no es rota', "return { fallo: sinCerrar(json) ? 'cortado' : 'roto' };", "return { fallo: 'roto' };", 'nexus: cada mensaje'],
+  ['nexus: rota no es cortada', "return enCadena || abiertos > 0;", 'return true;', 'nexus: cada mensaje'],
+  ['nexus: otra forma se dice', "|| !Array.isArray(datos.achievements) || !datos.achievements.length) return { fallo: 'forma' };", ") return { fallo: 'forma' };", 'nexus: cada mensaje'],
+  ['nexus: solo cuenta Asura 1', "if (datos.server.name !== SERVIDOR_NEXUS) return { fallo: 'servidor' };", '', 'nexus: cada mensaje'],
+  ['nexus: sin nada reconocido se dice', 'if (!tramos.size) return decir(T.nexus.forma, true);', '', 'nexus: cada mensaje'],
+  ['nexus: el recuadro se vacía', "campo.value = '';\n      const bien", 'const bien', 'nexus: tambi'],
+  ['nexus: un error no se presenta como éxito', 'if (fallo) return decir(T.nexus[fallo], true);', 'if (fallo) return decir(T.nexus[fallo]);', 'nexus: cada mensaje'],
+  ['nexus: una forma rara tampoco', 'if (!tramos.size) return decir(T.nexus.forma, true);', 'if (!tramos.size) return decir(T.nexus.forma);', 'nexus: cada mensaje'],
+  ['nexus: el error lleva su rótulo', "error.append(rotulo, ' ', texto);", 'error.append(texto);', 'nexus: cada mensaje'],
+  ['nexus: el éxito anterior se va', "bien.textContent = mal ? '' : texto;\n      bien.hidden = mal;", 'if (!mal) bien.textContent = texto;\n      bien.hidden = false;', 'nexus: cada mensaje'],
+  ['nexus: el error anterior se va', 'error.hidden = !mal;', 'if (mal) error.hidden = false;', 'nexus: cada mensaje'],
+  ['nexus: lo pegado no se pinta en el recuadro', 'e.preventDefault();\n    traerNexus(pegado);', 'traerNexus(pegado);', 'nexus: sin cuenta'],
+  ['nexus: lo pegado no sale', 'const { fallo, logros } = leerNexus(pegado);', "fetch('/lista', { method: 'POST', body: pegado }).catch(() => {}); const { fallo, logros } = leerNexus(pegado);", 'nexus: sin cuenta'],
+  ['nexus: los nombres como texto', "bien.textContent = mal ? '' : texto;", "bien.innerHTML = mal ? '' : texto;", 'nexus: lo desconocido'],
+  ['nexus: importar nunca baja', 'if (n > antes) apuntar(id, n);', 'apuntar(id, n);', 'nexus: nunca quita'],
+  ['nexus: lo que no casa no se marca', "c.length !== objetivos.length || !c.every((x, i) => x?.target === objetivos[i] && typeof x.done === 'boolean')", '!c.length', 'nexus: lo desconocido'],
+  ['nexus: repetidos no cuentan', ' || vistos.has(clave)', '', 'nexus: lo desconocido'],
+  ['nexus: lo desconocido se cuenta', 'desconocidos.length ? T.nexus.desconocidos(desconocidos.length, pocosNombres(desconocidos)) : \'\',', "'',", 'nexus: lo desconocido'],
+  ['nexus: lo que falta se cuenta', "faltan ? T.nexus.faltan(faltan) : '',", "'',", 'nexus: lo desconocido'],
+  ['nexus: se decide por done', 'tramos.get(id)[desde + i] = x.done;', 'tramos.get(id)[desde + i] = x.collected;', 'nexus: se decide'],
+  ['nexus: un hueco no se salta', 'const n = hueco < 0 ? hechos.length : hueco;', 'const n = hechos.lastIndexOf(true) + 1;', 'nexus: se decide'],
+  ['nexus: un hueco se dice', "saltos ? T.nexus.saltos(saltos) : '',", "'',", 'nexus: se decide'],
+  ['nexus: lo oculto se casa sin nombrarlo', "return tapar ? clave.replace(tapar, '$1') : clave;", 'return clave;', 'nexus: con todo hecho'],
+  ['nexus: lo oculto no se cuenta', 'if (botones.has(id)) {\n        ya +=', 'if (true) {\n        ya +=', 'nexus: sin cuenta'],
+  ['nexus: con cuenta se guarda', 'if (almacen.token) programarSubida(0);\n    return decir([', 'return decir([', 'nexus: con cuenta'],
+  ['nexus: la caja se enseña', "'[data-nexus-caja]', ", '', 'nexus: sin cuenta'],
 ];
 
-const SOLO = process.env.MUTACIONES_SOLO ? GUARDAS.slice(0, Number(process.env.MUTACIONES_SOLO)) : GUARDAS;
+// MUTACIONES_QUE: solo las guardas cuyo nombre case con esta expresión.
+const ELEGIDAS = process.env.MUTACIONES_QUE ? GUARDAS.filter(([que]) => new RegExp(process.env.MUTACIONES_QUE).test(que)) : GUARDAS;
+const SOLO = process.env.MUTACIONES_SOLO ? ELEGIDAS.slice(0, Number(process.env.MUTACIONES_SOLO)) : ELEGIDAS;
 
 // Sin resumen no se sabe nada: se ha colgado o se ha caído el recorrido, y eso no es una guarda viva.
 function recorrido(patron, espera = ESPERA) {
@@ -67,7 +100,9 @@ function recorrido(patron, espera = ESPERA) {
   const fallos = /^(?:ℹ|#) fail (\d+)/m.exec(r.stdout ?? '')?.[1];
   const buenas = /^(?:ℹ|#) pass (\d+)/m.exec(r.stdout ?? '')?.[1];
   if (fallos === undefined || buenas === undefined) return { sinResumen: r.error?.code ?? `salida ${r.status}` };
-  return { fallos: Number(fallos), buenas: Number(buenas) };
+  // El primer motivo: cae por lo que se ha quitado, no por otra cosa.
+  const motivo = /AssertionError[^:]*: ([^\n]{0,110})(?:\n\s*\n\s*([^\n]{0,110}))?/.exec(r.stdout ?? '') ?? /Error: ([^\n]{0,110})/.exec(r.stdout ?? '');
+  return { fallos: Number(fallos), buenas: Number(buenas), motivo: motivo ? [motivo[1], motivo[2]].filter(Boolean).join(' ') : '' };
 }
 
 // Una prueba inestable puede dar cualquier cosa una vez: antes de concluir, se repite.
@@ -100,11 +135,11 @@ for (const [que, texto, cambio, patron] of SOLO) {
     continue;
   }
   writeFileSync(MUTANTE, ORIGINAL.replace(texto, () => cambio));
-  const { fallos, buenas, sinResumen, aLaSegunda } = conReintento(patron);
+  const { fallos, buenas, sinResumen, aLaSegunda, motivo } = conReintento(patron);
   if (sinResumen) {
     console.log(`SIN RESUMEN  ${que}: el recorrido no ha acabado (${sinResumen}), repetido dos veces`);
     sinResolver++;
-  } else if (fallos > 0) console.log(`cazada  ${que}  (${fallos} en rojo, ${buenas} en verde)${aLaSegunda ? ', a la segunda: prueba inestable' : ''}`);
+  } else if (fallos > 0) console.log(`cazada  ${que}  (${fallos} en rojo, ${buenas} en verde)${aLaSegunda ? ', a la segunda: prueba inestable' : ''}  → ${motivo}`);
   else if (buenas === 0) {
     console.log(`MAL     ${que}: «${patron}» no elige ninguna prueba`);
     vivas++;

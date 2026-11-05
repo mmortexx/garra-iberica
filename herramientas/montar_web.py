@@ -22,7 +22,8 @@ En los textos de paginas/:
   {{batallas}}         todas las batallas del clan, de la última a la primera
   {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a su página
   {{logros_ruta}}      la ruta de logros, sesión a sesión; {{logros_lista}}, todos los logros (ver logros_web.py)
-  {{logros_datos}}     los tramos de cada logro, para ruta.js; {{logros_antiguos}}, cómo se llamaban antes algunos
+  {{logros_datos}}     los tramos de cada logro, para ruta.js; {{logros_antiguos}}, cómo se llamaban antes algunos;
+                       {{logros_nexus}}, cómo se llama cada logro en Asura Nexus
   {{servicio}}         dirección del servicio de cuentas, de cuentas.json
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
@@ -282,6 +283,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'logros_lista': lambda: logros_web.lista(lang),
         'logros_datos': lambda: logros_web.datos_pagina(),
         'logros_antiguos': lambda: logros_web.antiguos_pagina(),
+        'logros_nexus': lambda: logros_web.nexus_pagina(),
         'servicio': lambda: logros_web.servicio(),
     }
 

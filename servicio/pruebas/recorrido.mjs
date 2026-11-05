@@ -1056,3 +1056,410 @@ test('lo guardado y los códigos de antes, con los ids por posición, siguen val
   assert.deepEqual(errores, []);
 });
 
+// ---------- la lista de Nexus ----------
+const TEXTO_NEXUS = readFileSync(join(SERVICIO, '..', 'herramientas', 'nexus_muestra.json'), 'utf8');
+const MUESTRA = JSON.parse(TEXTO_NEXUS);
+const muestra = tocar => {
+  const m = structuredClone(MUESTRA);
+  tocar?.(m);
+  return JSON.stringify(m);
+};
+const logroDe = (m, categoria, nombre) => m.achievements.find(x => x.category_path === categoria && x.name === nombre);
+// Lo que se espera sale de los «done» de la muestra, sin pasar por la tabla de la página.
+const hechos = x => x.conditions.filter(c => c.done).length;
+const oculto = x => /Oviraptor/.test(`${x.category_path} ${x.name}`);
+const TRAMOS_VISIBLES = MUESTRA.achievements.filter(x => !oculto(x)).reduce((a, x) => a + hechos(x), 0);
+const TRAMOS_TODOS = MUESTRA.achievements.reduce((a, x) => a + hechos(x), 0);
+const POR_NOMBRE = [
+  ['g-F17-I', 'The Gatekeepers', 'Gate F17 I'], ['f-C14', 'In the footsteps of the creators', 'Visit site C14'],
+  ['addict', 'Dino Addict', "It's addicting, isn't it ?"], ['trice-add', 'Herbivores / Triceratops', 'Trike addict'],
+  ['troo-exp', 'Carnivores / Troodon', 'Explorer: Shallow Beach Island'], ['fed-rex', 'Fed to the food chain', 'Die to Tyrannosaurus'],
+  ['fed-deino', 'Fed to the food chain', 'Die to Deinosuchus'], ['ovi-add', 'Carnivores / Oviraptor', 'Ovi addict'],
+  ['beipi-h-C', 'Omnivores / Beipiaosaurus', 'Hunter: Carnivores'],
+];
+const CAJA = '[data-nexus-pegar]';
+const dicho = p => texto(p, '[data-nexus-mensaje]:not([hidden])');
+const marcas = async p => (await guardado(p))?.marcas ?? {};
+const barra = p => p.locator('[data-barra]').evaluate(e => e.value);
+
+// Lo que hace una persona: Ctrl+V de verdad, con lo copiado en el portapapeles.
+async function pegarDeVerdad(p, contenido) {
+  await p.evaluate(t => navigator.clipboard.writeText(t), contenido);
+  await p.locator(CAJA).focus();
+  await p.keyboard.press('Control+V');
+}
+// Más rápido, para probar muchos textos.
+const pegar = (p, contenido) => p.locator(CAJA).evaluate((campo, t) => {
+  const dt = new DataTransfer();
+  dt.setData('text', t);
+  campo.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+}, contenido);
+const PORTAPAPELES = { permissions: ['clipboard-read', 'clipboard-write'] };
+
+function apuntarPeticiones(ctx) {
+  const lista = [];
+  ctx.on('request', r => lista.push({ metodo: r.method(), url: r.url(), cuerpo: r.postData() ?? '' }));
+  return lista;
+}
+function sinTextoPegado(peticiones) {
+  for (const r of peticiones) {
+    const todo = `${r.url} ${r.cuerpo}`;
+    assert.ok(!/category_path|conditions|achievements|Asura 1|Die to Tyrannosaurus/.test(todo), `sale lo pegado en ${r.metodo} ${r.url}`);
+    assert.ok(r.cuerpo.length < 20000, `${r.metodo} ${r.url} lleva ${r.cuerpo.length} caracteres`);
+  }
+}
+
+test('nexus: sin cuenta, pegar la lista marca lo que toca, deja el recuadro vacío y no sale nada', async () => {
+  const { ctx, abrir } = await dispositivo(PORTAPAPELES);
+  const peticiones = apuntarPeticiones(ctx);
+  const p = await abrir();
+  assert.equal(await p.locator('[data-nexus-caja] a').getAttribute('href'), 'https://nexus.asura-theisle.com/achievements/api/list');
+  assert.equal(await p.locator('[data-nexus-caja] a').getAttribute('rel'), 'noopener noreferrer');
+  assert.equal(await p.locator('[data-nexus-caja] a').getAttribute('target'), '_blank');
+  await capturar(p, 'nexus-antes', '[data-nexus-caja]');
+  await pegarDeVerdad(p, TEXTO_NEXUS);
+  assert.equal(await dicho(p), `Tramos añadidos: ${TRAMOS_VISIBLES}. Ya tenías: 0.`);
+  assert.equal(await visible(p, '[data-nexus-mal]'), false, 'lo que ha salido bien no se presenta como error');
+  assert.equal(await p.locator('[data-nexus-bien]').getAttribute('role'), 'status');
+  await capturar(p, 'nexus-despues', '[data-nexus-caja]');
+  assert.equal(await p.locator(CAJA).inputValue(), '');
+  assert.equal(await barra(p), TRAMOS_VISIBLES, 'la barra suma lo mismo que dice el mensaje');
+  const m = await marcas(p);
+  for (const [id, categoria, nombre] of POR_NOMBRE) assert.equal(m[id] ?? 0, hechos(logroDe(MUESTRA, categoria, nombre)), id);
+  assert.equal(m['carno-grow'], 2, 'el crecimiento de ejemplo de Carnotaurus va hasta el 50%');
+  assert.equal(m['ovi-grow'], 3, 'lo oculto también se guarda');
+  assert.equal(Object.values(m).reduce((a, b) => a + b, 0), TRAMOS_TODOS);
+  assert.ok(!(await p.evaluate(() => JSON.stringify(localStorage))).includes('category_path'), 'lo pegado no se guarda');
+  await p.reload();
+  assert.equal(await pulsado(p, 'carno-grow', 2), 'true');
+  assert.equal(await pulsado(p, 'carno-grow', 3), 'false');
+  assert.equal(await pulsado(p, 'fed-rex', 1), 'true');
+  // Marcar a mano sigue funcionando.
+  await pulsar(p, 'allo-grow', 1);
+  assert.equal((await marcas(p))['allo-grow'], 1);
+  sinTextoPegado(peticiones);
+  assert.deepEqual(peticiones.filter(r => r.metodo !== 'GET' || !r.url.startsWith(URL_WEB)), [], 'sin cuenta no se habla con nadie');
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: con cuenta, un solo guardado, solo con marcas, y otro dispositivo lo ve', async () => {
+  const { ctx, abrir } = await dispositivo(PORTAPAPELES);
+  const peticiones = apuntarPeticiones(ctx);
+  const p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'fed-rex', 5);
+  await subido('ana', 'fed-rex', 5);
+  await hasta(async () => /Guardado en tu cuenta/.test(await texto(p, '[data-estado]')), 'guardado a mano');
+  peticiones.length = 0;
+  await pegarDeVerdad(p, TEXTO_NEXUS);
+  await hasta(async () => (await filasDe('ana')).length === TRAMOS_TODOS + 4, 'todos los tramos en la cuenta');
+  await new Promise(r => { setTimeout(r, 1000); });
+  const guardados = peticiones.filter(r => r.metodo === 'PUT');
+  assert.equal(guardados.length, 1, 'una importación es un solo guardado');
+  const { cambios, modo } = JSON.parse(guardados[0].cuerpo);
+  assert.equal(modo, 'subir', 'importar nunca fija hacia abajo');
+  assert.deepEqual([...new Set(cambios.flatMap(c => Object.keys(c)))].sort(), ['logro', 'nivel']);
+  assert.ok(cambios.length <= 500);
+  sinTextoPegado(peticiones);
+  assert.ok((await filasDe('ana')).some(f => f.logro === 'fed-rex' && f.nivel === 5), 'lo marcado de más sigue');
+  await hasta(async () => /Guardado en tu cuenta/.test(await texto(p, '[data-estado]')), 'dice que ha guardado');
+  // Pegarla otra vez no añade nada ni gasta escrituras.
+  peticiones.length = 0;
+  await pegar(p, TEXTO_NEXUS);
+  assert.match(await dicho(p), /^Tramos añadidos: 0\./);
+  await new Promise(r => { setTimeout(r, 800); });
+  assert.deepEqual(peticiones.filter(r => r.metodo === 'PUT'), [], 'sin nada nuevo no se escribe');
+
+  const otro = await dispositivo();
+  const q = await otro.abrir();
+  await dentro(q);
+  await hasta(async () => (await pulsado(q, 'carno-grow', 2)) === 'true', 'otro dispositivo lo ve');
+  await otro.ctx.close();
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: con el servicio caído lo importado no se pierde y sube al volver', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  await caer(ctx);
+  await pegar(p, TEXTO_NEXUS);
+  assert.match(await dicho(p), /^Tramos añadidos: /);
+  await hasta(async () => /Sin conexión/.test(await texto(p, '[data-estado]')), 'el aviso');
+  await volver(ctx);
+  await avisar(p);
+  await hasta(async () => (await filasDe('ana')).length === TRAMOS_TODOS, 'lo importado en la cuenta');
+  await ctx.close();
+});
+
+test('nexus: nunca quita marcas y cuenta lo que ya tenías', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await pulsar(p, 'allo-grow', 4);
+  await pulsar(p, 'fed-rex', 5);
+  await pulsar(p, 'fed-deino', 2);
+  assert.equal(hechos(logroDe(MUESTRA, 'Fed to the food chain', 'Die to Tyrannosaurus')), 1, 'la muestra tiene menos que lo marcado a mano');
+  assert.equal(hechos(logroDe(MUESTRA, 'Carnivores / Allosaurus', 'Growth 1%')), 0, 'la muestra no tiene lo marcado a mano');
+  assert.equal(hechos(logroDe(MUESTRA, 'Fed to the food chain', 'Die to Deinosuchus')), 5, 'la muestra tiene más que lo marcado a mano');
+  await pegar(p, TEXTO_NEXUS);
+  assert.equal(await dicho(p), `Tramos añadidos: ${TRAMOS_VISIBLES - 3}. Ya tenías: 3.`);
+  const m = await marcas(p);
+  assert.equal(m['allo-grow'], 4);
+  assert.equal(m['fed-rex'], 5);
+  assert.equal(m['fed-deino'], 5, 'lo que Nexus tiene de más se añade');
+  await pegar(p, TEXTO_NEXUS);
+  assert.equal(await dicho(p), `Tramos añadidos: 0. Ya tenías: ${TRAMOS_VISIBLES}.`);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: cada mensaje de error, en los dos idiomas, sin marcar nada', async () => {
+  const mitad = Math.floor(TEXTO_NEXUS.length / 2);
+  const casos = [
+    ['vacío', '   \n ', /nada que leer/, /nothing to read/],
+    ['portada en HTML', '<!doctype html><html><head><style>a{b:c}</style></head><body>Nexus</body></html>', /no es tu lista.*Entra en Nexus/, /not your achievements list.*Sign in/],
+    ['portada copiada como texto', 'Asura Nexus\nInicio\nEntrar con Steam', /no es tu lista/, /not your achievements list/],
+    ['sin haber entrado', '{"error": "Unauthorized"}', /no has entrado/, /not signed in/],
+    ['el resumen que copia Firefox', '\t\r\nserver\t{ id: 1, name: "Asura 1", enabled: true }\r\nsnapshot_seconds\t0\r\nsummary\t{ total: 253, done: 126, collected: 126, … }\r\n', /Firefox.*Raw Data/, /Firefox.*Raw Data/],
+    ['cortada', TEXTO_NEXUS.slice(0, mitad), /cortada/, /cut off/],
+    ['cortada justo tras una llave', TEXTO_NEXUS.slice(0, TEXTO_NEXUS.lastIndexOf('}', mitad) + 1), /cortada/, /cut off/],
+    ['JSON roto', TEXTO_NEXUS.replace('"achievements"', '"achievements" oops'), /dañada/, /damaged/],
+    ['otra forma: sin logros', '{"server": {"id": 1, "name": "Asura 1"}, "items": []}', /forma.*No se ha marcado/, /shape.*Nothing has been ticked/],
+    ['otra forma: lista vacía', '{"server": {"id": 1, "name": "Asura 1"}, "achievements": []}', /forma/, /shape/],
+    ['otra forma: sin servidor', muestra(m => { delete m.server; }), /forma/, /shape/],
+    ['otra forma: ningún logro conocido', muestra(m => { for (const x of m.achievements) x.name = `${x.name} 2`; }), /forma/, /shape/],
+    ['otra forma: cambian los campos de todos', muestra(m => { for (const x of m.achievements) x.conditions = 'x'; }), /forma/, /shape/],
+    ['otro servidor', muestra(m => { m.server.name = 'Asura 2'; m.server.id = 2; }), /otro servidor.*Asura 1.*No se ha marcado/, /another Nexus server.*Asura 1.*Nothing has been ticked/],
+    ['demasiado grande, aunque sea válido', TEXTO_NEXUS.replace('{', `{${' '.repeat(2000001)}`), /demasiado texto/, /too much text/],
+  ];
+  const { ctx, abrir } = await dispositivo();
+  for (const [ruta, indice] of [['/ruta/', 2], ['/en/route/', 3]]) {
+    const p = await abrir(ruta);
+    await pulsar(p, 'allo-exp');
+    for (const caso of casos) {
+      await pegar(p, caso[1]);
+      assert.match(await dicho(p), caso[indice], `${ruta} ${caso[0]}`);
+      // El error se distingue sin color: rótulo escrito, otra forma y aviso inmediato al lector de pantalla.
+      assert.match(await p.locator('[data-nexus-mal]').innerText(), /^Error: /, `${ruta} ${caso[0]}: sin rótulo de error`);
+      assert.equal(await visible(p, '[data-nexus-bien]'), false, `${ruta} ${caso[0]}: se presenta como un éxito`);
+      assert.equal(await p.locator('[data-nexus-mal]').getAttribute('role'), 'alert');
+      assert.deepEqual(await marcas(p), { 'allo-exp': 1 }, `${ruta} ${caso[0]}: no se marca nada`);
+      assert.equal(await p.locator(CAJA).inputValue(), '', `${ruta} ${caso[0]}: el recuadro queda vacío`);
+    }
+    const borde = sel => p.locator(sel).evaluate(e => parseFloat(getComputedStyle(e).borderLeftWidth));
+    assert.ok(await borde('[data-nexus-mal]') >= 4, 'el error tiene su propia forma, no solo otro color');
+    await p.locator(CAJA).fill('');
+    await pulsar(p, 'allo-exp');
+    await p.close();
+  }
+  const q = await abrir();
+  await pegar(q, TEXTO_NEXUS);
+  assert.ok(await q.locator('[data-nexus-bien]').evaluate(e => parseFloat(getComputedStyle(e).borderLeftWidth)) < 2, 'un éxito no lleva la forma del error');
+  await pegar(q, '{"error": "Unauthorized"}');
+  assert.match(await dicho(q), /^Error: Nexus dice que no has entrado/);
+  assert.equal(await visible(q, '[data-nexus-bien]'), false, 'el éxito anterior no se queda al lado del error');
+  const tinte = sel => q.locator(sel).evaluate(e => getComputedStyle(e).borderLeftColor.match(/\d+/g).slice(0, 3).join());
+  assert.notEqual(await tinte('[data-nexus-mal]'), await tinte('[data-nexus-bien]'), 'con color, el error tampoco se confunde con el éxito');
+  await pegar(q, TEXTO_NEXUS);
+  assert.equal(await visible(q, '[data-nexus-mal]'), false, 'el error anterior no se queda al lado del éxito');
+  assert.match(await dicho(q), /^Tramos añadidos/);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: un texto mil veces mayor se rechaza sin colgar la página', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  const tarda = await p.locator(CAJA).evaluate(campo => {
+    const dt = new DataTransfer();
+    dt.setData('text', `{${'x'.repeat(50000000)}`);
+    const antes = performance.now();
+    campo.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    return performance.now() - antes;
+  });
+  assert.ok(tarda < 1500, `tarda ${tarda} ms`);
+  assert.match(await dicho(p), /demasiado texto/);
+  await ctx.close();
+});
+
+test('nexus: lo desconocido y lo que no casa se cuenta, sin bloquear el resto, y solo como texto', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  const lista = muestra(m => {
+    const malo = '<img src=x onerror="window.__malo=1">';
+    m.achievements.push({ name: malo, category_path: 'Nuevo', conditions: [{ target: 1, done: true }] });
+    m.achievements.push({ name: 'Otro nuevo', category_path: '__proto__', conditions: [{ target: 1, done: true }] });
+    m.achievements.push({ name: 'constructor', category_path: 'toString', conditions: [] });
+    m.achievements.push(null, 7, 'x');
+    const distinto = logroDe(m, 'Fed to the food chain', 'Die to Deinosuchus');
+    distinto.conditions[0].target += 1;
+    const menos = logroDe(m, 'Fed to the food chain', 'Die to Allosaurus');
+    menos.conditions.pop();
+    const repetido = structuredClone(logroDe(m, 'Herbivores / Stegosaurus', 'Stego addict'));
+    m.achievements.push(repetido);
+    m.achievements.splice(m.achievements.indexOf(logroDe(m, 'The Gatekeepers', 'Gate C14')), 1);
+  });
+  const conClave = lista.replace('"achievements":[', '"__proto__":{"contaminado":1},"achievements":[{"__proto__":{"contaminado":1},"category_path":"x","name":"y"},');
+  assert.notEqual(conClave, lista);
+  await pegar(p, conClave);
+  const mensaje = await dicho(p);
+  assert.match(mensaje, /^Tramos añadidos: \d+\. Ya tenías: 0\. /);
+  assert.match(mensaje, /que no conocemos: 8 \(y, <img src=x onerror="window\.__malo=1">, Otro nuevo, constructor, Stego addict\)/);
+  assert.match(mensaje, /tramos distintos a los nuestros, sin marcar: 2 \(Die to Deinosuchus, Die to Allosaurus\)/);
+  assert.match(mensaje, /no venían en tu lista: 1\./);
+  const m = await marcas(p);
+  assert.equal(m['fed-deino'], undefined, 'lo que no casa no se marca');
+  assert.equal(m['fed-allo'], undefined, 'lo que no casa no se marca');
+  assert.equal(m['carno-grow'], 2, 'el resto sí');
+  assert.equal(await p.locator('img[src="x"]').count(), 0, 'no se pinta como HTML');
+  assert.equal(await p.evaluate(() => window.__malo), undefined);
+  assert.equal(await p.evaluate(() => ({}).contaminado), undefined);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: se decide por los done de cada tramo, y un hueco no se salta', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await pegar(p, muestra(m => {
+    for (const x of m.achievements) {
+      for (const c of x.conditions) {
+        c.done = false;
+        c.collected = false;
+        c.claimable = false;
+      }
+      x.state = 'locked';
+    }
+    // Desbloqueado y sin cobrar: cuenta. Cobrado sin estar hecho (no debería existir): no cuenta.
+    const sinCobrar = logroDe(m, 'Fed to the food chain', 'Die to Tyrannosaurus');
+    sinCobrar.state = 'claimable';
+    sinCobrar.tiers_ready = 2;
+    sinCobrar.conditions[0].done = true;
+    sinCobrar.conditions[0].claimable = true;
+    sinCobrar.conditions[1].done = true;
+    sinCobrar.conditions[1].claimable = true;
+    const cobrado = logroDe(m, 'Fed to the food chain', 'Die to Deinosuchus');
+    cobrado.state = 'collected';
+    cobrado.conditions[0].collected = true;
+    // Un tramo hecho sin los anteriores.
+    logroDe(m, 'Carnivores / Allosaurus', 'Growth 1%').conditions[0].done = true;
+    logroDe(m, 'Carnivores / Allosaurus', 'Growth 100%').conditions[0].done = true;
+    logroDe(m, 'Fed to the food chain', 'Die to Stegosaurus').conditions[3].done = true;
+  }));
+  assert.deepEqual(await marcas(p), { 'allo-grow': 1, 'fed-rex': 2 });
+  assert.match(await dicho(p), /^Tramos añadidos: 3\. Ya tenías: 0\. En 2 logros Nexus da por hecho un tramo sin los anteriores/);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: con todo hecho se marca toda la lista, oculto incluido; y sin nada, nada', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  const maximos = await p.locator('[data-miembro]').evaluate(e => JSON.parse(e.dataset.logros));
+  await pegar(p, muestra(m => { for (const x of m.achievements) for (const c of x.conditions) c.done = false; }));
+  assert.equal(await dicho(p), 'Tramos añadidos: 0. Ya tenías: 0.');
+  assert.deepEqual(await marcas(p), {});
+  await pegar(p, muestra(m => { for (const x of m.achievements) for (const c of x.conditions) c.done = true; }));
+  assert.deepEqual(await marcas(p), maximos, 'los 253 de Nexus llegan a los 184 de la página, con todos sus tramos');
+  const [hecho, total] = await p.locator('[data-barra]').evaluate(e => [e.value, e.max]);
+  assert.equal(hecho, total);
+  assert.equal(await dicho(p), `Tramos añadidos: ${total}. Ya tenías: 0.`);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: también vale con formato, con algo alrededor y con el botón', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  // La respuesta real pesa 468 KB, y 936 KB con sangría de 4: la muestra solo guarda lo que se lee, así que aquí se rellena hasta ese tamaño.
+  const comoLaReal = JSON.stringify({
+    ...MUESTRA, snapshot_seconds: 20, category_rewards: [{ rewards: [{ label: 'x' }] }],
+    achievements: MUESTRA.achievements.map(x => ({
+      id: 'x', description: 'x'.repeat(3000), state: 'locked', rewards: [{ label: 'x' }], ...x,
+      conditions: x.conditions.map(c => ({ current: 0, collected: false, claimable: false, rewards: [], ...c })),
+    })),
+  }, null, 4);
+  assert.ok(comoLaReal.length > 936000, `${comoLaReal.length} caracteres`);
+  await pegar(p, comoLaReal);
+  assert.match(await dicho(p), new RegExp(`^Tramos añadidos: ${TRAMOS_VISIBLES}\\.`), 'del tamaño de la real, con sangría y con campos que no se leen');
+  await p.close();
+  const otro = await dispositivo();
+  const q = await otro.abrir();
+  await pegar(q, `Pretty-print\r\n${TEXTO_NEXUS.replaceAll('\n', '\r\n')}\r\n\r\nFin`);
+  assert.match(await dicho(q), new RegExp(`^Tramos añadidos: ${TRAMOS_VISIBLES}\\.`), 'con texto alrededor');
+  await q.close();
+  const tercero = await dispositivo();
+  const r = await tercero.abrir();
+  await r.locator(CAJA).fill(TEXTO_NEXUS);
+  await r.click('[data-nexus-traer]');
+  assert.match(await dicho(r), new RegExp(`^Tramos añadidos: ${TRAMOS_VISIBLES}\\.`), 'escrito y con el botón');
+  assert.equal(await r.locator(CAJA).inputValue(), '');
+  await r.locator(CAJA).fill('');
+  await r.click('[data-nexus-traer]');
+  assert.match(await dicho(r), /nada que leer/);
+  await ctx.close();
+  await otro.ctx.close();
+  await tercero.ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: en inglés y sin servicio, funciona, habla inglés y no sale nada', async () => {
+  sinServicio = true;
+  const { ctx, abrir } = await dispositivo();
+  const peticiones = apuntarPeticiones(ctx);
+  const p = await abrir('/en/route/');
+  assert.match(await p.locator('[data-nexus-caja] h3').innerText(), /Bring your achievements from Nexus/);
+  await pegar(p, TEXTO_NEXUS);
+  assert.equal(await dicho(p), `Steps added: ${TRAMOS_VISIBLES}. You already had: 0.`);
+  assert.equal(await barra(p), TRAMOS_VISIBLES);
+  await p.reload();
+  assert.equal(await pulsado(p, 'carno-grow', 2), 'true');
+  sinTextoPegado(peticiones);
+  assert.deepEqual(peticiones.filter(r => r.metodo !== 'GET' || !r.url.startsWith(URL_WEB)), []);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('nexus: teclado, 375 px, impresión y sin JavaScript', async () => {
+  const movil = await dispositivo({ ancho: 375, alto: 812 });
+  const p = await movil.abrir();
+  await p.locator('[data-nexus-caja] a').focus();
+  await p.keyboard.press('Tab');
+  assert.equal(await p.evaluate(() => document.activeElement.id), 'nexus-pegar');
+  await p.keyboard.press('Tab');
+  assert.equal(await p.evaluate(() => 'nexusTraer' in document.activeElement.dataset), true);
+  await p.keyboard.press('Enter');
+  assert.match(await dicho(p), /nada que leer/, 'el botón funciona con el teclado');
+  await pegar(p, muestra(m => { m.achievements.push({ name: 'x'.repeat(500), category_path: 'y', conditions: [] }); }));
+  const ancho = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  assert.ok(ancho[0] <= ancho[1], `la página se desborda a 375 px: ${ancho}`);
+  for (const sel of ['[data-nexus-caja]', CAJA, '[data-nexus-bien]', '[data-nexus-traer]']) {
+    const c = await p.locator(sel).boundingBox();
+    assert.ok(c.x >= 0 && c.x + c.width <= 375, `${sel} se sale: ${JSON.stringify(c)}`);
+  }
+  assert.ok((await p.locator(CAJA).boundingBox()).height >= 44, 'el recuadro se puede pulsar con el dedo');
+  await capturar(p, 'nexus-movil', '[data-nexus-caja]');
+  assert.equal(await visible(p, '[data-nexus-caja]'), true);
+  const tapado = q => q.evaluate(() => {
+    document.querySelector('[data-nexus-caja]').scrollIntoView({ behavior: 'instant', block: 'start' });
+    return document.querySelector('.barra').getBoundingClientRect().bottom - document.querySelector('[data-nexus-caja] h3').getBoundingClientRect().top;
+  });
+  assert.ok(await tapado(p) <= 0, 'a 375 px, la barra fija tapa el título de la caja');
+  await p.emulateMedia({ media: 'print' });
+  assert.equal(await visible(p, '[data-nexus-caja]'), false, 'al imprimir no sale');
+  await movil.ctx.close();
+
+  const grande = await dispositivo();
+  const g = await grande.abrir();
+  assert.ok(await tapado(g) <= 0, 'en escritorio, la barra fija tapa el título de la caja');
+  await grande.ctx.close();
+
+  const sinJs = await dispositivo({ javaScriptEnabled: false });
+  const q = await sinJs.abrir();
+  assert.equal(await visible(q, '[data-nexus-caja]'), false, 'sin JavaScript no finge funcionar');
+  await sinJs.ctx.close();
+  assert.deepEqual(errores, []);
+});
+
