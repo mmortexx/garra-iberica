@@ -1229,6 +1229,37 @@ def revisar_combate(raiz, d, falla, avisa):
                 avisa(f'la guía de combate del Discord ({lang}) dice {especie} {n} y su ficha, {grupo[especie]}: la web pone el de la ficha; corrígelo en el Discord')
 
 
+ENTRENAMIENTO = {'es': 'entrenamiento', 'en': 'training'}
+
+
+def revisar_entrenamiento(raiz, falla):
+    """El entrenamiento de PvP va en los dos idiomas, con su salto y justo antes de la llamada final. Queda fuera
+    de la comparación con el Discord (sin data-guia) y, mientras no esté decidido, no da cifras: ni hora, ni topes."""
+    for lang, ancla in ENTRENAMIENTO.items():
+        nombre = RUTA['combate', lang]
+        html = leer(raiz, nombre + 'index.html')
+        saltos = re.search(r'<p class="saltos[^"]*">(.*?)</p>', html, re.S)
+        if not saltos or f'href="#{ancla}"' not in saltos.group(1):
+            falla(f'{nombre}: la cabecera no tiene el salto a #{ancla}')
+        antes = html.split('<section class="llamada"', 1)[0]
+        secciones = list(re.finditer(r'<section class="seccion" id="([^"]+)"', antes))
+        if not secciones or secciones[-1].group(1) != ancla:
+            falla(f'{nombre}: la sección #{ancla} no está justo antes de la llamada final')
+            continue
+        seccion = antes[secciones[-1].start():]
+        if len(re.findall(r'<section class="bloque ', seccion)) != 3:
+            falla(f'{nombre}: la sección #{ancla} no tiene sus tres bloques')
+        if 'data-guia' in seccion:
+            falla(f'{nombre}: la sección #{ancla} lleva data-guia, y no está en la guía del Discord')
+        if '<img' in seccion:
+            falla(f'{nombre}: la sección #{ancla} lleva una imagen')
+        visible = texto_visible('<body>' + seccion)
+        if re.search(r'\d', visible):
+            falla(f'{nombre}: la sección #{ancla} da una cifra; el día, la hora y los datos del juego no están decididos ahí')
+        if 'Discord' not in visible:
+            falla(f'{nombre}: la sección #{ancla} no dice que el día y la hora se anuncian en el Discord')
+
+
 def medidas_webp(fichero):
     """(ancho, alto) de un WebP leyendo su cabecera (VP8, VP8L o VP8X), sin Pillow"""
     b = fichero.read_bytes()[:30]
@@ -1533,6 +1564,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_nombres_web(raiz, falla)
     revisar_guia(falla, avisa)
     revisar_combate(raiz, d, falla, avisa)
+    revisar_entrenamiento(raiz, falla)
     revisar_galeria(raiz, falla, avisa)
     revisar_detalles(raiz, falla)
     revisar_cifras(falla, avisa)

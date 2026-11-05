@@ -126,6 +126,10 @@ python herramientas/prueba_pages.py
   (`posts.json`, junto a `fichas.json`), falla si la web no dice exactamente lo mismo, en el mismo
   orden, y avisa si la guía del Discord da un grupo distinto del de la ficha. Si el staff cambia la
   guía en Discord: copiar el texto nuevo a las dos páginas.
+- El entrenamiento de PvP (`#entrenamiento` y `#training`, al final de esa misma página) no está en la guía del
+  Discord y no lleva `data-guia`. `comprobar.py` (`revisar_entrenamiento`) falla si falta en un idioma, su salto o
+  uno de sus tres bloques, si deja de estar justo antes de la llamada final, si lleva una imagen o si da una cifra.
+  Cuando se decidan el día y la hora, hay que quitar de ahí la regla de las cifras al escribirlos.
 - Vídeos de las batallas: `python herramientas/preparar_videos.py` los genera desde los vídeos
   exportados (lista `VIDEOS`, clave de `batallas.json` → fichero dentro de `~/Videos`) en
   `docs/video/batalla-<clave>.mp4`, más una versión ligera para móviles (`-movil.mp4`, un tercio del
