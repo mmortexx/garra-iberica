@@ -1260,6 +1260,8 @@ test('nexus: cada mensaje de error, en los dos idiomas, sin marcar nada', async 
   await pegar(q, '{"error": "Unauthorized"}');
   assert.match(await dicho(q), /^Error: Nexus dice que no has entrado/);
   assert.equal(await visible(q, '[data-nexus-bien]'), false, 'el éxito anterior no se queda al lado del error');
+  const tinte = sel => q.locator(sel).evaluate(e => getComputedStyle(e).borderLeftColor.match(/\d+/g).slice(0, 3).join());
+  assert.notEqual(await tinte('[data-nexus-mal]'), await tinte('[data-nexus-bien]'), 'con color, el error tampoco se confunde con el éxito');
   await pegar(q, TEXTO_NEXUS);
   assert.equal(await visible(q, '[data-nexus-mal]'), false, 'el error anterior no se queda al lado del éxito');
   assert.match(await dicho(q), /^Tramos añadidos/);

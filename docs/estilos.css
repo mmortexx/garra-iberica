@@ -1756,7 +1756,7 @@ textarea.ruta-campo { display: block; resize: vertical; }
 .ruta-pasos li + li { margin-top: .4rem; }
 .ruta-etiqueta { display: block; margin-bottom: .3rem; color: var(--hueso); font-weight: 600; }
 .ruta-aviso-abajo { margin: .8rem 0 0; }
-.ruta-aviso-mal { border-color: var(--rojo-claro); border-left-width: 5px; }
+.ruta-aviso-mal { border-color: var(--ascua); border-left-width: 5px; }
 /* Al llegar aquí con el teclado o por programa, el título no se queda bajo la barra fija. */
 .ruta-nexus, .ruta-nexus textarea { scroll-margin-top: 6.5rem; }
 .ruta-trayectoria { margin: 0; padding: 0; list-style: none; }
