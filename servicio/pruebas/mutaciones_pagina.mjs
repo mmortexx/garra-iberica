@@ -29,7 +29,7 @@ const GUARDAS = [
   ['caducada conserva lo pendiente', "almacen.caduca = 0;\n    cuenta = null;\n    historial = [];", 'almacen.caduca = 0;\n    almacen.subidas = {};\n    cuenta = null;\n    historial = [];', 'sesión caducada'],
   ['avisar de la sesión caducada', "if (r.status === 401) throw Object.assign(new Error('sesión'), { caducada: true });", '', 'sesión caducada'],
   ['otra pestaña', "if (e.key !== CLAVE && e.key !== null) return;\n    leer();", 'return;', 'dos pestañas'],
-  ['limpiar lo guardado', "const sano = o => {\n    const fuera = {};\n    if (!o || typeof o !== 'object') return fuera;", 'const sano = o => {\n    if (o) return o;\n    const fuera = {};', 'un almacén corrupto'],
+  ['limpiar lo guardado', "const sano = o => {\n    const fuera = {};\n    if (!o || typeof o !== 'object' || Array.isArray(o)) return fuera;", 'const sano = o => {\n    if (o) return o;\n    const fuera = {};', 'un almacén corrupto'],
   ['borrar también aquí', 'limpiarLocal();\n      aviso(T.borrado);', 'aviso(T.borrado);', 'borrar:'],
   ['no fingir el borrado', 'if (!r.ok) throw new Error(String(r.status));\n      limpiarLocal();\n      aviso(T.borrado);', 'limpiarLocal();\n      aviso(T.borrado);', 'si borrar falla'],
   ['pedir confirmación', "else if ('borrar' in b.dataset) ver('[data-confirmar]', true);", "else if ('borrar' in b.dataset) borrarTodo();", 'borrar:'],
@@ -59,11 +59,11 @@ const SOLO = process.env.MUTACIONES_SOLO ? GUARDAS.slice(0, Number(process.env.M
 
 // Sin resumen no se sabe nada: se ha colgado o se ha caído el recorrido, y eso no es una guarda viva.
 function recorrido(patron) {
-  const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', `--test-name-pattern=${patron}`, 'pruebas/recorrido.mjs'], {
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=spec', '--test-concurrency=1', `--test-name-pattern=${patron}`, 'pruebas/recorrido.mjs'], {
     cwd: SERVICIO, encoding: 'utf8', timeout: ESPERA, env: { ...process.env, RUTA_JS: MUTANTE, CAPTURAS: '' },
   });
-  const fallos = /ℹ fail (\d+)/.exec(r.stdout ?? '')?.[1];
-  const buenas = /ℹ pass (\d+)/.exec(r.stdout ?? '')?.[1];
+  const fallos = /^(?:ℹ|#) fail (\d+)/m.exec(r.stdout ?? '')?.[1];
+  const buenas = /^(?:ℹ|#) pass (\d+)/m.exec(r.stdout ?? '')?.[1];
   if (fallos === undefined || buenas === undefined) return { sinResumen: r.error?.code ?? `salida ${r.status}` };
   return { fallos: Number(fallos), buenas: Number(buenas) };
 }

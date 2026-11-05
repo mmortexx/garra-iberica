@@ -5,3 +5,4 @@ node_modules/
 .wrangler/
 .dev.vars
 servicio/src/__mutante.js
+servicio/src/__mutante_progreso.js

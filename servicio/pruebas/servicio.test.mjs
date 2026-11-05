@@ -4,12 +4,12 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import { unstable_readConfig } from 'wrangler';
 import lista from '../../herramientas/logros.json' with { type: 'json' };
 import congelados from '../../herramientas/logros_congelados.json' with { type: 'json' };
 import { MAXIMOS, calcular } from '../src/catalogo.js';
-import { aplicarCambios } from '../src/progreso.js';
 import { leerBorrados, sqlBorrar, sqlExportar } from '../scripts/miembro.mjs';
 import { sqlDeCopia } from '../scripts/restaurar.mjs';
 import {
@@ -17,6 +17,8 @@ import {
   arrancarDiscord, arrancarServicio, huella, retoDe,
 } from './banco.mjs';
 
+// SERVICIO_PROGRESO: otro progreso.js, para ver estas pruebas fallar con una guarda quitada (mutaciones.mjs).
+const { aplicarCambios } = await import(pathToFileURL(process.env.SERVICIO_PROGRESO || join(SERVICIO, 'src/progreso.js')).href);
 let discord, s;
 before(async () => {
   discord = await arrancarDiscord();
@@ -951,6 +953,17 @@ describe('datos de un miembro a petición', () => {
       rmSync(carpeta, { recursive: true, force: true });
     }
     assert.ok(!existsSync(join(SERVICIO, 'borrados.local.txt')) || /\*\.local\.txt/.test(readFileSync(join(SERVICIO, '..', '.gitignore'), 'utf8')));
+  });
+});
+
+describe('las mutaciones del servicio', () => {
+  test('unas pruebas sin resumen no se cuentan como guarda viva ni como cazada', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+    });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /no han dado resumen/);
+    assert.doesNotMatch(r.stdout, /VIVA|cazada/);
   });
 });
 
