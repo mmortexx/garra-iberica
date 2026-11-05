@@ -2,14 +2,19 @@
 
 Hoy el clan son unos 13 jugadores. Medido el 5 de noviembre de 2026 con `npm run medir`: 13.000 miembros con los 535 tramos
 marcados, el peor caso posible (6.955.000 filas), en local con el motor de Cloudflare. Dos ejecuciones de tres pasadas de 50
-peticiones cada una; se da el rango entre todas.
+peticiones cada una (seis pasadas); se da el rango entre todas. Se midió con otro programa pesado abierto en el ordenador: una
+tercera ejecución se descartó por tener picos de hasta 79 ms, y entre las dos buenas el rango llega a 1,5 veces. Sirve para el
+orden de magnitud (unos 10 ms por petición), **no para comparar 1 ms arriba o abajo con otra medición**.
 
 | Petición | Mediana | Peor 5 % |
 | --- | --- | --- |
-| Abrir la página con sesión (`GET /yo`, 535 filas) | 4,8–6,4 ms | 5,7–8,3 ms |
-| Guardar 50 logros (`PUT /yo/progreso`) | 8,8–11,0 ms | 10,2–14,1 ms |
-| Una sesión inventada (`GET /yo`) | 2,5–3,3 ms | 2,9–6,3 ms |
-| Una página de la copia, a mitad de tabla (1000 filas) | 5,8–8,3 ms | 7,4–9,9 ms |
+| Abrir la página con sesión (`GET /yo`, 535 filas) | 7,5–9,8 ms | 8,9–11,2 ms |
+| Guardar 50 logros (`PUT /yo/progreso`) | 6,6–10,1 ms | 7,8–11,7 ms |
+| Marcar un solo tramo teniéndolos todos (`PUT /yo/progreso`) | 8,5–10,3 ms | 10,2–23,4 ms |
+| Una sesión inventada (`GET /yo`) | 3,9–5,3 ms | 5,2–7,0 ms |
+| Volver de Discord (`GET /auth/discord/callback`) | 7,3–9,1 ms | 9,2–12,3 ms |
+| Canjear el código de entrada (`POST /sesion`) | 7,0–8,2 ms | 9,3–17,4 ms |
+| Una página de la copia, a mitad de tabla (1000 filas) | 8,3–9,5 ms | 10,4–13,4 ms |
 
 Tamaño de la base: 310 MB. Ninguna petición recorre una tabla entera: todas van por la clave o un índice de cada miembro
 (la prueba «limpiar los códigos de un miembro no recorre la tabla» lo vigila donde faltaba).
