@@ -63,7 +63,9 @@ const GUARDAS = [
   ['tipo del cuerpo', "if (!(req.headers.get('Content-Type') ?? '').toLowerCase().startsWith('application/json')) throw new Fallo(415, 'tipo');", '', 'peticiones mal hechas'],
   ['sin caché', "h.set('Cache-Control', 'no-store');", '', 'toda respuesta'],
   ['sin detalles de errores', "respuesta = json(503, { error: 'no_disponible' });", 'respuesta = json(503, { error: "no_disponible", detalle: String(e) });', 'sin base de datos'],
-  ['limpieza solo de lo caducado', "env.DB.prepare('DELETE FROM sesiones WHERE caduca <= ?1').bind(ahora)", "env.DB.prepare('DELETE FROM sesiones WHERE ?1 > 0').bind(ahora)", 'borra lo caducado'],
+  ['la sesión dura lo que dice el aviso legal', 'const DURACION_SESION = 30 * DIA;', 'const DURACION_SESION = 31 * DIA;', 'duran lo que dice'],
+  ['la cookie dura lo que dice el aviso legal', 'Max-Age=600; HttpOnly; Secure; SameSite=Lax', 'Max-Age=601; HttpOnly; Secure; SameSite=Lax', 'duran lo que dice'],
+  ['limpieza solo de lo caducado',"env.DB.prepare('DELETE FROM sesiones WHERE caduca <= ?1').bind(ahora)", "env.DB.prepare('DELETE FROM sesiones WHERE ?1 > 0').bind(ahora)", 'borra lo caducado'],
 ];
 
 const ESPERA = Number(process.env.MUTACIONES_ESPERA) || 180000;
