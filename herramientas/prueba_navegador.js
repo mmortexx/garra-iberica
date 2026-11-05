@@ -18,17 +18,17 @@ const { chromium } = require('playwright');
 const { readFileSync } = require('fs');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
-// Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
+// Las 20 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
 // añaden al empezar, desde el mapa del sitio.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
   ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
   ['combate/', 'combate'], ['en/combat/', 'combate'],
   ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
-  ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
+  ['normas/', 'normas'], ['en/rules/', 'normas'], ['ruta/', 'ruta'], ['en/route/', 'ruta'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
 // Páginas que no están en el menú (se llega desde el pie o desde la página de su tema): no marcan ninguno.
-const FUERA_MENU = ['normas', 'legal', 'especie'];
+const FUERA_MENU = ['normas', 'ruta', 'legal', 'especie'];
 // Enlaces del menú (montar_web.MENU), Inicio incluido.
 const EN_MENU = 7;
 const CON_CUENTA = ['inicio', 'caceria'];
@@ -111,7 +111,7 @@ const efectos = async navegador => {
   };
   // Móvil lento: bajo el velo oscuro de la cabecera, 600–800 px de foto no se distinguen de 1000 y pesan
   // un tercio menos, y es lo que tarda en pintarse la página.
-  for (const r of ['clan/', 'en/clan/', 'caceria/', 'dinosaurios/', 'combate/', 'galeria/', 'unete/', 'normas/', 'legal/']) {
+  for (const r of ['clan/', 'en/clan/', 'caceria/', 'dinosaurios/', 'combate/', 'galeria/', 'unete/', 'normas/', 'ruta/', 'legal/']) {
     const { ctx, p } = await abrir(r, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     const foto = await p.evaluate(() => document.querySelector('.cabecera-fondo').currentSrc.split('/').pop());
     if (+foto.match(/-(\d+)\.webp$/)[1] > 800) fallos.push(`/${r} en el móvil la cabecera pide ${foto}`);

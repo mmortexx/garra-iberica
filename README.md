@@ -10,12 +10,16 @@ Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
 
 | Fichero | Para qué |
 |---|---|
-| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
-| `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
+| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas, ruta de logros y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
+| `docs/**/index.html` | Las páginas publicadas: 20 fijas (10 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas y bruma rasante (portada, cabeceras y llamadas), modo ligero automático si el navegador no da abasto, paralaje, apariciones al hacer scroll, fotos que se funden al llegar, portada de los vídeos de las batallas al acercarse (como `poster` se pediría al abrir la página y competiría con la cabecera en un móvil lento), botón grande de reproducir en ellos, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva, lo plegado que nombre la dirección (una ficha, `dinosaurios/#triceratops`, o una respuesta, `unete/#micro`: esas direcciones circulan y la prueba de navegador falla si cambian) y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). Los enlaces de la web a él llevan los valores tras el fragmento (`#planificador?especie=triceratops`): Google no rastrea los fragmentos y sí cada dirección con parámetros, y `comprobar.py` falla si un enlace interno lleva parámetros. Las direcciones con `?` siguen funcionando. Mientras se calcula la fecha, el sitio de la cuenta atrás lleva un texto sin fecha escrita a mano (`reserva`). |
 | `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos); las filas viajan a su sitio nuevo. Sin él, la lista se ve entera en el orden de las fichas. |
+| `docs/ruta.js` | La ruta de logros: marcar y recordar en el navegador y, si entras con Discord, en tu cuenta. Es lo único de la web que guarda algo en el navegador, y solo si lo usas. Sin él, la ruta se lee entera. |
+| `herramientas/logros.json`, `herramientas/logros_web.py` | La lista de logros, una sola para la página y el servicio de cuentas, y lo que la convierte en HTML. |
+| `herramientas/cuentas.json` | La dirección del servicio de cuentas. Vacía, la ruta funciona solo en el navegador de cada uno y lo dice. |
+| `servicio/` | El servicio de cuentas, en Cloudflare; no se publica en la web. Cómo ponerlo en marcha, copias de seguridad y límites: [servicio/README.md](servicio/README.md). |
 | `docs/404.html` | Página de «no encontrada», en los dos idiomas a la vez (sin scripts no puede saber cuál toca): cada uno enlaza a su inicio, su guía, su Cacería y su Discord, y `comprobar.py` lo vigila. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
@@ -42,7 +46,7 @@ python herramientas/prueba_batallas.py
 python herramientas/prueba_borradores.py
 ```
 
-- `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
+- `montar_web.py` genera las 20 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
   `titulo:` (60 como mucho), `descripcion:` (70–155 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al

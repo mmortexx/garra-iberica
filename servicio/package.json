@@ -1,0 +1,18 @@
+{
+  "name": "garra-cuentas",
+  "private": true,
+  "type": "module",
+  "description": "Servicio de cuentas de la web del clan: entrar con Discord y guardar los logros de cada miembro.",
+  "scripts": {
+    "test": "node --test \"pruebas/*.test.mjs\"",
+    "mutaciones": "node pruebas/mutaciones.mjs",
+    "mutaciones:pagina": "node pruebas/mutaciones_pagina.mjs",
+    "medir": "node pruebas/medir.mjs",
+    "recorrido": "node --test --test-concurrency=1 pruebas/recorrido.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "miniflare": "4.20260730.0",
+    "wrangler": "4.157.0"
+  }
+}

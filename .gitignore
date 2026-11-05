@@ -1,3 +1,7 @@
 .claude/
 __pycache__/
 *.local.txt
+node_modules/
+.wrangler/
+.dev.vars
+servicio/src/__mutante.js
