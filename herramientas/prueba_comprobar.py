@@ -6,6 +6,7 @@ Uso: python herramientas/prueba_comprobar.py
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -139,6 +140,19 @@ def sin_seccion_de_mutaciones():
     assert 'mut_en' in mensaje, f'sin mut_en debía parar con un mensaje claro; dice «{mensaje}»'
 
 
+def caceria_con_fallos():
+    """Con todo roto, la prueba de la cacería tiene que contar cada fallo y salir en rojo, no romperse al contarlo."""
+    with tempfile.TemporaryDirectory() as d:
+        rota = Path(d) / 'caceria.js'
+        rota.write_text("const f = () => { throw new Error('a propósito'); };\n"
+                        'module.exports = { proximaCaceria: f, restante: f, planCrecer: f, semana: f, enZona: f };\n', encoding='utf-8')
+        r = subprocess.run(['node', str(Path(__file__).with_name('prueba_caceria.js')), str(rota)], capture_output=True, text=True, encoding='utf-8')
+    lineas = r.stdout.splitlines() or ['']
+    fallidas = sum(l.startswith('FALLO') for l in lineas)
+    assert r.returncode == 1 and fallidas and lineas[-1] == f'{fallidas} fallos' and not r.stderr, \
+        f'código {r.returncode}, {fallidas} FALLO, última línea «{lineas[-1]}», error «{r.stderr.strip()[:200]}»'
+
+
 def tira(nombre):
     return f'<li><img src="@/img/{nombre}-600.webp" width="600" alt=""></li>'
 
@@ -243,6 +257,7 @@ prueba('una mutación solo en inglés', mutacion_en('mut', 'mut_en'))
 prueba('sin la lista de mutaciones en inglés', sin_seccion_de_mutaciones)
 prueba('la tira toma el texto de la foto de la galería', tira_con_foto_de_la_galeria)
 prueba('la tira con una foto que no está en la galería', tira_con_foto_de_fuera)
+prueba('la prueba de la cacería cuenta sus fallos y sale en rojo', caceria_con_fallos)
 
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)
