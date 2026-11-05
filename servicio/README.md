@@ -10,7 +10,11 @@ Mientras `herramientas/cuentas.json` tenga `servicio` vacío, la página funcion
 
 Se hace una vez. Los comandos se ejecutan dentro de `servicio/`, con Node 22 o superior.
 
-Hechos el 5 de noviembre de 2026: pasos 1 a 6, con el servicio en `https://garra-cuentas.garra-iberica.workers.dev`. Faltan los pasos 7 a 9.
+Estado el 5 de noviembre de 2026: hechos los pasos 1 a 8, con el servicio en `https://garra-cuentas.garra-iberica.workers.dev`
+(la aplicación de Discord existe y los tres secretos están puestos en Cloudflare). **Faltan** la migración `0002`, publicar
+el servicio de este repositorio y el paso 9. Lo publicado ahora es una versión anterior: no conoce los ids de logro de
+esta versión y rechazaría lo que la web nueva le mande. Por eso el paso 9 se hace en el orden de «Encender las cuentas»,
+no a la letra: **seguirlo tal cual desde el paso 5 saltaría la `0002` y el `deploy`**.
 
 1. Crea una cuenta en <https://dash.cloudflare.com/sign-up>.
 2. Instala y entra: `npm ci`, y `npx wrangler login` (abre el navegador).
@@ -29,8 +33,57 @@ Hechos el 5 de noviembre de 2026: pasos 1 a 6, con el servicio en `https://garra
    - `npx wrangler secret put DISCORD_CLIENT_SECRET`
    - `npx wrangler secret put ADMIN_IDS`: los identificadores de Discord de quien puede descargar la copia de seguridad,
      separados por comas. Sin él, nadie puede.
-9. En `herramientas/cuentas.json`, pon la dirección del paso 6 en `servicio`, sin barra final. Después, desde la raíz:
+9. Encender las cuentas, como se explica justo debajo.
+
+## Encender las cuentas
+
+En este orden, y **el servicio primero, la web después**. Cada paso, dentro de `servicio/` salvo el último.
+
+1. `npx wrangler d1 migrations apply garra-cuentas --remote`: aplica lo que falte (hoy, `0002`, un índice) y no toca los
+   datos. Comprueba con `npx wrangler d1 migrations list garra-cuentas --remote`: no debe quedar nada pendiente.
+2. `npx wrangler deploy`: publica el servicio de este repositorio.
+3. Comprueba el servicio solo, con la web aún sin cuentas: `curl https://garra-cuentas.garra-iberica.workers.dev/salud`
+   debe devolver `{"ok":true}`.
+4. En `herramientas/cuentas.json`, pon esa dirección en `servicio`, sin barra final. Desde la raíz:
    `python herramientas/montar_web.py`, `python herramientas/comprobar.py` y sube los cambios.
+5. Haz la prueba de humo de abajo.
+
+### Prueba de humo
+
+Con la web ya publicada con cuentas, en una ventana privada y con `npx wrangler tail` abierto en otra terminal
+(no debe salir ningún error):
+
+1. La ruta de logros (`/ruta/`) enseña «Entrar con Discord» y la consola del navegador no muestra errores de seguridad.
+2. Entra con tu cuenta de Discord: vuelves a la ruta con tu nombre, sin código en la dirección.
+3. Marca un logro, recarga y comprueba que sigue marcado. Ábrela en otro navegador, entra y comprueba que también está.
+4. «Descargar mis datos» baja un fichero con tu nombre y ese logro.
+5. «Salir» te deja sin sesión, y «Entrar con Discord» te lleva otra vez a Discord.
+6. En la base: `npx wrangler d1 execute garra-cuentas --remote --command "SELECT COUNT(*) AS miembros FROM miembros"`
+   cuenta uno más. Si no quieres conservar la prueba, bórrala con «Borrar mis datos».
+7. Si algo falla y hay que dar marcha atrás en la web, ve a «Apagar las cuentas».
+
+## Apagar las cuentas
+
+Vaciar `servicio` en `cuentas.json` **no borra nada de la base**, y a la vez hace que el aviso legal diga que no hay cuentas.
+Si se hace con miembros dentro, el aviso mentiría sobre datos que siguen guardados. Se hace así, en este orden y **la web
+primero, el servicio después**:
+
+1. Avisa en el Discord con fecha. Quien quiera sus datos puede bajarlos con «Descargar mis datos» mientras la web aún los ofrece.
+2. Descarga una copia de seguridad (arriba) si quieres conservarla, y guárdala fuera del repositorio.
+3. Si no se van a conservar los datos, bórralos todos y comprueba que no queda nada:
+   `npx wrangler d1 execute garra-cuentas --remote --command "DELETE FROM miembros"` y luego
+   `npx wrangler d1 execute garra-cuentas --remote --command "SELECT COUNT(*) AS n FROM miembros"` (debe dar 0). Las
+   sesiones, los códigos de entrada y los logros caen en cascada con cada miembro.
+   Si se conservan, **no se apaga**: no hay forma honesta de dejar datos guardados con un aviso que dice que no existen.
+   Deja las cuentas encendidas.
+4. Solo con la base en 0: `servicio` vacío en `herramientas/cuentas.json`, `python herramientas/montar_web.py`,
+   `python herramientas/comprobar.py` y sube los cambios.
+5. Después, y solo después, `npx wrangler delete` dentro de `servicio/` (quita el servicio publicado) y, si quieres, borra
+   la aplicación de Discord y los secretos.
+
+Con la web ya sin servicio, quien tenía una sesión guardada en su navegador no ve nada raro: la página dice que las cuentas
+no están disponibles, conserva sus marcas en ese navegador y no habla con ningún servicio. Si las cuentas vuelven sin
+haber borrado la base, esa sesión (si no ha caducado) y lo que quedó pendiente de subir siguen donde estaban.
 
 ## Copia de seguridad y vuelta atrás
 

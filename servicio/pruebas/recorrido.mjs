@@ -136,6 +136,42 @@ test('sin servicio configurado la página funciona, lo dice y no ofrece entrar',
   assert.deepEqual(errores, []);
 });
 
+test('con sesión y el servicio apagado en la web: no finge guardar, no pierde nada y sigue al volver', async () => {
+  const { ctx, abrir } = await dispositivo();
+  let p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'allo-exp');
+  await subido('ana', 'allo-exp', 1);
+  await caer(ctx);
+  await pulsar(p, 'carno-exp');
+  await hasta(async () => (await guardado(p)).subidas?.['carno-exp'] === 1, 'lo pendiente guardado en el navegador');
+  await p.close();
+
+  sinServicio = true;
+  const pedidas = [];
+  ctx.on('request', r => { if (!r.url().startsWith(URL_WEB)) pedidas.push(r.url()); });
+  p = await abrir();
+  const estado = await texto(p, '[data-estado]');
+  assert.match(estado, /aún no están disponibles/, `dice «${estado}»`);
+  assert.equal(await visible(p, '[data-dentro]'), false, 'sigue enseñando una cuenta que ya no existe');
+  assert.equal(await visible(p, '[data-entrar]'), false);
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  assert.equal(await pulsado(p, 'carno-exp'), 'true');
+  await pulsar(p, 'dryo-exp');
+  await p.reload();
+  assert.equal(await pulsado(p, 'dryo-exp'), 'true', 'lo marcado sin servicio se guarda en el navegador');
+  assert.deepEqual(pedidas, [], 'no habla con un servicio que la web ya no declara');
+  await p.close();
+
+  sinServicio = false;
+  await volver(ctx);
+  p = await abrir();
+  await subido('ana', 'carno-exp', 1);
+  await subido('ana', 'dryo-exp', 1);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
 test('sin JavaScript se lee todo y nada finge funcionar', async () => {
   const { ctx, abrir } = await dispositivo({ javaScriptEnabled: false });
   const p = await abrir();

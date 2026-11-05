@@ -223,11 +223,11 @@
     const n = porSubir();
     let texto;
     if (!hayAlmacen) texto = T.sinAlmacen;
+    else if (!SERVICIO) texto = T.sinServicio;
     else if (caducada) texto = T.caducada(n);
     else if (almacen.token && servicioCaido) texto = n ? T.pendientes(n) : T.caido;
     else if (almacen.token && n) texto = T.subiendo(n);
     else if (almacen.token) texto = T.nube;
-    else if (!SERVICIO) texto = T.sinServicio;
     else if (servicioCaido) texto = T.caido;
     else texto = T.soloNavegador;
     estado.textContent = texto;
@@ -242,7 +242,8 @@
   }
 
   function pintarCuenta() {
-    const dentro = Boolean(almacen.token && cuenta);
+    // Sin servicio en la web no hay cuenta que enseñar, aunque quede una sesión guardada: se conserva para cuando vuelva.
+    const dentro = Boolean(SERVICIO && almacen.token && cuenta);
     ver('[data-dentro]', dentro);
     ver('[data-fuera]', !dentro && Boolean(SERVICIO));
     if (dentro) {

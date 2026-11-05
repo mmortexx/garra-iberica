@@ -53,6 +53,8 @@ const GUARDAS = [
   ['la dirección antigua no toca nada', "if (location.hostname === 'mmortexx.github.io') return;", '', 'dirección antigua'],
   ['lo rechazado se queda pendiente', 'almacen.subidas[k] === v && !retener.has(k)', 'almacen.subidas[k] === v', 'rechaza'],
   ['lo rechazado no se reintenta sin parar', '.filter(k => !retenidas.has(k))', '', 'rechaza'],
+  ['sin servicio no se enseña una cuenta', 'const dentro = Boolean(SERVICIO && almacen.token && cuenta);', 'const dentro = Boolean(almacen.token && cuenta);', 'servicio apagado en la web'],
+  ['sin servicio no finge guardar', 'else if (!SERVICIO) texto = T.sinServicio;\n    else if (caducada)', 'else if (caducada)', 'servicio apagado en la web'],
 ];
 
 const SOLO = process.env.MUTACIONES_SOLO ? GUARDAS.slice(0, Number(process.env.MUTACIONES_SOLO)) : GUARDAS;
