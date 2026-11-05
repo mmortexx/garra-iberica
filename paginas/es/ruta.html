@@ -7,12 +7,12 @@ h1: Ruta de logros
     <div class="envoltura cabecera-in">
       {{migas}}
       <h1 id="titulo" class="entra">Ruta de logros</h1>
-      <p class="entrada entra entra-2">Los logros de Asura, sesión a sesión. Qué tienes solo lo ves tú en Nexus, así que aquí se marcan a mano.</p>
+      <p class="entrada entra entra-2">Los logros de Asura, sesión a sesión. Trae los tuyos de Nexus pegando tu lista, o márcalos a mano.</p>
     </div>
   </section>
 
   <section class="seccion" id="tu-cuenta" aria-labelledby="t-cuenta">
-    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}">
+    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}" data-nexus="{{logros_nexus}}">
       <h2 id="t-cuenta">Tu progreso</h2>
       <noscript><p class="ruta-aviso">Esta página necesita JavaScript para marcar y guardar. Sin él puedes leer toda la ruta aquí abajo.</p></noscript>
       <div class="ruta-resumen" data-resumen hidden>
@@ -54,6 +54,23 @@ h1: Ruta de logros
         </p>
       </div>
 
+      <div class="ruta-paso ruta-nexus" data-nexus-caja hidden>
+        <h3>Trae tus logros de Nexus</h3>
+        <ol class="ruta-pasos">
+          <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Abre tu lista de logros en Nexus<span class="oculto"> (se abre en una pestaña nueva)</span></a>. Se ve como un texto raro: es normal. Si solo pone «Unauthorized», entra antes en Nexus y vuelve a abrirla.</li>
+          <li>Copia toda la página: Ctrl+A y Ctrl+C. En el móvil, mantén pulsado el texto y elige «Seleccionar todo». En Firefox, abre antes la segunda pestaña de arriba (datos sin procesar, «Raw Data»).</li>
+          <li>Vuelve aquí y pégala en este recuadro: tus logros se marcan solos.</li>
+        </ol>
+        <label class="ruta-etiqueta" for="nexus-pegar">Tu lista de Nexus</label>
+        <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-mini" data-nexus-traer>Marcar mis logros</button>
+        </p>
+        <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
+        <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
+        <p class="ruta-nota">Lo que pegas se lee solo en tu navegador y ese texto no se envía a ningún sitio: solo se guardan las marcas que salen de él, en este navegador y, si has entrado, en tu cuenta. Nunca quita nada: solo añade lo que te faltaba, y puedes seguir marcando a mano.</p>
+      </div>
+
       <div class="ruta-paso" data-codigo-caja hidden>
         <h3 id="t-codigo">¿Ya usabas la ruta? Trae tu código</h3>
         <p class="ruta-nota">Pega el código que empieza por GR1. Nunca quita nada: solo añade lo que te faltaba. También puedes copiar el tuyo, para llevarlo a otro navegador sin cuenta.</p>
@@ -74,7 +91,7 @@ h1: Ruta de logros
   <section class="seccion" id="la-ruta" aria-labelledby="t-ruta">
     <div class="envoltura">
       <h2 id="t-ruta">La ruta</h2>
-      <p class="intro">Una sesión por dino, ordenadas por zonas. La que toca sale abierta. Abre también <a href="#los-logros">la lista de logros</a> y marca lo que ya tengas en Nexus: la ruta salta lo que esté hecho.</p>
+      <p class="intro">Una sesión por dino, ordenadas por zonas. La que toca sale abierta. Abre también <a href="#los-logros">la lista de logros</a> y trae de Nexus o marca a mano lo que ya tengas: la ruta salta lo que esté hecho.</p>
       {{logros_ruta}}
       <p class="ruta-nota">Teletransporte de Nexus: menos del 30% de crecimiento, estamina al 100%, quieto 20 s y 3 min de espera entre uno y otro.</p>
     </div>

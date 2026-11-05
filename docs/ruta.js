@@ -46,6 +46,23 @@
     copiaFrenada: n => `Downloading the backup… ${n} rows. Waiting a minute for the request limit: keep this page open.`,
     copiaHecha: (m, p) => `Backup downloaded: ${m} members, ${p} rows of progress. Keep it somewhere safe: it has personal data.`,
     coord: c => `Copied: ${c}. Paste it into the Nexus map`,
+    nexus: {
+      error: 'Error:',
+      vacio: 'There is nothing to read: paste the list Nexus gives you.',
+      grande: 'That is too much text to be your Nexus list, so it has not been read. Copy only that page.',
+      pagina: 'That is not your achievements list: it looks like another page. Sign in to Nexus, open the link above and copy what comes up.',
+      sesion: 'Nexus says you are not signed in. Sign in to Nexus, open the link above again and copy what comes up.',
+      cortado: 'The list arrives cut off: the end is missing. Copy the whole page again, leaving nothing out.',
+      roto: 'The list is damaged and cannot be read. Copy the whole page again, without changing anything.',
+      firefox: 'Firefox only copied a summary. In the Nexus tab, open the second tab at the top (Raw Data), then copy the whole page again.',
+      forma: 'This list does not have the shape we expect: Nexus may have changed. Nothing has been ticked. Let us know on the clan’s Discord.',
+      servidor: 'This list is from another Nexus server, not Asura 1, and only Asura 1 counts here. Nothing has been ticked.',
+      hecho: (n, y) => `Steps added: ${n}. You already had: ${y}.`,
+      desconocidos: (n, nombres) => `Achievements in your list we do not know: ${n} (${nombres}). The rest have been ticked.`,
+      noCasan: (n, nombres) => `Achievements whose steps differ from ours, not ticked: ${n} (${nombres}).`,
+      faltan: n => `Achievements of ours missing from your list: ${n}.`,
+      saltos: n => `In ${n} achievements Nexus counts a step as done without the ones before it: ticked only up to the gap.`,
+    },
     errores: {
       no_miembro: 'Only members of the clan’s Discord server can sign in. If you just joined, finish the server’s checks first. Nothing about you has been saved.',
       cancelado: 'You cancelled on Discord. Nothing has changed.',
@@ -87,6 +104,23 @@
     copiaFrenada: n => `Descargando la copia… ${n} filas. Esperando un minuto por el límite de peticiones: no cierres la página.`,
     copiaHecha: (m, p) => `Copia descargada: ${m} miembros, ${p} filas de progreso. Guárdala en lugar seguro: lleva datos personales.`,
     coord: c => `Copiado: ${c}. Pégalo en el mapa de Nexus`,
+    nexus: {
+      error: 'Error:',
+      vacio: 'No hay nada que leer: pega la lista que te da Nexus.',
+      grande: 'Eso es demasiado texto para ser tu lista de Nexus, y no se ha leído. Copia solo esa página.',
+      pagina: 'Eso no es tu lista de logros: parece otra página. Entra en Nexus, abre el enlace de arriba y copia lo que salga.',
+      sesion: 'Nexus dice que no has entrado. Entra en Nexus, abre otra vez el enlace de arriba y copia lo que salga.',
+      cortado: 'La lista llega cortada: falta el final. Copia otra vez toda la página, sin dejarte nada.',
+      roto: 'La lista está dañada y no se puede leer. Copia otra vez toda la página, sin cambiar nada.',
+      firefox: 'Firefox solo ha copiado un resumen. En la pestaña de Nexus, abre la segunda pestaña de arriba (datos sin procesar, «Raw Data») y copia otra vez toda la página.',
+      forma: 'Esta lista no tiene la forma que esperamos: puede que Nexus haya cambiado. No se ha marcado nada. Avísanos en el Discord del clan.',
+      servidor: 'Esta lista es de otro servidor de Nexus, no de Asura 1, y aquí solo cuenta Asura 1. No se ha marcado nada.',
+      hecho: (n, y) => `Tramos añadidos: ${n}. Ya tenías: ${y}.`,
+      desconocidos: (n, nombres) => `Logros de tu lista que no conocemos: ${n} (${nombres}). El resto se ha marcado.`,
+      noCasan: (n, nombres) => `Logros con tramos distintos a los nuestros, sin marcar: ${n} (${nombres}).`,
+      faltan: n => `Logros nuestros que no venían en tu lista: ${n}.`,
+      saltos: n => `En ${n} logros Nexus da por hecho un tramo sin los anteriores: se ha marcado solo hasta el hueco.`,
+    },
     errores: {
       no_miembro: 'Solo pueden entrar los miembros del servidor de Discord del clan. Si acabas de unirte, termina antes las comprobaciones del servidor. No se ha guardado nada de ti.',
       cancelado: 'Has cancelado en Discord. No ha cambiado nada.',
@@ -178,7 +212,7 @@
       li, d: li.querySelector('details'), contador: li.querySelector('[data-contador]'),
       tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
     }));
-    for (const s of ['[data-resumen]', '[data-codigo-caja]']) ver(s, true);
+    for (const s of ['[data-resumen]', '[data-nexus-caja]', '[data-codigo-caja]']) ver(s, true);
     document.querySelector('[data-filtros]').hidden = false;
   }
 
@@ -549,6 +583,143 @@
     aviso([nuevas ? T.importadas(nuevas) : T.nadaQueTraer, ignoradas ? T.ignoradas(ignoradas) : ''].filter(Boolean).join(' '));
   }
 
+  // ---------- la lista de Nexus ----------
+  // Lo pegado es de fuera y no se fía de nada: se mide antes de interpretarlo, solo se leen campos concretos y sus nombres
+  // se pintan como texto. No sale de aquí: lo único que se guarda son las marcas, por el camino de siempre.
+  const TOPE_NEXUS = 2000000;
+  const SERVIDOR_NEXUS = 'Asura 1';
+
+  // ¿Se queda abierta alguna llave, corchete o cadena? Entonces falta el final, no es que esté mal escrito.
+  function sinCerrar(texto) {
+    let abiertos = 0;
+    let enCadena = false;
+    for (let i = 0; i < texto.length; i++) {
+      const c = texto[i];
+      if (enCadena) {
+        if (c === '\\') i++;
+        else if (c === '"') enCadena = false;
+      } else if (c === '"') enCadena = true;
+      else if (c === '{' || c === '[') abiertos++;
+      else if (c === '}' || c === ']') abiertos--;
+    }
+    return enCadena || abiertos > 0;
+  }
+
+  // { fallo } o { logros }. Por delante o por detrás del JSON puede venir algo más, según lo que el navegador copie.
+  function leerNexus(pegado) {
+    if (pegado.length > TOPE_NEXUS) return { fallo: 'grande' };
+    const texto = pegado.trim();
+    if (!texto) return { fallo: 'vacio' };
+    // La vista de JSON de Firefox copia un resumen, no la lista.
+    if (/(?:^|\n)snapshot_seconds\t/.test(texto.slice(0, 2000))) return { fallo: 'firefox' };
+    const inicio = texto.indexOf('{');
+    if (inicio < 0 || /<(?:html|!doctype|head|body)\b|^</i.test(texto.slice(0, 2000))) return { fallo: 'pagina' };
+    const fin = texto.lastIndexOf('}');
+    const json = fin > inicio ? texto.slice(inicio, fin + 1) : texto.slice(inicio);
+    let datos;
+    try {
+      datos = JSON.parse(json);
+    } catch {
+      return { fallo: sinCerrar(json) ? 'cortado' : 'roto' };
+    }
+    if (typeof datos.error === 'string' && !Array.isArray(datos.achievements)) return { fallo: 'sesion' };
+    if (typeof datos.server?.name !== 'string' || !Array.isArray(datos.achievements) || !datos.achievements.length) return { fallo: 'forma' };
+    if (datos.server.name !== SERVIDOR_NEXUS) return { fallo: 'servidor' };
+    return { logros: datos.achievements };
+  }
+
+  const pocosNombres = lista => lista.filter(n => typeof n === 'string').slice(0, 5).map(n => n.slice(0, 60)).join(', ');
+
+  // { tramos: logro → [tramo hecho o no], vistos, desconocidos, noCasan }
+  function casarNexus(logros, tabla, ocultas) {
+    const tapar = ocultas.length ? new RegExp(`\\b(${ocultas.join('|')})[a-z]*`, 'g') : null;
+    const claveNexus = (categoria, nombre) => {
+      const clave = `${categoria}|${nombre}`;
+      return tapar ? clave.replace(tapar, '$1') : clave;
+    };
+    const tramos = new Map();
+    const vistos = new Set();
+    const desconocidos = [];
+    const noCasan = [];
+    for (const l of logros) {
+      const clave = typeof l?.category_path === 'string' && typeof l.name === 'string' ? claveNexus(l.category_path, l.name) : null;
+      if (clave === null || !tabla.has(clave) || vistos.has(clave)) {
+        desconocidos.push(l?.name);
+        continue;
+      }
+      vistos.add(clave);
+      const [id, desde, objetivos] = tabla.get(clave);
+      const c = l.conditions;
+      if (!Array.isArray(c) || c.length !== objetivos.length || !c.every((x, i) => x?.target === objetivos[i] && typeof x.done === 'boolean')) {
+        noCasan.push(l.name);
+        continue;
+      }
+      if (!tramos.has(id)) tramos.set(id, new Array(MAXIMOS.get(id)).fill(false));
+      c.forEach((x, i) => { tramos.get(id)[desde + i] = x.done; });
+    }
+    return { tramos, vistos, desconocidos, noCasan };
+  }
+
+  function traerNexus(pegado) {
+    const campo = $('[data-nexus-pegar]');
+    // Un error se distingue sin depender del color: lleva su rótulo escrito y, para quien usa lector de pantalla, se anuncia al momento.
+    const decir = (texto, mal = false) => {
+      campo.value = '';
+      const bien = $('[data-nexus-bien]');
+      const error = $('[data-nexus-mal]');
+      bien.textContent = mal ? '' : texto;
+      bien.hidden = mal;
+      error.replaceChildren();
+      if (mal) {
+        const rotulo = document.createElement('b');
+        rotulo.textContent = T.nexus.error;
+        error.append(rotulo, ' ', texto);
+      }
+      error.hidden = !mal;
+    };
+    const { fallo, logros } = leerNexus(pegado);
+    if (fallo) return decir(T.nexus[fallo], true);
+    const { ocultas, logros: entradas } = JSON.parse(raiz.dataset.nexus);
+    const tabla = new Map(Object.entries(entradas));
+    const { tramos, vistos, desconocidos, noCasan } = casarNexus(logros, tabla, ocultas);
+    if (!tramos.size) return decir(T.nexus.forma, true);
+    let nuevos = 0;
+    let ya = 0;
+    let saltos = 0;
+    for (const [id, hechos] of tramos) {
+      // Un tramo sin los anteriores no se da por hecho: la marca es «hasta aquí», y la ruta se saltaría lo que falta.
+      const hueco = hechos.indexOf(false);
+      const n = hueco < 0 ? hechos.length : hueco;
+      if (hechos.lastIndexOf(true) > n) saltos++;
+      const antes = nivel(id);
+      // Lo oculto se guarda, pero no se cuenta: la barra de la página solo suma lo que enseña.
+      if (botones.has(id)) {
+        ya += Math.min(n, antes);
+        nuevos += Math.max(n - antes, 0);
+      }
+      if (n > antes) apuntar(id, n);
+    }
+    const faltan = [...tabla].filter(([clave, [id]]) => !vistos.has(clave) && botones.has(id)).length;
+    guardar();
+    pintarMarcas();
+    if (almacen.token) programarSubida(0);
+    return decir([
+      T.nexus.hecho(nuevos, ya),
+      desconocidos.length ? T.nexus.desconocidos(desconocidos.length, pocosNombres(desconocidos)) : '',
+      noCasan.length ? T.nexus.noCasan(noCasan.length, pocosNombres(noCasan)) : '',
+      faltan ? T.nexus.faltan(faltan) : '',
+      saltos ? T.nexus.saltos(saltos) : '',
+    ].filter(Boolean).join(' '));
+  }
+
+  // Se coge del portapapeles sin que llegue a pintarse en el recuadro: una página entera ahí pesa, y más si es enorme.
+  $('[data-nexus-pegar]').addEventListener('paste', e => {
+    const pegado = e.clipboardData?.getData('text');
+    if (typeof pegado !== 'string') return;
+    e.preventDefault();
+    traerNexus(pegado);
+  });
+
   function alPortapapeles(texto, bien, mal) {
     try {
       navigator.clipboard.writeText(texto).then(bien, mal);
@@ -699,6 +870,7 @@
     else if ('borrarSi' in b.dataset) borrarTodo();
     else if ('copia' in b.dataset) copiaDelClan();
     else if ('traer' in b.dataset) traerCodigo();
+    else if ('nexusTraer' in b.dataset) traerNexus($('[data-nexus-pegar]').value);
     else if ('copiarCodigo' in b.dataset) {
       const c = codigoActual();
       const mal = () => {

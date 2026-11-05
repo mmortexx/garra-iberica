@@ -7,12 +7,12 @@ h1: Achievements route
     <div class="envoltura cabecera-in">
       {{migas}}
       <h1 id="titulo" class="entra">Achievements route</h1>
-      <p class="entrada entra entra-2">The Asura achievements, session by session. Only you can see what you have on Nexus, so here you tick them by hand.</p>
+      <p class="entrada entra entra-2">The Asura achievements, session by session. Bring yours from Nexus by pasting your list, or tick them by hand.</p>
     </div>
   </section>
 
   <section class="seccion" id="your-account" aria-labelledby="t-cuenta">
-    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}">
+    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}" data-nexus="{{logros_nexus}}">
       <h2 id="t-cuenta">Your progress</h2>
       <noscript><p class="ruta-aviso">This page needs JavaScript to tick and save. Without it you can still read the whole route below.</p></noscript>
       <div class="ruta-resumen" data-resumen hidden>
@@ -54,6 +54,23 @@ h1: Achievements route
         </p>
       </div>
 
+      <div class="ruta-paso ruta-nexus" data-nexus-caja hidden>
+        <h3>Bring your achievements from Nexus</h3>
+        <ol class="ruta-pasos">
+          <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Open your achievements list on Nexus<span class="oculto"> (opens in a new tab)</span></a>. It looks like strange text: that is normal. If it only says “Unauthorized”, sign in to Nexus first and open it again.</li>
+          <li>Copy the whole page: Ctrl+A and Ctrl+C. On a phone, press and hold the text and choose “Select all”. In Firefox, first open the second tab at the top (Raw Data).</li>
+          <li>Come back here and paste it into this box: your achievements tick themselves.</li>
+        </ol>
+        <label class="ruta-etiqueta" for="nexus-pegar">Your Nexus list</label>
+        <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-mini" data-nexus-traer>Tick my achievements</button>
+        </p>
+        <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
+        <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
+        <p class="ruta-nota">What you paste is read only in your browser and that text is not sent anywhere: only the ticks that come from it are saved, in this browser and, if you are signed in, in your account. It never removes anything: it only adds what you were missing, and you can keep ticking by hand.</p>
+      </div>
+
       <div class="ruta-paso" data-codigo-caja hidden>
         <h3 id="t-codigo">Already using the route? Bring your code</h3>
         <p class="ruta-nota">Paste the code that starts with GR1. It never removes anything: it only adds what you were missing. You can also copy yours, to take it to another browser without an account.</p>
@@ -74,7 +91,7 @@ h1: Achievements route
   <section class="seccion" id="the-route" aria-labelledby="t-ruta">
     <div class="envoltura">
       <h2 id="t-ruta">The route</h2>
-      <p class="intro">One session per dino, ordered by area. The current one is open. Also open <a href="#all-achievements">the achievements list</a> and tick what you already have on Nexus: the route skips what is done.</p>
+      <p class="intro">One session per dino, ordered by area. The current one is open. Also open <a href="#all-achievements">the achievements list</a> and bring from Nexus or tick by hand what you already have: the route skips what is done.</p>
       {{logros_ruta}}
       <p class="ruta-nota">Nexus teleport: under 30% growth, 100% stamina, stand still for 20 s, and a 3 min wait between teleports.</p>
     </div>

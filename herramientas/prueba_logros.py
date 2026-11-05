@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import comprobar  # noqa: E402
 import guia_dinos  # noqa: E402
+import limpiar_muestra_nexus  # noqa: E402
 import logros_web  # noqa: E402
 import montar_web  # noqa: E402
 
@@ -98,6 +99,137 @@ def cada_punto_en_una_sesion():
 def datos_de_la_pagina():
     from html import unescape
     assert json.loads(unescape(logros_web.datos_pagina(d))) == MAX
+
+
+MUESTRA = json.loads(limpiar_muestra_nexus.MUESTRA.read_text(encoding='utf-8'))
+
+
+def diferencias_nexus(tabla, muestra, maximos):
+    """Todo lo que no casa uno a uno entre nuestra lista y lo que dice Nexus."""
+    fuera = []
+    reales = {}
+    for x in muestra['achievements']:
+        clave = (x['category_path'], x['name'])
+        if clave in reales:
+            fuera.append(f'repetido en Nexus: {clave}')
+        reales[clave] = x
+    fuera += [f'sin decidir, Nexus trae: {k}' for k in reales.keys() - tabla.keys()]
+    fuera += [f'ya no está en Nexus: {k}' for k in tabla.keys() - reales.keys()]
+    cubiertos = {}
+    for clave, (logro, desde, objetivos) in tabla.items():
+        if clave in reales and [c['target'] for c in reales[clave]['conditions']] != objetivos:
+            fuera.append(f'tramos distintos en {clave}')
+        for i in range(desde, desde + len(objetivos)):
+            if (logro, i) in cubiertos:
+                fuera.append(f'tramo repetido: {logro} {i + 1}')
+            cubiertos[logro, i] = clave
+    tramos = {(k, i) for k, n in maximos.items() for i in range(n)}
+    fuera += [f'tramo sin correspondencia: {k} {i + 1}' for k, i in tramos - cubiertos.keys()]
+    fuera += [f'tramo que no existe: {k} {i + 1}' for k, i in cubiertos.keys() - tramos]
+    return fuera
+
+
+def nexus_casa_uno_a_uno():
+    tabla = logros_web.nexus(d)
+    assert len(MUESTRA['achievements']) == 253 == len(tabla), f'{len(MUESTRA["achievements"])} y {len(tabla)}'
+    assert not (f := diferencias_nexus(tabla, MUESTRA, MAX)), f
+    assert len({v[0] for v in tabla.values()}) == 184 == len(MAX)
+    assert sum(len(v[2]) for v in tabla.values()) == 535 == sum(MAX.values())
+
+
+def nexus_sin_decidir_falla():
+    # Nexus renombra uno.
+    copia = json.loads(json.dumps(MUESTRA))
+    copia['achievements'][0]['name'] = 'Renombrado'
+    assert any('sin decidir' in x for x in diferencias_nexus(logros_web.nexus(d), copia, MAX))
+    # Nexus cambia los tramos de uno.
+    copia = json.loads(json.dumps(MUESTRA))
+    copia['achievements'][0]['conditions'][0]['target'] += 1
+    assert any('tramos distintos' in x for x in diferencias_nexus(logros_web.nexus(d), copia, MAX))
+    # Nosotros añadimos una especie, una huella o un tramo sin decidir cómo se llaman en Nexus.
+    nueva = json.loads(json.dumps(d))
+    nueva['especies'].append({**nueva['especies'][0], 'id': 'nueva', 'nombre': 'Nueva'})
+    assert any('ya no está' in x for x in diferencias_nexus(logros_web.nexus(nueva), MUESTRA, logros_web.maximos(nueva)))
+    nueva = json.loads(json.dumps(d))
+    nueva['huellas'].append({**nueva['huellas'][0], 'codigo': 'Z99'})
+    assert any('ya no está' in x for x in diferencias_nexus(logros_web.nexus(nueva), MUESTRA, logros_web.maximos(nueva)))
+    # Un logro nuestro que no sale de nexus(): se queda sin correspondencia.
+    tabla = logros_web.nexus(d)
+    del tabla['Dino Addict', "It's addicting, isn't it ?"]
+    assert any('tramo sin correspondencia: addict' in x for x in diferencias_nexus(tabla, MUESTRA, MAX))
+
+
+def nexus_en_la_pagina():
+    pagina = json.loads(unescape(logros_web.nexus_pagina(d)))
+    tabla = logros_web.nexus(d)
+    assert pagina['ocultas'] == ['Ovi']
+    assert len(pagina['logros']) == len(tabla), 'al recortar lo oculto, dos logros se llaman igual'
+    for (categoria, nombre), v in tabla.items():
+        assert pagina['logros'][logros_web.nexus_clave(categoria, nombre, pagina['ocultas'])] == list(v)
+    assert 'Oviraptor' not in logros_web.nexus_pagina(d), 'la tabla de la página nombra lo oculto'
+    # Si Oviraptor deja de ser oculto, su nombre entero entra en la tabla sin tocar nada más.
+    visible = json.loads(json.dumps(d))
+    for e in visible['especies']:
+        e.pop('oculto', None)
+    assert 'Carnivores / Oviraptor|Growth 1%' in json.loads(unescape(logros_web.nexus_pagina(visible)))['logros']
+    # El servicio acepta MAX_CAMBIOS logros por guardado: una importación siempre cabe en uno.
+    servicio = (logros_web.HERRAMIENTAS.parent / 'servicio' / 'src' / 'index.js').read_text(encoding='utf-8')
+    tope = int(re.search(r'const MAX_CAMBIOS = (\d+);', servicio).group(1))
+    assert len(MAX) <= tope, f'{len(MAX)} logros no caben en un guardado de {tope}'
+
+
+def aviso_legal_de_nexus():
+    for lang, frase in (('es', 'Tu lista de Asura Nexus'), ('en', 'Your Asura Nexus list')):
+        legal = (montar_web.FUENTES / lang / 'legal.html').read_text(encoding='utf-8')
+        for activas in (True, False):
+            assert frase in montar_web.segun_cuentas(legal, activas), f'{lang}: el aviso legal no habla de la lista con cuentas={activas}'
+
+
+def muestra_sin_datos_de_nadie(muestra=None):
+    muestra = muestra or MUESTRA
+    assert set(muestra) == {'server', 'achievements'}, f'la muestra trae de más: {sorted(set(muestra) - {"server", "achievements"})}'
+    assert set(muestra['server']) == {'name'}, 'el servidor de la muestra trae de más'
+    for x in muestra['achievements']:
+        assert set(x) == {'category_path', 'name', 'conditions'}, f'{x["name"]} trae de más: premios o algo que solo se ve tras entrar en Nexus'
+        for c in x['conditions']:
+            assert set(c) == {'target', 'done'}, f'un tramo de {x["name"]} trae de más: premios o datos de una cuenta'
+    assert limpiar_muestra_nexus.limpiar(muestra) == muestra, 'el progreso de nexus_muestra.json no es el de ejemplo: pásala por limpiar_muestra_nexus.py'
+
+
+def muestra_real_no_pasa():
+    premio = {'type': 'points', 'label': '5 000 Asura Points'}
+    for tocar in (lambda m: m['achievements'][0].__setitem__('rewards', [premio]),
+                  lambda m: m['achievements'][0]['conditions'][0].__setitem__('rewards', [premio]),
+                  lambda m: m.__setitem__('category_rewards', [{'name': 'Carnivores', 'rewards': [premio]}]),
+                  lambda m: m['achievements'][0].__setitem__('description', 'Texto de Nexus'),
+                  lambda m: m['achievements'][0].__setitem__('done_at', '2026-10-24T11:30:52+00:00'),
+                  lambda m: m['achievements'][0]['conditions'][0].__setitem__('current', 7),
+                  lambda m: m['achievements'][0]['conditions'][0].__setitem__('done', not m['achievements'][0]['conditions'][0]['done']),
+                  lambda m: m.__setitem__('snapshot_seconds', 20),
+                  lambda m: m['server'].__setitem__('id', 1),
+                  lambda m: m.__setitem__('account', {'name': 'alguien'})):
+        copia = json.loads(json.dumps(MUESTRA))
+        tocar(copia)
+        try:
+            muestra_sin_datos_de_nadie(copia)
+        except AssertionError:
+            continue
+        raise AssertionError(f'pasa una muestra con datos de más: {[k for k in copia if k not in MUESTRA]}')
+
+
+def limpiar_quita_lo_de_nexus():
+    """Una respuesta como la real, con premios, ids, fechas y un campo que hoy no existe: de ahí sale justo la muestra."""
+    real = json.loads(json.dumps(MUESTRA))
+    real['server'].update(id=1, enabled=True)
+    real.update(snapshot_seconds=20, summary={'done': 153}, categories=['Dino Addict'], category_rewards=[{'rewards': [{'label': 'Asura Points'}]}], campo_nuevo='x')
+    for x in real['achievements']:
+        x.update(id='6a7b', description='Texto', rewards=[{'label': 'Asura Points'}], done_at='2026-10-24', state='collected', progress={'current': 13}, campo_nuevo='x')
+        for c in x['conditions']:
+            c.update(current=13, collected=True, rewards=[{'label': 'Asura Points'}], campo_nuevo='x')
+            c['done'] = not c['done']
+    limpia = limpiar_muestra_nexus.limpiar(real)
+    assert limpia == MUESTRA, 'limpiar deja pasar algo de la respuesta real'
+    assert 'Asura Points' not in json.dumps(limpia) and 'campo_nuevo' not in json.dumps(limpia)
 
 
 def direccion_mal_escrita():
@@ -232,6 +364,13 @@ def main():
     prueba('cada tramo visible tiene su botón, una vez', cada_tramo_tiene_boton)
     prueba('cada punto del mapa está en una sesión y solo una', cada_punto_en_una_sesion)
     prueba('los datos de la página son los del catálogo', datos_de_la_pagina)
+    prueba('Nexus y nuestra lista casan uno a uno, con los mismos tramos', nexus_casa_uno_a_uno)
+    prueba('un logro añadido o renombrado sin decidir su correspondencia se caza', nexus_sin_decidir_falla)
+    prueba('la tabla de Nexus de la página no nombra lo oculto y cabe en un guardado', nexus_en_la_pagina)
+    prueba('el aviso legal habla de la lista de Nexus, con cuentas y sin ellas', aviso_legal_de_nexus)
+    prueba('la muestra de Nexus lleva solo lo que el importador lee', muestra_sin_datos_de_nadie)
+    prueba('una muestra con premios o datos de una cuenta no pasa', muestra_real_no_pasa)
+    prueba('limpiar deja fuera de la muestra todo lo demás de Nexus', limpiar_quita_lo_de_nexus)
     prueba('una dirección de servicio mal escrita para el montaje', direccion_mal_escrita)
     prueba('comprobar.py caza web y servicio desalineados', caza_configuracion_desalineada)
     prueba('el aviso legal solo describe cuentas que existen', el_aviso_solo_describe_cuentas_que_existen)
