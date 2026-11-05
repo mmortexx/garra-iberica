@@ -593,7 +593,7 @@ def cabecera(t, lineas):
     return [
         f'  <section class="cabecera" id="{t["inicio"]}" aria-labelledby="titulo" data-ascuas>',
         '    <img class="cabecera-fondo" src="@/img/galeria-noche-1200.webp" srcset="@/img/galeria-noche-800.webp 800w, '
-        '@/img/galeria-noche-1200.webp 1200w, @/img/galeria-noche-1600.webp 1600w" sizes="(max-width: 700px) 60vw, 100vw" alt="" '
+        '@/img/galeria-noche-1200.webp 1200w, @/img/galeria-noche-1600.webp 1600w" sizes="(max-width: 700px) 45vw, 100vw" alt="" '
         'width="1600" height="670" fetchpriority="high">',
         '    <div class="envoltura cabecera-in">',
         '      {{migas}}',

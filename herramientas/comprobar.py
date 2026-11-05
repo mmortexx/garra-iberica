@@ -1053,13 +1053,13 @@ def revisar_galeria(raiz, falla, avisa):
     for lang, ruta in (('es', 'galeria/'), ('en', 'en/gallery/')):
         fotos = re.findall(r'<li id="([^"]*)" class="foto[^"]*"><a class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, ruta + 'index.html'))
         anclas[lang] = [i for i, _, _ in fotos]
-        # A lo ancho en un móvil 3x bastan 1000 px: sin este primer tramo piden 1500 (el doble de peso) sin que se note.
+        # A lo ancho en un móvil 3x bastan 1000 px y en uno 2x de hasta 400 px, 600: sin estos tramos piden 1500 y 1000 (el doble de peso) sin que se note.
         anchas = re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html'))
         medias = [n for n, (_, _, a) in preparar_galeria.FOTOS.items() if max(a) == 800]
         if len(anchas) != len(preparar_galeria.FOTOS) - len(medias):
             falla(f'{ruta}: {len(anchas)} fotos a lo ancho con su «sizes», y son {len(preparar_galeria.FOTOS) - len(medias)}')
         for sizes in anchas:
-            if not sizes.startswith('(max-width: 450px) 330px, '):
+            if not sizes.startswith('(max-width: 400px) 300px, (max-width: 450px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
         # Un ancho generado que la página no ofrece no sirve de nada: el móvil bajaría el siguiente, más pesado.
         # Los de 400 px pueden faltar: algunas fotos solo los tienen para la tira de la portada.
