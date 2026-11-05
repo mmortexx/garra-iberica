@@ -1,8 +1,0 @@
-// La web en Cloudflare: solo publica docs/. Los vídeos los sirve GitHub Pages (docs/_redirects).
-{
-  "name": "clan",
-  "compatibility_date": "2026-07-01",
-  "assets": { "directory": "./docs", "not_found_handling": "404-page" },
-  "preview_urls": false,
-  "observability": { "enabled": false }
-}

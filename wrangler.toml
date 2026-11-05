@@ -1,0 +1,12 @@
+# La web en Cloudflare: solo publica docs/. Los vídeos los sirve GitHub Pages (docs/_redirects).
+# Tiene que ser .toml: un wrangler.json(c) aquí ganaría a servicio/wrangler.toml también dentro de servicio/.
+name = "clan"
+compatibility_date = "2026-07-01"
+preview_urls = false
+
+[assets]
+directory = "./docs"
+not_found_handling = "404-page"
+
+[observability]
+enabled = false
