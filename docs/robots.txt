@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mmortexx.github.io/garra-iberica/sitemap.xml
+Sitemap: https://garra-iberica.pages.dev/sitemap.xml

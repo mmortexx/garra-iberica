@@ -21,8 +21,8 @@ import tempfile
 from pathlib import Path
 
 DOCS = Path(__file__).resolve().parent.parent / 'docs'
-# Por debajo del máximo de comprobar.py (40 MB) con margen.
-PESO_MAX = 38 * 1024 * 1024
+# Por debajo del máximo de comprobar.py (25 MiB, lo que admite Cloudflare por fichero) con margen.
+PESO_MAX = 24 * 1024 * 1024
 # Franja central de 2,39:1 (sin las bandas negras).
 RECORTE = 'crop=iw:trunc(iw/2.39/2)*2:0:(ih-oh)/2'
 IMAGEN = RECORTE + ',scale=1280:536:flags=lanczos'

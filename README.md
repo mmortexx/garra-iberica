@@ -1,10 +1,10 @@
 # Código de la web
 
-**La web está en https://mmortexx.github.io/garra-iberica/**. Esto es solo su código.
+**La web está en https://garra-iberica.pages.dev/**. Esto es solo su código.
 
-Web estática publicada con GitHub Pages desde la carpeta `docs/`. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+Web estática publicada con Cloudflare Pages desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages sigue publicando la misma carpeta solo para que la dirección antigua lleve a la nueva (`docs/efectos.js`). Sin dependencias: HTML, CSS y un poco de JavaScript propio.
 
-Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
+Dirección: https://garra-iberica.pages.dev/ (inglés en `/en/`).
 
 ## Qué hay
 
@@ -210,10 +210,10 @@ sale en rojo, se arregla y se vuelve a subir.
 
 ## Cambiar la dirección
 
-Si el repositorio o la cuenta cambian de nombre:
+Si cambia la dirección de la web (también hay que cambiarla en `servicio/wrangler.toml` y volver a publicar el servicio):
 
 ```
-python herramientas/cambiar_dominio.py https://CUENTA.github.io/REPO/
+python herramientas/cambiar_dominio.py https://NUEVA-DIRECCION/
 python herramientas/calendario.py
 python herramientas/montar_web.py
 ```
@@ -268,8 +268,8 @@ Necesita Python con Pillow y fontTools.
 
 ## Buscadores
 
-Al estar en una subcarpeta (`/garra-iberica/`), Google no lee nuestro `robots.txt`: el mapa del sitio
-hay que enviarlo a mano en Google Search Console y en Bing Webmaster Tools (`sitemap.xml`).
+`robots.txt` indica el mapa del sitio (`sitemap.xml`). Para seguir la web en Google Search Console y en Bing Webmaster Tools
+hay que dar de alta la dirección nueva y enviar allí el mapa.
 
 `comprobar.py` vigila lo que depende de nosotros: títulos de 60 caracteres como mucho (Google corta el
 resto, y al final va el nombre del clan), descripciones de 70 a 155, encabezados sin números pegados ni

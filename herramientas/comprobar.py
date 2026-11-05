@@ -47,7 +47,7 @@ MAX_KB_IMAGEN = 120
 AMPLIADA = '-ampliada-'
 MAX_KB_AMPLIADA = 750
 # Vídeos de las batallas (preparar_videos.py): solo se bajan al darle al play, pero en el móvil pesan.
-MAX_MB_VIDEO = 40
+MAX_MB_VIDEO = 25  # Cloudflare no publica ficheros de más de 25 MiB
 # IDs de Discord: no deben salir en la web pública. Los apodos de miembros a vigilar están en
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'

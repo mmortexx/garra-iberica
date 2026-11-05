@@ -2,7 +2,7 @@
 
 Permite que un miembro del clan entre en la ruta de logros con Discord y vea su progreso en cualquier dispositivo.
 Corre en Cloudflare Workers con una base D1. Aquí no hay ningún secreto: el repositorio es público y los secretos van
-en Cloudflare. GitHub Pages solo publica `docs/`, así que este código no se sirve en la web.
+en Cloudflare. La web solo publica `docs/`, así que este código no se sirve en ella.
 
 Mientras `herramientas/cuentas.json` tenga `servicio` vacío, la página funciona solo en el navegador de cada uno y lo dice.
 

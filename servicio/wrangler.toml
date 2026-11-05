@@ -6,8 +6,8 @@ compatibility_date = "2026-07-01"
 
 [vars]
 GUILD_ID = "1564701916452229202"
-PAGINA_ES = "https://mmortexx.github.io/garra-iberica/ruta/"
-PAGINA_EN = "https://mmortexx.github.io/garra-iberica/en/route/"
+PAGINA_ES = "https://garra-iberica.pages.dev/ruta/"
+PAGINA_EN = "https://garra-iberica.pages.dev/en/route/"
 
 [[d1_databases]]
 binding = "DB"
