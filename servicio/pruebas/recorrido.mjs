@@ -1262,6 +1262,7 @@ test('nexus: cada mensaje de error, en los dos idiomas, sin marcar nada', async 
   assert.equal(await visible(q, '[data-nexus-bien]'), false, 'el éxito anterior no se queda al lado del error');
   await pegar(q, TEXTO_NEXUS);
   assert.equal(await visible(q, '[data-nexus-mal]'), false, 'el error anterior no se queda al lado del éxito');
+  assert.match(await dicho(q), /^Tramos añadidos/);
   await ctx.close();
   assert.deepEqual(errores, []);
 });
