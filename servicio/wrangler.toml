@@ -13,7 +13,7 @@ PAGINA_EN = "https://mmortexx.github.io/garra-iberica/en/route/"
 binding = "DB"
 database_name = "garra-cuentas"
 # Lo da «wrangler d1 create» (ver servicio/README.md).
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "d98e3a0a-074d-4e57-b594-81e9736730d4"
 migrations_dir = "migraciones"
 
 # Por dirección IP: entrar y canjear el código.
