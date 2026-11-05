@@ -1037,14 +1037,25 @@ describe('las mutaciones del servicio', () => {
 });
 
 describe('las mutaciones de la página', () => {
+  // Sin la línea base: aquí se mide solo el bucle de guardas. La línea base tiene su prueba, justo debajo.
   test('un recorrido sin resumen no se cuenta como guarda viva', () => {
     const r = spawnSync(process.execPath, ['pruebas/mutaciones_pagina.mjs'], {
-      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1', MUTACIONES_SIN_BASE: '1' },
     });
     assert.equal(r.status, 1, r.stdout);
     assert.match(r.stdout, /SIN RESUMEN/);
     assert.doesNotMatch(r.stdout, /VIVA/);
     assert.match(r.stdout, /1 sin resolver/);
+  });
+
+  test('si el recorrido ya falla con el ruta.js sin tocar, para antes de medir nada y lo dice', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones_pagina.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+    });
+    assert.equal(r.status, 2, r.stdout);
+    assert.match(r.stdout, /BASE ROJA: el recorrido con el ruta\.js sin tocar no acaba/);
+    assert.match(r.stdout, /las guardas no se pueden medir/);
+    assert.doesNotMatch(r.stdout, /VIVA|cazada|SIN RESUMEN/);
   });
 });
 

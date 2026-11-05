@@ -60,9 +60,9 @@ const GUARDAS = [
 const SOLO = process.env.MUTACIONES_SOLO ? GUARDAS.slice(0, Number(process.env.MUTACIONES_SOLO)) : GUARDAS;
 
 // Sin resumen no se sabe nada: se ha colgado o se ha caído el recorrido, y eso no es una guarda viva.
-function recorrido(patron) {
-  const r = spawnSync(process.execPath, ['--test', '--test-reporter=spec', '--test-concurrency=1', `--test-name-pattern=${patron}`, 'pruebas/recorrido.mjs'], {
-    cwd: SERVICIO, encoding: 'utf8', timeout: ESPERA, env: { ...process.env, RUTA_JS: MUTANTE, CAPTURAS: '' },
+function recorrido(patron, espera = ESPERA) {
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=spec', '--test-concurrency=1', ...(patron === null ? [] : [`--test-name-pattern=${patron}`]), 'pruebas/recorrido.mjs'], {
+    cwd: SERVICIO, encoding: 'utf8', timeout: espera, env: { ...process.env, RUTA_JS: MUTANTE, CAPTURAS: '' },
   });
   const fallos = /^(?:ℹ|#) fail (\d+)/m.exec(r.stdout ?? '')?.[1];
   const buenas = /^(?:ℹ|#) pass (\d+)/m.exec(r.stdout ?? '')?.[1];
@@ -76,6 +76,18 @@ function conReintento(patron) {
   if (primera.fallos > 0) return primera;
   const segunda = recorrido(patron);
   return segunda.fallos > 0 || segunda.sinResumen ? { ...segunda, aLaSegunda: true } : segunda;
+}
+
+// Si el recorrido ya falla con el ruta.js de verdad, «cazar» una guarda no demuestra nada: todo cae. Primero, en verde.
+if (!process.env.MUTACIONES_SIN_BASE) {
+  writeFileSync(MUTANTE, ORIGINAL);
+  const base = recorrido(null, 5 * ESPERA);
+  if (base.sinResumen || base.fallos > 0) {
+    rmSync(MUTANTE, { force: true });
+    console.log(`BASE ROJA: el recorrido con el ruta.js sin tocar ${base.sinResumen ? `no acaba (${base.sinResumen})` : `falla ${base.fallos} pruebas`}; las guardas no se pueden medir`);
+    process.exit(2);
+  }
+  console.log(`base en verde: ${base.buenas} pruebas del recorrido pasan con el ruta.js sin tocar`);
 }
 
 let vivas = 0;
