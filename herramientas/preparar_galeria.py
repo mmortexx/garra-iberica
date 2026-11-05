@@ -75,11 +75,13 @@ FOTOS = {
     'galeria-deino-guardia': ('Captura de pantalla 2026-10-31 235648.png', (0, 0, 3080, 1439), (800, 1200, 1600)),
     'galeria-deino-fila': ('Captura de pantalla 2026-10-31 235710.png', (0, 0, 3080, 1391), (800, 1200, 1600)),
     'galeria-manada-atardecer': ('manada-atardecer.png', (0, 0, 1672, 941), (600, 1000, 1300)),
+    'galeria-lago-salto': ('Captura de pantalla 2026-11-05 193758.png', (0, 60, 3080, 1439), (600, 1000, 1300)),
+    'galeria-orilla-reposo': ('Captura de pantalla 2026-11-05 193735.png', (0, 60, 3080, 1439), (600, 1000, 1300)),
 }
 ACLARAR = {'galeria-brasas': 0.45, 'galeria-deino-guardia': 0.65, 'galeria-deino-fila': 0.65}
 # Capturas cuya vista ampliada no puede ser la captura entera (chat con nombres de jugadores de otros
-# clanes, interfaz, avisos): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
-AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos', *PROPIAS)}
+# clanes, interfaz, avisos, contador de FPS): se amplía el mismo recorte de la galería. comprobar.py lo vigila.
+AMPLIADA_PROPIA = {n: FOTOS[n][1] for n in ('galeria-deino-acecho', 'galeria-deino-lomo', 'galeria-deino-ojos', 'galeria-lago-salto', 'galeria-orilla-reposo', *PROPIAS)}
 # Imagen al compartir cada página (1200x630, JPEG: WhatsApp no enseña WebP). Las demás páginas usan
 # og-garra-iberica.jpg (preparar_imagenes.py). página: (fichero, foto, centro horizontal del recorte
 # de 0 a 1, texto alternativo en español e inglés). montar_web.py y comprobar.py leen OG.

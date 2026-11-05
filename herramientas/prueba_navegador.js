@@ -830,7 +830,7 @@ const ventana = async navegador => {
       const filas = new Map();
       for (const r of c) filas.set(Math.round(r.top), (filas.get(Math.round(r.top)) || []).concat(r));
       return { porFila: [...filas.values()].map(f => f.length), desiguales: [...filas.values()].filter(f => Math.max(...f.map(r => r.height)) - Math.min(...f.map(r => r.height)) > 2).length,
-        recortadas: [...document.querySelectorAll('.foto-entera img, .foto-fila img, .foto-atardecer img')].filter(i => { const b = i.parentElement.getBoundingClientRect(); return Math.abs(b.width / b.height - i.width / i.height) > .05 && i.naturalWidth && Math.abs(b.width / b.height - i.naturalWidth / i.naturalHeight) > .05; }).length };
+        recortadas: [...document.querySelectorAll('.foto-entera img, .foto-fila img, .foto-orilla img, .foto-atardecer img')].filter(i => { const b = i.parentElement.getBoundingClientRect(); return Math.abs(b.width / b.height - i.width / i.height) > .05 && i.naturalWidth && Math.abs(b.width / b.height - i.naturalWidth / i.naturalHeight) > .05; }).length };
     });
     if (Math.max(...fotos.porFila) < 3) fallos.push(`galería a 3440: como mucho ${Math.max(...fotos.porFila)} fotos por fila`);
     if (fotos.desiguales) fallos.push(`galería a 3440: ${fotos.desiguales} filas con fotos de distinto alto`);
