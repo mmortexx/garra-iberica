@@ -20,13 +20,14 @@ h1: Ruta de logros
         <ol class="ruta-pasos">
           <li><b>Entra con Discord</b> con el botón de aquí abajo. Discord te pregunta si dejas que la web sepa quién eres y compruebe que estás en el servidor del clan: acepta. Si prefieres no entrar, tus marcas se quedan solo en este navegador.</li>
           <li><b>Trae tus logros de Nexus</b>: abre tu lista, cópiala entera y pégala en el recuadro «Tu lista de Nexus». Lo que ya tienes se marca solo, sin ir uno a uno.</li>
-          <li><b>Sigue la ruta</b>: más abajo sale abierta la sesión que te toca, con el dino y lo que hay que hacer en ella.</li>
+          <li><b>Sigue la ruta</b>: más abajo, en «Ahora toca», tienes la sesión que te toca, con el dino y lo que hay que hacer en ella, paso a paso.</li>
         </ol>
         <p class="ruta-nota">Cuando consigas logros nuevos, vuelve a pegar la lista de Nexus o márcalos a mano: nunca se borra nada de lo que ya tenías. En otro móvil u ordenador, entra con Discord y lo verás todo.</p>
       </div>
       <div class="ruta-resumen" data-resumen hidden>
         <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
         <p data-total></p>
+        <p class="ruta-toca" data-toca hidden><span data-toca-texto></span> — <a href="#ahora">Ir</a></p>
       </div>
       <p class="ruta-estado" data-estado role="status" hidden></p>
       <p class="ruta-aviso" data-mensaje role="alert" hidden></p>
@@ -100,7 +101,34 @@ h1: Ruta de logros
   <section class="seccion" id="la-ruta" aria-labelledby="t-ruta">
     <div class="envoltura">
       <h2 id="t-ruta">La ruta</h2>
-      <p class="intro">Una sesión por dino, ordenadas por zonas. La que toca sale abierta. Abre también <a href="#los-logros">la lista de logros</a> y trae de Nexus o marca a mano lo que ya tengas: la ruta salta lo que esté hecho.</p>
+      <p class="intro">Una sesión por dino, ordenadas por zonas. Abre también <a href="#los-logros">la lista de logros</a> y trae de Nexus o marca a mano lo que ya tengas: la ruta salta lo que esté hecho.</p>
+      <div class="ahora-zona" data-ahora-zona hidden>
+        <section class="ahora" id="ahora" data-ahora aria-labelledby="ahora-n ahora-titulo">
+          <p class="ahora-arriba"><span class="ahora-n" id="ahora-n" data-ahora-n></span><span class="ahora-estado" data-ahora-estado></span></p>
+          <h3 class="ahora-titulo" id="ahora-titulo" tabindex="-1" data-ahora-titulo></h3>
+          <p class="ahora-dino"><span class="dieta" data-ahora-dino></span></p>
+          <p class="sesion-nota" data-ahora-nota hidden></p>
+          <div data-ahora-que>
+            <p class="sesion-que">Qué hacer</p>
+            <ol class="sesion-pasos" data-ahora-pasos></ol>
+          </div>
+          <div class="ahora-progreso" data-ahora-progreso>
+            <progress data-ahora-barra max="1" value="0" aria-labelledby="ahora-cuenta"></progress>
+            <p id="ahora-cuenta" data-ahora-cuenta></p>
+          </div>
+          <ul class="tareas" role="list" data-ahora-tareas></ul>
+          <p class="ahora-fin" data-ahora-fin hidden>Has hecho todas las sesiones de la ruta. Lo que te quede está en <a href="#los-logros">la lista de logros</a>.</p>
+          <p class="ahora-aviso" data-ahora-aviso role="status"></p>
+          <p class="ahora-ir">
+            <button type="button" class="ruta-filtro" data-ahora-ir="antes">← Anterior</button>
+            <button type="button" class="ruta-filtro" data-ahora-ir="actual">Ir a la actual</button>
+            <button type="button" class="ruta-filtro" data-ahora-ir="despues">Siguiente →</button>
+          </p>
+          <p class="oculto" data-ahora-voz role="status"></p>
+        </section>
+        <h3 class="ahora-toda">Toda la ruta</h3>
+        <ol class="ahora-indice" role="list" data-ahora-indice></ol>
+      </div>
       {{logros_ruta}}
       <p class="ruta-nota">Teletransporte de Nexus: menos del 30% de crecimiento, estamina al 100%, quieto 20 s y 3 min de espera entre uno y otro.</p>
     </div>

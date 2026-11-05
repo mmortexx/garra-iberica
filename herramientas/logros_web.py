@@ -248,7 +248,7 @@ def ruta(lang, d=None):
                          f'<span class="tarea-t"><b>{escape(etiqueta)}</b>{pie}</span>{extra}</li>')
         nota_html = f'<p class="sesion-nota">{escape(nota)}</p>' if nota else ''
         bloques.append(
-            f'<li class="sesion" data-sesion data-especie="{nombre}">'
+            f'<li class="sesion" data-sesion data-especie="{nombre}" data-grupo="{e["grupo"]}">'
             f'<details class="plegable">'
             f'<summary><span class="sesion-n">{n}</span><span class="ruta-grupo-t"><b>{escape(titulo)}</b><small>{escape(e["nombre"])}</small></span>'
             f'<span class="contador" data-contador></span></summary>'

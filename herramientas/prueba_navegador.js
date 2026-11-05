@@ -908,6 +908,190 @@ const ventana = async navegador => {
   console.log('Ventanas grandes:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
+// La ruta de logros, recuadro «Ahora toca»: la sesión que te toca y qué hacer, marcar ahí o en la lista, avanzar al
+// completarla, ir de una a otra y llegar desde «Tu progreso». SOLO=ahora prueba solo esto.
+const AHORA = {
+  'ruta/': { sesion: (n, t) => `Sesión ${n} de ${t}`, actual: 'Ahora toca', hecha: 'Hecha', pendiente: 'Pendiente', completada: t => `Sesión completada. Ahora: ${t}.`, fin: 'Ruta completada', toca: 'Te toca' },
+  'en/route/': { sesion: (n, t) => `Session ${n} of ${t}`, actual: 'Up next', hecha: 'Done', pendiente: 'Pending', completada: t => `Session complete. Next: ${t}.`, fin: 'Route complete', toca: 'Next for you' },
+};
+const ahoraToca = async navegador => {
+  const fallos = [];
+  const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+  const caja = p => p.evaluate(() => {
+    const z = document.querySelector('[data-ahora-zona]');
+    const q = s => z && z.querySelector(s);
+    const ver = s => { const e = q(s); return Boolean(e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden'); };
+    return {
+      visible: ver('[data-ahora]'), n: q('[data-ahora-n]')?.textContent.trim(), estado: ver('[data-ahora-estado]') ? q('[data-ahora-estado]').textContent.trim() : '',
+      titulo: q('[data-ahora-titulo]')?.textContent.trim(), dino: ver('[data-ahora-dino]') ? q('[data-ahora-dino]').textContent.trim() : '',
+      grupo: q('[data-ahora-dino]')?.className || '', pasos: z ? z.querySelectorAll('[data-ahora-pasos] li').length : 0,
+      tareas: z ? [...z.querySelectorAll('[data-ahora-tareas] button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel, b.getAttribute('aria-pressed')]) : [],
+      copiar: z ? z.querySelectorAll('[data-ahora-tareas] button[data-copiar]:not([disabled])').length : 0,
+      barra: q('[data-ahora-barra]') ? [q('[data-ahora-barra]').value, q('[data-ahora-barra]').max] : null,
+      aviso: q('[data-ahora-aviso]')?.textContent.trim(), avisoRol: q('[data-ahora-aviso]')?.getAttribute('role'),
+      irActual: ver('[data-ahora-ir="actual"]'), antesNo: q('[data-ahora-ir="antes"]')?.getAttribute('aria-disabled') === 'true',
+      despuesNo: q('[data-ahora-ir="despues"]')?.getAttribute('aria-disabled') === 'true',
+      indice: z ? z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]').length : 0,
+      marcada: z ? [...z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]')].findIndex(b => b.getAttribute('aria-current') === 'true') : -1,
+      foco: document.activeElement === q('[data-ahora-titulo]'),
+      toca: document.querySelector('[data-toca]')?.innerText.trim() || '', tocaVisible: Boolean(document.querySelector('[data-toca]')?.getClientRects().length),
+      listaVisible: Boolean(document.querySelector('[data-sesiones]')?.getClientRects().length),
+    };
+  });
+  const sembrar = (ctx, marcas) => ctx.addInitScript(m => { if (!sessionStorage.getItem('sembrado')) { localStorage.setItem('garra-ruta-v1', JSON.stringify({ marcas: m })); sessionStorage.setItem('sembrado', '1'); } }, marcas);
+  const hasta = (ses, n) => { const m = {}; for (const s of ses.slice(0, n)) for (const [id, v] of s.tareas) m[id] = Math.max(m[id] || 0, v); return m; };
+  const pulsarEnCaja = (p, id, v) => p.click(`[data-ahora-tareas] button[data-logro="${id}"][data-nivel="${v}"]`);
+  const enLista = (p, id, v) => p.evaluate(([i, n]) => document.querySelector(`.ruta-grupos button[data-logro="${i}"][data-nivel="${n}"]`)?.getAttribute('aria-pressed'), [id, v]);
+  const guardado = (p, id) => p.evaluate(i => JSON.parse(localStorage.getItem('garra-ruta-v1') || '{}').marcas?.[i] || 0, id);
+  for (const r of Object.keys(AHORA)) {
+    const t = AHORA[r];
+    const ctx = await navegador.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(e.message));
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    const ses = await p.evaluate(() => [...document.querySelectorAll('[data-sesion]')].map(li => ({
+      titulo: li.querySelector('summary b').textContent, dino: li.querySelector('summary small').textContent, grupo: li.dataset.grupo,
+      tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
+    })));
+    const N = ses.length;
+    let c = await caja(p);
+    if (!c.visible) {
+      fallos.push(`/${r}: el recuadro «Ahora toca» no aparece`);
+      await ctx.close();
+      continue;
+    }
+    if (c.n !== t.sesion(1, N) || c.estado !== t.actual || c.titulo !== ses[0].titulo) fallos.push(`/${r} sin marcas: «${c.n}», «${c.estado}», «${c.titulo}» y debía ser la sesión 1, ${ses[0].titulo}`);
+    if (!c.antesNo) fallos.push(`/${r}: en la sesión 1 «Anterior» no está desactivado`);
+    if (c.indice !== N) fallos.push(`/${r}: «Toda la ruta» tiene ${c.indice} sesiones de ${N}`);
+    if (c.listaVisible) fallos.push(`/${r}: con JavaScript la lista plegable de sesiones sigue a la vista, repetida bajo el recuadro`);
+    if (c.avisoRol !== 'status') fallos.push(`/${r}: el aviso del recuadro no es role=status`);
+    await ctx.close();
+
+    // A mitad de la ruta: cuatro sesiones hechas.
+    const ctx2 = await navegador.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    await sembrar(ctx2, hasta(ses, 4));
+    const q = await ctx2.newPage();
+    q.on('pageerror', e => errores.push(e.message));
+    await q.goto(BASE + r, { waitUntil: 'load' });
+    c = await caja(q);
+    const s5 = ses[4];
+    const clase = { C: 'dieta-carnivoro', H: 'dieta-herbivoro', O: 'dieta-omnivoro' }[s5.grupo];
+    if (c.n !== t.sesion(5, N) || c.estado !== t.actual || c.titulo !== s5.titulo || c.dino !== s5.dino) fallos.push(`/${r} con 4 hechas: «${c.n}», «${c.estado}», «${c.titulo}», «${c.dino}» y debía ser la sesión 5, ${s5.titulo} (${s5.dino})`);
+    if (!c.grupo.includes(clase)) fallos.push(`/${r}: el dino de la sesión 5 no lleva el color de su grupo (${clase}): «${c.grupo}»`);
+    if (c.pasos < 1) fallos.push(`/${r}: la sesión 5 no dice qué hacer`);
+    if (JSON.stringify(c.tareas.map(([i, v]) => [i, v])) !== JSON.stringify(s5.tareas)) fallos.push(`/${r}: las tareas del recuadro no son las de la sesión 5: ${JSON.stringify(c.tareas)}`);
+    if (c.marcada !== 4) fallos.push(`/${r}: «Toda la ruta» marca como vista la ${c.marcada + 1}, no la 5`);
+    if (!c.tocaVisible || !c.toca.includes(t.toca) || !c.toca.includes(t.sesion(5, N).toLowerCase()) || !c.toca.includes(s5.titulo) || !c.toca.includes(s5.dino)) fallos.push(`/${r}: el acceso de «Tu progreso» dice «${c.toca}»`);
+    const conCoord = ses.findIndex(s => s.tareas.some(([i]) => /^[fg]-/.test(i)));
+    await q.evaluate(() => scrollTo(0, 0));
+    await q.click('[data-toca] a');
+    await q.waitForTimeout(150);
+    const llegada = await q.evaluate(() => { const b = document.querySelector('[data-ahora]').getBoundingClientRect(); return { arriba: b.top, alto: innerHeight }; });
+    c = await caja(q);
+    if (!c.foco || llegada.arriba < 0 || llegada.arriba > llegada.alto / 2) fallos.push(`/${r}: el acceso de «Tu progreso» no lleva al recuadro (foco en el título: ${c.foco}, arriba a ${Math.round(llegada.arriba)} px)`);
+    // Marcar en el recuadro marca en la lista, y al revés; las dos guardan igual.
+    const [id1, v1] = s5.tareas[0];
+    await pulsarEnCaja(q, id1, v1);
+    if (await enLista(q, id1, v1) !== 'true' || await guardado(q, id1) !== v1) fallos.push(`/${r}: marcar ${id1} en el recuadro no lo marca en la lista o no lo guarda`);
+    c = await caja(q);
+    if (!c.barra || c.barra[0] !== 1 || c.barra[1] !== s5.tareas.length) fallos.push(`/${r}: la barra de la sesión dice ${JSON.stringify(c.barra)} tras marcar 1 de ${s5.tareas.length}`);
+    const [idU, vU] = s5.tareas[s5.tareas.length - 1];
+    await q.evaluate(([i, n]) => { document.querySelector(`.ruta-grupos button[data-logro="${i}"][data-nivel="${n}"]`).closest('details').open = true; }, [idU, vU]);
+    await q.click(`.ruta-grupos button[data-logro="${idU}"][data-nivel="${vU}"]`);
+    c = await caja(q);
+    if (c.tareas.find(([i, v]) => i === idU && v === vU)?.[2] !== 'true') fallos.push(`/${r}: marcar ${idU} en la lista no lo marca en el recuadro`);
+    // Completar la sesión: avanza a la siguiente y lo dice.
+    for (const [i, v] of s5.tareas) if (await guardado(q, i) < v) await pulsarEnCaja(q, i, v);
+    c = await caja(q);
+    if (c.n !== t.sesion(6, N) || c.titulo !== ses[5].titulo || c.aviso !== t.completada(ses[5].titulo)) fallos.push(`/${r}: al completar la 5 se queda en «${c.n}» y avisa «${c.aviso}»`);
+    if (!c.foco) fallos.push(`/${r}: al completar la sesión el foco no pasa al título de la siguiente`);
+    // Anterior, Siguiente e Ir a la actual.
+    await q.click('[data-ahora-ir="antes"]');
+    c = await caja(q);
+    if (c.n !== t.sesion(5, N) || c.estado !== t.hecha || !c.irActual) fallos.push(`/${r}: «Anterior» enseña «${c.n}», «${c.estado}», ir a la actual ${c.irActual}`);
+    await q.click('[data-ahora-ir="despues"]');
+    c = await caja(q);
+    if (c.n !== t.sesion(6, N) || c.estado !== t.actual || c.irActual) fallos.push(`/${r}: «Siguiente» enseña «${c.n}», «${c.estado}», ir a la actual ${c.irActual}`);
+    await q.click('[data-ahora-ir="despues"]');
+    c = await caja(q);
+    if (c.n !== t.sesion(7, N) || c.estado !== t.pendiente || !c.irActual) fallos.push(`/${r}: «Siguiente» otra vez enseña «${c.n}», «${c.estado}»`);
+    await q.click('[data-ahora-ir="actual"]');
+    c = await caja(q);
+    if (c.n !== t.sesion(6, N)) fallos.push(`/${r}: «Ir a la actual» enseña «${c.n}»`);
+    // Pulsar una sesión de «Toda la ruta» la enseña arriba.
+    await q.click(`[data-ahora-indice] [data-ahora-ver="${conCoord}"]`);
+    c = await caja(q);
+    if (c.n !== t.sesion(conCoord + 1, N) || c.titulo !== ses[conCoord].titulo || !c.foco || c.marcada !== conCoord) fallos.push(`/${r}: pulsar la sesión ${conCoord + 1} en la lista enseña «${c.n}» (foco ${c.foco})`);
+    if (c.copiar < 1) fallos.push(`/${r}: la sesión ${conCoord + 1} no tiene botones de copiar coordenadas`);
+    await q.click('[data-ahora-ir="actual"]');
+    // Desmarcar algo de una sesión anterior: lo que toca vuelve atrás y el recuadro lo sigue.
+    const [i3, v3] = ses[2].tareas[0];
+    await q.evaluate(([i, n]) => { document.querySelector(`.ruta-grupos button[data-logro="${i}"][data-nivel="${n}"]`).closest('details').open = true; }, [i3, v3]);
+    await q.click(`.ruta-grupos button[data-logro="${i3}"][data-nivel="${v3}"]`);
+    c = await caja(q);
+    if (c.n !== t.sesion(3, N) || c.estado !== t.actual) fallos.push(`/${r}: al desmarcar una tarea de la 3 el recuadro enseña «${c.n}»`);
+    // Con el teclado: el foco se ve.
+    await q.focus('[data-ahora-ir="despues"]');
+    await q.keyboard.press('Shift+Tab');
+    await q.keyboard.press('Tab');
+    const contorno = await q.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
+    if (contorno === 'none') fallos.push(`/${r}: con el teclado no se ve el foco en los botones del recuadro`);
+    await ctx2.close();
+
+    // Toda la ruta hecha.
+    const ctx3 = await navegador.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    await sembrar(ctx3, hasta(ses, N));
+    const f = await ctx3.newPage();
+    f.on('pageerror', e => errores.push(e.message));
+    await f.goto(BASE + r, { waitUntil: 'load' });
+    c = await caja(f);
+    if (c.titulo !== t.fin || c.tareas.length || !c.toca.includes(t.fin) || c.irActual) fallos.push(`/${r} con todo hecho: título «${c.titulo}», ${c.tareas.length} tareas, acceso «${c.toca}»`);
+    await f.click('[data-ahora-ir="antes"]');
+    c = await caja(f);
+    if (c.n !== t.sesion(N, N) || c.estado !== t.hecha || c.irActual) fallos.push(`/${r} con todo hecho, «Anterior» enseña «${c.n}», «${c.estado}»`);
+    await ctx3.close();
+
+    // Móvil: sin scroll de lado y sin fallos de accesibilidad, con una sesión a medias.
+    for (const [ancho, alto] of [[360, 740], [390, 844]]) {
+      const m = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: true, hasTouch: true, reducedMotion: 'reduce', bypassCSP: true });
+      await sembrar(m, { ...hasta(ses, 4), [s5.tareas[0][0]]: s5.tareas[0][1] });
+      const mp = await m.newPage();
+      mp.on('pageerror', e => errores.push(e.message));
+      await mp.goto(BASE + r, { waitUntil: 'load' });
+      const medida = await mp.evaluate(() => {
+        const a = document.querySelector('[data-ahora]').getBoundingClientRect();
+        const fuera = [...document.querySelectorAll('[data-ahora] *, [data-ahora-indice] *')].filter(e => { const b = e.getBoundingClientRect(); return b.width && (b.right > innerWidth + .5 || b.left < -.5); }).length;
+        return { sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth, derecha: a.right, fuera };
+      });
+      if (medida.sobra > 0 || medida.derecha > ancho || medida.fuera) fallos.push(`/${r} a ${ancho} px: sobra ${medida.sobra} px de lado, el recuadro acaba en ${Math.round(medida.derecha)}, ${medida.fuera} piezas se salen`);
+      await mp.evaluate(axe);
+      const v = await mp.evaluate(() => axe.run(document, { resultTypes: ['violations'] }).then(a => a.violations.map(x => `${x.id} ×${x.nodes.length} (${x.nodes[0].target.join(' ')})`)));
+      if (v.length) fallos.push(`/${r} a ${ancho} px, axe: ${v.join(', ')}`);
+      await m.close();
+    }
+    {
+      const pc = await navegador.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce', bypassCSP: true });
+      await sembrar(pc, { ...hasta(ses, 4), [s5.tareas[0][0]]: s5.tareas[0][1] });
+      const pp = await pc.newPage();
+      await pp.goto(BASE + r, { waitUntil: 'load' });
+      await pp.evaluate(axe);
+      const v = await pp.evaluate(() => axe.run(document, { resultTypes: ['violations'] }).then(a => a.violations.map(x => `${x.id} ×${x.nodes.length} (${x.nodes[0].target.join(' ')})`)));
+      if (v.length) fallos.push(`/${r} a 1280 px, axe: ${v.join(', ')}`);
+      await pc.close();
+    }
+    // Sin JavaScript no hay recuadro y la ruta se lee entera.
+    const sinJs = await navegador.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+    const sp = await sinJs.newPage();
+    await sp.goto(BASE + r, { waitUntil: 'load' });
+    const sj = await sp.evaluate(() => ({ caja: Boolean(document.querySelector('[data-ahora-zona]')?.getClientRects().length), toca: Boolean(document.querySelector('[data-toca]')?.getClientRects().length), lista: document.querySelectorAll('[data-sesion]').length, ve: Boolean(document.querySelector('[data-sesiones]')?.getClientRects().length) }));
+    if (sj.caja || sj.toca || !sj.ve || sj.lista !== N) fallos.push(`/${r} sin JavaScript: recuadro ${sj.caja}, acceso ${sj.toca}, lista a la vista ${sj.ve} con ${sj.lista} sesiones`);
+    await sinJs.close();
+    if (errores.length) fallos.push(`/${r}: errores en la página: ${errores.join('; ')}`);
+  }
+  console.log('Ruta de logros, «Ahora toca»:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  return fallos.length;
+};
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   // La web mide su fluidez al cargar y una máquina cargada la pondría en modo ligero al azar: se deja
@@ -946,6 +1130,11 @@ const ventana = async navegador => {
   }
   if (process.env.SOLO === 'fotos') {
     const n = await fotosMovil(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'ahora') {
+    const n = await ahoraToca(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2584,6 +2773,7 @@ const ventana = async navegador => {
   malos += await fotosMovil(navegador);
   malos += await enlacesPuesto(navegador);
   malos += await imprimir(navegador);
+  malos += await ahoraToca(navegador);
   await navegador.close();
   if (SALIDAS.length) {
     malos++;

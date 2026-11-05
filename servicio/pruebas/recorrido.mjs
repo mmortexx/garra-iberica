@@ -235,6 +235,9 @@ test('sin JavaScript se lee todo y nada finge funcionar', async () => {
   assert.match(await texto(p, '#tu-cuenta noscript, #tu-cuenta .ruta-aviso'), /JavaScript/);
   assert.equal(await p.locator('[data-entrar]').isVisible(), false);
   assert.equal(await p.locator('[data-filtros]').isVisible(), false);
+  assert.equal(await p.locator('[data-ahora-zona]').isVisible(), false, 'sin JavaScript no hay recuadro «Ahora toca»');
+  assert.equal(await p.locator('[data-toca]').isVisible(), false);
+  assert.equal(await p.locator('[data-sesiones]').isVisible(), true);
   await ctx.close();
 });
 
@@ -270,7 +273,7 @@ test('entrar: sabe quién eres, guarda en tu cuenta y otro dispositivo lo ve', a
   assert.equal(await pulsado(q, 'allo-grow', 4), 'false');
   await capturar(q, 'es-1366-dentro');
   assert.match(await texto(q, '[data-trayectoria]'), /Allosaurus · Crecer 80%/, 'la trayectoria dice qué logro es');
-  await capturar(q, 'es-1366-ruta', '[data-sesion].sesion-actual');
+  await capturar(q, 'es-1366-ruta', '[data-ahora]');
   await capturar(p, 'es-375-logros', '.ruta-grupo[data-bloque="allo"]');
   await movil.ctx.close();
   await pc.ctx.close();
@@ -964,17 +967,48 @@ test('la copia espera y sigue si el límite de peticiones la frena', async () =>
   await ctx.close();
 });
 
-test('la ruta: la sesión que toca sale abierta y salta lo hecho', async () => {
+test('la ruta: «Ahora toca» enseña la sesión que toca, avanza al completarla y guarda igual que la lista', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
-  const primera = p.locator('[data-sesion]').first();
-  assert.ok(await primera.evaluate(e => e.classList.contains('sesion-actual') && e.querySelector('details').open));
-  const tareas = await primera.locator('button[data-logro]').evaluateAll(l => l.map(b => [b.dataset.logro, b.dataset.nivel]));
-  for (const [logro, nivel] of tareas) await primera.locator(`button[data-logro="${logro}"][data-nivel="${nivel}"]`).click();
-  assert.ok(await primera.evaluate(e => e.classList.contains('sesion-hecha')));
-  assert.ok(await p.locator('[data-sesion]').nth(1).evaluate(e => e.classList.contains('sesion-actual') && e.querySelector('details').open));
-  await capturar(p, 'es-1366-sin-cuenta');
+  const ses = await p.locator('[data-sesion]').evaluateAll(l => l.map(li => ({
+    titulo: li.querySelector('summary b').textContent, tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
+  })));
+  const N = ses.length;
+  const dice = sel => p.locator(sel).first().evaluate(e => e.textContent.trim());
+  const enCaja = (logro, nivel) => p.locator(`[data-ahora-tareas] button[data-logro="${logro}"][data-nivel="${nivel}"]`);
+  assert.equal(await p.locator('[data-ahora]').isVisible(), true, 'el recuadro se ve');
+  assert.equal(await p.locator('[data-sesiones]').isVisible(), false, 'con JavaScript el recuadro y su índice sustituyen a la lista plegable');
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 1 de ${N}`);
+  assert.equal(await dice('[data-ahora-titulo]'), ses[0].titulo);
+  assert.ok((await dice('[data-toca]')).startsWith(`Te toca: sesión 1 de ${N} · ${ses[0].titulo}`), 'el acceso de «Tu progreso» dice qué toca');
+  await dentro(p);
+  const [[logro0, nivel0]] = ses[0].tareas;
+  await enCaja(logro0, nivel0).click();
+  assert.equal(await pulsado(p, logro0, nivel0), 'true', 'marcar en el recuadro marca en la lista');
+  await subido('ana', logro0, nivel0);
+  for (const [logro, nivel] of ses[0].tareas.slice(1)) await enCaja(logro, nivel).click();
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 2 de ${N}`, 'completar la sesión pasa a la siguiente');
+  assert.equal(await dice('[data-ahora-aviso]'), `Sesión completada. Ahora: ${ses[1].titulo}.`);
+  for (const [logro, nivel] of ses[0].tareas) await subido('ana', logro, nivel);
+  const [logro1, nivel1] = ses[1].tareas[0];
+  await pulsar(p, logro1, nivel1);
+  assert.equal(await enCaja(logro1, nivel1).getAttribute('aria-pressed'), 'true', 'marcar en la lista marca en el recuadro');
+  await p.click('[data-ahora-ir="antes"]');
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 1 de ${N}`, 'anterior');
+  assert.equal(await dice('[data-ahora-estado]'), 'Hecha');
+  await p.click('[data-ahora-ir="actual"]');
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 2 de ${N}`, 'ir a la actual');
+  assert.equal(await p.locator('[data-ahora-ir="actual"]').isVisible(), false, 'en la actual no se ofrece ir a ella');
+  await p.click('[data-ahora-ir="despues"]');
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 3 de ${N}`, 'siguiente');
+  assert.equal(await dice('[data-ahora-estado]'), 'Pendiente');
+  await p.click('[data-ahora-ver="5"]');
+  assert.equal(await dice('[data-ahora-titulo]'), ses[5].titulo, 'pulsar una sesión de toda la ruta la enseña en el recuadro');
+  await p.click('[data-toca] a');
+  assert.equal(await dice('[data-ahora-n]'), `Sesión 2 de ${N}`, 'el acceso de «Tu progreso» vuelve a la que toca');
+  await capturar(p, 'es-1366-ahora', '[data-ahora]');
   await ctx.close();
+  assert.deepEqual(errores, []);
 });
 
 test('los filtros enseñan lo que dicen', async () => {
