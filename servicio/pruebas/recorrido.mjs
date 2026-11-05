@@ -971,7 +971,7 @@ test('la ruta: «Ahora toca» enseña la sesión que toca, avanza al completarla
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
   const ses = await p.locator('[data-sesion]').evaluateAll(l => l.map(li => ({
-    titulo: li.querySelector('summary b').textContent, tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
+    titulo: li.querySelector('summary b').textContent, dino: li.querySelector('summary small').textContent, tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
   })));
   const N = ses.length;
   const dice = sel => p.locator(sel).first().evaluate(e => e.textContent.trim());
@@ -980,15 +980,22 @@ test('la ruta: «Ahora toca» enseña la sesión que toca, avanza al completarla
   assert.equal(await p.locator('[data-sesiones]').isVisible(), false, 'con JavaScript el recuadro y su índice sustituyen a la lista plegable');
   assert.equal(await dice('[data-ahora-n]'), `Sesión 1 de ${N}`);
   assert.equal(await dice('[data-ahora-titulo]'), ses[0].titulo);
-  assert.ok((await dice('[data-toca]')).startsWith(`Te toca: sesión 1 de ${N} · ${ses[0].titulo}`), 'el acceso de «Tu progreso» dice qué toca');
+  assert.equal(await dice('[data-toca-n]'), `Te toca: sesión 1 de ${N}`, 'el acceso de «Tu progreso» dice qué sesión toca');
+  assert.equal(await dice('[data-toca-sitio]'), ses[0].titulo, 'y cuál es');
+  assert.equal(await dice('[data-toca-dino]'), ses[0].dino, 'y con qué dino');
   await dentro(p);
   const [[logro0, nivel0]] = ses[0].tareas;
   await enCaja(logro0, nivel0).click();
   assert.equal(await pulsado(p, logro0, nivel0), 'true', 'marcar en el recuadro marca en la lista');
+  assert.equal(await enCaja(logro0, nivel0).evaluate(b => b.classList.contains('recien')), true, 'la casilla recién marcada se nota');
   await subido('ana', logro0, nivel0);
   for (const [logro, nivel] of ses[0].tareas.slice(1)) await enCaja(logro, nivel).click();
   assert.equal(await dice('[data-ahora-n]'), `Sesión 2 de ${N}`, 'completar la sesión pasa a la siguiente');
   assert.equal(await dice('[data-ahora-aviso]'), `Sesión completada. Ahora: ${ses[1].titulo}.`);
+  assert.equal(await dice('[data-toca-sitio]'), ses[1].titulo, 'el acceso de arriba sigue a la que toca');
+  assert.equal(await p.locator('[data-ahora-ver="1"] .ahora-li-chip').isVisible(), true, 'en toda la ruta, la que toca lo dice con letras');
+  assert.equal(await p.locator('[data-ahora-ver="0"] .ahora-li-chip').isVisible(), false, 'y la hecha no');
+  assert.equal(await p.locator('[data-ahora-ver="0"]').evaluate(b => b.classList.contains('sesion-hecha')), true, 'la hecha lleva su marca');
   for (const [logro, nivel] of ses[0].tareas) await subido('ana', logro, nivel);
   const [logro1, nivel1] = ses[1].tareas[0];
   await pulsar(p, logro1, nivel1);
@@ -1007,6 +1014,10 @@ test('la ruta: «Ahora toca» enseña la sesión que toca, avanza al completarla
   await p.click('[data-toca] a');
   assert.equal(await dice('[data-ahora-n]'), `Sesión 2 de ${N}`, 'el acceso de «Tu progreso» vuelve a la que toca');
   await capturar(p, 'es-1366-ahora', '[data-ahora]');
+  const bloque = p.locator('.ruta-grupo[data-bloque="allo"]');
+  assert.equal(await bloque.evaluate(d => d.classList.contains('grupo-completo')), false);
+  await bloque.locator('.tramos').evaluateAll(l => l.forEach(t => t.lastElementChild.click()));
+  assert.equal(await bloque.evaluate(d => d.classList.contains('grupo-completo')), true, 'un grupo completo de «Todos los logros» lleva su marca');
   await ctx.close();
   assert.deepEqual(errores, []);
 });

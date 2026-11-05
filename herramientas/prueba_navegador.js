@@ -963,7 +963,7 @@ const ahoraToca = async navegador => {
       indice: z ? z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]').length : 0,
       marcada: z ? [...z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]')].findIndex(b => b.getAttribute('aria-current') === 'true') : -1,
       foco: document.activeElement === q('[data-ahora-titulo]'),
-      toca: document.querySelector('[data-toca]')?.innerText.trim() || '', tocaVisible: Boolean(document.querySelector('[data-toca]')?.getClientRects().length),
+      toca: document.querySelector('[data-toca]')?.textContent.trim() || '', tocaVisible: Boolean(document.querySelector('[data-toca]')?.getClientRects().length),
       listaVisible: Boolean(document.querySelector('[data-sesiones]')?.getClientRects().length),
     };
   });

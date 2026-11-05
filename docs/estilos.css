@@ -1735,40 +1735,76 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 }
 
 /* Ruta de logros */
-.ruta-cuenta > * { max-width: 48rem; }
-.ruta-resumen progress, .ahora-progreso progress { display: block; width: 100%; height: .7rem; margin: .4rem 0 .5rem; border: 1px solid var(--borde); border-radius: 99px; overflow: hidden; background: rgba(138, 138, 138, .15); appearance: none; }
+.ruta-cuenta > :not(.ruta-guia, .ruta-paneles) { max-width: 48rem; }
+.ruta-cuenta [hidden], .ruta-filtros[hidden], .logro[hidden], .ahora-zona[hidden], .ahora-zona [hidden], .sesiones[hidden] { display: none; }
+.ruta-resumen progress, .ahora-progreso progress { display: block; width: 100%; height: .7rem; margin: .5rem 0; border: 1px solid var(--borde); border-radius: 99px; overflow: hidden; background: rgba(138, 138, 138, .15); appearance: none; }
 .ruta-resumen progress::-webkit-progress-bar, .ahora-progreso progress::-webkit-progress-bar { background: transparent; }
 .ruta-resumen progress::-webkit-progress-value, .ahora-progreso progress::-webkit-progress-value { background: var(--ascua); }
 .ruta-resumen progress::-moz-progress-bar, .ahora-progreso progress::-moz-progress-bar { background: var(--ascua); }
-.ruta-resumen p { margin: 0 0 .5rem; color: var(--hueso); font-weight: 600; }
-.ruta-estado { margin: 0 0 1rem; color: var(--suave); }
-.ruta-estado-mal { color: var(--rojo-claro); }
-.ruta-aviso { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid var(--borde-fuerte); border-radius: 8px; color: var(--hueso); overflow-wrap: anywhere; }
-.ruta-paso { margin: 1.4rem 0 0; }
-.ruta-paso h3 { margin: 0 0 .4rem; }
 .ruta-nota { color: var(--suave); font-size: .95rem; }
-.ruta-botones { display: flex; flex-wrap: wrap; gap: .6rem; margin: .8rem 0 0; }
-.ruta-confirmar { margin-top: 1rem; padding: 1rem; border: 1px solid var(--borde-fuerte); border-radius: 8px; }
-.ruta-confirmar p { margin: 0; }
-.ruta-confirmar p + p { margin-top: .8rem; }
-.ruta-campo { box-sizing: border-box; width: 100%; min-height: 44px; padding: .5rem .8rem; border: 1px solid var(--borde); border-radius: 8px; background: rgba(15, 15, 15, .55); color: var(--hueso); font: inherit; }
-.ruta-campo::placeholder { color: var(--suave); }
-textarea.ruta-campo { display: block; resize: vertical; }
-.ruta-pasos { margin: .4rem 0 1rem; padding-left: 1.4rem; }
-.ruta-pasos li + li { margin-top: .4rem; }
-.ruta-etiqueta { display: block; margin-bottom: .3rem; color: var(--hueso); font-weight: 600; }
+.ruta-aviso { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid var(--borde-fuerte); border-radius: 4px; color: var(--hueso); overflow-wrap: anywhere; }
 .ruta-aviso-abajo { margin: .8rem 0 0; }
 .ruta-aviso-mal { border-color: var(--ascua); border-left-width: 5px; }
+.ruta-botones { display: flex; flex-wrap: wrap; gap: .6rem; margin: .9rem 0 0; }
+.ruta-campo { box-sizing: border-box; width: 100%; min-height: 44px; padding: .5rem .8rem; border: 1px solid rgba(231, 231, 231, .35); border-radius: 4px; background: rgba(8, 8, 8, .6); color: var(--hueso); font: inherit; }
+.ruta-campo::placeholder { color: var(--suave); }
+.ruta-campo:hover { border-color: var(--borde-fuerte); }
+textarea.ruta-campo { display: block; resize: vertical; }
+.ruta-etiqueta { display: block; margin-bottom: .3rem; color: var(--hueso); font-weight: 600; }
+.ruta-pasos { margin: .4rem 0 1rem; padding-left: 1.4rem; }
+.ruta-pasos li + li { margin-top: .45rem; }
+.ruta-pasos li::marker, .sesion-pasos li::marker { color: var(--rojo-claro); font-weight: 600; }
+
+/* Cómo empezar: los mismos pasos con hexágono que en «Únete». */
+.ruta-guia { margin: 1.4rem 0 0; }
+.ruta-guia > h3 { margin: 0; }
+.ruta-guia-pasos { margin: 1.4rem 0 1.2rem; }
+.ruta-guia-pasos h4 { margin: .3rem 0 .45rem; font-size: 1.3rem; text-transform: uppercase; }
+.ruta-guia > .ruta-nota { max-width: 48rem; margin: 0; }
+
+/* Paneles de «Tu progreso»: una sola clase de tarjeta, en dos columnas cuando caben. */
+.ruta-paneles { display: grid; gap: 1.2rem; margin-top: 2rem; }
+@media (min-width: 960px) {
+  .ruta-paneles { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .ruta-ancho { grid-column: 1 / -1; }
+}
+.ruta-panel { box-sizing: border-box; min-width: 0; margin: 0; padding: clamp(1.1rem, 3vw, 1.6rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-radius: 4px; box-shadow: var(--cristal-brillo); }
+.ruta-panel > :first-child { margin-top: 0; }
+.ruta-panel > :last-child { margin-bottom: 0; }
+.ruta-panel h3 { margin: 0 0 .7rem; font-size: 1.45rem; text-transform: uppercase; }
+.ruta-panel .boton-sec::after { content: none; }
+.ruta-peligro { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--linea); }
+.ruta-confirmar { margin-top: 1rem; padding: 1rem; border: 1px solid var(--ascua); border-left-width: 4px; border-radius: 4px; background: rgba(255, 53, 31, .07); }
+.ruta-confirmar p { margin: 0; }
+.ruta-confirmar p + p { margin-top: .8rem; }
+.ruta-panel.ruta-confirmar { margin: 0; padding: clamp(1.1rem, 3vw, 1.6rem); }
+.ruta-trayectoria { margin: 0; padding: 0; list-style: none; }
+.ruta-trayectoria li { display: flex; flex-wrap: wrap; gap: 0 .8rem; padding: .45rem 0; border-bottom: 1px solid var(--linea); }
+.ruta-trayectoria time { min-width: 7rem; color: var(--suave); font-variant-numeric: tabular-nums; }
 /* Al llegar aquí con el teclado o por programa, el título no se queda bajo la barra fija. */
 .ruta-nexus, .ruta-nexus textarea { scroll-margin-top: 6.5rem; }
-.ruta-trayectoria { margin: 0; padding: 0; list-style: none; }
-.ruta-trayectoria li { display: flex; flex-wrap: wrap; gap: 0 .8rem; padding: .4rem 0; border-bottom: 1px solid var(--linea); }
-.ruta-trayectoria time { min-width: 7rem; color: var(--suave); }
+
+/* El resumen: cuánto llevas y la sesión que te toca, con su botón. */
+.ruta-resumen { border-left: 2px solid var(--ascua); }
+.ruta-total { margin: 0; color: var(--suave); font-size: 1.05rem; }
+.ruta-total b { margin-right: .1em; color: var(--hueso); font: 400 clamp(2.6rem, 7vw, 3.4rem)/1 var(--titulos); font-variant-numeric: tabular-nums; }
+.ruta-resumen progress { height: .8rem; margin: .7rem 0 .6rem; }
+.ruta-estado { margin: 0; color: var(--suave); font-size: .95rem; }
+.ruta-estado-mal { color: var(--rojo-claro); }
+.ruta-toca { display: grid; gap: 1rem; margin-top: 1.2rem; padding: 1rem 1.1rem; border: 1px solid var(--borde-fuerte); border-radius: 4px; background: linear-gradient(120deg, rgba(255, 53, 31, .13), rgba(255, 53, 31, .02) 70%); }
+.ruta-toca-t { display: grid; justify-items: start; gap: .35rem; margin: 0; }
+.ruta-toca-n { color: var(--rojo-claro); font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; }
+.ruta-toca-sitio { color: var(--hueso); font: 400 clamp(1.7rem, 4.5vw, 2.2rem)/1.05 var(--titulos); text-transform: uppercase; overflow-wrap: anywhere; }
+.ruta-toca-fin .ruta-toca-sitio { font: 600 1.1rem/1.4 var(--cuerpo); text-transform: none; }
+.ruta-toca .boton { justify-self: start; }
+@media (min-width: 520px) { .ruta-toca { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+
 .ruta-filtros { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.2rem; }
-.ruta-filtro, .tramo, .coord { min-width: 44px; min-height: 44px; padding: .3rem .7rem; border: 1px solid var(--borde); border-radius: 8px; background: rgba(15, 15, 15, .55); color: var(--hueso); font: 600 1rem var(--cuerpo); cursor: pointer; }
+.ruta-filtro, .tramo, .coord { min-width: 44px; min-height: 44px; padding: .3rem .7rem; border: 1px solid var(--borde); border-radius: 4px; background: rgba(15, 15, 15, .55); color: var(--hueso); font: 600 1rem var(--cuerpo); cursor: pointer; transition: border-color .2s, background-color .2s; }
 .ruta-filtro[aria-pressed="true"], .tramo[aria-pressed="true"] { border-color: var(--ascua); background: rgba(255, 53, 31, .22); color: #fff; }
+.ruta-filtro[aria-disabled="true"] { cursor: default; border-style: dashed; background: none; color: var(--suave); }
 .tramo:disabled, .coord:disabled { cursor: default; opacity: .7; }
-.ruta-filtro:hover, .tramo:hover:enabled, .coord:hover:enabled { border-color: var(--borde-fuerte); }
+.ruta-filtro:hover:not([aria-disabled="true"]), .tramo:hover:enabled, .coord:hover:enabled { border-color: var(--borde-fuerte); }
 .ruta-grupos details, .sesiones details { border-top: 0; }
 .ruta-grupo summary, .sesion summary { display: flex; align-items: center; gap: .8rem; padding-right: 2.4rem; }
 .ruta-grupo-t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
@@ -1776,12 +1812,21 @@ textarea.ruta-campo { display: block; resize: vertical; }
 .contador { color: var(--suave); font-size: .95rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .logros, .tareas, .sesiones { margin: 0; padding: 0; list-style: none; }
 .logro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; padding: .6rem 0; border-top: 1px solid var(--linea); }
-.ruta-cuenta [hidden], .ruta-filtros[hidden], .logro[hidden], .ahora-zona[hidden], .ahora-zona [hidden], .sesiones[hidden] { display: none; }
 .logro-nombre { flex: 1 1 14rem; min-width: 0; }
 .logro-coord { display: block; color: var(--suave); font-size: .9rem; }
 .tramos { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+/* Todos los logros: la dieta con su color de siempre y el grupo completo con su marca. */
+.ruta-grupo[data-grupo="C"] .ruta-grupo-t small { color: #ff6c5c; }
+.ruta-grupo[data-grupo="H"] .ruta-grupo-t small { color: #b3d68f; }
+.ruta-grupo[data-grupo="O"] .ruta-grupo-t small { color: #f2c66f; }
+.ruta-grupo .contador { min-width: 3.4rem; padding: .25rem .6rem; border: 1px solid var(--borde); border-radius: 99px; text-align: center; }
+.grupo-completo > summary .contador { border-color: rgba(231, 231, 231, .5); color: var(--hueso); }
+.grupo-completo > summary .contador::before { content: "✓ "; content: "✓ " / ""; }
+
+/* La lista plegable de sesiones: sin JavaScript es la que se lee. */
 .sesion-n { flex: none; width: 2rem; color: var(--rojo-claro); font: 400 1.4rem var(--titulos); text-align: center; }
-.sesion-hecha .ruta-grupo-t b { color: var(--suave); text-decoration: line-through; }
+.sesion-hecha .ruta-grupo-t b { color: var(--suave); }
 .sesion-actual > details { border-left: 2px solid var(--ascua); }
 .sesion-cuerpo { padding: 0 0 1.2rem 1rem; }
 .ruta-grupo .logros { padding: 0 0 .6rem 1rem; }
@@ -1789,32 +1834,72 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
 .sesion-nota { margin: 0 0 .8rem; color: var(--hueso); }
 .sesion-que { margin: 0 0 .3rem; font-weight: 600; }
 .sesion-pasos { margin: 0 0 1rem; padding-left: 1.4rem; color: var(--suave); }
-.tarea { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; padding: .5rem 0; border-top: 1px solid var(--linea); }
-.tramo-tarea { padding: 0; font-size: 1.2rem; color: transparent; }
+.sesion-pasos li + li { margin-top: .25rem; }
+
+/* Tareas: casilla, texto y coordenadas siempre en su sitio; en el móvil las coordenadas bajan bajo el texto. */
+.tarea { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: .45rem .9rem; padding: .55rem 0; border-top: 1px solid var(--linea); }
+.tarea .coord { grid-column: 3; }
+@media (max-width: 519px) { .tarea .coord { grid-column: 2; justify-self: start; } }
+.tramo-tarea { width: 44px; padding: 0; border-color: rgba(231, 231, 231, .5); font-size: 1.2rem; color: transparent; }
 .tramo-tarea[aria-pressed="true"] { color: #fff; }
-.tarea-t { display: flex; flex-direction: column; flex: 1 1 12rem; min-width: 0; }
+.tarea:has(.tramo-tarea[aria-pressed="true"]) .tarea-t b { color: var(--suave); }
+.tarea-t { display: flex; flex-direction: column; min-width: 0; }
 .tarea-t small { color: var(--suave); font-size: .9rem; }
 .coord { flex: none; font-size: .9rem; font-variant-numeric: tabular-nums; }
-/* «Ahora toca»: la sesión que te toca y qué hacer en ella, encima de toda la ruta. */
-.ahora { box-sizing: border-box; max-width: 48rem; margin: 1.6rem 0 0; padding: clamp(1rem, 3.5vw, 1.6rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-left: 2px solid var(--ascua); border-radius: 4px; box-shadow: var(--cristal-brillo); scroll-margin-top: 6.5rem; }
-.ahora-arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .8rem; margin: 0 0 .6rem; }
+
+/* «Ahora toca» a la izquierda y toda la ruta a la derecha cuando hay sitio; si no, una encima de otra. */
+.ahora-zona { display: grid; gap: 2rem 2.6rem; margin: 1.8rem 0 1.4rem; }
+@media (min-width: 1100px) {
+  .ahora-zona { grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem); grid-template-rows: auto 1fr; align-items: start; }
+  .ahora-zona .ahora { grid-row: 1 / span 2; max-width: none; }
+  .ahora-toda, .ahora-indice { grid-column: 2; }
+}
+.ahora { box-sizing: border-box; min-width: 0; max-width: 48rem; margin: 0; padding: clamp(1.1rem, 3.5vw, 1.9rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-left: 2px solid var(--ascua); border-radius: 4px; box-shadow: var(--cristal-brillo); scroll-margin-top: 6.5rem; }
+.ahora-arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .8rem; margin: 0 0 .7rem; }
 .ahora-n { color: var(--suave); font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; }
 .ahora-estado { padding: .35rem .75rem; border: 1px solid var(--borde); border-radius: 99px; color: var(--suave); font: 600 .85rem/1 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 .ahora-estado[data-estado="actual"] { border-color: var(--ascua); background: rgba(255, 53, 31, .22); color: #fff; }
-.ahora-estado[data-estado="hecha"] { border-color: var(--borde-fuerte); color: var(--hueso); }
-.ahora-titulo { margin: 0 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.4rem); text-transform: uppercase; overflow-wrap: anywhere; }
-.ahora-dino { margin: 0 0 1rem; }
-.ahora-progreso p { margin: 0 0 .6rem; color: var(--suave); font-size: .95rem; }
-.ahora .tareas { margin: 0 0 1rem; }
+.ahora-estado[data-estado="hecha"] { border-color: rgba(231, 231, 231, .5); color: var(--hueso); }
+.ahora-estado[data-estado="hecha"]::before { content: "✓ "; content: "✓ " / ""; }
+.ahora-titulo { margin: 0 0 .6rem; font-size: clamp(2rem, 5.5vw, 3rem); text-transform: uppercase; overflow-wrap: anywhere; }
+.ahora-dino { margin: 0 0 1.3rem; }
+.ahora .sesion-que { margin-bottom: .4rem; color: var(--hueso); }
+.ahora .sesion-pasos { margin-bottom: 1.4rem; }
+.ahora-progreso { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem 1rem; margin: 0 0 .6rem; }
+.ahora-progreso progress { flex: 1 1 12rem; margin: 0; }
+.ahora-progreso p { margin: 0; color: var(--suave); font-size: .95rem; font-variant-numeric: tabular-nums; }
+.ahora .tareas { margin: 0 0 1.2rem; }
 .ahora-fin { margin: 0 0 1rem; color: var(--hueso); }
 .ahora-aviso { margin: 0; }
-.ahora-aviso:not(:empty) { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid var(--borde-fuerte); border-left: 5px solid var(--ascua); border-radius: 8px; color: var(--hueso); }
-.ahora-ir { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; }
-.ahora-ir button { flex: 1 1 auto; }
-.ruta-filtro[aria-disabled="true"] { cursor: default; border-style: dashed; background: none; color: var(--suave); }
-.ahora-toda { margin: 2.4rem 0 .6rem; }
-.ahora-indice { max-width: 48rem; margin: 0 0 1.4rem; padding: 0; list-style: none; border-top: 1px solid var(--linea); }
-.ahora-li { box-sizing: border-box; display: flex; align-items: center; gap: .8rem; width: 100%; min-height: 44px; padding: .55rem .6rem .55rem 0; border: 0; border-bottom: 1px solid var(--linea); background: none; color: var(--hueso); font: 600 1.05rem/1.3 var(--etiquetas); letter-spacing: .03em; text-align: left; cursor: pointer; transition: color .2s; }
-@media (hover: hover) { .ahora-li:hover { color: var(--ascua-viva); } }
-.ahora-li[aria-current="true"] { box-shadow: inset 2px 0 0 var(--ascua); background: linear-gradient(90deg, rgba(255, 53, 31, .07), transparent 70%); }
+.ahora-aviso:not(:empty) { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid var(--borde-fuerte); border-left: 5px solid var(--ascua); border-radius: 4px; background: rgba(255, 53, 31, .07); color: var(--hueso); }
+.ahora-ir { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .5rem; margin: 0; padding-top: 1.1rem; border-top: 1px solid var(--linea); }
+
+/* Toda la ruta: hecha con ✓, la que toca con su anillo y «Ahora toca», y lo que lleva cada una. */
+.ahora-toda { margin: 0; font-size: 1.45rem; text-transform: uppercase; }
+.ahora-indice { max-width: 48rem; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--linea); }
+.ahora-li { box-sizing: border-box; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) auto; grid-template-areas: "n t c" "n b b"; align-items: center; gap: .35rem .8rem; width: 100%; min-height: 44px; padding: .6rem .6rem .6rem .25rem; border: 0; border-bottom: 1px solid var(--linea); background: none; color: var(--hueso); font: 600 1.05rem/1.25 var(--etiquetas); letter-spacing: .03em; text-align: left; cursor: pointer; transition: background-color .2s; }
+@media (hover: hover) { .ahora-li:hover { background: rgba(255, 53, 31, .06); } }
+.ahora-li[aria-current="true"] { box-shadow: inset 2px 0 0 var(--ascua); background: linear-gradient(90deg, rgba(255, 53, 31, .1), transparent 75%); }
+.ahora-li .sesion-n { grid-area: n; box-sizing: border-box; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 1px solid rgba(231, 231, 231, .35); border-radius: 50%; color: var(--suave); font: 400 1.05rem/1 var(--titulos); }
+.ahora-li .ruta-grupo-t { grid-area: t; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: .5rem; }
+.ahora-li .ruta-grupo-t b { grid-row: 1; grid-column: 1; }
+.ahora-li .ruta-grupo-t small { grid-column: 1 / -1; }
+.ahora-li-chip { display: none; grid-row: 1; grid-column: 2; justify-self: start; padding: .2rem .5rem; border: 1px solid var(--ascua); border-radius: 99px; background: rgba(255, 53, 31, .22); color: #fff; font: 600 .75rem/1 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.ahora-li .contador { grid-area: c; min-width: 2.8rem; text-align: right; }
+.ahora-li-barra { grid-area: b; height: 3px; border-radius: 99px; background: rgba(138, 138, 138, .2); overflow: hidden; }
+.ahora-li-barra::before { content: ""; display: block; height: 100%; background: var(--ascua); transform: scaleX(var(--hecho, 0)); transform-origin: left; transition: transform .45s var(--suave-salida); }
+.ahora-li.sesion-hecha .sesion-n { position: relative; border-color: rgba(231, 231, 231, .55); background: rgba(231, 231, 231, .1); font-size: 0; }
+.ahora-li.sesion-hecha .sesion-n::after { content: "✓"; content: "✓" / ""; color: var(--hueso); font: 700 1.05rem/1 var(--cuerpo); }
+.ahora-li.sesion-hecha .ahora-li-barra { visibility: hidden; }
+.ahora-li.sesion-actual .sesion-n { border: 2px solid var(--ascua); background: rgba(255, 53, 31, .22); color: #fff; box-shadow: 0 0 12px rgba(255, 53, 31, .45); }
 .ahora-li.sesion-actual .ruta-grupo-t b { color: var(--ascua-viva); }
+.ahora-li.sesion-actual .ahora-li-chip { display: block; }
+
+/* Marcar una tarea y completar una sesión se notan, sin moverse si se pide menos movimiento o en modo ligero. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.ligera) .tramo-tarea.recien { animation: casilla .38s var(--suave-salida); }
+  :root:not(.ligera) .ahora-aviso:not(:empty) { animation: aviso-entra .5s var(--suave-salida); }
+}
+@keyframes casilla { 40% { scale: 1.16; box-shadow: 0 0 0 5px rgba(255, 53, 31, .25); } }
+@keyframes aviso-entra { from { opacity: 0; translate: 0 -.4rem; } }
+@media (prefers-reduced-motion: reduce) { .ahora-li-barra::before { transition: none; } }
