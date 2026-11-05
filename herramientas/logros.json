@@ -1,0 +1,1116 @@
+{
+ "_nota": "Lista de logros de la ruta del clan, mirada el 4 de noviembre de 2026. Una sola fuente: de aquí salen la página (montar_web.py) y lo que acepta el servicio (servicio/). Oviraptor va oculto: comprobar.py no deja nombrarlo en la web hasta confirmar sus datos (borradores/); sus marcas se aceptan y se guardan para no perderlas.",
+ "mirada": "2026-11-04",
+ "especies": [
+  {
+   "id": "allo",
+   "nombre": "Allosaurus",
+   "grupo": "C",
+   "sitio": "The Volcano",
+   "ll": [
+    1373,
+    1327
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 75,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "austro",
+   "nombre": "Austroraptor",
+   "grupo": "C",
+   "sitio": "The Port",
+   "ll": [
+    1399,
+    1646
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 0,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "carno",
+   "nombre": "Carnotaurus",
+   "grupo": "C",
+   "sitio": "The Dam",
+   "ll": [
+    1379,
+    983
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 50,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "cerato",
+   "nombre": "Ceratosaurus",
+   "grupo": "C",
+   "sitio": "North Lake",
+   "ll": [
+    1546,
+    1375
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "deino",
+   "nombre": "Deinosuchus",
+   "grupo": "C",
+   "sitio": "The Pit",
+   "ll": [
+    485,
+    302
+   ],
+   "fauna": 25,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    },
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    10,
+    30,
+    75,
+    150
+   ]
+  },
+  {
+   "id": "dilo",
+   "nombre": "Dilophosaurus",
+   "grupo": "C",
+   "sitio": "West Rail",
+   "ll": [
+    969,
+    501
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 50,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "herrera",
+   "nombre": "Herrerasaurus",
+   "grupo": "C",
+   "sitio": "The Swamp",
+   "ll": [
+    492,
+    951
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 0,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "omni",
+   "nombre": "Omniraptor",
+   "grupo": "C",
+   "sitio": "The Highlands",
+   "ll": [
+    1058,
+    761
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 50,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "ovi",
+   "nombre": "Oviraptor",
+   "grupo": "C",
+   "sitio": "East Swamp",
+   "ll": [
+    567,
+    1036
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 50,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ],
+   "oculto": true
+  },
+  {
+   "id": "ptera",
+   "nombre": "Pteranodon",
+   "grupo": "C",
+   "sitio": "tejado de The Dome",
+   "sitio_en": "roof of The Dome",
+   "ll": [
+    794,
+    806
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 30,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    },
+    {
+     "tipo": "C",
+     "min": 30,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "troo",
+   "nombre": "Troodon",
+   "grupo": "C",
+   "sitio": "islote de Shallow Beach",
+   "sitio_en": "Shallow Beach islet",
+   "ll": [
+    542,
+    1206
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 0,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "rex",
+   "nombre": "Tyrannosaurus",
+   "grupo": "C",
+   "sitio": "Port Containers",
+   "ll": [
+    1399,
+    1646
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "H",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    },
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    10,
+    30,
+    75,
+    150
+   ]
+  },
+  {
+   "id": "diablo",
+   "nombre": "Diabloceratops",
+   "grupo": "H",
+   "sitio": "Pit Pond",
+   "ll": [
+    511,
+    363
+   ],
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "dryo",
+   "nombre": "Dryosaurus",
+   "grupo": "H",
+   "sitio": "edificios de The Pit",
+   "sitio_en": "The Pit buildings",
+   "ll": [
+    485,
+    302
+   ],
+   "fauna": null,
+   "cazas": [],
+   "horas": [
+    1,
+    3,
+    10,
+    25,
+    50
+   ]
+  },
+  {
+   "id": "hypsi",
+   "nombre": "Hypsilophodon",
+   "grupo": "H",
+   "sitio": "South Plains",
+   "ll": [
+    675,
+    588
+   ],
+   "fauna": null,
+   "cazas": [],
+   "horas": [
+    1,
+    3,
+    10,
+    25,
+    50
+   ]
+  },
+  {
+   "id": "kentro",
+   "nombre": "Kentrosaurus",
+   "grupo": "H",
+   "sitio": "Delta",
+   "ll": [
+    896,
+    1165
+   ],
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "maia",
+   "nombre": "Maiasaura",
+   "grupo": "H",
+   "sitio": "Mudflats",
+   "ll": [
+    793,
+    370
+   ],
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "pachy",
+   "nombre": "Pachycephalosaurus",
+   "grupo": "H",
+   "sitio": "SW Sanctuary",
+   "ll": null,
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 50,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "stego",
+   "nombre": "Stegosaurus",
+   "grupo": "H",
+   "sitio": "Central Sanctuary",
+   "ll": null,
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "teno",
+   "nombre": "Tenontosaurus",
+   "grupo": "H",
+   "sitio": "West Sanctuary",
+   "ll": null,
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 50,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    5,
+    20,
+    50,
+    100
+   ]
+  },
+  {
+   "id": "trice",
+   "nombre": "Triceratops",
+   "grupo": "H",
+   "sitio": "The Volcano",
+   "ll": [
+    1373,
+    1327
+   ],
+   "fauna": null,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 75,
+     "tramos": [
+      1,
+      5,
+      20,
+      50,
+      100
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    10,
+    30,
+    75,
+    150
+   ]
+  },
+  {
+   "id": "beipi",
+   "nombre": "Beipiaosaurus",
+   "grupo": "O",
+   "sitio": "The Port",
+   "ll": [
+    1399,
+    1646
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 0,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    },
+    {
+     "tipo": "H",
+     "min": 0,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    3,
+    10,
+    25,
+    50
+   ]
+  },
+  {
+   "id": "galli",
+   "nombre": "Gallimimus",
+   "grupo": "O",
+   "sitio": "The Dam",
+   "ll": [
+    1379,
+    983
+   ],
+   "fauna": 50,
+   "cazas": [
+    {
+     "tipo": "C",
+     "min": 50,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    },
+    {
+     "tipo": "H",
+     "min": 50,
+     "tramos": [
+      1,
+      3,
+      10,
+      25,
+      50
+     ]
+    }
+   ],
+   "horas": [
+    1,
+    3,
+    10,
+    25,
+    50
+   ]
+  }
+ ],
+ "huellas": [
+  {
+   "codigo": "C14",
+   "x": -426,
+   "y": 198,
+   "r": 10
+  },
+  {
+   "codigo": "E15",
+   "x": -327,
+   "y": 239,
+   "r": 10
+  },
+  {
+   "codigo": "F11",
+   "x": -242,
+   "y": 51,
+   "r": 10
+  },
+  {
+   "codigo": "F16",
+   "x": -250,
+   "y": 338,
+   "r": 10
+  },
+  {
+   "codigo": "G15",
+   "x": -222,
+   "y": 286,
+   "r": 10
+  },
+  {
+   "codigo": "G20",
+   "x": -218,
+   "y": 531,
+   "r": 25
+  },
+  {
+   "codigo": "I12",
+   "x": -100,
+   "y": 85,
+   "r": 10
+  },
+  {
+   "codigo": "K15",
+   "x": 36,
+   "y": 260,
+   "r": 10
+  },
+  {
+   "codigo": "L11",
+   "x": 102,
+   "y": 28,
+   "r": 10
+  }
+ ],
+ "puertas": [
+  {
+   "codigo": "K12",
+   "x": 24,
+   "y": 78
+  },
+  {
+   "codigo": "L15",
+   "x": 59,
+   "y": 267
+  },
+  {
+   "codigo": "G20",
+   "x": -82,
+   "y": 439
+  },
+  {
+   "codigo": "G18",
+   "x": -196,
+   "y": 450
+  },
+  {
+   "codigo": "D17",
+   "x": -399,
+   "y": 399
+  },
+  {
+   "codigo": "C16",
+   "x": -419,
+   "y": 321
+  },
+  {
+   "codigo": "G15",
+   "x": -218,
+   "y": 289
+  },
+  {
+   "codigo": "H16",
+   "x": -161,
+   "y": 297
+  },
+  {
+   "codigo": "L12",
+   "x": 70,
+   "y": 64
+  },
+  {
+   "codigo": "K15",
+   "x": 5,
+   "y": 276
+  },
+  {
+   "codigo": "J16",
+   "x": -38,
+   "y": 296
+  },
+  {
+   "codigo": "H19",
+   "x": -156,
+   "y": 505
+  },
+  {
+   "codigo": "G19",
+   "x": -200,
+   "y": 509
+  },
+  {
+   "codigo": "G17",
+   "x": -209,
+   "y": 403
+  },
+  {
+   "codigo": "F17 I",
+   "x": -242,
+   "y": 392
+  },
+  {
+   "codigo": "F17 II",
+   "x": -258,
+   "y": 397
+  },
+  {
+   "codigo": "E17",
+   "x": -314,
+   "y": 397
+  },
+  {
+   "codigo": "D18",
+   "x": -372,
+   "y": 413
+  },
+  {
+   "codigo": "C17",
+   "x": -411,
+   "y": 356
+  },
+  {
+   "codigo": "C15",
+   "x": -452,
+   "y": 263
+  },
+  {
+   "codigo": "C14",
+   "x": -426,
+   "y": 229
+  },
+  {
+   "codigo": "D14",
+   "x": -380,
+   "y": 215
+  }
+ ],
+ "muertes": {
+  "tramos": [
+   1,
+   10,
+   40,
+   100,
+   200
+  ],
+  "especies": [
+   "Tyrannosaurus",
+   "Deinosuchus",
+   "Allosaurus",
+   "Triceratops",
+   "Ceratosaurus",
+   "Carnotaurus",
+   "Stegosaurus",
+   "Omniraptor",
+   "Dilophosaurus",
+   "Kentrosaurus",
+   "Pachycephalosaurus",
+   "Diabloceratops",
+   "Herrerasaurus",
+   "Oviraptor",
+   "Tenontosaurus",
+   "Maiasaura",
+   "Troodon",
+   "Pteranodon",
+   "Austroraptor",
+   "Gallimimus"
+  ]
+ },
+ "horas_totales": [
+  1,
+  10,
+  50,
+  100,
+  300,
+  500,
+  1500
+ ],
+ "plan": [
+  {
+   "especie": "dryo",
+   "tp": "The Pit plains",
+   "titulo": "Edificios de The Pit",
+   "titulo_en": "The Pit buildings",
+   "nota": "Date una vuelta entre los edificios.",
+   "nota_en": "Walk around between the buildings."
+  },
+  {
+   "especie": "diablo",
+   "tp": "The Pit plains",
+   "titulo": "Pit Pond",
+   "nota": "La charca junto a The Pit: métete en el agua o quédate en la orilla.",
+   "nota_en": "The pond next to The Pit: get in the water or stay on the shore."
+  },
+  {
+   "especie": "deino",
+   "tp": "The Pit plains",
+   "titulo": "The Pit",
+   "nota": ""
+  },
+  {
+   "especie": "maia",
+   "tp": "The Pit plains",
+   "titulo": "Mudflats",
+   "nota": ""
+  },
+  {
+   "especie": "pachy",
+   "tp": "The Pit plains",
+   "titulo": "SW Sanctuary",
+   "nota": "Lo más probable es el santuario S5. Quédate dentro un rato.",
+   "nota_en": "Most likely sanctuary S5. Stay inside for a while."
+  },
+  {
+   "especie": "hypsi",
+   "tp": null,
+   "titulo": "South Plains",
+   "nota": ""
+  },
+  {
+   "especie": "dilo",
+   "tp": "West Rail",
+   "titulo": "West Rail",
+   "nota": ""
+  },
+  {
+   "especie": "teno",
+   "tp": "West Rail",
+   "titulo": "West Sanctuary",
+   "nota": "Prueba el santuario S7, cerca de West Rail; si no cuenta, el S6.",
+   "nota_en": "Try sanctuary S7, near West Rail; if it does not count, S6."
+  },
+  {
+   "especie": "omni",
+   "tp": "Highland",
+   "titulo": "The Highlands",
+   "nota": ""
+  },
+  {
+   "especie": "herrera",
+   "tp": "Swamps",
+   "titulo": "The Swamp",
+   "nota": ""
+  },
+  {
+   "especie": "ovi",
+   "tp": "Swamps",
+   "titulo": "East Swamp",
+   "nota": "Si aún no se puede elegir en el juego, déjala para cuando salga.",
+   "nota_en": "If it still cannot be picked in the game, leave it until it comes out."
+  },
+  {
+   "especie": "kentro",
+   "tp": "Delta river & Coastal Pond",
+   "titulo": "Delta",
+   "nota": ""
+  },
+  {
+   "especie": "stego",
+   "tp": "Delta river & Coastal Pond",
+   "titulo": "Central Sanctuary",
+   "nota": "Prueba el santuario S3, el grande del centro-este, y quédate dentro un rato.",
+   "nota_en": "Try sanctuary S3, the big one in the centre-east, and stay inside for a while."
+  },
+  {
+   "especie": "troo",
+   "tp": null,
+   "titulo": "Shallow Beach",
+   "nota": "El islote frente a la playa.",
+   "nota_en": "The islet off the beach."
+  },
+  {
+   "especie": "carno",
+   "tp": "Water Access & Central Jungle",
+   "titulo": "La presa",
+   "titulo_en": "The Dam",
+   "nota": "Junto a Dam Lake.",
+   "nota_en": "Next to Dam Lake."
+  },
+  {
+   "especie": "galli",
+   "tp": "Water Access & Central Jungle",
+   "titulo": "La presa",
+   "titulo_en": "The Dam",
+   "nota": "Junto a Dam Lake.",
+   "nota_en": "Next to Dam Lake."
+  },
+  {
+   "especie": "allo",
+   "tp": "Water around the Volcano",
+   "titulo": "El Volcán",
+   "titulo_en": "The Volcano",
+   "nota": "Cráter del volcán.",
+   "nota_en": "The volcano crater."
+  },
+  {
+   "especie": "trice",
+   "tp": "Water around the Volcano",
+   "titulo": "El Volcán",
+   "titulo_en": "The Volcano",
+   "nota": "Cráter del volcán.",
+   "nota_en": "The volcano crater."
+  },
+  {
+   "especie": "cerato",
+   "tp": "N. Plains & N. Jungle",
+   "titulo": "North Lake",
+   "nota": ""
+  },
+  {
+   "especie": "austro",
+   "tp": "Eastern Jungle",
+   "titulo": "El Port",
+   "titulo_en": "The Port",
+   "nota": "El puerto, en la costa este.",
+   "nota_en": "The port, on the east coast."
+  },
+  {
+   "especie": "beipi",
+   "tp": "Eastern Jungle",
+   "titulo": "El Port",
+   "titulo_en": "The Port",
+   "nota": "El puerto, en la costa este.",
+   "nota_en": "The port, on the east coast."
+  },
+  {
+   "especie": "rex",
+   "tp": "Eastern Jungle",
+   "titulo": "Port Containers",
+   "nota": "Los contenedores del puerto.",
+   "nota_en": "The containers at the port."
+  },
+  {
+   "especie": "ptera",
+   "tp": null,
+   "titulo": "La Cúpula",
+   "titulo_en": "The Dome",
+   "nota": "Posarte en el tejado de la Cúpula. De adulto no hay teletransporte: ve volando.",
+   "nota_en": "Land on the roof of The Dome. There is no teleport as an adult: fly there."
+  }
+ ]
+}

@@ -1,0 +1,4 @@
+{
+ "_nota": "Dirección del servicio de cuentas (https://dominio, sin ruta ni barra final). Vacía: la ruta de logros funciona solo en el navegador de cada uno y lo dice. Ver servicio/README.md.",
+ "servicio": ""
+}

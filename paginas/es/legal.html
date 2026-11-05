@@ -1,5 +1,5 @@
 titulo: Aviso legal y privacidad – GARRA IBÉRICA, The Isle Evrima
-descripcion: Quién hace la web de GARRA IBÉRICA y qué datos trata: ninguno. Sin cookies, sin analítica, sin formularios y sin nada cargado de otros sitios.
+descripcion: Quién hace la web de GARRA IBÉRICA y qué datos trata: sin analítica ni publicidad, y solo con cuenta de la ruta de logros si tú decides entrar.
 h1: Aviso legal y privacidad
 ---
   <section class="cabecera cabecera-baja cabecera-corta" id="inicio" aria-labelledby="titulo" data-ascuas>
@@ -7,7 +7,7 @@ h1: Aviso legal y privacidad
     <div class="envoltura cabecera-in">
       {{migas}}
       <h1 id="titulo" class="entra">Aviso legal y privacidad</h1>
-      <p class="entrada entra entra-2">Corto, porque esta web no te pide nada ni guarda nada de ti.</p>
+      <p class="entrada entra entra-2">Corto. Si solo miras la web, no te pide ni guarda nada. Si entras en la ruta de logros con Discord, aquí está todo lo que se guarda.</p>
     </div>
   </section>
 
@@ -21,20 +21,41 @@ h1: Aviso legal y privacidad
       <section class="bloque revelar" aria-labelledby="t-datos">
         <h2 id="t-datos">Qué datos tuyos trata esta web</h2>
         <ul role="list">
-          <li>No usa cookies ni guarda nada en tu navegador.</li>
+          <li>Si solo miras la web, no usa cookies ni guarda nada en tu navegador. La excepción es <a href="@/ruta/">la ruta de logros</a>, y solo si la usas: <a href="#cuentas">aquí abajo</a> está lo que guarda.</li>
           <li>No tiene analítica, ni contadores de visitas, ni publicidad.</li>
-          <li>No tiene formularios ni cuentas: no te pide ningún dato.</li>
-          <li>No carga nada de otros sitios: las fuentes, las fotos y el código están en la propia web, y su política de seguridad impide cargar nada de fuera.</li>
+          <li><!--si-cuentas-->No tiene formularios. Las cuentas son solo para miembros del clan y son voluntarias.<!--sin-cuentas-->No tiene formularios ni cuentas: no te pide ningún dato.<!--fin-cuentas--></li>
+          <li>Las fuentes, las fotos y el código están en la propia web, y su política de seguridad impide cargar nada de fuera. La única excepción son los vídeos de la página del clan, que vienen de GitHub Pages y solo se piden si los reproduces.</li>
           <li>La cuenta atrás de la Cacería y la hora en cada país se calculan en tu navegador, con su reloj, sin enviar nada.</li>
         </ul>
       </section>
+      <section class="bloque revelar" id="cuentas" aria-labelledby="t-cuentas">
+        <!--si-cuentas-->
+        <h2 id="t-cuentas">Cuentas de la ruta de logros</h2>
+        <p>Entrar es voluntario: sin entrar, la ruta funciona igual y tus marcas se guardan solo en tu navegador, en el almacenamiento de esta web. Puedes borrarlas limpiando los datos del sitio.</p>
+        <p>Si entras con Discord, comprobamos que eres miembro del servidor del clan y guardamos para que veas tu progreso en cualquier dispositivo:</p>
+        <ul role="list">
+          <li>tu identificador de Discord, el nombre que muestras en el servidor, la fecha de alta y la de tu último acceso;</li>
+          <li>los logros que marcas y la fecha de cada uno.</li>
+        </ul>
+        <p>No guardamos tu correo, tu contraseña, tu lista de amigos ni tus servidores. Discord nos da un permiso que usamos una sola vez y anulamos al momento. Solo tú ves lo tuyo: no hay perfiles visibles para otros miembros. Quienes administran el clan pueden descargar una copia de seguridad con todo lo anterior, solo para no perderlo si algo falla.</p>
+        <p><b>Dónde está.</b> Lo guarda Cloudflare, en su red de la Unión Europea, por encargo del clan. Para atender cada petición, Cloudflare ve datos técnicos como tu dirección IP y los trata según su <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener" target="_blank">política de privacidad<span class="oculto"> (se abre en una pestaña nueva)</span></a>. El clan no vende ni cede tus datos a nadie.</p>
+        <p><b>En tu navegador.</b> Al entrar se usa una cookie técnica durante 10 minutos como máximo, solo para completar el viaje a Discord y evitar suplantaciones. Después, tus marcas y la clave de tu sesión quedan en el almacenamiento de esta web. La sesión dura 30 días. Al salir, se borran de ese navegador.</p>
+        <p><b>Cuánto tiempo.</b> Hasta que los borres. Dejar el clan no los borra: al caducar tu sesión ya no podrás volver a entrar, así que pide el borrado en el Discord del clan o descárgalos y bórralos antes de irte.</p>
+        <p><b>Tú decides.</b> En la propia página puedes descargar todos tus datos y borrarlos con un botón, en cualquier momento. Las copias de recuperación automáticas desaparecen en 7 días, y las de seguridad que descarga el clan se sustituyen por otras nuevas. Para cualquier duda o para ejercer tus derechos, escríbenos en el Discord del clan. También puedes reclamar ante la Agencia Española de Protección de Datos.</p>
+        <p><b>Menores.</b> Si tienes menos de 14 años, no entres sin permiso de tu madre, padre o tutor. Puedes usar la ruta sin cuenta: nada sale de tu navegador.</p>
+        <!--sin-cuentas-->
+        <h2 id="t-cuentas">La ruta de logros</h2>
+        <p>Tus marcas se guardan solo en tu navegador, en el almacenamiento de esta web: no salen de él. Puedes borrarlas limpiando los datos del sitio.</p>
+        <!--fin-cuentas-->
+      </section>
       <section class="bloque revelar" aria-labelledby="t-alojamiento">
         <h2 id="t-alojamiento">Dónde está alojada</h2>
-        <p>En GitHub Pages, un servicio de GitHub. Como cualquier servidor web, GitHub puede registrar datos técnicos de cada visita, como la dirección IP, para servir y proteger la web. Lo explica en su <a href="https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener" target="_blank">declaración de privacidad<span class="oculto"> (se abre en una pestaña nueva)</span></a>. El clan no tiene acceso a esos registros.</p>
+        <p>En Cloudflare. Como cualquier servidor web, Cloudflare puede registrar datos técnicos de cada visita, como la dirección IP, para servir y proteger la web. Lo explica en su <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener" target="_blank">política de privacidad<span class="oculto"> (se abre en una pestaña nueva)</span></a>. El clan no tiene acceso a esos registros.</p>
+        <p>Los vídeos y la dirección antigua, que solo te trae hasta aquí, siguen en GitHub Pages. Esas visitas las atiende GitHub, que lo explica en su <a href="https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener" target="_blank">declaración de privacidad<span class="oculto"> (se abre en una pestaña nueva)</span></a>.</p>
       </section>
       <section class="bloque revelar" aria-labelledby="t-enlaces">
         <h2 id="t-enlaces">Enlaces a otros sitios</h2>
-        <p>Los enlaces a Discord, Steam, Asura, Google Calendar y GitHub llevan fuera de esta web. Al abrirlos, se aplican las normas y la privacidad de cada uno.</p>
+        <p>Los enlaces a Discord, Steam, Asura, Google Calendar, GitHub y Cloudflare llevan fuera de esta web. Al abrirlos, se aplican las normas y la privacidad de cada uno.</p>
       </section>
       <p class="volver revelar"><a class="boton boton-sec boton-mini" href="@/">Volver al inicio</a></p>
     </div>

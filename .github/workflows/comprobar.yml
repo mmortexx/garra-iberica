@@ -39,6 +39,8 @@ jobs:
         run: python herramientas/prueba_borradores.py
       - name: Prueba de lo que debe parar la comprobación
         run: python herramientas/prueba_comprobar.py
+      - name: Prueba de la ruta de logros
+        run: python herramientas/prueba_logros.py
       - name: Instalar Playwright y Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.60.0 axe-core@4.14.0
@@ -48,6 +50,35 @@ jobs:
           python -m http.server 8765 --bind 127.0.0.1 --directory docs > /dev/null 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/ > /dev/null && break; sleep 1; done
           node herramientas/prueba_navegador.js
+
+  cuentas:
+    name: Servicio de cuentas y recorrido en navegador
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar el servicio
+        run: npm ci
+        working-directory: servicio
+      - name: Pruebas del servicio, ataques incluidos
+        run: npm test
+        working-directory: servicio
+      - name: Instalar Playwright y Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.60.0
+          npx playwright install --with-deps chromium
+      - name: Recorrido en navegador
+        run: npm run recorrido
+        working-directory: servicio
+      - name: Quitar cada guarda del servicio y exigir que una prueba falle
+        run: npm run mutaciones
+        working-directory: servicio
+      - name: Quitar cada guarda de la página y exigir que el recorrido falle
+        run: npm run mutaciones:pagina
+        working-directory: servicio
 
   apodos:
     name: Sin apodos de miembros

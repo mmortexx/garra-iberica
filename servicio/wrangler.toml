@@ -1,0 +1,37 @@
+# Servicio de cuentas. Aquí no va ningún secreto: el repositorio es público. El identificador y la clave de la
+# aplicación de Discord y los administradores se guardan en Cloudflare (ver servicio/README.md).
+name = "garra-cuentas"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+GUILD_ID = "1564701916452229202"
+PAGINA_ES = "https://clan.garra-iberica.workers.dev/ruta/"
+PAGINA_EN = "https://clan.garra-iberica.workers.dev/en/route/"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "garra-cuentas"
+# Lo da «wrangler d1 create» (ver servicio/README.md).
+database_id = "d98e3a0a-074d-4e57-b594-81e9736730d4"
+migrations_dir = "migraciones"
+
+# Por dirección IP: entrar y canjear el código.
+[[ratelimits]]
+name = "LIMITE_ENTRADA"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+# Por sesión o por IP: todo lo demás.
+[[ratelimits]]
+name = "LIMITE_API"
+namespace_id = "1002"
+simple = { limit = 120, period = 60 }
+
+# Limpia cada noche las sesiones y los códigos caducados.
+[triggers]
+crons = ["23 3 * * *"]
+
+# Apagado: esos registros guardarían unos días la dirección de cada petición, con códigos de un solo uso e IP.
+[observability]
+enabled = false

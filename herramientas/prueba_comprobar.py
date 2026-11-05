@@ -54,17 +54,17 @@ def web_tal_cual():
         shutil.rmtree(d, ignore_errors=True)
 
 
-def script_de_mas(palabra, carpeta):
+def script_de_mas(palabra, carpeta, nombre=None):
     """Un nombre y un sitio que no conoce nadie: si la revisión tira de una lista de ficheros, no lo ve."""
     def f():
         d = copia_web()
         try:
-            nombre = f'{uuid.uuid4().hex}.js'
-            sitio = d / carpeta / nombre
+            nombre_real = nombre or f'{uuid.uuid4().hex}.js'
+            sitio = d / carpeta / nombre_real
             sitio.parent.mkdir(parents=True, exist_ok=True)
             sitio.write_text(f'{palabra};\n', encoding='utf-8')
             mensajes = privacidad(d)
-            assert any(nombre in m for m in mensajes), f'un script con {palabra} en {carpeta or "la raíz"} pasa: {mensajes}'
+            assert any(nombre_real in m for m in mensajes), f'un script con {palabra} en {carpeta or "la raíz"} pasa: {mensajes}'
         finally:
             shutil.rmtree(d, ignore_errors=True)
     return f
@@ -160,6 +160,8 @@ prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
 for palabra in GUARDAN:
     prueba(f'un script suelto en la raíz con {palabra}', script_de_mas(palabra, ''))
 prueba('un script suelto en una subcarpeta', script_de_mas('localStorage', f'{uuid.uuid4().hex}/{uuid.uuid4().hex}'))
+prueba('la excepción de ruta.js no vale para otra carpeta', script_de_mas('localStorage', uuid.uuid4().hex, 'ruta.js'))
+prueba('la excepción de ruta.js no vale para otra forma de guardar', script_de_mas('sessionStorage', '', 'ruta.js'))
 prueba('un ID de Discord en una clave de arriba de las fichas', id_en_las_fichas)
 prueba('un apodo en una clave de arriba de las fichas', apodo_en_las_fichas)
 prueba('las fichas reales, sin IDs', fichas_reales_limpias)

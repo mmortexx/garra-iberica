@@ -21,6 +21,9 @@ En los textos de paginas/:
                        (ver cifras.py y batallas_web.py)
   {{batallas}}         todas las batallas del clan, de la última a la primera
   {{grupo:Especie}}    grupo máximo de esa especie según su ficha, con enlace a su página
+  {{logros_ruta}}      la ruta de logros, sesión a sesión; {{logros_lista}}, todos los logros (ver logros_web.py)
+  {{logros_datos}}     los tramos de cada logro, para ruta.js
+  {{servicio}}         dirección del servicio de cuentas, de cuentas.json
 
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
@@ -39,6 +42,7 @@ import batallas_web  # noqa: E402
 import calendario  # noqa: E402
 import cifras  # noqa: E402
 import guia_dinos  # noqa: E402
+import logros_web  # noqa: E402
 import preparar_galeria  # noqa: E402
 
 RAIZ = HERRAMIENTAS.parent
@@ -47,9 +51,9 @@ FUENTES = RAIZ / 'paginas'
 DATOS_CLAN = HERRAMIENTAS / 'datos_clan.json'
 INVITACION = guia_dinos.INVITACION
 STEAM = guia_dinos.STEAM
-VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js']
+VERSIONADOS = ['estilos.css', 'efectos.js', 'caceria.js', 'guia.js', 'ruta.js']
 # Última revisión del contenido, para el mapa del sitio (la guía lleva la fecha de sus fichas).
-REVISADA = '2026-11-04'
+REVISADA = '2026-11-05'
 LANGS = ('es', 'en')
 
 # id, ruta (es, en), nombre en el pie y en las migas (es, en). Arriba solo van las de MENU; en el
@@ -63,6 +67,7 @@ PAGINAS = [
     ('galeria', ('galeria/', 'en/gallery/'), ('Galería', 'Gallery')),
     ('unete', ('unete/', 'en/join/'), ('Cómo entrar', 'How to join')),
     ('normas', ('normas/', 'en/rules/'), ('Normas', 'Rules')),
+    ('ruta', ('ruta/', 'en/route/'), ('Ruta de logros', 'Achievements route')),
     ('legal', ('legal/', 'en/legal/'), ('Aviso legal y privacidad', 'Legal notice and privacy')),
 ]
 # Inicio, además de en la marca: no todo el mundo sabe que la marca lleva a la portada.
@@ -130,8 +135,25 @@ T = {
 # Solo en la portada en español: con ellas Google Search Console y Bing Webmaster verifican la web.
 VERIFICACION = [('google-site-verification', 'TjZ3UO9z_tfPs5RZnAKtSvgGJ08vOeuVpI8ob2YMVbQ'),
                 ('msvalidate.01', '06F63226A2F1AE3F8270F972B3FCA4D2')]
-CSP = ("default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self'; font-src 'self'; "
-       "img-src 'self' data:; media-src 'self'; base-uri 'none'; form-action 'none'")
+
+
+def segun_cuentas(cuerpo, activas):
+    """Un texto puede decir dos cosas: <!--si-cuentas-->con cuentas<!--sin-cuentas-->sin ellas<!--fin-cuentas-->.
+    Los avisos no pueden describir un servicio que aún no existe."""
+    trozo = r'<!--si-cuentas-->(.*?)<!--sin-cuentas-->(.*?)<!--fin-cuentas-->'
+    limpio = re.sub(trozo, lambda m: m[1 if activas else 2], cuerpo, flags=re.S)
+    if '-cuentas-->' in limpio:
+        sys.exit('un trozo <!--si-cuentas--> está sin cerrar')
+    return limpio
+
+
+def csp(pagina):
+    """La misma en toda la web; solo la ruta de logros, que es la que lo usa, puede hablar con el servicio de cuentas."""
+    conectar = ' '.join(filter(None, ["'self'", logros_web.servicio() if pagina == 'ruta' else '']))
+    return (f"default-src 'none'; script-src 'self'; connect-src {conectar}; style-src 'self'; font-src 'self'; "
+            "img-src 'self' data:; media-src 'self' https://mmortexx.github.io; base-uri 'none'; form-action 'none'")
+
+
 ACERO = ('<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1">'
          '<stop offset="0" stop-color="#dadada"/><stop offset=".35" stop-color="#929292"/><stop offset=".6" stop-color="#474747"/>'
          '<stop offset="1" stop-color="#aeaeae"/></linearGradient></defs></svg>')
@@ -256,6 +278,10 @@ def rellenar(cuerpo, pagina, lang, base, d):
         'alfas': lambda: alfas(lang),
         'cifras': lambda: cifras.portada(lang, RUTA['clan', lang], d['fichas']),
         'batallas': lambda: batallas_web.lista(lang),
+        'logros_ruta': lambda: logros_web.ruta(lang),
+        'logros_lista': lambda: logros_web.lista(lang),
+        'logros_datos': lambda: logros_web.datos_pagina(),
+        'servicio': lambda: logros_web.servicio(),
     }
 
     def poner(m):
@@ -264,7 +290,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         if m.group(1) not in valores or m.group(2):
             sys.exit(f'paginas/{lang}/{pagina}.html: marcador desconocido {m.group(0)}')
         return valores[m.group(1)]()
-    cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, cuerpo)
+    cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, segun_cuentas(cuerpo, bool(logros_web.servicio())))
     if pagina == 'inicio':
         cuerpo = textos_tira(cuerpo, lang)
     pre = prefijo(RUTA[pagina, lang])
@@ -454,6 +480,8 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         scripts.append(f'<script src="{pre}caceria.js?v={v["caceria.js"]}" defer></script>')
     if 'data-comparar' in cuerpo:
         scripts.append(f'<script src="{pre}guia.js?v={v["guia.js"]}" defer></script>')
+    if 'data-miembro' in cuerpo:
+        scripts.append(f'<script src="{pre}ruta.js?v={v["ruta.js"]}" defer></script>')
     og_imagen, og_alt = imagen_og(pagina, lang)
     cuerpo_attrs = ''
     if pagina == 'inicio':
@@ -468,7 +496,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         f'<meta name="description" content="{escape(desc)}">',
         '<meta name="robots" content="max-image-preview:large, max-snippet:-1">',
         *[f'<meta name="{n}" content="{c}">' for n, c in VERIFICACION if (pagina, lang) == ('inicio', 'es')],
-        f'<meta http-equiv="Content-Security-Policy" content="{CSP}">',
+        f'<meta http-equiv="Content-Security-Policy" content="{csp(pagina)}">',
         '<meta name="referrer" content="strict-origin-when-cross-origin">',
         '<meta name="theme-color" content="#080808">',
         f'<link rel="canonical" href="{url}">',

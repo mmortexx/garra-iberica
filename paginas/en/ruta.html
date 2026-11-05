@@ -1,0 +1,97 @@
+titulo: Asura achievements route – GARRA IBÉRICA, The Isle Evrima
+descripcion: The Asura achievements, session by session: what comes next with each dino, and your ticks saved so you keep what you have.
+h1: Achievements route
+---
+  <section class="cabecera cabecera-baja cabecera-corta" id="inicio" aria-labelledby="titulo" data-ascuas>
+    <img class="cabecera-fondo" src="@/img/galeria-colina-1000.webp" srcset="@/img/galeria-colina-600.webp 600w, @/img/galeria-colina-1000.webp 1000w, @/img/galeria-colina-1300.webp 1300w" sizes="(max-width: 700px) 45vw, 100vw" alt="" width="1300" height="523" fetchpriority="high">
+    <div class="envoltura cabecera-in">
+      {{migas}}
+      <h1 id="titulo" class="entra">Achievements route</h1>
+      <p class="entrada entra entra-2">The Asura achievements, session by session. Only you can see what you have on Nexus, so here you tick them by hand.</p>
+    </div>
+  </section>
+
+  <section class="seccion" id="your-account" aria-labelledby="t-cuenta">
+    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}">
+      <h2 id="t-cuenta">Your progress</h2>
+      <noscript><p class="ruta-aviso">This page needs JavaScript to tick and save. Without it you can still read the whole route below.</p></noscript>
+      <div class="ruta-resumen" data-resumen hidden>
+        <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
+        <p data-total></p>
+      </div>
+      <p class="ruta-estado" data-estado role="status" hidden></p>
+      <p class="ruta-aviso" data-mensaje role="alert" hidden></p>
+
+      <div class="ruta-paso" data-fuera hidden>
+        <p>Sign in with your Discord account to lose nothing and see it on any device. Clan server members only. We keep your Discord ID, your name, your achievements and their dates: no email, no password, no friends list, and only you see what is yours. <a href="@/en/legal/#accounts">Full details</a>.</p>
+        <p><button type="button" class="boton" data-entrar>Sign in with Discord</button></p>
+        <p class="ruta-nota">It works without signing in too: your ticks are saved in this browser only.</p>
+      </div>
+
+      <div class="ruta-paso" data-dentro hidden>
+        <p>Hi, <b data-nombre-miembro></b>. Your ticks are saved to your account.</p>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-sec boton-mini" data-descargar>Download my data</button>
+          <button type="button" class="boton boton-sec boton-mini" data-salir>Sign out</button>
+          <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Sign out on all my devices</button>
+          <button type="button" class="boton boton-sec boton-mini" data-borrar>Delete my data</button>
+          <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Clan backup</button>
+        </p>
+        <div class="ruta-confirmar" data-confirmar hidden>
+          <p>This deletes your account, all your achievements and their dates. It cannot be undone: download your data first if you want to keep it. Recovery copies renew within a few days (<a href="@/en/legal/#accounts">details</a>).</p>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-borrar-si>Yes, delete everything</button>
+            <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, keep it</button>
+          </p>
+        </div>
+      </div>
+
+      <div class="ruta-paso ruta-confirmar" data-importar hidden>
+        <p data-importar-texto></p>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-mini" data-importar-si>Add them to my account</button>
+          <button type="button" class="boton boton-sec boton-mini" data-importar-no>Discard them</button>
+        </p>
+      </div>
+
+      <div class="ruta-paso" data-codigo-caja hidden>
+        <h3 id="t-codigo">Already using the route? Bring your code</h3>
+        <p class="ruta-nota">Paste the code that starts with GR1. It never removes anything: it only adds what you were missing. You can also copy yours, to take it to another browser without an account.</p>
+        <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-sec boton-mini" data-traer>Bring my progress</button>
+          <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copy my code</button>
+        </p>
+      </div>
+
+      <div class="ruta-paso" data-trayectoria-caja hidden>
+        <h3>Your history</h3>
+        <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="the-route" aria-labelledby="t-ruta">
+    <div class="envoltura">
+      <h2 id="t-ruta">The route</h2>
+      <p class="intro">One session per dino, ordered by area. The current one is open. Also open <a href="#all-achievements">the achievements list</a> and tick what you already have on Nexus: the route skips what is done.</p>
+      {{logros_ruta}}
+      <p class="ruta-nota">Nexus teleport: under 30% growth, 100% stamina, stand still for 20 s, and a 3 min wait between teleports.</p>
+    </div>
+  </section>
+
+  <section class="seccion" id="all-achievements" aria-labelledby="t-logros">
+    <div class="envoltura">
+      <h2 id="t-logros">All achievements</h2>
+      <div class="ruta-filtros" data-filtros hidden>
+        <button type="button" class="ruta-filtro" data-filtro="todos" aria-pressed="true">All</button>
+        <button type="button" class="ruta-filtro" data-filtro="C" aria-pressed="false">Carnivores</button>
+        <button type="button" class="ruta-filtro" data-filtro="H" aria-pressed="false">Herbivores</button>
+        <button type="button" class="ruta-filtro" data-filtro="O" aria-pressed="false">Omnivores</button>
+        <button type="button" class="ruta-filtro" data-filtro="G" aria-pressed="false">General</button>
+        <button type="button" class="ruta-filtro" data-pendientes aria-pressed="false">Pending only</button>
+      </div>
+      {{logros_lista}}
+      <p class="ruta-nota">Achievements list checked on <time datetime="2026-11-04">4 November 2026</time>. Map points are approximate: if one does not count, move a little and wait a minute. It may change with each season. Names here are our own translation; on Nexus they may read differently.</p>
+    </div>
+  </section>

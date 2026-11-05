@@ -18,17 +18,17 @@ const { chromium } = require('playwright');
 const { readFileSync } = require('fs');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
-// Las 18 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
+// Las 20 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
 // añaden al empezar, desde el mapa del sitio.
 const PAGINAS = [
   ['', 'inicio'], ['en/', 'inicio'], ['clan/', 'clan'], ['en/clan/', 'clan'],
   ['dinosaurios/', 'dinosaurios'], ['en/dinosaurs/', 'dinosaurios'], ['caceria/', 'caceria'], ['en/hunt/', 'caceria'],
   ['combate/', 'combate'], ['en/combat/', 'combate'],
   ['galeria/', 'galeria'], ['en/gallery/', 'galeria'], ['unete/', 'unete'], ['en/join/', 'unete'],
-  ['normas/', 'normas'], ['en/rules/', 'normas'], ['legal/', 'legal'], ['en/legal/', 'legal'],
+  ['normas/', 'normas'], ['en/rules/', 'normas'], ['ruta/', 'ruta'], ['en/route/', 'ruta'], ['legal/', 'legal'], ['en/legal/', 'legal'],
 ];
 // Páginas que no están en el menú (se llega desde el pie o desde la página de su tema): no marcan ninguno.
-const FUERA_MENU = ['normas', 'legal', 'especie'];
+const FUERA_MENU = ['normas', 'ruta', 'legal', 'especie'];
 // Enlaces del menú (montar_web.MENU), Inicio incluido.
 const EN_MENU = 7;
 const CON_CUENTA = ['inicio', 'caceria'];
@@ -111,7 +111,7 @@ const efectos = async navegador => {
   };
   // Móvil lento: bajo el velo oscuro de la cabecera, 600–800 px de foto no se distinguen de 1000 y pesan
   // un tercio menos, y es lo que tarda en pintarse la página.
-  for (const r of ['clan/', 'en/clan/', 'caceria/', 'dinosaurios/', 'combate/', 'galeria/', 'unete/', 'normas/', 'legal/']) {
+  for (const r of ['clan/', 'en/clan/', 'caceria/', 'dinosaurios/', 'combate/', 'galeria/', 'unete/', 'normas/', 'ruta/', 'legal/']) {
     const { ctx, p } = await abrir(r, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     const foto = await p.evaluate(() => document.querySelector('.cabecera-fondo').currentSrc.split('/').pop());
     if (+foto.match(/-(\d+)\.webp$/)[1] > 800) fallos.push(`/${r} en el móvil la cabecera pide ${foto}`);
@@ -551,7 +551,7 @@ const fotosMovil = async navegador => {
     await ctx.close();
   }
   // Cabeceras interiores en un móvil 3x: bajo el velo oscuro basta la variante más pequeña de su srcset, 26–47 KB menos por página.
-  for (const r of ['clan/', 'caceria/', 'combate/', 'dinosaurios/', 'galeria/', 'legal/', 'normas/', 'unete/', 'en/clan/', 'en/hunt/', 'en/combat/', 'en/dinosaurs/', 'en/gallery/', 'en/legal/', 'en/rules/', 'en/join/']) {
+  for (const r of ['clan/', 'caceria/', 'combate/', 'dinosaurios/', 'galeria/', 'legal/', 'normas/', 'ruta/', 'unete/', 'en/clan/', 'en/hunt/', 'en/combat/', 'en/dinosaurs/', 'en/gallery/', 'en/legal/', 'en/route/', 'en/rules/', 'en/join/']) {
     for (const w of [390, 430]) {
       const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
       const p = await ctx.newPage();
@@ -604,7 +604,7 @@ const fotosMovil = async navegador => {
 // nuevo que deje algo oculto. SOLO=imprimir prueba solo esto.
 const imprimir = async navegador => {
   const fallos = [];
-  for (const r of ['', 'en/', 'clan/', 'en/clan/', 'caceria/', 'combate/', 'galeria/', 'unete/', 'dinosaurios/', 'dinosaurios/triceratops/']) {
+  for (const r of ['', 'en/', 'clan/', 'en/clan/', 'caceria/', 'combate/', 'galeria/', 'unete/', 'ruta/', 'dinosaurios/', 'dinosaurios/triceratops/']) {
     const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
@@ -2346,11 +2346,34 @@ const ventana = async navegador => {
     if (fallos.length) malos++;
     console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');
   }
+  // La dirección antigua lleva a la misma página en la nueva, con su ancla; en la nueva no se mueve.
+  {
+    const fallos = [];
+    const ANTIGUA = 'https://mmortexx.github.io/garra-iberica/';
+    const NUEVA = (await (await fetch(BASE)).text()).match(/rel="canonical" href="([^"]+)"/)[1];
+    const ctx = await navegador.newContext({ bypassCSP: true });
+    for (const web of [ANTIGUA, NUEVA]) {
+      await ctx.route(web + '**', async q => q.fulfill({ response: await q.fetch({ url: q.request().url().replace(web, BASE) }) }));
+    }
+    const p = await ctx.newPage();
+    for (const [desde, hasta] of [
+      [`${ANTIGUA}en/route/#all-achievements`, `${NUEVA}en/route/#all-achievements`],
+      [`${ANTIGUA}?a=1`, `${NUEVA}?a=1`],
+      [`${NUEVA}clan/`, `${NUEVA}clan/`],
+    ]) {
+      await p.goto(desde, { waitUntil: 'load' });
+      await p.waitForTimeout(300);
+      if (p.url() !== hasta) fallos.push(`${desde} acaba en ${p.url()}`);
+    }
+    await ctx.close();
+    if (fallos.length) malos++;
+    console.log('Dirección antigua, a la nueva:', fallos.length ? fallos.join('; ') : 'bien');
+  }
   // Página 404: enlaza a la dirección pública, que aquí se sirve desde la copia local. Con red de
   // móvil, el título sale con la letra del clan (sin precargarla, «optional» la dejaba en Impact).
   {
     const fallos = [];
-    const PUBLICA = 'https://mmortexx.github.io/garra-iberica/';
+    const PUBLICA = (await (await fetch(BASE)).text()).match(/rel="canonical" href="([^"]+)"/)[1];
     const ctx = await navegador.newContext({ viewport: { width: 375, height: 812 }, bypassCSP: true });
     await ctx.route(PUBLICA + '**', async q => {
       const resp = await q.fetch({ url: q.request().url().replace(PUBLICA, BASE) });

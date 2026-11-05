@@ -20,6 +20,7 @@ import batallas_web
 import calendario
 import cifras
 import guia_dinos
+import logros_web
 import montar_web
 import preparar_galeria
 from html import unescape
@@ -39,6 +40,7 @@ GUIA_DIETA = 'Dieta:'
 GUIA_COMBATE = 'Guía de combate'
 INVITACION = 'https://discord.com/invite/z5mU6a9Kf8'
 VERSIONADOS = montar_web.VERSIONADOS
+SERVICIO_CUENTAS = Path(__file__).resolve().parent.parent / 'servicio' / 'wrangler.toml'
 MAX_KB_IMAGEN = 120
 # Las fotos de la galería a tamaño grande solo se descargan si alguien abre una; aun así, en el
 # móvil cada KB cuenta al ampliar (preparar_galeria.py baja la calidad hasta caber).
@@ -68,7 +70,7 @@ def dentro_del_div(html, inicio):
 
 
 # A dónde sacan los enlaces de la web y cómo los nombra el aviso legal.
-SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub'}
+SITIOS_FUERA = {'discord.com': 'Discord', 'store.steampowered.com': 'Steam', 'www.asura-evrima.com': 'Asura', 'calendar.google.com': 'Google Calendar', 'docs.github.com': 'GitHub', 'www.cloudflare.com': 'Cloudflare'}
 # Datos del clan que la web debe repetir tal cual (extracto sin datos personales de tarjetas.json).
 DATOS = Path(__file__).resolve().parent / 'datos_clan.json'
 PREPARAR_IMAGENES = Path(__file__).resolve().parent / 'preparar_imagenes.py'
@@ -909,12 +911,16 @@ def revisar_estilos(raiz, falla):
 
 
 def revisar_privacidad(raiz, falla):
-    """El aviso legal promete que la web no guarda ni pide nada y nombra a dónde llevan sus enlaces:
-    si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
+    """El aviso legal promete que la web no guarda ni pide nada, salvo la ruta de logros si la usas, y nombra a dónde
+    llevan sus enlaces: si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
     for fichero in sorted(raiz.rglob('*.js')):
-        guarda = re.search(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', fichero.read_text(encoding='utf-8'), re.I)
-        if guarda:
-            falla(f'{fichero.relative_to(raiz).as_posix()} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
+        nombre = fichero.relative_to(raiz).as_posix()
+        for guarda in re.finditer(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', fichero.read_text(encoding='utf-8'), re.I):
+            if (nombre, guarda.group(0)) != ('ruta.js', 'localStorage'):
+                falla(f'{nombre} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador, salvo la ruta de logros en localStorage')
+    for nombre, (pagina, _) in PAGINAS.items():
+        if 'ruta.js' in leer(raiz, nombre) and pagina != 'ruta':
+            falla(f'{nombre} carga ruta.js y el aviso legal dice que solo guarda algo la ruta de logros')
     dominios = set()
     for nombre in [*PAGINAS, '404.html']:
         html = leer(raiz, nombre)
@@ -932,6 +938,27 @@ def revisar_privacidad(raiz, falla):
         for dominio, sitio in SITIOS_FUERA.items():
             if dominio not in dominios:
                 falla(f'SITIOS_FUERA nombra {dominio} y ninguna página enlaza allí: quítalo también del aviso legal ({sitio})')
+
+
+def revisar_cuentas(raiz, base, falla, servicio=SERVICIO_CUENTAS):
+    """La web y el servicio de cuentas tienen que apuntarse el uno al otro: si no, entrar falla ya publicado, sin que
+    nada avise. Y solo la ruta de logros puede hablar con el servicio."""
+    direccion = logros_web.servicio()
+    configuracion = servicio.read_text(encoding='utf-8')
+    for clave, pagina_lang in (('PAGINA_ES', 'es'), ('PAGINA_EN', 'en')):
+        esperada = base + RUTA['ruta', pagina_lang]
+        if f'{clave} = "{esperada}"' not in configuracion:
+            falla(f'{servicio.name}: {clave} debe ser {esperada}, la dirección de la página (¿ha cambiado el dominio?)')
+    for nombre, (pagina, _) in PAGINAS.items():
+        html = leer(raiz, nombre)
+        conecta = re.search(r"connect-src ([^;]*);", html)
+        esperado = ' '.join(filter(None, ["'self'", direccion if pagina == 'ruta' else '']))
+        if not conecta or conecta.group(1) != esperado:
+            falla(f'{nombre}: connect-src debe ser «{esperado}» y es «{conecta and conecta.group(1)}»')
+        if pagina == 'ruta' and f'data-servicio="{direccion}"' not in html:
+            falla(f'{nombre}: data-servicio no es «{direccion}», lo que dice {logros_web.CUENTAS.name}')
+        if pagina == 'legal' and any(f in html for f in ('Si entras con Discord', 'If you sign in with Discord')) != bool(direccion):
+            falla(f'{nombre}: el aviso legal tiene que describir las cuentas si existen, y solo entonces ({logros_web.CUENTAS.name})')
 
 
 def guia_del_discord(posts, titulo):
@@ -1227,6 +1254,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_borradores(raiz, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
+    revisar_cuentas(raiz, guia_dinos.base_web(raiz), falla)
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
     revisar_nombres_web(raiz, falla)

@@ -1,21 +1,25 @@
 # Código de la web
 
-**La web está en https://mmortexx.github.io/garra-iberica/**. Esto es solo su código.
+**La web está en https://clan.garra-iberica.workers.dev/**. Esto es solo su código.
 
-Web estática publicada con GitHub Pages desde la carpeta `docs/`. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+Web estática publicada en Cloudflare (`wrangler.toml`) desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages sigue publicando la misma carpeta para dos cosas: que la dirección antigua lleve a la nueva (`docs/efectos.js`) y servir los vídeos (`docs/_redirects`), porque Cloudflare los entrega enteros y no por trozos, y sin trozos no se puede saltar a un punto del vídeo. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
 
-Dirección: https://mmortexx.github.io/garra-iberica/ (inglés en `/en/`).
+Dirección: https://clan.garra-iberica.workers.dev/ (inglés en `/en/`).
 
 ## Qué hay
 
 | Fichero | Para qué |
 |---|---|
-| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
-| `docs/**/index.html` | Las páginas publicadas: 18 fijas (9 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
+| `paginas/es/`, `paginas/en/` | El texto de cada página (inicio, clan, cacería, guía de combate, galería, únete, normas, ruta de logros y aviso legal), en español y en inglés. Aquí se cambian los textos; si cambias uno, cámbialo en los dos idiomas. |
+| `docs/**/index.html` | Las páginas publicadas: 20 fijas (10 por idioma) y una por especie en cada idioma. Las genera `herramientas/montar_web.py`; no se editan a mano. |
 | `docs/estilos.css` | Todo el diseño y las animaciones. |
 | `docs/efectos.js` | Ascuas y bruma rasante (portada, cabeceras y llamadas), modo ligero automático si el navegador no da abasto, paralaje, apariciones al hacer scroll, fotos que se funden al llegar, portada de los vídeos de las batallas al acercarse (como `poster` se pediría al abrir la página y competiría con la cabecera en un móvil lento), botón grande de reproducir en ellos, visor de la galería (con el texto de la foto debajo, dos dedos para ampliar, deslizar para cambiar o cerrar, «Atrás» lo cierra y cada foto tiene su enlace), el botón flotante de volver arriba (sale al subir en una página larga), los enlaces viejos de la portada (`/#normas`) a su página nueva, lo plegado que nombre la dirección (una ficha, `dinosaurios/#triceratops`, o una respuesta, `unete/#micro`: esas direcciones circulan y la prueba de navegador falla si cambian) y el reposo: tras 20 s sin actividad, con otra ventana delante o con el menú o el visor encima, los efectos de ambiente se quedan quietos para no gastar. Las ascuas van a 30 fotogramas por segundo: a 60 se llevaban un tercio del procesador de un móvil. La página funciona igual sin él (cada foto abre su imagen grande). |
 | `docs/caceria.js` | Cuenta atrás de la Cacería (sábados 22:00, hora de España), en el idioma de la página, el planificador de la guía y el selector «¿A qué hora es en tu país?» de la página de la Cacería (hora de la cacería, la encuesta y el aviso en el país elegido; los países van en la página y `comprobar.py` exige que sean zonas horarias reales y las mismas en los dos idiomas, y que `AVISOS` diga las horas de `datos_clan.json`). El planificador guarda lo elegido en la dirección (`?especie=triceratops&ritmo=2&horas=4#planificador`). Los enlaces de la web a él llevan los valores tras el fragmento (`#planificador?especie=triceratops`): Google no rastrea los fragmentos y sí cada dirección con parámetros, y `comprobar.py` falla si un enlace interno lleva parámetros. Las direcciones con `?` siguen funcionando. Mientras se calcula la fecha, el sitio de la cuenta atrás lleva un texto sin fecha escrita a mano (`reserva`). |
 | `docs/guia.js` | Ordena y filtra la comparativa de especies de la guía de dinosaurios (por peso, crecimiento, grupo, dieta y cuántos jugáis juntos); las filas viajan a su sitio nuevo. Sin él, la lista se ve entera en el orden de las fichas. |
+| `docs/ruta.js` | La ruta de logros: marcar y recordar en el navegador y, si entras con Discord, en tu cuenta. Es lo único de la web que guarda algo en el navegador, y solo si lo usas. Sin él, la ruta se lee entera. |
+| `herramientas/logros.json`, `herramientas/logros_web.py` | La lista de logros, una sola para la página y el servicio de cuentas, y lo que la convierte en HTML. |
+| `herramientas/cuentas.json` | La dirección del servicio de cuentas. Vacía, la ruta funciona solo en el navegador de cada uno y lo dice. |
+| `servicio/` | El servicio de cuentas, en Cloudflare; no se publica en la web. Cómo ponerlo en marcha, copias de seguridad y límites: [servicio/README.md](servicio/README.md). |
 | `docs/404.html` | Página de «no encontrada», en los dos idiomas a la vez (sin scripts no puede saber cuál toca): cada uno enlaza a su inicio, su guía, su Cacería y su Discord, y `comprobar.py` lo vigila. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
@@ -43,7 +47,7 @@ python herramientas/prueba_borradores.py
 python herramientas/prueba_comprobar.py
 ```
 
-- `montar_web.py` genera las 18 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
+- `montar_web.py` genera las 20 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
   `404.html`. Cabecera, menú, pie, metadatos, datos estructurados y migas son comunes y salen del
   script; el contenido de cada página sale de `paginas/<idioma>/<página>.html`: arriba unas líneas
   `titulo:` (60 como mucho), `descripcion:` (70–155 letras), `h1:` y, opcional, `og_descripcion:` (la que sale al
@@ -156,7 +160,7 @@ python herramientas/prueba_comprobar.py
   (`{{alfas}}` en la página, en orden alfabético y con el mismo estilo). Son la única excepción a
   los apodos vigilados: solo esos tres (`JEFES` en `comprobar.py`), solo dentro de ese fragmento y
   de esa cita, y el comprobador falla si la tarjeta cambia de jefes o si un apodo sale en otro sitio.
-  Vigila también lo que promete el aviso legal: ningún script guarda nada en el navegador, ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
+  Vigila también lo que promete el aviso legal: ningún `.js` de la web guarda nada en el navegador (salvo `ruta.js`, la ruta de logros, en `localStorage`), ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_comprobar.py` prueba que se paren un script de más que guarde algo en el navegador, un ID o un apodo en
   `fichas_dinos.json`, una mutación sin traducir y una foto de la tira de la portada que no está en la galería.
@@ -212,10 +216,10 @@ sale en rojo, se arregla y se vuelve a subir.
 
 ## Cambiar la dirección
 
-Si el repositorio o la cuenta cambian de nombre:
+Si cambia la dirección de la web (también hay que cambiarla en `servicio/wrangler.toml` y volver a publicar el servicio):
 
 ```
-python herramientas/cambiar_dominio.py https://CUENTA.github.io/REPO/
+python herramientas/cambiar_dominio.py https://NUEVA-DIRECCION/
 python herramientas/calendario.py
 python herramientas/montar_web.py
 ```
@@ -270,8 +274,8 @@ Necesita Python con Pillow y fontTools.
 
 ## Buscadores
 
-Al estar en una subcarpeta (`/garra-iberica/`), Google no lee nuestro `robots.txt`: el mapa del sitio
-hay que enviarlo a mano en Google Search Console y en Bing Webmaster Tools (`sitemap.xml`).
+`robots.txt` indica el mapa del sitio (`sitemap.xml`). Para seguir la web en Google Search Console y en Bing Webmaster Tools
+hay que dar de alta la dirección nueva y enviar allí el mapa.
 
 `comprobar.py` vigila lo que depende de nosotros: títulos de 60 caracteres como mucho (Google corta el
 resto, y al final va el nombre del clan), descripciones de 70 a 155, encabezados sin números pegados ni

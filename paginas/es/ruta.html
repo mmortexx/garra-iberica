@@ -1,0 +1,97 @@
+titulo: Ruta de logros de Asura – GARRA IBÉRICA, The Isle Evrima
+descripcion: La ruta de logros de Asura sesión a sesión: qué toca con cada dino, y tus marcas guardadas para no perder lo que ya tienes.
+h1: Ruta de logros
+---
+  <section class="cabecera cabecera-baja cabecera-corta" id="inicio" aria-labelledby="titulo" data-ascuas>
+    <img class="cabecera-fondo" src="@/img/galeria-colina-1000.webp" srcset="@/img/galeria-colina-600.webp 600w, @/img/galeria-colina-1000.webp 1000w, @/img/galeria-colina-1300.webp 1300w" sizes="(max-width: 700px) 45vw, 100vw" alt="" width="1300" height="523" fetchpriority="high">
+    <div class="envoltura cabecera-in">
+      {{migas}}
+      <h1 id="titulo" class="entra">Ruta de logros</h1>
+      <p class="entrada entra entra-2">Los logros de Asura, sesión a sesión. Qué tienes solo lo ves tú en Nexus, así que aquí se marcan a mano.</p>
+    </div>
+  </section>
+
+  <section class="seccion" id="tu-cuenta" aria-labelledby="t-cuenta">
+    <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}">
+      <h2 id="t-cuenta">Tu progreso</h2>
+      <noscript><p class="ruta-aviso">Esta página necesita JavaScript para marcar y guardar. Sin él puedes leer toda la ruta aquí abajo.</p></noscript>
+      <div class="ruta-resumen" data-resumen hidden>
+        <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
+        <p data-total></p>
+      </div>
+      <p class="ruta-estado" data-estado role="status" hidden></p>
+      <p class="ruta-aviso" data-mensaje role="alert" hidden></p>
+
+      <div class="ruta-paso" data-fuera hidden>
+        <p>Entra con tu cuenta de Discord para no perder nada y verlo en cualquier dispositivo. Solo miembros del servidor del clan. Guardamos tu identificador de Discord, tu nombre, tus logros y sus fechas: ni correo, ni contraseña, ni lista de amigos, y solo tú ves lo tuyo. <a href="@/legal/#cuentas">Todos los detalles</a>.</p>
+        <p><button type="button" class="boton" data-entrar>Entrar con Discord</button></p>
+        <p class="ruta-nota">Sin entrar también funciona: tus marcas se guardan solo en este navegador.</p>
+      </div>
+
+      <div class="ruta-paso" data-dentro hidden>
+        <p>Hola, <b data-nombre-miembro></b>. Tus marcas se guardan en tu cuenta.</p>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-sec boton-mini" data-descargar>Descargar mis datos</button>
+          <button type="button" class="boton boton-sec boton-mini" data-salir>Salir</button>
+          <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Salir en todos mis dispositivos</button>
+          <button type="button" class="boton boton-sec boton-mini" data-borrar>Borrar mis datos</button>
+          <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Copia de seguridad del clan</button>
+        </p>
+        <div class="ruta-confirmar" data-confirmar hidden>
+          <p>Se borrarán tu cuenta, todos tus logros y sus fechas. No se puede deshacer: descarga antes tus datos si los quieres conservar. Las copias de recuperación se renuevan en unos días (<a href="@/legal/#cuentas">detalles</a>).</p>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-borrar-si>Sí, borrar todo</button>
+            <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, dejarlo</button>
+          </p>
+        </div>
+      </div>
+
+      <div class="ruta-paso ruta-confirmar" data-importar hidden>
+        <p data-importar-texto></p>
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-mini" data-importar-si>Añadirlas a mi cuenta</button>
+          <button type="button" class="boton boton-sec boton-mini" data-importar-no>Descartarlas</button>
+        </p>
+      </div>
+
+      <div class="ruta-paso" data-codigo-caja hidden>
+        <h3 id="t-codigo">¿Ya usabas la ruta? Trae tu código</h3>
+        <p class="ruta-nota">Pega el código que empieza por GR1. Nunca quita nada: solo añade lo que te faltaba. También puedes copiar el tuyo, para llevarlo a otro navegador sin cuenta.</p>
+        <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
+        <p class="ruta-botones">
+          <button type="button" class="boton boton-sec boton-mini" data-traer>Traer mi progreso</button>
+          <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copiar mi código</button>
+        </p>
+      </div>
+
+      <div class="ruta-paso" data-trayectoria-caja hidden>
+        <h3>Tu trayectoria</h3>
+        <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="la-ruta" aria-labelledby="t-ruta">
+    <div class="envoltura">
+      <h2 id="t-ruta">La ruta</h2>
+      <p class="intro">Una sesión por dino, ordenadas por zonas. La que toca sale abierta. Abre también <a href="#los-logros">la lista de logros</a> y marca lo que ya tengas en Nexus: la ruta salta lo que esté hecho.</p>
+      {{logros_ruta}}
+      <p class="ruta-nota">Teletransporte de Nexus: menos del 30% de crecimiento, estamina al 100%, quieto 20 s y 3 min de espera entre uno y otro.</p>
+    </div>
+  </section>
+
+  <section class="seccion" id="los-logros" aria-labelledby="t-logros">
+    <div class="envoltura">
+      <h2 id="t-logros">Todos los logros</h2>
+      <div class="ruta-filtros" data-filtros hidden>
+        <button type="button" class="ruta-filtro" data-filtro="todos" aria-pressed="true">Todos</button>
+        <button type="button" class="ruta-filtro" data-filtro="C" aria-pressed="false">Carnívoros</button>
+        <button type="button" class="ruta-filtro" data-filtro="H" aria-pressed="false">Herbívoros</button>
+        <button type="button" class="ruta-filtro" data-filtro="O" aria-pressed="false">Omnívoros</button>
+        <button type="button" class="ruta-filtro" data-filtro="G" aria-pressed="false">Generales</button>
+        <button type="button" class="ruta-filtro" data-pendientes aria-pressed="false">Solo pendientes</button>
+      </div>
+      {{logros_lista}}
+      <p class="ruta-nota">Lista de logros mirada el <time datetime="2026-11-04">4 de noviembre de 2026</time>. Los puntos del mapa son aproximados: si uno no cuenta, muévete un poco y espera un minuto. Puede cambiar con cada temporada.</p>
+    </div>
+  </section>

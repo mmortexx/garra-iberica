@@ -1,0 +1,6 @@
+# Solo para probar en local: cópialo a .dev.vars (no se sube). Los valores de verdad van en Cloudflare, con wrangler secret put.
+DISCORD_CLIENT_ID=id-de-prueba
+DISCORD_CLIENT_SECRET=clave-de-prueba
+ADMIN_IDS=100000000000000009
+# Un Discord simulado en local; sin esta línea, el de verdad.
+DISCORD_URL=http://127.0.0.1:8799
