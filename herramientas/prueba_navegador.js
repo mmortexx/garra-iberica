@@ -2397,6 +2397,8 @@ const ventana = async navegador => {
       await p.waitForTimeout(300);
       if (p.url() !== hasta) fallos.push(`${desde} acaba en ${p.url()}`);
     }
+    // Un desvío aún en vuelo al cerrar mataba node con TargetClosedError (visto en GitHub): se quitan antes.
+    await ctx.unrouteAll({ behavior: 'ignoreErrors' });
     await ctx.close();
     if (fallos.length) malos++;
     console.log('Dirección antigua, a la nueva:', fallos.length ? fallos.join('; ') : 'bien');
@@ -2445,6 +2447,8 @@ const ventana = async navegador => {
       if (m.pequenos.length) fallos.push(`${ancho}px: enlaces de menos de 24 px: ${m.pequenos.join(', ')}`);
       if (m.solapados.length) fallos.push(`${ancho}px: enlaces solapados: ${m.solapados.join(', ')}`);
     }
+    // Un desvío aún en vuelo al cerrar mataba node con TargetClosedError (visto en GitHub): se quitan antes.
+    await ctx.unrouteAll({ behavior: 'ignoreErrors' });
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta('404.html'), 'letra del clan, marca y los dos idiomas:', fallos.length ? fallos.join('; ') : 'sí');
