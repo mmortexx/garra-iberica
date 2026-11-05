@@ -1,6 +1,6 @@
 // Banco de pruebas: un Discord simulado de verdad (HTTP) y el servicio en el mismo motor que Cloudflare.
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -118,8 +118,9 @@ export async function empaquetar() {
 export const sentenciasDe = sql => sql.replace(/--.*$/gm, '').split(';').map(s => s.trim()).filter(Boolean);
 
 export async function aplicarEsquema(db) {
-  const sql = readFileSync(join(SERVICIO, 'migraciones/0001_inicial.sql'), 'utf8');
-  for (const s of sentenciasDe(sql)) await db.prepare(s).run();
+  for (const f of readdirSync(join(SERVICIO, 'migraciones')).sort()) {
+    for (const s of sentenciasDe(readFileSync(join(SERVICIO, 'migraciones', f), 'utf8'))) await db.prepare(s).run();
+  }
 }
 
 export async function arrancarServicio({ discord, limites = {}, codigo, adminIds = USUARIOS.admin.id, esquema = true, sinCredenciales = false, paginaEs = PAGINA_ES, paginaEn = PAGINA_EN } = {}) {
@@ -131,10 +132,10 @@ export async function arrancarServicio({ discord, limites = {}, codigo, adminIds
       GUILD_ID: GUILD, PAGINA_ES: paginaEs, PAGINA_EN: paginaEn, DISCORD_URL: discord.url,
       ...(sinCredenciales ? {} : { DISCORD_CLIENT_ID: ID_CLIENTE, DISCORD_CLIENT_SECRET: CLAVE_CLIENTE }), ...(adminIds === null ? {} : { ADMIN_IDS: adminIds }),
     },
-    ratelimits: {
-      LIMITE_ENTRADA: { namespace_id: '1001', simple: { limit: limites.entrada ?? 100000, period: 60 } },
-      LIMITE_API: { namespace_id: '1002', simple: { limit: limites.api ?? 100000, period: 60 } },
-    },
+    // limites.x === null deja el servicio sin ese contador, como si fallara.
+    ratelimits: Object.fromEntries([['LIMITE_ENTRADA', '1001', limites.entrada], ['LIMITE_API', '1002', limites.api], ['LIMITE_ESCRITURA', '1003', limites.escritura]]
+      .filter(([, , limite]) => limite !== null)
+      .map(([nombre, namespace_id, limite]) => [nombre, { namespace_id, simple: { limit: limite ?? 100000, period: 60 } }])),
   });
   const db = await mf.getD1Database('DB');
   if (esquema) await aplicarEsquema(db);

@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { after, before, beforeEach, describe, test } from 'node:test';
+import { unstable_readConfig } from 'wrangler';
 import { MAXIMOS } from '../src/catalogo.js';
+import { aplicarCambios } from '../src/progreso.js';
 import {
   CLAVE_CLIENTE, GUILD, ORIGEN, PAGINA_EN, PAGINA_ES, SERVICIO, USUARIOS, URL_SERVICIO, aleatorio, aplicarEsquema,
   arrancarDiscord, arrancarServicio, huella, retoDe,
@@ -722,6 +724,105 @@ describe('configuración', () => {
     } finally {
       await s2.parar();
       await d2.parar();
+    }
+  });
+});
+
+describe('lo que cuesta cada petición', () => {
+  const id = USUARIOS.ana.id;
+  const todos = new Map(MAXIMOS);
+  beforeEach(() => s.db.prepare("INSERT INTO miembros (discord_id, nombre, desde, ultimo_acceso) VALUES (?1, 'Ana', '2026-11-05', '2026-11-05')").bind(id).run());
+  const aplicar = (cambios, modo) => aplicarCambios(s.db, id, new Map(cambios), modo, '2026-11-05');
+
+  test('quien lo tiene todo: marcar un tramo no reescribe nada más', async () => {
+    await aplicar(todos, 'subir');
+    await aplicar([['allo-exp', 0]], 'fijar');
+    const g = await aplicar([['allo-exp', 1]], 'fijar');
+    assert.ok(g.escritas <= 2, `escribe ${g.escritas} filas`);
+    assert.ok(g.leidas <= 10, `lee ${g.leidas} filas`);
+  });
+
+  test('volver a mandar lo mismo no escribe nada, por mucho que sea', async () => {
+    const primera = await aplicar(todos, 'subir');
+    assert.ok(primera.escritas >= 535 && primera.escritas <= 1100, `la primera escribe ${primera.escritas}`);
+    for (const modo of ['fijar', 'subir']) {
+      const g = await aplicar(todos, modo);
+      assert.equal(g.escritas, 0, `${modo} reescribe ${g.escritas} filas`);
+      assert.ok(g.leidas <= 1100, `${modo} lee ${g.leidas} filas`);
+    }
+  });
+
+  test('bajar un logro solo borra sus tramos y deja el resto', async () => {
+    await aplicar(todos, 'subir');
+    const antes = (await s.filas('SELECT * FROM progreso')).length;
+    const g = await aplicar([['addict', 1]], 'fijar');
+    const quitados = MAXIMOS.get('addict') - 1;
+    assert.equal((await s.filas('SELECT * FROM progreso')).length, antes - quitados);
+    assert.ok(g.escritas <= quitados * 2, `escribe ${g.escritas}`);
+  });
+
+  test('limpiar los códigos de un miembro no recorre la tabla', async () => {
+    const plan = await s.filas("EXPLAIN QUERY PLAN DELETE FROM entradas WHERE discord_id = '1' AND caduca <= 1");
+    assert.ok(plan.every(p => !/^SCAN entradas/.test(p.detail)), plan.map(p => p.detail).join('; '));
+  });
+});
+
+describe('los límites', () => {
+  test('la configuración de verdad lleva la base, los tres límites y la limpieza de cada noche', () => {
+    const c = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    assert.equal(c.name, 'garra-cuentas');
+    assert.deepEqual(c.d1_databases.map(d => [d.binding, d.database_name]), [['DB', 'garra-cuentas']]);
+    assert.match(c.d1_databases[0].database_id, /^[0-9a-f-]{36}$/);
+    const limite = Object.fromEntries(c.ratelimits.map(r => [r.name, r.simple.limit]));
+    assert.deepEqual(Object.keys(limite).sort(), ['LIMITE_API', 'LIMITE_ENTRADA', 'LIMITE_ESCRITURA']);
+    assert.ok(limite.LIMITE_ESCRITURA < limite.LIMITE_API, 'escribir tiene que costar más que leer');
+    assert.ok(limite.LIMITE_ESCRITURA <= 30);
+    assert.equal(c.triggers.crons.length, 1);
+    assert.equal(c.observability.enabled, false);
+  });
+
+  test('guardar tiene su propio límite por miembro: frenado, leer sigue y otro miembro también', async () => {
+    const t = await arrancarServicio({ discord, limites: { escritura: 2 } });
+    try {
+      const ana = await t.entrar('ana');
+      const otraAna = await t.entrar('ana');
+      const bea = await t.entrar('bea');
+      const guardar = token => t.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios: [{ logro: 'allo-exp', nivel: 1 }] } });
+      const estados = [];
+      for (const token of [ana, otraAna, ana, otraAna]) estados.push((await guardar(token)).status);
+      assert.ok(estados.includes(429), `sin freno: ${estados}`);
+      assert.equal((await t.pedir('/yo', { token: ana })).status, 200);
+      assert.equal((await guardar(bea)).status, 200);
+    } finally {
+      await t.parar();
+    }
+  });
+
+  test('si falla el contador: entrar y escribir se cierran, leer sigue y salir también', async () => {
+    const sinEntrada = await arrancarServicio({ discord, limites: { entrada: null } });
+    try {
+      const r = await sinEntrada.pedir(`/auth/discord?reto=${retoDe(aleatorio())}`, { origen: null });
+      assert.equal(new URLSearchParams(new URL(r.headers.get('location')).hash.slice(1)).get('error'), 'demasiadas');
+    } finally {
+      await sinEntrada.parar();
+    }
+    const sinEscritura = await arrancarServicio({ discord, limites: { escritura: null } });
+    try {
+      const token = await sinEscritura.entrar('ana');
+      const r = await sinEscritura.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios: [{ logro: 'allo-exp', nivel: 1 }] } });
+      assert.equal(r.status, 429);
+      assert.deepEqual(await sinEscritura.filas('SELECT * FROM progreso'), []);
+      assert.equal((await sinEscritura.pedir('/yo', { token })).status, 200);
+    } finally {
+      await sinEscritura.parar();
+    }
+    const sinApi = await arrancarServicio({ discord, limites: { api: null } });
+    try {
+      const token = await sinApi.entrar('ana');
+      assert.equal((await sinApi.pedir('/yo', { token })).status, 200);
+      assert.equal((await sinApi.pedir('/sesion', { method: 'DELETE', token })).status, 200);
+    } finally {
+      await sinApi.parar();
     }
   });
 });
