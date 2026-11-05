@@ -64,6 +64,19 @@ def id_puerta(codigo):
     return 'g-' + codigo.replace(' ', '-')
 
 
+def id_caza(especie, caza):
+    return f'{especie["id"]}-h-{caza["tipo"]}'
+
+
+def ids_muertes(d):
+    """[(id del logro, especie)] de «muerte por»: por el id de la especie, no por su posición en la lista."""
+    por_nombre = {e['nombre']: e for e in d['especies']}
+    faltan = [n for n in d['muertes']['especies'] if n not in por_nombre]
+    if faltan:
+        raise SystemExit(f'logros.json: muertes.especies nombra especies que no existen: {faltan}')
+    return [(f'fed-{por_nombre[n]["id"]}', por_nombre[n]) for n in d['muertes']['especies']]
+
+
 def maximos(d):
     """{logro: número de tramos}, ocultos incluidos: lo mismo que servicio/src/catalogo.js."""
     m = {}
@@ -71,8 +84,10 @@ def maximos(d):
         m[f'{e["id"]}-exp'] = 1
         m[f'{e["id"]}-grow'] = len(CRECER)
         m[f'{e["id"]}-prime'] = 1
-        for i, c in enumerate(e['cazas']):
-            m[f'{e["id"]}-h{i}'] = len(c['tramos'])
+        for c in e['cazas']:
+            if id_caza(e, c) in m:
+                raise SystemExit(f'logros.json: {e["id"]} tiene dos cacerías repetidas de tipo {c["tipo"]}')
+            m[id_caza(e, c)] = len(c['tramos'])
         m[f'{e["id"]}-add'] = len(e['horas'])
         if e['fauna']:
             m[f'{e["id"]}-unl'] = 1
@@ -80,8 +95,8 @@ def maximos(d):
         m[id_huella(h['codigo'])] = 1
     for p in d['puertas']:
         m[id_puerta(p['codigo'])] = 1
-    for i in range(len(d['muertes']['especies'])):
-        m[f'fed-{i}'] = len(d['muertes']['tramos'])
+    for id_muerte, _ in ids_muertes(d):
+        m[id_muerte] = len(d['muertes']['tramos'])
     m['addict'] = len(d['horas_totales'])
     return m
 
@@ -123,8 +138,8 @@ def sesiones(d, con_ocultos=False):
 def visibles(d):
     """Los logros que la página enseña, ocultos fuera."""
     ocultas = {e['id'] for e in d['especies'] if e.get('oculto')}
-    ocultos = {i for i, n in enumerate(d['muertes']['especies']) if any(e['nombre'] == n and e['id'] in ocultas for e in d['especies'])}
-    return [k for k in maximos(d) if k.split('-')[0] not in ocultas and not (k.startswith('fed-') and int(k[4:]) in ocultos)]
+    ocultos = {i for i, e in ids_muertes(d) if e['id'] in ocultas}
+    return [k for k in maximos(d) if k.split('-')[0] not in ocultas and k not in ocultos]
 
 
 def _sitio(e, lang):
@@ -142,9 +157,9 @@ def filas_especie(e, lang):
     filas = [(f'{sp}-exp', f'{t["explorador"]} · {_sitio(e, lang)}', [(t['hecho'], f'{t["explorador"]} · {_sitio(e, lang)}: {t["hecho"]}')]),
              (f'{sp}-grow', t['crecer'], [(c, f'{t["crecer"]} {c}') for c in CRECER]),
              (f'{sp}-prime', t['prime'], [(t['hecho'], f'{t["prime"]}: {t["hecho"]}')])]
-    for i, c in enumerate(e['cazas']):
+    for c in e['cazas']:
         nombre = t['herb' if c['tipo'] == 'H' else 'carn'] + (f' ≥{c["min"]}%' if c['min'] else '')
-        filas.append((f'{sp}-h{i}', nombre, [(str(n), f'{nombre}: {n} {_unidad(n, t["bajas"])}') for n in c['tramos']]))
+        filas.append((id_caza(e, c), nombre, [(str(n), f'{nombre}: {n} {_unidad(n, t["bajas"])}') for n in c['tramos']]))
     filas.append((f'{sp}-add', t['horas'], [(f'{n} h', f'{t["horas"]}: {n} h') for n in e['horas']]))
     if e['fauna']:
         nombre = f'{t["fauna"]} · {e["fauna"]} {t["muertes"][1]}'
@@ -189,8 +204,8 @@ def lista(lang, d=None):
     bloques.append(_grupo('horas', 'G', t['totales'], t['totales_nota'],
                           [_fila('addict', t['total'], [(f'{n} h', f'{t["total"]}: {n} h') for n in d['horas_totales']])]))
     ocultas = {e['nombre'] for e in d['especies'] if e.get('oculto')}
-    muertes = [_fila(f'fed-{i}', f'{t["muerte_por"]} {n}', [(str(k), f'{t["muerte_por"]} {n}: {k} {_unidad(k, t["muertes"])}') for k in d['muertes']['tramos']])
-               for i, n in enumerate(d['muertes']['especies']) if n not in ocultas]
+    muertes = [_fila(id_muerte, f'{t["muerte_por"]} {e["nombre"]}', [(str(k), f'{t["muerte_por"]} {e["nombre"]}: {k} {_unidad(k, t["muertes"])}') for k in d['muertes']['tramos']])
+               for id_muerte, e in ids_muertes(d) if e['nombre'] not in ocultas]
     bloques.append(_grupo('muertes', 'G', t['matan'], t['matan_nota'], muertes))
     return '<div class="ruta-grupos" data-grupos>' + ''.join(bloques) + '</div>'
 
@@ -240,6 +255,11 @@ def ruta(lang, d=None):
             f'<ol class="sesion-pasos">{"".join(f"<li>{p}</li>" for p in pasos)}</ol>'
             f'<ul class="tareas" role="list">{"".join(filas)}</ul></div></details></li>')
     return '<ol class="sesiones" role="list" data-sesiones>' + ''.join(bloques) + '</ol>'
+
+
+def antiguos_pagina(d=None):
+    """Cómo se llamaban antes los logros de posición, para traducir lo que un navegador o un código GR1 traiga de antes."""
+    return escape(json.dumps((d or datos())['ids_antiguos'], separators=(',', ':')))
 
 
 def datos_pagina(d=None):

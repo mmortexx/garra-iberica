@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
-import { after, before, beforeEach, test } from 'node:test';
+import { after, afterEach, before, beforeEach, test } from 'node:test';
 import { chromium } from 'playwright';
 import { sqlDeCopia } from '../scripts/restaurar.mjs';
 import { SERVICIO, USUARIOS, arrancarDiscord, arrancarServicio } from './banco.mjs';
@@ -17,6 +17,25 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 let navegador, discord, s, web, URL_WEB, URL_API;
 let sinServicio = false;
 const errores = [];
+// Nada de estas pruebas puede salir del ordenador: lo que intente salir se para aquí y la prueba falla (afterEach).
+const fugas = [];
+const LOCAL = new Set(['127.0.0.1', 'localhost']);
+const esAjena = url => { const u = new URL(url); return /^https?:$/.test(u.protocol) && !LOCAL.has(u.hostname); };
+
+// La página sale de docs/ diciendo el servicio de verdad (o ninguno, con las cuentas apagadas). Aquí se cambia SIEMPRE por
+// el de pruebas, o por ninguno con sinServicio; si el texto no encaja, revienta: dejarlo pasar es hablar con producción.
+const SERVICIO_PUBLICADO = JSON.parse(readFileSync(join(DOCS, '..', 'herramientas', 'cuentas.json'), 'utf8')).servicio;
+const EN_LA_PAGINA = { dato: /data-servicio="[^"]*"/g, csp: /connect-src 'self'(?: https:\/\/[^\s;]+)?;/g };
+function ajustar(html) {
+  for (const [que, patron] of Object.entries(EN_LA_PAGINA)) {
+    const veces = (html.match(patron) ?? []).length;
+    if (veces !== 1) throw new Error(`la ruta debe llevar ${patron} una vez y lo lleva ${veces}: estas pruebas ya no saben poner su propio servicio (${que})`);
+  }
+  const dado = sinServicio ? '' : URL_API;
+  const fuera = html.replace(EN_LA_PAGINA.dato, `data-servicio="${dado}"`).replace(EN_LA_PAGINA.csp, `connect-src 'self'${dado ? ` ${dado}` : ''};`);
+  if (SERVICIO_PUBLICADO && fuera.includes(SERVICIO_PUBLICADO)) throw new Error(`la página de pruebas aún nombra el servicio de verdad (${SERVICIO_PUBLICADO})`);
+  return fuera;
+}
 
 function servirDocs() {
   const servidor = createServer((req, res) => {
@@ -27,8 +46,13 @@ function servirDocs() {
     if (ruta === '/ruta.js' && process.env.RUTA_JS) fichero = process.env.RUTA_JS;
     let cuerpo;
     try { cuerpo = readFileSync(fichero); } catch { res.writeHead(404); res.end(); return; }
-    if (fichero.endsWith('index.html') && !sinServicio && cuerpo.includes('data-miembro')) {
-      cuerpo = cuerpo.toString('utf8').replace('data-servicio=""', `data-servicio="${URL_API}"`).replace("connect-src 'self';", `connect-src 'self' ${URL_API};`);
+    if (fichero.endsWith('index.html') && cuerpo.includes('data-miembro')) {
+      try {
+        cuerpo = ajustar(cuerpo.toString('utf8'));
+      } catch (e) {
+        fugas.push(e.message);
+        res.writeHead(500); res.end(e.message); return;
+      }
     }
     res.writeHead(200, { 'content-type': TIPOS[extname(fichero)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
     res.end(cuerpo);
@@ -43,6 +67,11 @@ before(async () => {
   discord = await arrancarDiscord();
   s = await arrancarServicio({ discord, paginaEs: `${URL_WEB}/ruta/`, paginaEn: `${URL_WEB}/en/route/` });
   URL_API = (await s.mf.ready).origin.replace('127.0.0.1', 'localhost');
+  assert.ok(!esAjena(URL_API) && URL_API !== SERVICIO_PUBLICADO, `el servicio de pruebas no es local: ${URL_API}`);
+  for (const pagina of ['ruta', 'en/route']) {
+    const html = ajustar(readFileSync(join(DOCS, pagina, 'index.html'), 'utf8'));
+    assert.ok(html.includes(`data-servicio="${URL_API}"`) && html.includes(`connect-src 'self' ${URL_API};`), `${pagina}: no habla con el servicio de pruebas`);
+  }
 });
 
 after(async () => {
@@ -57,12 +86,18 @@ beforeEach(async () => {
   sinServicio = false;
   discord.quien = 'ana';
   errores.length = 0;
+  fugas.length = 0;
   await s.limpiar();
+});
+
+afterEach(() => {
+  assert.deepEqual(fugas.splice(0), [], 'la prueba ha intentado salir del ordenador (o la página no era la de pruebas)');
 });
 
 // Un dispositivo: un navegador con su propio almacenamiento.
 async function dispositivo({ ancho = 1366, alto = 900, ...resto } = {}) {
   const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, ...resto });
+  await ctx.route(url => esAjena(url.href), r => { fugas.push(`${r.request().method()} ${r.request().url()}`); return r.abort('blockedbyclient'); });
   const abrir = async (ruta = '/ruta/') => {
     const p = await ctx.newPage();
     p.on('pageerror', e => errores.push(`pageerror: ${e.message}`));
@@ -132,6 +167,61 @@ test('sin servicio configurado la página funciona, lo dice y no ofrece entrar',
   await p.reload();
   assert.equal(await pulsado(p, 'allo-exp'), 'true');
   assert.deepEqual(pedidas, []);
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('ninguna prueba toca producción: lo que intente salir se para y se anota', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  const real = 'https://servicio-real.invalid/salud';
+  await p.goto(real).then(() => assert.fail('la petición salió'), () => {});
+  await p.goto('https://discord.invalid/oauth2/authorize').then(() => assert.fail('la petición salió'), () => {});
+  assert.deepEqual(fugas.splice(0), [`GET ${real}`, 'GET https://discord.invalid/oauth2/authorize']);
+  await ctx.close();
+});
+
+test('el servidor de pruebas no deja pasar una página con otra forma: revienta', () => {
+  const servicio = 'data-servicio="x" connect-src \'self\';';
+  assert.ok(ajustar(servicio).includes(`data-servicio="${URL_API}"`));
+  for (const mal of ['sin nada', `${servicio} ${servicio}`, 'data-servicio="x"', "connect-src 'self';"]) {
+    assert.throws(() => ajustar(mal), /una vez/, mal);
+  }
+  assert.equal(ajustar(`data-servicio="https://garra-cuentas.garra-iberica.workers.dev" connect-src 'self' https://garra-cuentas.garra-iberica.workers.dev;`).includes('garra-cuentas'), false);
+});
+
+test('con sesión y el servicio apagado en la web: no finge guardar, no pierde nada y sigue al volver', async () => {
+  const { ctx, abrir } = await dispositivo();
+  let p = await abrir();
+  await dentro(p);
+  await pulsar(p, 'allo-exp');
+  await subido('ana', 'allo-exp', 1);
+  await caer(ctx);
+  await pulsar(p, 'carno-exp');
+  await hasta(async () => (await guardado(p)).subidas?.['carno-exp'] === 1, 'lo pendiente guardado en el navegador');
+  await p.close();
+
+  sinServicio = true;
+  const pedidas = [];
+  ctx.on('request', r => { if (!r.url().startsWith(URL_WEB)) pedidas.push(r.url()); });
+  p = await abrir();
+  const estado = await texto(p, '[data-estado]');
+  assert.match(estado, /aún no están disponibles/, `dice «${estado}»`);
+  assert.equal(await visible(p, '[data-dentro]'), false, 'sigue enseñando una cuenta que ya no existe');
+  assert.equal(await visible(p, '[data-entrar]'), false);
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  assert.equal(await pulsado(p, 'carno-exp'), 'true');
+  await pulsar(p, 'dryo-exp');
+  await p.reload();
+  assert.equal(await pulsado(p, 'dryo-exp'), 'true', 'lo marcado sin servicio se guarda en el navegador');
+  assert.deepEqual(pedidas, [], 'no habla con un servicio que la web ya no declara');
+  await p.close();
+
+  sinServicio = false;
+  await volver(ctx);
+  p = await abrir();
+  await subido('ana', 'carno-exp', 1);
+  await subido('ana', 'dryo-exp', 1);
   await ctx.close();
   assert.deepEqual(errores, []);
 });
@@ -877,7 +967,7 @@ test('los filtros enseñan lo que dicen', async () => {
 test('lo oculto no se enseña, pero se guarda', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
-  assert.equal(await p.locator('[data-fila^="ovi-"], button[data-logro^="ovi-"], button[data-logro="fed-13"]').count(), 0);
+  assert.equal(await p.locator('[data-fila^="ovi-"], button[data-logro^="ovi-"], button[data-logro="fed-ovi"]').count(), 0);
   assert.ok(!(await p.content()).toLowerCase().includes('oviraptor'));
   await dentro(p);
   await p.fill('[data-codigo]', `GR1.${Buffer.from(JSON.stringify({ 'ovi-grow': 4 })).toString('base64')}`);
@@ -885,3 +975,84 @@ test('lo oculto no se enseña, pero se guarda', async () => {
   await subido('ana', 'ovi-grow', 4);
   await ctx.close();
 });
+
+test('en la dirección antigua la página no lee, no guarda y no canjea nada', async () => {
+  const { ctx } = await dispositivo();
+  const ANTIGUA = 'https://mmortexx.github.io';
+  await ctx.route(`${ANTIGUA}/**`, async q => q.fulfill({ response: await q.fetch({ url: q.request().url().replace(`${ANTIGUA}/garra-iberica`, URL_WEB) }) }));
+  // efectos.js llevaría a la dirección nueva antes de que ruta.js hiciera nada: aquí se prueba solo ruta.js.
+  await ctx.route(/efectos\.js/, q => q.abort());
+  const sesion = JSON.stringify({ marcas: {}, cuenta: '1', nombre: 'Ana', token: 'x'.repeat(40), tokenDe: '1', caduca: Date.now() + 1e7 });
+  const alServicio = [];
+  ctx.on('request', q => { if (q.url().startsWith(URL_API)) alServicio.push(`${q.method()} ${q.url()}`); });
+  const p = await ctx.newPage();
+  await p.addInitScript(valor => { if (!localStorage.getItem('garra-ruta-v1')) localStorage.setItem('garra-ruta-v1', valor); }, sesion);
+  for (const hash of ['', `#entrada=${'a'.repeat(30)}`]) {
+    await p.goto(`${ANTIGUA}/garra-iberica/ruta/${hash}`, { waitUntil: 'load' });
+    await p.waitForTimeout(1500);
+    assert.ok(await p.evaluate(() => performance.getEntriesByType('resource').some(e => /ruta\.js/.test(e.name))), 'ruta.js se ha cargado');
+    assert.deepEqual(alServicio, [], `no habla con el servicio${hash ? ' ni canjea la entrada' : ' con la sesión guardada'}`);
+    assert.equal(await p.evaluate(() => localStorage.getItem('garra-ruta-v1')), sesion, 'no toca lo guardado');
+    assert.equal(await p.evaluate(() => location.hash), hash, 'no gasta el código de entrada');
+  }
+  await ctx.close();
+});
+
+test('si el servicio rechaza lo nuevo: se avisa bien, se conserva, no se reintenta sin parar y sube cuando lo acepta', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  let puts = 0;
+  await ctx.route(`${URL_API}/yo/progreso`, async q => {
+    if (q.request().method() !== 'PUT') return q.continue();
+    puts++;
+    return q.fulfill({
+      status: 200, contentType: 'application/json',
+      headers: { 'access-control-allow-origin': URL_WEB },
+      body: JSON.stringify({ aplicados: 0, rechazados: [{ logro: 'allo-exp', motivo: 'desconocido' }] }),
+    });
+  });
+  await pulsar(p, 'allo-exp');
+  await hasta(async () => /no acepta 1 marcas/.test(await texto(p, '[data-mensaje]')), 'el aviso de lo rechazado');
+  assert.ok(!/ya no están en la lista/.test(await texto(p, '[data-mensaje]')), 'el aviso no miente');
+  assert.deepEqual((await guardado(p)).subidas, { 'allo-exp': 1 }, 'sigue pendiente');
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  const antes = puts;
+  await p.waitForTimeout(2500);
+  assert.equal(puts, antes, 'no se reintenta sin parar');
+  assert.deepEqual(await filasDe('ana'), []);
+  await ctx.unroute(`${URL_API}/yo/progreso`);
+  await p.reload();
+  await subido('ana', 'allo-exp', 1);
+  assert.deepEqual((await guardado(p)).subidas, {});
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('lo guardado y los códigos de antes, con los ids por posición, siguen valiendo', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const antes = { marcas: { 'allo-h0': 3, 'fed-0': 2, 'rex-h1': 1 }, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 };
+  const p = await ctx.newPage();
+  await p.addInitScript(valor => { if (!localStorage.getItem('garra-ruta-v1')) localStorage.setItem('garra-ruta-v1', valor); }, JSON.stringify(antes));
+  await p.goto(`${URL_WEB}/ruta/`, { waitUntil: 'load' });
+  // allo-h0 era la cacería de herbívoros de Allosaurus; fed-0, la muerte por Tyrannosaurus; rex-h1, su cacería de carnívoros.
+  assert.equal(await pulsado(p, 'allo-h-H', 3), 'true');
+  assert.equal(await pulsado(p, 'allo-h-H', 4), 'false');
+  assert.equal(await pulsado(p, 'fed-rex', 2), 'true');
+  assert.equal(await pulsado(p, 'rex-h-C', 1), 'true');
+  await pulsar(p, 'allo-exp');
+  assert.deepEqual((await guardado(p)).marcas, { 'allo-h-H': 3, 'fed-rex': 2, 'rex-h-C': 1, 'allo-exp': 1 }, 'lo guardado vuelve a escribirse con los ids de ahora');
+
+  const otro = await dispositivo();
+  const q = await otro.abrir();
+  const codigo = `GR1.${Buffer.from(JSON.stringify({ 'allo-h1': 9, 'dryo-h0': 1, 'allo-h0': 2 })).toString('base64')}`;
+  await q.fill('[data-codigo]', codigo);
+  await q.click('[data-traer]');
+  assert.equal(await pulsado(q, 'allo-h-H', 2), 'true');
+  assert.equal(await pulsado(q, 'allo-h-H', 3), 'false');
+  assert.deepEqual(Object.keys((await guardado(q)).marcas), ['allo-h-H']);
+  await ctx.close();
+  await otro.ctx.close();
+  assert.deepEqual(errores, []);
+});
+

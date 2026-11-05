@@ -1,9 +1,10 @@
 // Servicio de cuentas de la web del clan: entrar con Discord y recordar los logros de cada miembro.
 //
-// La web está en otro sitio (GitHub Pages) y los navegadores bloquean las cookies entre sitios, así que la sesión viaja
+// La web está en otra dirección y los navegadores bloquean las cookies entre sitios, así que la sesión viaja
 // en la cabecera Authorization: una clave aleatoria que la página guarda y de la que aquí solo queda la huella.
 // Sin cookies de sesión no hay CSRF: otra web no puede añadir esa cabecera. La única cookie es la del viaje a Discord.
 import { MAXIMOS } from './catalogo.js';
+import { aplicarCambios } from './progreso.js';
 
 const DIA = 864e5;
 const DURACION_SESION = 30 * DIA; // No se alarga con el uso: al caducar se vuelve a comprobar que sigue en el clan.
@@ -38,13 +39,14 @@ const ip = req => req.headers.get('CF-Connecting-IP') || 'desconocida';
 const origenWeb = env => new URL(env.PAGINA_ES).origin;
 const pagina = (env, idioma) => (idioma === 'en' ? env.PAGINA_EN : env.PAGINA_ES);
 
-async function dentroDelLimite(limitador, clave) {
+// Si el contador falla: leer sigue, porque una consulta cuesta poco y la clave ya es aleatoria; entrar y escribir se
+// cierran, porque gastan Discord y las filas diarias. La página guarda lo marcado y lo sube cuando vuelve.
+async function dentroDelLimite(limitador, clave, { siFalla = false } = {}) {
   try {
     return (await limitador.limit({ key: clave })).success;
   } catch (e) {
-    // Si el contador falla, la web sigue: las claves son aleatorias y los datos, acotados.
     console.error('limite', e.name);
-    return true;
+    return siFalla;
   }
 }
 
@@ -215,13 +217,13 @@ async function canjear(req, env) {
 
 async function sesionDe(req, env) {
   // Antes de mirar la base: las claves inventadas se cortan sin gastarla.
-  if (!await dentroDelLimite(env.LIMITE_API, `ip:${ip(req)}`)) throw new Fallo(429, 'demasiadas');
+  if (!await dentroDelLimite(env.LIMITE_API, `ip:${ip(req)}`, { siFalla: true })) throw new Fallo(429, 'demasiadas');
   const [tipo, token] = (req.headers.get('Authorization') ?? '').split(' ');
   if (tipo !== 'Bearer' || !ALEATORIO.test(token ?? '')) throw new Fallo(401, 'sin_sesion');
   const h = await huella(token);
   const fila = await env.DB.prepare('SELECT discord_id FROM sesiones WHERE huella = ?1 AND caduca > ?2').bind(h, Date.now()).first();
   if (!fila) throw new Fallo(401, 'sin_sesion');
-  if (!await dentroDelLimite(env.LIMITE_API, `s:${h}`)) throw new Fallo(429, 'demasiadas');
+  if (!await dentroDelLimite(env.LIMITE_API, `s:${h}`, { siFalla: true })) throw new Fallo(429, 'demasiadas');
   return { id: fila.discord_id, huella: h };
 }
 
@@ -264,24 +266,12 @@ function validarCambios(cambios) {
 
 async function guardarProgreso(req, env) {
   const { id } = await sesionDe(req, env);
+  if (!await dentroDelLimite(env.LIMITE_ESCRITURA, `m:${id}`)) throw new Fallo(429, 'demasiadas');
   const { cambios, modo = 'fijar' } = await leerJson(req);
   if (!Array.isArray(cambios) || (modo !== 'fijar' && modo !== 'subir')) throw new Fallo(400, 'forma');
   if (cambios.length > MAX_CAMBIOS) throw new Fallo(413, 'demasiado_grande');
   const { validos, rechazados } = validarCambios(cambios);
-  if (validos.size) {
-    const tramos = [];
-    for (const [logro, nivel] of validos) for (let n = 1; n <= nivel; n++) tramos.push([logro, n]);
-    const sentencias = [];
-    if (modo === 'fijar') {
-      sentencias.push(env.DB.prepare(`DELETE FROM progreso WHERE discord_id = ?1 AND nivel >
-        (SELECT j.value ->> '$[1]' FROM json_each(?2) j WHERE j.value ->> '$[0]' = progreso.logro)`).bind(id, JSON.stringify([...validos])));
-    }
-    if (tramos.length) {
-      sentencias.push(env.DB.prepare(`INSERT OR IGNORE INTO progreso (discord_id, logro, nivel, fecha)
-        SELECT ?1, j.value ->> '$[0]', j.value ->> '$[1]', ?2 FROM json_each(?3) j`).bind(id, hoy(), JSON.stringify(tramos)));
-    }
-    await env.DB.batch(sentencias);
-  }
+  if (validos.size) await aplicarCambios(env.DB, id, validos, modo, hoy());
   return json(200, { aplicados: validos.size, rechazados });
 }
 

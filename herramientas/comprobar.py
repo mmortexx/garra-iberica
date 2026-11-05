@@ -53,9 +53,12 @@ MAX_MB_VIDEO = 40
 ID_DISCORD = r'\b\d{17,20}\b'
 VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
 # Única excepción a los apodos: los tres jefes del clan, por decisión del clan (1/11/2026), y solo
-# donde los pone montar_web.alfas() con los nombres de la cita de la tarjeta #rangos. Un nombre
-# más, o estos mismos en cualquier otro sitio, sigue fallando.
+# donde los pone montar_web.alfas() con los nombres de la cita de la tarjeta #rangos, más la frase
+# del aviso legal que dice a quién escribir. Un nombre más, o estos mismos en cualquier otro sitio,
+# sigue fallando.
 JEFES = ('Imaginary', 'Quilez', 'Ray')
+# Y la frase del aviso legal que dice a quién escribir para pedir los datos (paginas/*/legal.html), una vez por página.
+FRASE_JEFES_LEGAL = {'es': f'a {", ".join(JEFES[:-1])} o {JEFES[-1]}', 'en': f'to {", ".join(JEFES[:-1])} or {JEFES[-1]}'}
 AVISO_PESTANA = {'es': 'se abre en una pestaña nueva', 'en': 'opens in a new tab'}
 
 
@@ -789,6 +792,14 @@ def revisar_alfas(raiz, falla):
             falla(f'{RUTA["clan", lang]}index.html: los tres jefes no salen una vez, tal como los pone montar_web.alfas()')
         permitidos.setdefault(pagina.resolve(), []).append(fragmento)
         permitidos.setdefault(DATOS.resolve(), []).append(json.loads(DATOS.read_text(encoding='utf-8'))['alfas'][f'fuente_{lang}'])
+        # El aviso legal, con cuentas, manda a quien ya se fue a escribir a estos tres: solo esa frase, y una vez.
+        legal = RUTA['legal', lang] + 'index.html'
+        frase = FRASE_JEFES_LEGAL[lang]
+        veces = leer(raiz, legal).count(frase)
+        if veces > 1:
+            falla(f'{legal}: la frase «{frase}» sale {veces} veces; la excepción de apodos es para una sola')
+        elif veces:
+            permitidos.setdefault((raiz / legal).resolve(), []).append(frase)
     return permitidos
 
 

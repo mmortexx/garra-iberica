@@ -28,6 +28,12 @@ name = "LIMITE_API"
 namespace_id = "1002"
 simple = { limit = 120, period = 60 }
 
+# Por miembro: guardar marcas. Más bajo, porque es lo que gasta las filas escritas de cada día.
+[[ratelimits]]
+name = "LIMITE_ESCRITURA"
+namespace_id = "1003"
+simple = { limit = 30, period = 60 }
+
 # Limpia cada noche las sesiones y los códigos caducados.
 [triggers]
 crons = ["23 3 * * *"]

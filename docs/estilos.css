@@ -671,6 +671,7 @@ img.por-llegar { opacity: 0; }
 .galeria .foto-panoramica { grid-column: 1 / -1; aspect-ratio: 1600 / 670; }
 .galeria .foto-entera { aspect-ratio: 3080 / 1439; }
 .galeria .foto-fila { aspect-ratio: 3080 / 1391; }
+.galeria .foto-orilla { aspect-ratio: 3080 / 1379; }
 .galeria .foto-atardecer { aspect-ratio: 1672 / 941; }
 .foto-cuernos img { object-position: 50% 0; }
 .galeria .foto-baja { aspect-ratio: 3080 / 1239; }
@@ -1698,6 +1699,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .galeria .foto-panoramica { --r: 2.388; }
   .galeria .foto-entera { --r: 2.14; }
   .galeria .foto-fila { --r: 2.214; }
+  .galeria .foto-orilla { --r: 2.233; }
   .galeria .foto-atardecer { --r: 1.777; }
   .galeria .foto-baja { --r: 2.486; }
   .galeria .foto-media { --r: 2.017; }

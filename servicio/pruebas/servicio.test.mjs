@@ -1,14 +1,24 @@
 // Comportamiento del servicio, visto desde fuera: por HTTP, como lo ve la página o quien lo ataca.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
-import { MAXIMOS } from '../src/catalogo.js';
+import { unstable_readConfig } from 'wrangler';
+import lista from '../../herramientas/logros.json' with { type: 'json' };
+import congelados from '../../herramientas/logros_congelados.json' with { type: 'json' };
+import { MAXIMOS, calcular } from '../src/catalogo.js';
+import { leerBorrados, sqlBorrar, sqlExportar } from '../scripts/miembro.mjs';
+import { sqlDeCopia } from '../scripts/restaurar.mjs';
 import {
   CLAVE_CLIENTE, GUILD, ORIGEN, PAGINA_EN, PAGINA_ES, SERVICIO, USUARIOS, URL_SERVICIO, aleatorio, aplicarEsquema,
   arrancarDiscord, arrancarServicio, huella, retoDe,
 } from './banco.mjs';
 
+// SERVICIO_PROGRESO: otro progreso.js, para ver estas pruebas fallar con una guarda quitada (mutaciones.mjs).
+const { aplicarCambios } = await import(pathToFileURL(process.env.SERVICIO_PROGRESO || join(SERVICIO, 'src/progreso.js')).href);
 let discord, s;
 before(async () => {
   discord = await arrancarDiscord();
@@ -373,7 +383,7 @@ describe('guardar logros', () => {
 
   test('acepta los logros de Oviraptor, ocultos en la web, para no perderlos', async () => {
     const t = await s.entrar('ana');
-    const j = await (await marcar(t, [{ logro: 'ovi-exp', nivel: 1 }, { logro: 'fed-13', nivel: 2 }])).json();
+    const j = await (await marcar(t, [{ logro: 'ovi-exp', nivel: 1 }, { logro: 'fed-ovi', nivel: 2 }])).json();
     assert.equal(j.aplicados, 2);
   });
 
@@ -725,3 +735,368 @@ describe('configuración', () => {
     }
   });
 });
+
+describe('lo que cuesta cada petición', () => {
+  const id = USUARIOS.ana.id;
+  const todos = new Map(MAXIMOS);
+  beforeEach(() => s.db.prepare("INSERT INTO miembros (discord_id, nombre, desde, ultimo_acceso) VALUES (?1, 'Ana', '2026-11-05', '2026-11-05')").bind(id).run());
+  const aplicar = (cambios, modo) => aplicarCambios(s.db, id, new Map(cambios), modo, '2026-11-05');
+
+  test('quien lo tiene todo: marcar un tramo no reescribe nada más', async () => {
+    await aplicar(todos, 'subir');
+    await aplicar([['allo-exp', 0]], 'fijar');
+    const g = await aplicar([['allo-exp', 1]], 'fijar');
+    assert.ok(g.escritas <= 2, `escribe ${g.escritas} filas`);
+    assert.ok(g.leidas <= 10, `lee ${g.leidas} filas`);
+  });
+
+  test('volver a mandar lo mismo no escribe nada, por mucho que sea', async () => {
+    const primera = await aplicar(todos, 'subir');
+    assert.ok(primera.escritas >= 535 && primera.escritas <= 1100, `la primera escribe ${primera.escritas}`);
+    for (const modo of ['fijar', 'subir']) {
+      const g = await aplicar(todos, modo);
+      assert.equal(g.escritas, 0, `${modo} reescribe ${g.escritas} filas`);
+      assert.ok(g.leidas <= 1100, `${modo} lee ${g.leidas} filas`);
+    }
+  });
+
+  test('bajar un logro solo borra sus tramos y deja el resto', async () => {
+    await aplicar(todos, 'subir');
+    const antes = (await s.filas('SELECT * FROM progreso')).length;
+    const g = await aplicar([['addict', 1]], 'fijar');
+    const quitados = MAXIMOS.get('addict') - 1;
+    assert.equal((await s.filas('SELECT * FROM progreso')).length, antes - quitados);
+    assert.ok(g.escritas <= quitados * 2, `escribe ${g.escritas}`);
+  });
+
+  test('limpiar los códigos de un miembro no recorre la tabla', async () => {
+    const plan = await s.filas("EXPLAIN QUERY PLAN DELETE FROM entradas WHERE discord_id = '1' AND caduca <= 1");
+    assert.ok(plan.every(p => !/^SCAN entradas/.test(p.detail)), plan.map(p => p.detail).join('; '));
+  });
+});
+
+describe('los límites', () => {
+  test('la configuración de verdad lleva la base, los tres límites y la limpieza de cada noche', () => {
+    const c = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    assert.equal(c.name, 'garra-cuentas');
+    assert.deepEqual(c.d1_databases.map(d => [d.binding, d.database_name]), [['DB', 'garra-cuentas']]);
+    assert.match(c.d1_databases[0].database_id, /^[0-9a-f-]{36}$/);
+    const limite = Object.fromEntries(c.ratelimits.map(r => [r.name, r.simple.limit]));
+    assert.deepEqual(Object.keys(limite).sort(), ['LIMITE_API', 'LIMITE_ENTRADA', 'LIMITE_ESCRITURA']);
+    assert.ok(limite.LIMITE_ESCRITURA < limite.LIMITE_API, 'escribir tiene que costar más que leer');
+    assert.ok(limite.LIMITE_ESCRITURA <= 30);
+    assert.equal(c.triggers.crons.length, 1);
+    assert.equal(c.observability.enabled, false);
+  });
+
+  test('guardar tiene su propio límite por miembro: frenado, leer sigue y otro miembro también', async () => {
+    const t = await arrancarServicio({ discord, limites: { escritura: 2 } });
+    try {
+      const ana = await t.entrar('ana');
+      const otraAna = await t.entrar('ana');
+      const bea = await t.entrar('bea');
+      const guardar = token => t.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios: [{ logro: 'allo-exp', nivel: 1 }] } });
+      const estados = [];
+      for (const token of [ana, otraAna, ana, otraAna]) estados.push((await guardar(token)).status);
+      assert.ok(estados.includes(429), `sin freno: ${estados}`);
+      assert.equal((await t.pedir('/yo', { token: ana })).status, 200);
+      assert.equal((await guardar(bea)).status, 200);
+    } finally {
+      await t.parar();
+    }
+  });
+
+  test('si falla el contador: entrar y escribir se cierran, leer sigue y salir también', async () => {
+    const sinEntrada = await arrancarServicio({ discord, limites: { entrada: null } });
+    try {
+      const r = await sinEntrada.pedir(`/auth/discord?reto=${retoDe(aleatorio())}`, { origen: null });
+      assert.equal(new URLSearchParams(new URL(r.headers.get('location')).hash.slice(1)).get('error'), 'demasiadas');
+    } finally {
+      await sinEntrada.parar();
+    }
+    const sinEscritura = await arrancarServicio({ discord, limites: { escritura: null } });
+    try {
+      const token = await sinEscritura.entrar('ana');
+      const r = await sinEscritura.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios: [{ logro: 'allo-exp', nivel: 1 }] } });
+      assert.equal(r.status, 429);
+      assert.deepEqual(await sinEscritura.filas('SELECT * FROM progreso'), []);
+      assert.equal((await sinEscritura.pedir('/yo', { token })).status, 200);
+    } finally {
+      await sinEscritura.parar();
+    }
+    const sinApi = await arrancarServicio({ discord, limites: { api: null } });
+    try {
+      const token = await sinApi.entrar('ana');
+      assert.equal((await sinApi.pedir('/yo', { token })).status, 200);
+      assert.equal((await sinApi.pedir('/sesion', { method: 'DELETE', token })).status, 200);
+    } finally {
+      await sinApi.parar();
+    }
+  });
+});
+
+describe('la dirección antigua', () => {
+  test('la configuración publicada acepta solo la dirección nueva', () => {
+    const { vars } = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    assert.equal(new URL(vars.PAGINA_ES).origin, 'https://clan.garra-iberica.workers.dev');
+    assert.equal(new URL(vars.PAGINA_EN).origin, 'https://clan.garra-iberica.workers.dev');
+  });
+
+  test('desde GitHub Pages no se puede ni canjear ni usar una sesión', async () => {
+    const t = await arrancarServicio({ discord, paginaEs: 'https://clan.garra-iberica.workers.dev/ruta/', paginaEn: 'https://clan.garra-iberica.workers.dev/en/route/' });
+    try {
+      const nueva = await t.pedir('/salud', { origen: 'https://clan.garra-iberica.workers.dev' });
+      assert.equal(nueva.headers.get('access-control-allow-origin'), 'https://clan.garra-iberica.workers.dev');
+      for (const [ruta, opciones] of [['/sesion', { method: 'POST', cuerpo: { codigo: 'x', verificador: 'y' } }], ['/yo', {}]]) {
+        const antigua = await t.pedir(ruta, { ...opciones, origen: 'https://mmortexx.github.io' });
+        assert.equal(antigua.status, 403, `${ruta} da ${antigua.status}`);
+        assert.equal(antigua.headers.get('access-control-allow-origin'), null);
+      }
+    } finally {
+      await t.parar();
+    }
+  });
+});
+
+describe('lo que promete el aviso legal', () => {
+  const aviso = lang => readFileSync(join(SERVICIO, '..', 'paginas', lang, 'legal.html'), 'utf8');
+  const FRASES = {
+    es: { cookie: /cookie técnica durante (\d+) minutos/, sesion: /La sesión dura (\d+) días/, copias: /recuperación automáticas desaparecen en (\d+) días/ },
+    en: { cookie: /technical cookie for (\d+) minutes/, sesion: /A session lasts (\d+) days/, copias: /recovery copies disappear within (\d+) days/ },
+  };
+  const dice = (lang, que) => {
+    const m = FRASES[lang][que].exec(aviso(lang));
+    assert.ok(m, `paginas/${lang}/legal.html ya no dice «${FRASES[lang][que]}»`);
+    return Number(m[1]);
+  };
+
+  test('la cookie y la sesión duran lo que dice, en los dos idiomas', async () => {
+    const inicio = await s.pedir(`/auth/discord?reto=${retoDe(aleatorio())}`, { origen: null });
+    const segundos = Number(/Max-Age=(\d+)/.exec(inicio.headers.get('set-cookie'))[1]);
+    await s.entrar('ana');
+    const [{ caduca }] = await s.filas('SELECT caduca FROM sesiones');
+    const dias = Math.round((caduca - Date.now()) / 86400000);
+    for (const lang of ['es', 'en']) {
+      assert.equal(dice(lang, 'cookie') * 60, segundos, `${lang}: cookie`);
+      assert.equal(dice(lang, 'sesion'), dias, `${lang}: sesión`);
+    }
+  });
+
+  // Los 7 días son de Cloudflare (plan gratuito), no de este código: lo único que se puede atar es el README, que lo cita.
+  test('las copias de recuperación: lo mismo en el aviso y en el README', () => {
+    const readme = Number(/D1 guarda (\d+) días de vuelta atrás/.exec(readFileSync(join(SERVICIO, 'README.md'), 'utf8'))[1]);
+    for (const lang of ['es', 'en']) assert.equal(dice(lang, 'copias'), readme, lang);
+  });
+
+  test('quien ya se fue tiene un camino para pedirlo, en los dos idiomas', () => {
+    assert.match(aviso('es'), /Si ya te fuiste, escribe por mensaje privado de Discord/);
+    assert.match(aviso('en'), /If you have already left, send a private Discord message/);
+    assert.match(readFileSync(join(SERVICIO, 'README.md'), 'utf8'), /scripts\/miembro\.mjs borrar ID/);
+  });
+});
+
+// Lo que el README manda hacer o promete tiene que ser verdad: cada cifra y cada orden, atadas al código.
+describe('el README dice lo que hace el servicio', () => {
+  const readme = readFileSync(join(SERVICIO, 'README.md'), 'utf8');
+  const orden = patron => {
+    const m = patron.exec(readme);
+    assert.ok(m, `servicio/README.md ya no dice ${patron}`);
+    return m[1];
+  };
+  const ana = USUARIOS.ana.id;
+
+  test('los límites por minuto son los de wrangler.toml', () => {
+    const c = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    const limite = Object.fromEntries(c.ratelimits.map(r => [r.name, r.simple.limit]));
+    const m = /(\d+) entradas con Discord, (\d+) lecturas\s+y \*\*(\d+) escrituras de logros por miembro\*\*/.exec(readme);
+    assert.ok(m, 'servicio/README.md ya no cuenta los límites por petición');
+    assert.deepEqual(m.slice(1).map(Number), [limite.LIMITE_ENTRADA, limite.LIMITE_API, limite.LIMITE_ESCRITURA]);
+  });
+
+  test('la sesión dura los días que dice el README al dejar el clan', async () => {
+    await s.entrar('ana');
+    const [{ caduca }] = await s.filas('SELECT caduca FROM sesiones');
+    assert.equal(Number(orden(/caduca su sesión: \*\*(\d+) días\*\*/)), Math.round((caduca - Date.now()) / 86400000));
+  });
+
+  test('cortar la sesión de quien se va, tal como lo escribe el README, solo corta la suya', async () => {
+    const [tokenAna, tokenBea] = [await s.entrar('ana'), await s.entrar('bea')];
+    await s.db.prepare(orden(/--command "(DELETE FROM sesiones WHERE discord_id = 'ID')"/).replace('ID', ana)).run();
+    assert.equal((await s.pedir('/yo', { token: tokenAna })).status, 401);
+    assert.equal((await s.pedir('/yo', { token: tokenBea })).status, 200);
+    assert.equal((await s.filas('SELECT * FROM miembros')).length, 2, 'sus datos no se tocan');
+  });
+
+  test('apagar con el DELETE del README no deja nada de nadie en ninguna tabla', async () => {
+    const [tokenAna, tokenBea] = [await s.entrar('ana'), await s.entrar('bea')];
+    await marcar(tokenAna, [{ logro: 'addict', nivel: 2 }]);
+    await marcar(tokenBea, [{ logro: 'allo-exp', nivel: 1 }]);
+    assert.ok((await s.filas('SELECT * FROM progreso')).length >= 2 && (await s.filas('SELECT * FROM sesiones')).length === 2);
+    await s.db.prepare(orden(/--command "(DELETE FROM miembros)"/)).run();
+    for (const t of ['miembros', 'progreso', 'sesiones', 'entradas']) assert.equal((await s.filas(`SELECT * FROM ${t}`)).length, 0, t);
+  });
+});
+
+// El repositorio es público y el README manda crear en servicio/ ficheros con datos personales de los miembros.
+describe('datos personales fuera del repositorio', () => {
+  const RAIZ = join(SERVICIO, '..');
+  const git = (...args) => spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' });
+  const ignorado = nombre => git('check-ignore', '--no-index', '-q', '--', `servicio/${nombre}`).status === 0;
+  const versionado = nombre => git('ls-files', '--', `servicio/${nombre}`).stdout.trim() !== '';
+
+  test('lo que el README manda crear en servicio/ no se sube', () => {
+    const readme = readFileSync(join(SERVICIO, 'README.md'), 'utf8');
+    const nombres = [...new Set([...readme.matchAll(/(?<![\w./-])([\w.-]+\.(?:sql|json))\b/g)].map(m => m[1]))].filter(n => !versionado(n));
+    for (const esperado of ['restaurar.sql', 'datos.json', 'copia.sql']) assert.ok(nombres.includes(esperado), `el README ya no menciona ${esperado}: ¿cambió el procedimiento?`);
+    for (const n of nombres) assert.ok(ignorado(n), `servicio/${n} lo crea el README con datos personales y git no lo ignora`);
+  });
+
+  test('las variantes razonables tampoco se suben', () => {
+    for (const n of ['copia.json', 'copia-2026-11-05.sql', 'copia 2.sql', 'datos-100000000000000001.json', 'restaurar-ana.sql', 'garra-copia.json', 'borrados.local.txt']) {
+      assert.ok(ignorado(n), `servicio/${n} se subiría`);
+    }
+  });
+
+  test('y lo que sí es del repositorio no queda ignorado', () => {
+    const ignorados = git('ls-files', '-ci', '--exclude-standard').stdout.trim();
+    assert.equal(ignorados, '', 'ficheros versionados que ahora git ignora');
+    for (const n of ['package.json', 'package-lock.json', 'wrangler.toml', 'migraciones/0001_inicial.sql']) assert.ok(!ignorado(n), `servicio/${n} es del repositorio`);
+  });
+});
+
+describe('datos de un miembro a petición', () => {
+  const [ana, bea] = [USUARIOS.ana.id, USUARIOS.bea.id];
+  const copia = async () => ({
+    formato: 'garra-copia-1',
+    miembros: await s.filas('SELECT * FROM miembros'),
+    progreso: await s.filas('SELECT * FROM progreso'),
+  });
+  const ejecutar = async sql => { for (const orden of sql.split('\n').filter(Boolean)) await s.db.prepare(orden).run(); };
+
+  beforeEach(async () => {
+    for (const quien of ['ana', 'bea']) {
+      const token = await s.entrar(quien);
+      await marcar(token, [{ logro: 'addict', nivel: 2 }]);
+    }
+  });
+
+  test('exportar da lo suyo y nada de otro', async () => {
+    const [miembro, progreso] = await Promise.all(sqlExportar(ana).map(sql => s.filas(sql)));
+    assert.deepEqual(miembro.map(m => m.discord_id), [ana]);
+    assert.equal(progreso.length, 2);
+    assert.ok(progreso.every(p => p.logro === 'addict' && p.fecha && !('discord_id' in p)));
+  });
+
+  test('borrar se lleva todo lo suyo, sesiones incluidas, y no toca a otro', async () => {
+    await s.db.prepare(sqlBorrar(ana)).run();
+    for (const tabla of ['miembros', 'progreso', 'sesiones', 'entradas']) {
+      assert.deepEqual(await s.filas(`SELECT * FROM ${tabla} WHERE discord_id = ?1`, ana), [], tabla);
+    }
+    assert.equal((await s.filas('SELECT * FROM progreso WHERE discord_id = ?1', bea)).length, 2);
+    assert.equal((await s.filas('SELECT * FROM sesiones WHERE discord_id = ?1', bea)).length, 1);
+  });
+
+  test('restaurar una copia antigua no revive a quien se borró a petición', async () => {
+    const antigua = await copia();
+    await s.db.prepare(sqlBorrar(ana)).run();
+    await ejecutar(sqlDeCopia(antigua, [ana]));
+    assert.deepEqual(await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', ana), []);
+    assert.deepEqual(await s.filas('SELECT * FROM progreso WHERE discord_id = ?1', ana), []);
+    assert.equal((await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', bea)).length, 1);
+  });
+
+  test('un identificador raro no llega a la base, y la lista de borrados se lee bien', () => {
+    for (const malo of ["1' OR '1'='1", '', undefined, '123']) {
+      assert.throws(() => sqlBorrar(malo), /no es un identificador/);
+      assert.throws(() => sqlExportar(malo), /no es un identificador/);
+    }
+    const carpeta = mkdtempSync(join(tmpdir(), 'garra-borrados-'));
+    try {
+      const lista = join(carpeta, 'b.txt');
+      assert.deepEqual(leerBorrados(lista), []);
+      writeFileSync(lista, `${ana}\r\n\n${bea}\n${ana}\n`);
+      assert.deepEqual(leerBorrados(lista), [ana, bea]);
+      writeFileSync(lista, 'no-es-un-id\n');
+      assert.throws(() => leerBorrados(lista), /no es un identificador/);
+    } finally {
+      rmSync(carpeta, { recursive: true, force: true });
+    }
+    assert.ok(!existsSync(join(SERVICIO, 'borrados.local.txt')) || /\*\.local\.txt/.test(readFileSync(join(SERVICIO, '..', '.gitignore'), 'utf8')));
+  });
+});
+
+describe('las mutaciones del servicio', () => {
+  test('unas pruebas sin resumen no se cuentan como guarda viva ni como cazada', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+    });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /no han dado resumen/);
+    assert.doesNotMatch(r.stdout, /VIVA|cazada/);
+  });
+});
+
+describe('las mutaciones de la página', () => {
+  // Sin la línea base: aquí se mide solo el bucle de guardas. La línea base tiene su prueba, justo debajo.
+  test('un recorrido sin resumen no se cuenta como guarda viva', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones_pagina.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1', MUTACIONES_SIN_BASE: '1' },
+    });
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /SIN RESUMEN/);
+    assert.doesNotMatch(r.stdout, /VIVA/);
+    assert.match(r.stdout, /1 sin resolver/);
+  });
+
+  test('si el recorrido ya falla con el ruta.js sin tocar, para antes de medir nada y lo dice', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones_pagina.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+    });
+    assert.equal(r.status, 2, r.stdout);
+    assert.match(r.stdout, /BASE ROJA: el recorrido con el ruta\.js sin tocar no acaba/);
+    assert.match(r.stdout, /las guardas no se pueden medir/);
+    assert.doesNotMatch(r.stdout, /VIVA|cazada|SIN RESUMEN/);
+  });
+});
+
+describe('los ids de los logros', () => {
+  const DECIDIR = 'Hay que decidir qué pasa con lo ya guardado antes de tocar esto (ver servicio/README.md, «Cambiar la lista de logros»)';
+
+  test('son los congelados: cualquier cambio obliga a decidir la migración', () => {
+    const ahora = Object.fromEntries(MAXIMOS);
+    const quitados = Object.keys(congelados.logros).filter(k => !(k in ahora));
+    const recortados = Object.keys(congelados.logros).filter(k => k in ahora && ahora[k] !== congelados.logros[k]);
+    const nuevos = Object.keys(ahora).filter(k => !(k in congelados.logros));
+    assert.deepEqual({ quitados, recortados, nuevos }, { quitados: [], recortados: [], nuevos: [] }, DECIDIR);
+  });
+
+  test('cambiar el orden de la lista no cambia ningún id', () => {
+    const revuelta = structuredClone(lista);
+    revuelta.especies.reverse();
+    revuelta.muertes.especies.reverse();
+    for (const e of revuelta.especies) e.cazas.reverse();
+    assert.deepEqual([...calcular(revuelta)].sort(), [...MAXIMOS].sort());
+  });
+
+  test('la tabla de los de antes lleva a ids que existen y no pisa ninguno de ahora', () => {
+    const antiguos = Object.entries(lista.ids_antiguos);
+    assert.equal(antiguos.length, 26 + 20);
+    for (const [antes, ahora] of antiguos) {
+      assert.ok(MAXIMOS.has(ahora), `${antes} lleva a ${ahora}, que no existe`);
+      assert.ok(!MAXIMOS.has(antes), `${antes} sigue siendo un id de ahora: se confundirían`);
+    }
+    assert.equal(new Set(antiguos.map(([, ahora]) => ahora)).size, antiguos.length, 'dos de antes llevan al mismo');
+    const [primera] = lista.muertes.especies;
+    assert.equal(lista.ids_antiguos['fed-0'], `fed-${lista.especies.find(e => e.nombre === primera).id}`);
+  });
+
+  test('no repetir el tipo de cacería en una especie, ni nombrar una muerte por una especie que no existe', () => {
+    const rota = structuredClone(lista);
+    rota.especies[0].cazas.push({ ...rota.especies[0].cazas[0] });
+    assert.throws(() => calcular(rota), /repetid/);
+    const otra = structuredClone(lista);
+    otra.muertes.especies.push('Nadie');
+    assert.throws(() => calcular(otra), /no es una especie/);
+  });
+});
+

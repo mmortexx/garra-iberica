@@ -5,9 +5,13 @@
   'use strict';
   const raiz = document.querySelector('[data-miembro]');
   if (!raiz) return;
+  // La web vive en otra dirección y efectos.js lleva allí: en la antigua no se lee ni se guarda nada ni se canjea ninguna entrada.
+  if (location.hostname === 'mmortexx.github.io') return;
   const en = document.documentElement.lang === 'en';
   const SERVICIO = raiz.dataset.servicio || '';
   const MAXIMOS = new Map(Object.entries(JSON.parse(raiz.dataset.logros)));
+  // Cómo se llamaban antes los logros que se identificaban por su posición: lo guardado o copiado de antes sigue valiendo.
+  const ANTIGUOS = new Map(Object.entries(JSON.parse(raiz.dataset.antiguos || '{}')));
   const CLAVE = 'garra-ruta-v1';
   const CLAVE_ENTRADA = 'garra-ruta-entrada';
   const ESPERAS = [5000, 15000, 60000, 300000];
@@ -28,7 +32,7 @@
     nadaQueTraer: 'That code adds nothing new: you already had all of it.',
     codigoMalo: 'That code is not valid. Copy the whole code and try again.',
     ignoradas: n => `Ticks in the code ignored because they are not in the achievements list: ${n}.`,
-    rechazadas: n => `Ticks the service did not accept because they are no longer in the list: ${n}.`,
+    rechazadas: n => `The service does not accept ${n} ticks from the new list yet. They stay in this browser and will upload once it does.`,
     copiado: 'Code copied.',
     copiaAMano: 'Your code is in the box: copy it by hand.',
     salirConPendientes: n => `Unsaved ticks: ${n}. Signing out loses them. Press again to sign out anyway.`,
@@ -69,7 +73,7 @@
     nadaQueTraer: 'Ese código no añade nada nuevo: ya lo tenías todo.',
     codigoMalo: 'Ese código no vale. Copia el código entero y prueba otra vez.',
     ignoradas: n => `Marcas del código ignoradas porque no están en la lista de logros: ${n}.`,
-    rechazadas: n => `Marcas que el servicio no ha aceptado porque ya no están en la lista: ${n}.`,
+    rechazadas: n => `El servicio aún no acepta ${n} marcas de la lista nueva. Siguen en este navegador y se subirán cuando las acepte.`,
     copiado: 'Código copiado.',
     copiaAMano: 'Tu código está en el recuadro: cópialo a mano.',
     salirConPendientes: n => `Marcas sin guardar: ${n}. Si sales, se pierden. Pulsa otra vez para salir igualmente.`,
@@ -103,11 +107,20 @@
   const vacio = () => ({ marcas: {}, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 });
   let almacen = vacio();
   let hayAlmacen = true;
+  function alNombreDeAhora(o) {
+    const traducido = Object.create(null);
+    for (const [k, v] of Object.entries(o)) {
+      const nuevo = ANTIGUOS.get(k) ?? k;
+      if (!Object.hasOwn(traducido, nuevo) || !(traducido[nuevo] >= v)) traducido[nuevo] = v;
+    }
+    return traducido;
+  }
   const sano = o => {
     const fuera = {};
-    if (!o || typeof o !== 'object') return fuera;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return fuera;
+    const propio = alNombreDeAhora(o);
     for (const [k, m] of MAXIMOS) {
-      const v = Object.hasOwn(o, k) ? o[k] : undefined;
+      const v = Object.hasOwn(propio, k) ? propio[k] : undefined;
       if (Number.isInteger(v) && v >= 0 && v <= m) fuera[k] = v;
     }
     return fuera;
@@ -138,7 +151,9 @@
   }
   // Si la lista de logros cambia, en la cuenta puede haber tramos de más: se guardan, pero no cuentan.
   const nivel = id => Math.min(almacen.marcas[id] || 0, MAXIMOS.get(id) || 0);
-  const porSubir = () => new Set([...Object.keys(almacen.subidas), ...Object.keys(almacen.bajadas)]).size;
+  // Lo que el servicio rechazó (suele ser un servicio más viejo que la página): se queda pendiente, pero no se reintenta en esta carga.
+  const retenidas = new Set();
+  const porSubir = () => new Set([...Object.keys(almacen.subidas), ...Object.keys(almacen.bajadas)].filter(k => !retenidas.has(k))).size;
   const sinSubir = () => new Set([...Object.keys(almacen.subidas), ...Object.keys(almacen.bajadas), ...Object.keys(almacen.porImportar)]).size;
 
   // ---------- pintar ----------
@@ -208,11 +223,11 @@
     const n = porSubir();
     let texto;
     if (!hayAlmacen) texto = T.sinAlmacen;
+    else if (!SERVICIO) texto = T.sinServicio;
     else if (caducada) texto = T.caducada(n);
     else if (almacen.token && servicioCaido) texto = n ? T.pendientes(n) : T.caido;
     else if (almacen.token && n) texto = T.subiendo(n);
     else if (almacen.token) texto = T.nube;
-    else if (!SERVICIO) texto = T.sinServicio;
     else if (servicioCaido) texto = T.caido;
     else texto = T.soloNavegador;
     estado.textContent = texto;
@@ -227,7 +242,8 @@
   }
 
   function pintarCuenta() {
-    const dentro = Boolean(almacen.token && cuenta);
+    // Sin servicio en la web no hay cuenta que enseñar, aunque quede una sesión guardada: se conserva para cuando vuelva.
+    const dentro = Boolean(SERVICIO && almacen.token && cuenta);
     ver('[data-dentro]', dentro);
     ver('[data-fuera]', !dentro && Boolean(SERVICIO));
     if (dentro) {
@@ -323,10 +339,12 @@
     const subidas = { ...almacen.subidas };
     try {
       const rechazados = [...await enviarLote(bajadas, 'fijar'), ...await enviarLote(subidas, 'subir')];
-      for (const [k, v] of Object.entries(bajadas)) if (almacen.bajadas[k] === v) delete almacen.bajadas[k];
-      for (const [k, v] of Object.entries(subidas)) if (almacen.subidas[k] === v) delete almacen.subidas[k];
+      const retener = new Set(rechazados.map(r => r.logro));
+      for (const [k, v] of Object.entries(bajadas)) if (almacen.bajadas[k] === v && !retener.has(k)) delete almacen.bajadas[k];
+      for (const [k, v] of Object.entries(subidas)) if (almacen.subidas[k] === v && !retener.has(k)) delete almacen.subidas[k];
+      for (const k of retener) retenidas.add(k);
       acuses++;
-      if (rechazados.length) aviso(T.rechazadas(rechazados.length));
+      if (retener.size) aviso(T.rechazadas(retener.size));
       anotarHistorial(bajadas, subidas, rechazados);
       intentos = 0;
       servicioCaido = false;

@@ -11,7 +11,8 @@ peticiones cada una; se da el rango entre todas.
 | Una sesión inventada (`GET /yo`) | 2,5–3,3 ms | 2,9–6,3 ms |
 | Una página de la copia, a mitad de tabla (1000 filas) | 5,8–8,3 ms | 7,4–9,9 ms |
 
-Tamaño de la base: 310 MB. Ninguna petición recorre la tabla entera: todas van por la clave de cada miembro.
+Tamaño de la base: 310 MB. Ninguna petición recorre una tabla entera: todas van por la clave o un índice de cada miembro
+(la prueba «limpiar los códigos de un miembro no recorre la tabla» lo vigila donde faltaba).
 
 Es tiempo en este ordenador. Publicado se suma la red, y **no mide los 10 ms de procesador por petición del plan gratuito**:
 eso solo se ve publicado (`npx wrangler tail`, error 1102).

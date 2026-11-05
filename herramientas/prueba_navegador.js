@@ -18,6 +18,25 @@ const { chromium } = require('playwright');
 const { readFileSync } = require('fs');
 // WEB: otra dirección local (p. ej. para probar una versión anterior servida en otro puerto).
 const BASE = process.env.WEB || 'http://127.0.0.1:8765/';
+// Nada de esta prueba puede salir del ordenador: la ruta de logros lleva la dirección del servicio de verdad y las
+// pruebas no deben tocarlo. Lo que intente salir se para, se anota y la prueba falla (al final).
+const SALIDAS = [];
+const LOCALES = new Set(['127.0.0.1', 'localhost', new URL(BASE).hostname]);
+const sinSalir = async ctx => {
+  await ctx.route(url => /^https?:$/.test(url.protocol) && !LOCALES.has(url.hostname), r => { SALIDAS.push(`${r.request().method()} ${r.request().url()}`); return r.abort('blockedbyclient'); });
+  return ctx;
+};
+// El freno de arriba, probado: una dirección que no existe (.invalid) tiene que quedar anotada y parada. SOLO=salidas, solo esto.
+const frenoDeSalidas = async navegador => {
+  const ctx = await navegador.newContext();
+  const p = await ctx.newPage();
+  await p.goto('https://servicio-real.invalid/salud').catch(() => {});
+  const fuera = SALIDAS.splice(0);
+  await ctx.close();
+  const bien = fuera.length === 1 && fuera[0] === 'GET https://servicio-real.invalid/salud';
+  console.log('Lo que intenta salir del ordenador se para:', bien ? 'bien' : `NO se para (${fuera.join('; ') || 'ni se anota'})`);
+  return bien ? 0 : 1;
+};
 // Las 20 páginas (mismo orden que montar_web.PAGINAS) y lo que lleva cada una. Las de cada especie se
 // añaden al empezar, desde el mapa del sitio.
 const PAGINAS = [
@@ -416,7 +435,7 @@ const efectos = async navegador => {
   // Letra del navegador al 150 %: la cabecera sigue cabiendo, con el botón del menú entero en pantalla.
   {
     const grande = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), args: ['--blink-settings=defaultFontSize=24'] });
-    const ctx = await grande.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const ctx = await sinSalir(await grande.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }));
     const p = await ctx.newPage();
     for (const r of ['', 'en/hunt/']) {
       await p.goto(BASE + r, { waitUntil: 'load' });
@@ -811,7 +830,7 @@ const ventana = async navegador => {
       const filas = new Map();
       for (const r of c) filas.set(Math.round(r.top), (filas.get(Math.round(r.top)) || []).concat(r));
       return { porFila: [...filas.values()].map(f => f.length), desiguales: [...filas.values()].filter(f => Math.max(...f.map(r => r.height)) - Math.min(...f.map(r => r.height)) > 2).length,
-        recortadas: [...document.querySelectorAll('.foto-entera img, .foto-fila img, .foto-atardecer img')].filter(i => { const b = i.parentElement.getBoundingClientRect(); return Math.abs(b.width / b.height - i.width / i.height) > .05 && i.naturalWidth && Math.abs(b.width / b.height - i.naturalWidth / i.naturalHeight) > .05; }).length };
+        recortadas: [...document.querySelectorAll('.foto-entera img, .foto-fila img, .foto-orilla img, .foto-atardecer img')].filter(i => { const b = i.parentElement.getBoundingClientRect(); return Math.abs(b.width / b.height - i.width / i.height) > .05 && i.naturalWidth && Math.abs(b.width / b.height - i.naturalWidth / i.naturalHeight) > .05; }).length };
     });
     if (Math.max(...fotos.porFila) < 3) fallos.push(`galería a 3440: como mucho ${Math.max(...fotos.porFila)} fotos por fila`);
     if (fotos.desiguales) fallos.push(`galería a 3440: ${fotos.desiguales} filas con fotos de distinto alto`);
@@ -888,10 +907,15 @@ const ventana = async navegador => {
   // fijo el modo normal, salvo en la prueba de ese modo.
   const contextoSinFijar = navegador.newContext.bind(navegador);
   navegador.newContext = async (...a) => {
-    const ctx = await contextoSinFijar(...a);
+    const ctx = await sinSalir(await contextoSinFijar(...a));
     await ctx.addInitScript(() => { window.garraModoFijo = true; });
     return ctx;
   };
+  if (process.env.SOLO === 'salidas') {
+    const n = await frenoDeSalidas(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
   if (process.env.SOLO === 'efectos') {
     const n = await efectos(navegador);
     await navegador.close();
@@ -1463,7 +1487,7 @@ const ventana = async navegador => {
   // falta el Chromium completo: el reducido para modo sin ventana (el de por defecto) no la tiene.
   {
     const conMemoria = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chromium' }), ignoreDefaultArgs: ['--disable-back-forward-cache'] });
-    const ctx = await conMemoria.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    const ctx = await sinSalir(await conMemoria.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true }));
     await ctx.addInitScript(() => addEventListener('pageshow', e => { window.__memoria = e.persisted; }));
     const p = await ctx.newPage();
     await p.goto(BASE, { waitUntil: 'load' });
@@ -2543,12 +2567,17 @@ const ventana = async navegador => {
     if (fallos.length) malos++;
     console.log(ruta('caceria/'), 'hora de cada zona:', fallos.length ? fallos.join('; ') : 'sí');
   }
+  malos += await frenoDeSalidas(navegador);
   malos += await efectos(navegador);
   malos += await ventana(navegador);
   malos += await fotosMovil(navegador);
   malos += await enlacesPuesto(navegador);
   malos += await imprimir(navegador);
   await navegador.close();
+  if (SALIDAS.length) {
+    malos++;
+    console.log('Ha intentado salir del ordenador (parado):', [...new Set(SALIDAS)].join('; '));
+  }
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);
 })();

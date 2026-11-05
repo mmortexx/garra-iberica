@@ -2,7 +2,7 @@
 // Uso: npm run medir   (tarda; la base de prueba se borra al acabar)
 // Mide en local, con el motor de Cloudflare. No mide los 10 ms de procesador del plan gratuito, que solo se ven publicado.
 import { MAXIMOS } from '../src/catalogo.js';
-import { aleatorio, arrancarDiscord, arrancarServicio, huella, USUARIOS } from './banco.mjs';
+import { aleatorio, arrancarDiscord, arrancarServicio, huella, retoDe, USUARIOS } from './banco.mjs';
 
 const MIEMBROS = Number(process.env.MIEMBROS ?? 13000);
 const PASADAS = 3;
@@ -41,23 +41,44 @@ await db.prepare("INSERT INTO miembros (discord_id, nombre, desde, ultimo_acceso
 await db.prepare('INSERT INTO sesiones (huella, discord_id, caduca) VALUES (?1, ?2, ?3)').bind(huella(admin), USUARIOS.admin.id, Date.now() + 864e5).run();
 
 const cambios = [...MAXIMOS].slice(0, 50).map(([logro, max]) => ({ logro, nivel: max }));
+// Cada caso puede preparar lo que no se mide (un código de entrada nuevo por petición) y devuelve lo que se mide.
+let alterna = 0;
 const CASOS = {
-  'GET /yo (un miembro con todo marcado)': () => s.pedir('/yo', { token }),
-  'PUT /yo/progreso (50 logros, modo fijar)': () => s.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios, modo: 'fijar' } }),
-  'GET /yo con una sesión inventada': () => s.pedir('/yo', { token: aleatorio() }),
-  'GET /admin/copia (página de 1000 filas, a mitad)': () => s.pedir(`/admin/copia?tabla=progreso&desde=${encodeURIComponent(`${quien}|allo-add|1`)}`, { token: admin }),
+  'GET /yo (un miembro con todo marcado)': { pedir: () => s.pedir('/yo', { token }) },
+  'PUT /yo/progreso (50 logros, modo fijar)': { pedir: () => s.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios, modo: 'fijar' } }) },
+  'PUT /yo/progreso (un solo tramo, teniéndolo todo)': {
+    pedir: () => s.pedir('/yo/progreso', { method: 'PUT', token, cuerpo: { cambios: [{ logro: 'allo-grow', nivel: 3 + (alterna++ % 2) }], modo: 'fijar' } }),
+  },
+  'GET /yo con una sesión inventada': { pedir: () => s.pedir('/yo', { token: aleatorio() }) },
+  'GET /auth/discord/callback (vuelta de Discord)': {
+    preparar: async () => {
+      const verificador = aleatorio();
+      const inicio = await s.pedir(`/auth/discord?reto=${retoDe(verificador)}&idioma=es`, { origen: null });
+      return { cookie: inicio.headers.get('set-cookie').split(';')[0], state: new URL(inicio.headers.get('location')).searchParams.get('state') };
+    },
+    pedir: ({ cookie, state }) => s.pedir(`/auth/discord/callback?code=${discord.darCodigo('ana')}&state=${state}`, { origen: null, cabeceras: { Cookie: cookie } }),
+  },
+  'POST /sesion (canjear el código)': {
+    preparar: async () => {
+      const { fragmento, verificador } = await s.volverDeDiscord('ana');
+      return { codigo: fragmento.get('entrada'), verificador };
+    },
+    pedir: cuerpo => s.pedir('/sesion', { method: 'POST', cuerpo }),
+  },
+  'GET /admin/copia (página de 1000 filas, a mitad)': { pedir: () => s.pedir(`/admin/copia?tabla=progreso&desde=${encodeURIComponent(`${quien}|allo-add|1`)}`, { token: admin }) },
 };
 
 const resultados = {};
-for (const [que, pedir] of Object.entries(CASOS)) {
+for (const [que, { preparar, pedir }] of Object.entries(CASOS)) {
   const medias = [];
   for (let p = 0; p < PASADAS; p++) {
     const veces = [];
     for (let i = 0; i < VECES; i++) {
+      const listo = preparar ? await preparar() : undefined;
       const t = performance.now();
-      const r = await pedir();
+      const r = await pedir(listo);
       await r.arrayBuffer();
-      if (r.status !== 200 && r.status !== 401) throw new Error(`${que}: ${r.status}`);
+      if (r.status !== 200 && r.status !== 401 && r.status !== 302) throw new Error(`${que}: ${r.status}`);
       veces.push(performance.now() - t);
     }
     veces.sort((a, b) => a - b);
