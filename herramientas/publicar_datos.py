@@ -3,7 +3,8 @@
 La tarea nocturna del ranking lo ejecuta al acabar: este PC ya tiene permiso para subir a los dos repositorios, así que no
 hace falta guardar ninguna credencial nueva en GitHub. Trabaja en una copia temporal de lo último de GitHub, nunca en la
 carpeta de trabajo, y solo sube si:
-- las cifras y las batallas pasan su validación y las cifras no retroceden de forma sospechosa (Nexus puede dar datos a medias);
+- las cifras y las batallas pasan su validación y las cifras no retroceden de forma sospechosa (Nexus puede dar datos a medias).
+  Cada dato se revisa por su cuenta: el que no pasa se queda fuera y dice por qué, sin frenar al otro;
 - al montar la web cambian solo los ficheros de esos datos (si cambia algo más, es trabajo de otra persona: no se arrastra);
 - comprobar.py da «Todo correcto», también con los apodos de herramientas/vigilar.local.txt.
 GitHub vuelve a comprobarlo todo al recibirlo, y el vigilante del Discord avisa en #mando si la portada no coincide o esas
@@ -12,7 +13,7 @@ las cifras de esta noche.
 
 Uso: python herramientas/publicar_datos.py          publica si hay algo nuevo
      python herramientas/publicar_datos.py --vista  hace todo menos el commit y la subida
-Sale con error, y diciendo por qué, si no ha podido o no ha debido publicar.
+Sale con error, y diciendo por qué, si no ha podido o no ha debido publicar algo, aunque haya publicado lo demás.
 """
 import json
 import os
@@ -78,36 +79,54 @@ def leer_batallas(ruta):
         raise NoPublico(str(e)) from None
 
 
+def cifras_nuevas():
+    """True si difieren de las de GitHub y son de fiar; NoPublico si no lo son."""
+    if not cifras.ORIGINAL.is_file():
+        return False
+    crudo = cifras.ORIGINAL.read_bytes()
+    try:
+        ahora = cifras.leer(crudo, str(cifras.ORIGINAL))
+        viejo = en_github('cifras.json')
+        antes = cifras.leer(viejo, 'cifras.json de GitHub') if viejo else None
+    except SystemExit as e:
+        raise NoPublico(str(e)) from None
+    if crudo == viejo:
+        return False
+    motivo = sospecha(antes, ahora) if antes else None
+    if motivo:
+        raise NoPublico(f'las cifras {motivo}')
+    return True
+
+
+def batallas_nuevas():
+    """True si difieren de las de GitHub y están bien escritas; NoPublico si no lo están."""
+    if not batallas_web.ORIGINAL.is_file() or batallas_web.ORIGINAL.read_bytes() == en_github('batallas.json'):
+        return False
+    leer_batallas(batallas_web.ORIGINAL)
+    return True
+
+
 def novedades():
-    """Los originales que difieren de lo que hay en GitHub, ya revisados."""
-    nuevos = []
-    if cifras.ORIGINAL.is_file():
-        crudo = cifras.ORIGINAL.read_bytes()
+    """Los datos que hay que subir y, aparte, los que se quedan fuera con su motivo: {nombre: motivo}."""
+    nuevos, retenidos = [], {}
+    for nombre, revisar in (('cifras', cifras_nuevas), ('batallas', batallas_nuevas)):
         try:
-            ahora = cifras.leer(crudo, str(cifras.ORIGINAL))
-            viejo = en_github('cifras.json')
-            antes = cifras.leer(viejo, 'cifras.json de GitHub') if viejo else None
-        except SystemExit as e:
-            raise NoPublico(str(e)) from None
-        if crudo != viejo:
-            motivo = sospecha(antes, ahora) if antes else None
-            if motivo:
-                raise NoPublico(f'las cifras {motivo}')
-            nuevos.append('cifras')
-    if batallas_web.ORIGINAL.is_file():
-        if batallas_web.ORIGINAL.read_bytes() != en_github('batallas.json'):
-            leer_batallas(batallas_web.ORIGINAL)
-            nuevos.append('batallas')
-    return nuevos
+            if revisar():
+                nuevos.append(nombre)
+        except NoPublico as e:
+            retenidos[nombre] = str(e)
+    return nuevos, retenidos
 
 
-def entorno():
-    """Igual que en GitHub, sin el resto del proyecto del Discord: solo cuentan los dos originales que se publican."""
+def entorno(retenidos=()):
+    """Igual que en GitHub, sin el resto del proyecto del Discord: solo cuentan los dos originales que se publican.
+    Sin original, montar_web.py deja la copia que ya hay: así un dato retenido no llega a la web."""
     if not APODOS.is_file() or not APODOS.read_text(encoding='utf-8').strip():
         raise NoPublico(f'falta {APODOS.name}: sin buscar apodos no se publica en una web pública')
     nada = str(REPO / 'no-existe')
     return {**os.environ, 'GITHUB_ACTIONS': 'true', 'PYTHONIOENCODING': 'utf-8', 'PYTHONDONTWRITEBYTECODE': '1',
-            'GARRA_CIFRAS': str(cifras.ORIGINAL), 'GARRA_BATALLAS': str(batallas_web.ORIGINAL),
+            'GARRA_CIFRAS': nada if 'cifras' in retenidos else str(cifras.ORIGINAL),
+            'GARRA_BATALLAS': nada if 'batallas' in retenidos else str(batallas_web.ORIGINAL),
             'GARRA_TARJETAS': str(Path(nada) / 'tarjetas.json'), 'GARRA_DISCORD': nada, 'GARRA_FICHAS': str(Path(nada) / 'fichas.json'),
             'GARRA_POSTS': str(Path(nada) / 'posts.json'), 'GARRA_FOTOS': str(Path(nada) / 'fotos.json'),
             'VIGILAR_APODOS': APODOS.read_text(encoding='utf-8')}
@@ -140,11 +159,21 @@ def limpiar_huerfanas():
 def publicar(vista=False):
     limpiar_huerfanas()
     git('fetch', '--quiet', 'origin', RAMA)
-    nuevos = novedades()
+    nuevos, retenidos = novedades()
+    motivos = ' · '.join(retenidos.values())
+    if nuevos:
+        try:
+            subir(nuevos, retenidos, vista)
+        except NoPublico as e:
+            raise NoPublico(f'{e} · {motivos}' if motivos else str(e)) from None
+    if retenidos:
+        raise NoPublico(motivos)
     if not nuevos:
         print('Ya estaba al día: no publico nada.')
-        return
-    env = entorno()
+
+
+def subir(nuevos, retenidos, vista):
+    env = entorno(retenidos)
     carpeta = tempfile.mkdtemp(prefix='garra-datos-')
     copia = str(Path(carpeta) / 'web')
     try:
