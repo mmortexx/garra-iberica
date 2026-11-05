@@ -908,6 +908,35 @@ const ventana = async navegador => {
   console.log('Ventanas grandes:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
+// Zarpazo saltado: si la transición entre páginas se salta (en modo ligero, o el navegador cuando llega otra navegación
+// encima), ni la página que se deja ni la que llega dan error. Se fuerza el salto en cada lado. SOLO=transicion.
+const transicionSaltada = async navegador => {
+  const fallos = [];
+  for (const lado of ['pageswap', 'pagereveal']) {
+    const ctx = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(ev => addEventListener(ev, e => {
+      if (!e.viewTransition) return;
+      try { sessionStorage.setItem('saltada', 'true'); } catch { /* about:blank */ }
+      e.viewTransition.skipTransition();
+    }), lado);
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(e.message));
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForTimeout(300);
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    const cargada = p.waitForEvent('load', { timeout: 5000 }).then(() => true, () => false);
+    await p.tap('.menu a[href="clan/"]');
+    if (!(await cargada)) fallos.push(`${lado}: no llega a clan/`);
+    await p.waitForTimeout(800);
+    if (!(await p.evaluate(() => sessionStorage.getItem('saltada') === 'true'))) fallos.push(`${lado}: no hubo transición que saltar, la prueba no demuestra nada`);
+    if (errores.length) fallos.push(`saltada en ${lado}: ${JSON.stringify(errores)}`);
+    await ctx.close();
+  }
+  console.log('Zarpazo saltado sin errores en la página:', fallos.length ? fallos.join('; ') : 'bien');
+  return fallos.length;
+};
 // La ruta de logros, recuadro «Ahora toca»: la sesión que te toca y qué hacer, marcar ahí o en la lista, avanzar al
 // completarla, ir de una a otra y llegar desde «Tu progreso». SOLO=ahora prueba solo esto.
 const AHORA = {
@@ -1130,6 +1159,11 @@ const ahoraToca = async navegador => {
   }
   if (process.env.SOLO === 'fotos') {
     const n = await fotosMovil(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'transicion') {
+    const n = await transicionSaltada(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2774,6 +2808,7 @@ const ahoraToca = async navegador => {
   malos += await enlacesPuesto(navegador);
   malos += await imprimir(navegador);
   malos += await ahoraToca(navegador);
+  malos += await transicionSaltada(navegador);
   await navegador.close();
   if (SALIDAS.length) {
     malos++;
