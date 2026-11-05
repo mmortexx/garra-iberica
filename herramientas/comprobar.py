@@ -951,6 +951,41 @@ def revisar_privacidad(raiz, falla):
                 falla(f'SITIOS_FUERA nombra {dominio} y ninguna página enlaza allí: quítalo también del aviso legal ({sitio})')
 
 
+ANTI_MARCO = ('X-Content-Type-Options', 'X-Frame-Options', 'Content-Security-Policy')
+
+
+def revisar_cabeceras(raiz, falla):
+    """Las cabeceras que impiden meter la web en un marco ajeno (y engañar a un miembro con sesión para pulsar «Borrar mis
+    datos») no funcionan desde <meta>: solo las pone docs/_headers, en el bloque /*. Si se pierde o se rompe, nada más avisa."""
+    fichero = raiz / '_headers'
+    if not fichero.is_file():
+        falla('_headers: no existe, y sin él la web se puede meter en un marco ajeno (frame-ancestors, X-Frame-Options)')
+        return
+    cabeceras = {}
+    ruta = None
+    for linea in fichero.read_text(encoding='utf-8').splitlines():
+        if not linea.strip() or linea.lstrip().startswith('#'):
+            continue
+        if linea == linea.lstrip():
+            ruta = linea.strip()
+            continue
+        nombre, _, valor = linea.strip().partition(':')
+        nombre = nombre.strip()
+        if nombre.startswith('!'):
+            quitada = nombre[1:].strip()
+            if quitada.casefold() in map(str.casefold, ANTI_MARCO):
+                falla(f'_headers: el bloque {ruta} quita la cabecera {quitada}')
+        else:
+            cabeceras.setdefault((ruta, nombre.casefold()), []).append(valor.strip())
+    for nombre, esperado in (('X-Content-Type-Options', 'nosniff'), ('X-Frame-Options', 'DENY')):
+        valores = cabeceras.get(('/*', nombre.casefold()), [])
+        if not valores or any(v.casefold() != esperado.casefold() for v in valores):
+            falla(f'_headers: el bloque /* debe llevar «{nombre}: {esperado}» y lleva {valores or "nada"}')
+    politicas = [[p.split() for p in v.split(';')] for v in cabeceras.get(('/*', 'content-security-policy'), [])]
+    if not any(p[:2] == ['frame-ancestors', "'none'"] and len(p) == 2 for v in politicas for p in v):
+        falla("_headers: el bloque /* debe llevar «Content-Security-Policy» con «frame-ancestors 'none'»")
+
+
 def revisar_cuentas(raiz, base, falla, servicio=SERVICIO_CUENTAS):
     """La web y el servicio de cuentas tienen que apuntarse el uno al otro: si no, entrar falla ya publicado, sin que
     nada avise. Y solo la ruta de logros puede hablar con el servicio."""
@@ -1265,6 +1300,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_borradores(raiz, falla)
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
+    revisar_cabeceras(raiz, falla)
     revisar_cuentas(raiz, guia_dinos.base_web(raiz), falla)
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)

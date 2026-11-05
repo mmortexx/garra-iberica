@@ -239,6 +239,67 @@ def la_frase_de_los_jefes_dos_veces():
     assert sum('sale 2 veces' in m for m in mensajes) == 2, f'repetir la frase de los jefes pasa en alguna de las dos páginas: {mensajes}'
 
 
+CABECERAS = ('X-Content-Type-Options: nosniff', 'X-Frame-Options: DENY', "Content-Security-Policy: frame-ancestors 'none'")
+
+
+def mensajes_de_cabeceras(nuevas):
+    """Ejecuta comprobar.main sobre una copia de docs/ cuyo _headers lo decide nuevas(texto): None lo borra, un texto lo
+    sustituye. Los ficheros de la copia son enlaces duros: se sustituyen, no se editan."""
+    with tempfile.TemporaryDirectory() as d:
+        web = Path(d) / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        fichero = web / '_headers'
+        texto = fichero.read_text(encoding='utf-8')
+        fichero.unlink()
+        resultado = nuevas(texto)
+        if resultado is not None:
+            fichero.write_text(resultado, encoding='utf-8')
+        return [m for m in comprobar.main(web, sin_apodos=True, avisa=lambda _: None) if '_headers' in m]
+
+
+def sin_la_linea(texto, linea):
+    lineas = texto.splitlines()
+    assert lineas.count(f'  {linea}') == 1, f'docs/_headers ya no lleva «{linea}» una sola vez'
+    lineas.remove(f'  {linea}')
+    return '\n'.join(lineas) + '\n'
+
+
+def cabeceras_reales_pasan():
+    mensajes = mensajes_de_cabeceras(lambda texto: texto)
+    assert not mensajes, mensajes
+
+
+def sin_el_fichero_de_cabeceras():
+    mensajes = mensajes_de_cabeceras(lambda texto: None)
+    assert mensajes, 'sin docs/_headers pasa'
+
+
+def sin_una_cabecera(linea):
+    def f():
+        mensajes = mensajes_de_cabeceras(lambda texto: sin_la_linea(texto, linea))
+        assert any(linea.split(':')[0] in m for m in mensajes), f'sin «{linea}» pasa: {mensajes}'
+    return f
+
+
+def cabecera_en_otro_bloque(linea):
+    def f():
+        mensajes = mensajes_de_cabeceras(lambda texto: sin_la_linea(texto, linea).rstrip('\n') + f'\n/otra/*\n  {linea}\n')
+        assert any(linea.split(':')[0] in m for m in mensajes), f'«{linea}» solo en /otra/* pasa: {mensajes}'
+    return f
+
+
+def cabecera_con_otro_valor(nombre, antes, despues):
+    def f():
+        mensajes = mensajes_de_cabeceras(lambda texto: texto.replace(antes, despues, 1))
+        assert any(nombre in m for m in mensajes), f'«{despues}» en vez de «{antes}» pasa: {mensajes}'
+    return f
+
+
+def cabecera_quitada_por_otro_bloque():
+    mensajes = mensajes_de_cabeceras(lambda texto: texto.rstrip('\n') + '\n/ruta/*\n  ! X-Frame-Options\n')
+    assert any('X-Frame-Options' in m for m in mensajes), f'quitar X-Frame-Options en /ruta/* pasa: {mensajes}'
+
+
 prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
 prueba('el aviso legal con cuentas nombra a los tres jefes y pasa', jefes_en_el_aviso_legal)
 prueba('un cuarto nombre en el aviso legal falla', un_nombre_mas_en_el_aviso_legal)
@@ -258,6 +319,14 @@ prueba('sin la lista de mutaciones en inglés', sin_seccion_de_mutaciones)
 prueba('la tira toma el texto de la foto de la galería', tira_con_foto_de_la_galeria)
 prueba('la tira con una foto que no está en la galería', tira_con_foto_de_fuera)
 prueba('la prueba de la cacería cuenta sus fallos y sale en rojo', caceria_con_fallos)
+prueba('docs/_headers real: lleva las tres cabeceras en /*', cabeceras_reales_pasan)
+prueba('sin docs/_headers', sin_el_fichero_de_cabeceras)
+for linea in CABECERAS:
+    prueba(f'docs/_headers sin «{linea.split(":")[0]}»', sin_una_cabecera(linea))
+    prueba(f'docs/_headers con «{linea.split(":")[0]}» solo en otro bloque', cabecera_en_otro_bloque(linea))
+prueba('docs/_headers con frame-ancestors distinto de none', cabecera_con_otro_valor('frame-ancestors', "frame-ancestors 'none'", "frame-ancestors 'self'"))
+prueba('docs/_headers con X-Frame-Options distinto de DENY', cabecera_con_otro_valor('X-Frame-Options', 'X-Frame-Options: DENY', 'X-Frame-Options: SAMEORIGIN'))
+prueba('docs/_headers con X-Frame-Options quitada por otro bloque', cabecera_quitada_por_otro_bloque)
 
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)
