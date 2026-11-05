@@ -4,6 +4,7 @@ un ID o un apodo en fichas_dinos.json, mutaciones sin traducir y una foto de la 
 Uso: python herramientas/prueba_comprobar.py
 """
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -13,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import comprobar  # noqa: E402
 import guia_dinos  # noqa: E402
+import logros_web  # noqa: E402
 import montar_web  # noqa: E402
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -156,7 +158,78 @@ def tira_con_foto_de_fuera():
     assert 'galeria-no-existe' in mensaje and 'galeria.html' in mensaje, f'debía parar nombrando la foto y la galería; dice «{mensaje}»'
 
 
+SERVICIO_FALSO = 'https://servicio-de-prueba.example.workers.dev'
+VIGILADOS = (*comprobar.JEFES, APODO_FALSO)
+
+
+def con_cuentas(cambiar, hacer):
+    """Ejecuta hacer(web) con una copia de docs/ montada con el servicio de cuentas encendido (el aviso legal ya nombra a
+    quién escribir) y vigilando a los tres jefes. Los ficheros de la copia son enlaces duros: se sustituyen, no se editan."""
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        (d / 'cuentas.json').write_text(json.dumps({'servicio': SERVICIO_FALSO}), encoding='utf-8')
+        (d / 'vigilar.txt').write_text('\n'.join(VIGILADOS) + '\n', encoding='utf-8')
+        web = d / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        reales = logros_web.CUENTAS, comprobar.VIGILAR
+        logros_web.CUENTAS, comprobar.VIGILAR = d / 'cuentas.json', d / 'vigilar.txt'
+        try:
+            for nombre, texto in montar_web.montar(web).items():
+                (web / nombre).unlink(missing_ok=True)
+                (web / nombre).write_bytes(texto.encode('utf-8'))
+            cambiar(web)
+            return hacer(web)
+        finally:
+            logros_web.CUENTAS, comprobar.VIGILAR = reales
+
+
+def cambiando_legal(antes, despues):
+    def cambiar(web):
+        for lang in montar_web.LANGS:
+            fichero = web / montar_web.RUTA['legal', lang] / 'index.html'
+            texto = fichero.read_text(encoding='utf-8')
+            nuevo = texto.replace(*(antes[lang], despues[lang]))
+            assert nuevo != texto, f'{fichero}: no dice «{antes[lang]}»'
+            fichero.unlink()
+            fichero.write_text(nuevo, encoding='utf-8')
+    return cambiar
+
+
+def mensajes_de_legal(cambiar):
+    return con_cuentas(cambiar, lambda web: [m for m in comprobar.main(web, avisa=lambda _: None) if 'legal' in m])
+
+
+def jefes_en_el_aviso_legal():
+    mensajes = mensajes_de_legal(lambda web: None)
+    assert not mensajes, f'el aviso legal con cuentas no pasa: {mensajes}'
+
+
+def un_nombre_mas_en_el_aviso_legal():
+    sitios = {'es': 'Imaginary, Quilez o Ray', 'en': 'Imaginary, Quilez or Ray'}
+    con_uno_mas = {'es': f'Imaginary, Quilez, Ray o {APODO_FALSO}', 'en': f'Imaginary, Quilez, Ray or {APODO_FALSO}'}
+    mensajes = mensajes_de_legal(cambiando_legal(sitios, con_uno_mas))
+    assert sum(APODO_FALSO in m for m in mensajes) >= 2, f'un cuarto nombre pasa en alguna de las dos páginas: {mensajes}'
+
+
+def los_jefes_en_otro_sitio_del_aviso_legal():
+    sitios = {'es': 'Menores.</b>', 'en': 'Minors.</b>'}
+    con_jefe = {'es': 'Menores.</b> Quilez', 'en': 'Minors.</b> Quilez'}
+    mensajes = mensajes_de_legal(cambiando_legal(sitios, con_jefe))
+    assert sum('Quilez' in m for m in mensajes) >= 2, f'un jefe suelto en otro párrafo pasa en alguna de las dos páginas: {mensajes}'
+
+
+def la_frase_de_los_jefes_dos_veces():
+    sitios = {'es': 'Menores.</b>', 'en': 'Minors.</b>'}
+    repetida = {'es': 'Menores.</b> Escribe a Imaginary, Quilez o Ray.', 'en': 'Minors.</b> Write to Imaginary, Quilez or Ray.'}
+    mensajes = mensajes_de_legal(cambiando_legal(sitios, repetida))
+    assert sum('sale 2 veces' in m for m in mensajes) == 2, f'repetir la frase de los jefes pasa en alguna de las dos páginas: {mensajes}'
+
+
 prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
+prueba('el aviso legal con cuentas nombra a los tres jefes y pasa', jefes_en_el_aviso_legal)
+prueba('un cuarto nombre en el aviso legal falla', un_nombre_mas_en_el_aviso_legal)
+prueba('los jefes en otro párrafo del aviso legal fallan', los_jefes_en_otro_sitio_del_aviso_legal)
+prueba('la frase de los jefes repetida en el aviso legal falla', la_frase_de_los_jefes_dos_veces)
 for palabra in GUARDAN:
     prueba(f'un script suelto en la raíz con {palabra}', script_de_mas(palabra, ''))
 prueba('un script suelto en una subcarpeta', script_de_mas('localStorage', f'{uuid.uuid4().hex}/{uuid.uuid4().hex}'))
