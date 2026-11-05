@@ -895,6 +895,33 @@ describe('lo que promete el aviso legal', () => {
   });
 });
 
+// El repositorio es público y el README manda crear en servicio/ ficheros con datos personales de los miembros.
+describe('datos personales fuera del repositorio', () => {
+  const RAIZ = join(SERVICIO, '..');
+  const git = (...args) => spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' });
+  const ignorado = nombre => git('check-ignore', '--no-index', '-q', '--', `servicio/${nombre}`).status === 0;
+  const versionado = nombre => git('ls-files', '--', `servicio/${nombre}`).stdout.trim() !== '';
+
+  test('lo que el README manda crear en servicio/ no se sube', () => {
+    const readme = readFileSync(join(SERVICIO, 'README.md'), 'utf8');
+    const nombres = [...new Set([...readme.matchAll(/(?<![\w./-])([\w.-]+\.(?:sql|json))\b/g)].map(m => m[1]))].filter(n => !versionado(n));
+    for (const esperado of ['restaurar.sql', 'datos.json', 'copia.sql']) assert.ok(nombres.includes(esperado), `el README ya no menciona ${esperado}: ¿cambió el procedimiento?`);
+    for (const n of nombres) assert.ok(ignorado(n), `servicio/${n} lo crea el README con datos personales y git no lo ignora`);
+  });
+
+  test('las variantes razonables tampoco se suben', () => {
+    for (const n of ['copia.json', 'copia-2026-11-05.sql', 'copia 2.sql', 'datos-100000000000000001.json', 'restaurar-ana.sql', 'garra-copia.json', 'borrados.local.txt']) {
+      assert.ok(ignorado(n), `servicio/${n} se subiría`);
+    }
+  });
+
+  test('y lo que sí es del repositorio no queda ignorado', () => {
+    const ignorados = git('ls-files', '-ci', '--exclude-standard').stdout.trim();
+    assert.equal(ignorados, '', 'ficheros versionados que ahora git ignora');
+    for (const n of ['package.json', 'package-lock.json', 'wrangler.toml', 'migraciones/0001_inicial.sql']) assert.ok(!ignorado(n), `servicio/${n} es del repositorio`);
+  });
+});
+
 describe('datos de un miembro a petición', () => {
   const [ana, bea] = [USUARIOS.ana.id, USUARIOS.bea.id];
   const copia = async () => ({

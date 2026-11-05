@@ -6,3 +6,8 @@ node_modules/
 .dev.vars
 servicio/src/__mutante.js
 servicio/src/__mutante_progreso.js
+# servicio/: lo que el README manda crear con datos de miembros (copias, exportaciones, restauraciones)
+servicio/*.sql
+servicio/*.json
+!servicio/package.json
+!servicio/package-lock.json
