@@ -37,6 +37,8 @@ jobs:
         run: python herramientas/prueba_publicar.py
       - name: Prueba de los borradores
         run: python herramientas/prueba_borradores.py
+      - name: Prueba de lo que debe parar la comprobación
+        run: python herramientas/prueba_comprobar.py
       - name: Prueba de la ruta de logros
         run: python herramientas/prueba_logros.py
       - name: Instalar Playwright y Chromium

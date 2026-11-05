@@ -319,7 +319,12 @@ def textos_tira(cuerpo, lang):
     """La tira de fotos de la portada se describe con los textos de la galería, sin repetirlos en la página."""
     galeria = (FUENTES / lang / 'galeria.html').read_text(encoding='utf-8')
     textos = dict(re.findall(r'class="foto-ampliar" href="@/img/(galeria-[a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', galeria))
-    return re.sub(r'(<li><img src="@/img/(galeria-[a-z-]+)-\d+\.webp"[^>]*? alt=")(")', lambda m: m[1] + textos[m[2]] + m[3], cuerpo)
+
+    def con_texto(m):
+        if m[2] not in textos:
+            sys.exit(f'{lang}/inicio.html: la foto {m[2]} de la tira no está en {lang}/galeria.html, de donde sale su texto')
+        return m[1] + textos[m[2]] + m[3]
+    return re.sub(r'(<li><img src="@/img/(galeria-[a-z-]+)-\d+\.webp"[^>]*? alt=")(")', con_texto, cuerpo)
 
 
 def fotos_galeria(cuerpo, url):

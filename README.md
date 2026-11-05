@@ -44,6 +44,7 @@ python herramientas/prueba_galeria.py
 python herramientas/prueba_cifras.py
 python herramientas/prueba_batallas.py
 python herramientas/prueba_borradores.py
+python herramientas/prueba_comprobar.py
 ```
 
 - `montar_web.py` genera las 20 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
@@ -127,7 +128,8 @@ python herramientas/prueba_borradores.py
   `docs/video/batalla-<clave>.mp4`, más una versión ligera para móviles (`-movil.mp4`, un tercio del
   peso, la que se reproduce en pantallas de hasta 700 px), con su portada en `docs/img/`. La lista de El clan pone el
   vídeo a cada batalla que lo tiene. Se oyen tal cual (con la voz, si la hay), a propósito.
-  Para una batalla nueva: añadir su línea a `VIDEOS`, ejecutar el script y montar.
+  Para una batalla nueva: añadir su línea a `VIDEOS`, ejecutar el script, apuntar en `batallas_web.py` su fecha de
+  publicación (`VIDEOS_PUBLICADOS`) y su duración (`DURACION_VIDEOS`), que no se pueden deducir al montar, y montar.
 - Las secciones que antes estaban en la portada tienen ahora su página; `montar_web.MOVIDAS` dice a
   dónde lleva cada enlace viejo (`/#normas` → `normas/`) y `comprobar.py` vigila que el destino
   exista.
@@ -158,8 +160,10 @@ python herramientas/prueba_borradores.py
   (`{{alfas}}` en la página, en orden alfabético y con el mismo estilo). Son la única excepción a
   los apodos vigilados: solo esos tres (`JEFES` en `comprobar.py`), solo dentro de ese fragmento y
   de esa cita, y el comprobador falla si la tarjeta cambia de jefes o si un apodo sale en otro sitio.
-  Vigila también lo que promete el aviso legal: ningún script guarda nada en el navegador, ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
+  Vigila también lo que promete el aviso legal: ningún `.js` de la web guarda nada en el navegador (salvo `ruta.js`, la ruta de logros, en `localStorage`), ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
+- `prueba_comprobar.py` prueba que se paren un script de más que guarde algo en el navegador, un ID o un apodo en
+  `fichas_dinos.json`, una mutación sin traducir y una foto de la tira de la portada que no está en la galería.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_navegador.js` (opcional, necesita Playwright y axe-core y la web servida en local) abre las 18
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
@@ -190,12 +194,14 @@ python herramientas/prueba_borradores.py
   1440 px, letra y ancho no se mueven. La letra y el ancho salen de `html` y `--ancho` en `estilos.css`.
   Scroll con ratón (`SOLO=scroll` prueba solo esto): mientras se desplaza, lo que pasa bajo el ratón quieto no
   se enciende ni se apaga; al parar, al moverlo o con un botón pulsado responde como siempre.
-  Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las de la galería a lo ancho no piden más de 1200 px, ninguna se
+  Fotos en móviles de alta densidad (`SOLO=fotos` prueba solo esto): las cabeceras interiores en un móvil 3x bajan su variante más pequeña, las de la galería a lo ancho bajan la de 600 px en densidad 2 hasta 400 px, y no piden más de 1200 px; ninguna se
   amplía más de 1,26× (las medias baldosas apaisadas, hasta 1,34×: se ve igual y pesan la mitad), las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
   Cifras y podio de la portada, con su formato de miles y su redondeo (`SOLO=cifras` prueba solo esto).
   «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
 
-GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada push y pull request.
+  Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra.
+
+GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta todas estas comprobaciones en cada push y pull request.
 
 Las cifras de la portada y las batallas no se montan a mano: `herramientas/publicar_datos.py` las trae del proyecto del
 Discord, monta en una copia temporal de lo último de GitHub, pasa `comprobar.py` y sube. Lo lanza la tarea nocturna del
@@ -275,6 +281,8 @@ hay que dar de alta la dirección nueva y enviar allí el mapa.
 resto, y al final va el nombre del clan), descripciones de 70 a 155, encabezados sin números pegados ni
 enlaces dentro y, en el texto que se lee, las palabras con las que se busca un clan (`BUSQUEDAS`). Cada
 vídeo de batalla nuevo necesita su fecha de publicación en `batallas_web.VIDEOS_PUBLICADOS`.
+
+La Cacería no lleva marcado `Event`: se probó y se retiró (commit 3984c39), porque Google excluye los eventos sin parte física.
 
 Después de publicar un cambio de contenido, `python herramientas/indexnow.py` avisa a Bing (y a
 DuckDuckGo, Yahoo, Ecosia, Yandex y demás buscadores de IndexNow) para que vuelvan a pasar. Usa la

@@ -913,8 +913,9 @@ def revisar_estilos(raiz, falla):
 def revisar_privacidad(raiz, falla):
     """El aviso legal promete que la web no guarda ni pide nada, salvo la ruta de logros si la usas, y nombra a dónde
     llevan sus enlaces: si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
-    for nombre in sorted(set(VERSIONADOS) - {'estilos.css'}):
-        for guarda in re.finditer(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', leer(raiz, nombre), re.I):
+    for fichero in sorted(raiz.rglob('*.js')):
+        nombre = fichero.relative_to(raiz).as_posix()
+        for guarda in re.finditer(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', fichero.read_text(encoding='utf-8'), re.I):
             if (nombre, guarda.group(0)) != ('ruta.js', 'localStorage'):
                 falla(f'{nombre} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador, salvo la ruta de logros en localStorage')
     for nombre, (pagina, _) in PAGINAS.items():
@@ -1079,13 +1080,13 @@ def revisar_galeria(raiz, falla, avisa):
     for lang, ruta in (('es', 'galeria/'), ('en', 'en/gallery/')):
         fotos = re.findall(r'<li id="([^"]*)" class="foto[^"]*"><a class="foto-ampliar" href="[^"]*?img/([a-z-]+)-ampliada-\d+\.webp"[^>]*><img [^>]*? alt="([^"]+)"', leer(raiz, ruta + 'index.html'))
         anclas[lang] = [i for i, _, _ in fotos]
-        # A lo ancho en un móvil 3x bastan 1000 px: sin este primer tramo piden 1500 (el doble de peso) sin que se note.
+        # A lo ancho en un móvil 3x bastan 1000 px y en uno 2x de hasta 400 px, 600: sin estos tramos piden 1500 y 1000 (el doble de peso) sin que se note.
         anchas = re.findall(r'sizes="([^"]*calc\(100vw - 32px\))"', leer(raiz, ruta + 'index.html'))
         medias = [n for n, (_, _, a) in preparar_galeria.FOTOS.items() if max(a) == 800]
         if len(anchas) != len(preparar_galeria.FOTOS) - len(medias):
             falla(f'{ruta}: {len(anchas)} fotos a lo ancho con su «sizes», y son {len(preparar_galeria.FOTOS) - len(medias)}')
         for sizes in anchas:
-            if not sizes.startswith('(max-width: 450px) 330px, '):
+            if not sizes.startswith('(max-width: 400px) 300px, (max-width: 450px) 330px, '):
                 falla(f'{ruta}: una foto a lo ancho sin el tramo de móvil en «sizes»: {sizes}')
         # Un ancho generado que la página no ofrece no sirve de nada: el móvil bajaría el siguiente, más pesado.
         # Los de 400 px pueden faltar: algunas fotos solo los tienen para la tira de la portada.
@@ -1377,7 +1378,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
     # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
+    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, guia_dinos.FICHAS, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')

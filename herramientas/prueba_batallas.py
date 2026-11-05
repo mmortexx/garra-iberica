@@ -1,5 +1,6 @@
-"""Prueba de batallas_web.py: la fecha y la nota de cada batalla salen en la lista de El clan cuando existen, en el
-idioma de la página, y no salen cuando no existen; el fichero con una fecha o una nota mal puesta se rechaza.
+"""Prueba de batallas_web.py: el recuento de ganadas y los rótulos de cada resultado en la tira de la portada y en la
+lista de El clan, también en curso y sin ninguna batalla; la fecha y la nota de cada batalla salen cuando existen, en
+el idioma de la página, y no salen cuando no existen; el fichero con una fecha o una nota mal puesta se rechaza.
 
 Uso: python herramientas/prueba_batallas.py
 """
@@ -92,6 +93,81 @@ def videos_en_el_orden_de_la_lista():
     assert urls == ['https://x/video/batalla-delta-1.mp4', 'https://x/video/batalla-smoke-1.mp4'], urls
 
 
+VICTORIA = {**BASE, 'clave': 'v-1', 'rival': 'Vencidos', 'nosotros': 6, 'ellos': 3}
+DERROTA = {**BASE, 'clave': 'd-1', 'rival': 'Duros', 'nosotros': 6, 'ellos': 3, 'resultado': 'derrota'}
+EMPATE = {**BASE, 'clave': 'e-1', 'rival': 'Iguales', 'nosotros': 4, 'ellos': 4, 'resultado': 'empate'}
+EN_CURSO = {**BASE, 'clave': 'c-1', 'rival': 'Pendientes', 'resultado': None}
+
+
+def cuenta_solo_las_ganadas():
+    filas = b.filas('es', 'clan/', cargadas(VICTORIA, DERROTA, EMPATE, EN_CURSO))
+    assert '<b>1 de 3</b><span>batallas ganadas</span>' in filas[0], filas[0]
+    filas = b.filas('en', 'clan/', cargadas(VICTORIA, DERROTA, EMPATE, EN_CURSO))
+    assert '<b>1 of 3</b><span>battles won</span>' in filas[0], filas[0]
+
+
+def ninguna_ganada():
+    filas = b.filas('es', 'clan/', cargadas(DERROTA, EMPATE))
+    assert '<b>0 de 2</b><span>batallas ganadas</span>' in filas[0], filas[0]
+
+
+def en_singular():
+    es, en = b.filas('es', 'clan/', cargadas(VICTORIA))[0], b.filas('en', 'clan/', cargadas(DERROTA))[0]
+    assert '<b>1 de 1</b><span>batalla ganada</span>' in es, es
+    assert '<b>0 of 1</b><span>battle won</span>' in en, en
+
+
+def solo_en_curso_no_cuenta():
+    filas = b.filas('es', 'clan/', cargadas(EN_CURSO))
+    assert not any(' de ' in f.split('<span>')[0] for f in filas), f'sin batallas terminadas no hay recuento: {filas}'
+    assert any('En curso contra Pendientes' in f for f in filas), filas
+
+
+def lista_vacia():
+    for lang in ('es', 'en'):
+        assert b.filas(lang, 'clan/', []) == [], 'la tira, vacía'
+        assert '<li' not in b.lista(lang, []) and '<ol' in b.lista(lang, []), 'la lista, sin filas'
+
+
+def rotulos(batalla, es, en, resultado_es, resultado_en, clase):
+    def f():
+        lista = cargadas(batalla)
+        assert any(f'<span>{es}</span>' in x for x in b.filas('es', 'clan/', lista)), b.filas('es', 'clan/', lista)
+        assert any(f'<span>{en}</span>' in x for x in b.filas('en', 'clan/', lista)), b.filas('en', 'clan/', lista)
+        assert f'class="batalla-resultado {clase}">{resultado_es}<' in b.lista('es', lista), b.lista('es', lista)
+        assert f'class="batalla-resultado {clase}">{resultado_en}<' in b.lista('en', lista), b.lista('en', lista)
+    return f
+
+
+def inferioridad_solo_terminada():
+    inferior = {'nosotros': 3, 'ellos': 6}
+    assert b.frase({**DERROTA, **inferior}, 'es') == 'Derrota ante Duros, en inferioridad'
+    assert b.frase({**DERROTA, **inferior}, 'en') == 'Defeat against Duros, outnumbered'
+    assert 'inferioridad' not in b.frase({**EN_CURSO, **inferior}, 'es'), 'una batalla en curso aún no se califica'
+    assert 'inferioridad' not in b.frase(DERROTA, 'es'), 'con más jugadores que el rival no hay inferioridad'
+
+
+def portada_solo_las_ultimas():
+    varias = [{**VICTORIA, 'clave': f'v-{n}', 'rival': f'Rival{n}'} for n in range(b.EN_PORTADA + 1)]
+    filas = b.filas('es', 'clan/', cargadas(*varias))
+    texto = ' '.join(filas)
+    assert f'<b>{len(varias)} de {len(varias)}</b>' in filas[0], 'el recuento es de todas, no de las que salen'
+    assert 'Rival0' not in texto, 'la más vieja no sale en la portada'
+    assert texto.index(f'Rival{b.EN_PORTADA}') < texto.index('Rival1'), 'la última, primero'
+    assert 'href="@/clan/#batallas"' in filas[-1], filas[-1]
+
+
+prueba('cuenta solo las ganadas, de las terminadas', cuenta_solo_las_ganadas)
+prueba('ninguna ganada', ninguna_ganada)
+prueba('el recuento de una sola, en singular', en_singular)
+prueba('solo en curso: sin recuento', solo_en_curso_no_cuenta)
+prueba('sin batallas: tira y lista vacías', lista_vacia)
+prueba('rótulos de una victoria', rotulos(VICTORIA, 'Victoria ante Vencidos', 'Victory over Vencidos', 'Victoria', 'Victory', 'batalla-victoria'))
+prueba('rótulos de una derrota', rotulos(DERROTA, 'Derrota ante Duros', 'Defeat against Duros', 'Derrota', 'Defeat', 'batalla-derrota'))
+prueba('rótulos de un empate', rotulos(EMPATE, 'Empate con Iguales', 'Draw with Iguales', 'Empate', 'Draw', 'batalla-empate'))
+prueba('rótulos de una en curso', rotulos(EN_CURSO, 'En curso contra Pendientes', 'In progress against Pendientes', 'En curso', 'In progress', 'batalla-curso'))
+prueba('«en inferioridad» solo si terminó y eran menos', inferioridad_solo_terminada)
+prueba('la portada lleva las últimas y el recuento de todas', portada_solo_las_ultimas)
 prueba('la fecha y la nota salen en su idioma, con la nota escapada', con_fecha_y_nota)
 prueba('los vídeos declarados van en el orden de la lista', videos_en_el_orden_de_la_lista)
 prueba('el día de un solo dígito sale sin cero', fecha_de_un_digito)

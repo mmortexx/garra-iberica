@@ -4,9 +4,10 @@ La fuente es batallas/batallas.json del proyecto del Discord (el mismo que publi
 #batallas). GitHub no ve ese proyecto, así que la web lee una copia exacta, herramientas/batallas.json:
 montar_web.py la pone al día sola cada vez que encuentra el original (variable GARRA_BATALLAS o
 ~/Documents/Cosas/garra-iberica/batallas/batallas.json), y comprobar.py falla si la copia y el original
-difieren. Una batalla nueva se apunta solo en el Discord; aquí no se escribe nada a mano.
+difieren. Una batalla nueva se apunta solo en el Discord: sus datos no se escriben aquí a mano.
 El vídeo de cada batalla (si lo hay) lo genera preparar_videos.py en docs/video/batalla-<clave>.mp4,
-con su portada en docs/img/batalla-<clave>.webp; la lista lo pone solo si el fichero existe.
+con su portada en docs/img/batalla-<clave>.webp; la lista lo pone solo si el fichero existe. Lo único que
+se escribe aquí a mano es lo de cada vídeo nuevo: VIDEOS_PUBLICADOS y DURACION_VIDEOS, más abajo.
 """
 import datetime
 import json

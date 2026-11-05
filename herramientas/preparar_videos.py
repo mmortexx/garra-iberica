@@ -80,6 +80,7 @@ def main():
         if not origen.is_file():
             sys.exit(f'{clave}: no encuentro {origen}')
         preparar(clave, origen, VIDEOS[clave][1])
+    print('Si es un vídeo nuevo, apunta en batallas_web.py su fecha de publicación (VIDEOS_PUBLICADOS) y su duración (DURACION_VIDEOS), y monta la web.')
 
 
 if __name__ == '__main__':
