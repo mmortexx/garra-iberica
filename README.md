@@ -146,7 +146,15 @@ python herramientas/prueba_comprobar.py
   fuentes sin hinting (con él, en pantallas normales la «i» y la «j» pierden el punto) y
   que no se cuele ningún dato de miembros ni ID de Discord. Los apodos a vigilar se leen de
   `herramientas/vigilar.local.txt`, uno por línea; ese fichero no se sube a GitHub. Sin él, el
-  comprobador se niega a dar el visto bueno.
+  comprobador se niega a dar el visto bueno. En este PC suma los nombres de la manada de
+  `perfiles.json` del proyecto del Discord (se cambia la ruta con la variable `GARRA_PERFILES`; los
+  tres jefes no cuentan, y los nombres de menos de tres letras o solo símbolos se ignoran y se
+  cuentan en un aviso). Busca en la web y en todos los ficheros de texto versionados del repositorio
+  (`paginas/`, `servicio/`, `herramientas/`, este README…); en lo que no es la web, los IDs de Discord
+  y los tres jefes no se miran. También exige que `docs/_headers` lleve en el bloque `/*`
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` y `Content-Security-Policy` con
+  `frame-ancestors 'none'`: desde `<meta>` no funcionan y, sin ellas, otra web podría meter la
+  nuestra en un marco invisible.
   También exige que la web diga lo mismo que `herramientas/datos_clan.json`: los plazos de ascenso
   y la franja horaria de la Cacería en Latinoamérica (calculada con las zonas horarias de cada país
   para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni más
