@@ -1026,7 +1026,20 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .ver-subir .subir { opacity: 1; visibility: visible; translate: none; transition: opacity .3s, translate .35s var(--suave-salida), visibility 0s, border-color .25s, color .25s; }
 .subir:hover { border-color: var(--ascua); color: var(--ascua-viva); }
 @supports (backdrop-filter: blur(1px)) { .subir { background: rgba(12, 12, 12, .5); backdrop-filter: var(--cristal-desenfoque); } }
-@media print { .subir { display: none; } }
+/* Al imprimir nadie ha recorrido la página: sin esto faltan secciones enteras y los títulos con la letra
+   recortada sobre el fondo salen huecos. Rojo, porque se lee igual con los fondos impresos y sin ellos. */
+@media print {
+  .subir, .barra, .ascuas, .bruma, .niebla { display: none; }
+  *, *::before, *::after { animation: none !important; transition: none !important; text-shadow: none !important; }
+  .revelar, .revelar :is(h2, img, li, b, i, div), .entra, .h1-sub, img.por-llegar {
+    opacity: 1 !important; visibility: visible !important; translate: none !important; scale: none !important; rotate: none !important; clip-path: none !important;
+  }
+  .hex-brillo { stroke-dashoffset: 0 !important; }
+  .h1-marca, .cifras b {
+    background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
+    color: var(--ascua) !important; filter: none !important; clip-path: none !important;
+  }
+}
 
 /* Cifras del clan, bajo la portada */
 .cifras { list-style: none; max-width: calc(var(--ancho) + 32px); margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.6rem 1rem; }

@@ -521,7 +521,7 @@ const cifrasPortada = async (navegador, ESPECIES) => {
 };
 const fotosMovil = async navegador => {
   const fallos = [];
-  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [440, 3], [480, 3], [390, 2]]) {
+  for (const r of ['galeria/', 'en/gallery/']) for (const [w, d] of [[360, 3], [390, 3], [430, 3], [440, 3], [480, 3], [360, 2], [390, 2], [400, 2], [410, 2]]) {
     const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: d, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
@@ -530,7 +530,7 @@ const fotosMovil = async navegador => {
     await p.waitForFunction(() => [...document.querySelectorAll('.foto img')].every(i => i.complete && i.naturalWidth), null, { timeout: 15000 }).catch(() => {});
     const fotos = await p.evaluate(() => [...document.querySelectorAll('.foto img')].map(i => {
       const real = parseInt(i.srcset.split(',').map(s => s.trim().split(/\s+/)).find(([u]) => new URL(u, location).href === i.currentSrc)?.[1]);
-      return { f: i.currentSrc.split('/').pop(), real, ancha: i.clientWidth > innerWidth * .7,
+      return { f: i.currentSrc.split('/').pop(), real, ancha: i.clientWidth > innerWidth * .7, con600: /\s600w/.test(i.srcset),
         amplia: Math.max(i.clientWidth / real, i.clientHeight / (real * i.naturalHeight / i.naturalWidth)) * devicePixelRatio };
     }));
     if (fotos.length < 20) fallos.push(`${r} ${w}×${d}: solo ${fotos.length} fotos`);
@@ -542,10 +542,30 @@ const fotosMovil = async navegador => {
       const media = /^galeria-(roca|bosque|rugido|valle)-/.test(x.f);
       if (x.amplia > (media ? 1.34 : 1.26)) fallos.push(`${r} ${w}×${d}: ${x.f} ampliada ${x.amplia.toFixed(2)}×`);
       if (d === 3 && w <= 440 && media && !x.f.endsWith('-600.webp')) fallos.push(`${r} ${w}×${d}: media baldosa baja ${x.f}, no la de 600 px`);
+      // A lo ancho: hasta 400 px en densidad 2 basta la de 600 (a 410 ya pasaría del listón), o la de 800 en las
+      // fotos que no la tienen; la densidad 3 no baja de la de 1000.
+      if (x.ancha && d === 2 && w <= 400 && x.real !== (x.con600 ? 600 : 800)) fallos.push(`${r} ${w}×${d}: a lo ancho baja ${x.f}, no la de ${x.con600 ? 600 : 800} px`);
+      if (x.ancha && d === 2 && w > 400 && x.real <= 600) fallos.push(`${r} ${w}×${d}: a lo ancho baja ${x.f}, y a este ancho la de 600 px no llega`);
+      if (x.ancha && d === 3 && w <= 450 && x.real < 1000) fallos.push(`${r} ${w}×${d}: a lo ancho baja ${x.f}, menos de 1000 px`);
     }
     await ctx.close();
   }
-  console.log('Galería en móvil de alta densidad (peso y nitidez):', fallos.length ? fallos.join('; ') : 'bien');
+  // Cabeceras interiores en un móvil 3x: bajo el velo oscuro basta la variante más pequeña de su srcset, 26–47 KB menos por página.
+  for (const r of ['clan/', 'caceria/', 'combate/', 'dinosaurios/', 'galeria/', 'legal/', 'normas/', 'unete/', 'en/clan/', 'en/hunt/', 'en/combat/', 'en/dinosaurs/', 'en/gallery/', 'en/legal/', 'en/rules/', 'en/join/']) {
+    for (const w of [390, 430]) {
+      const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+      const p = await ctx.newPage();
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      const m = await p.evaluate(() => {
+        const i = document.querySelector('.cabecera-fondo');
+        const anchos = i.srcset.split(',').map(s => s.trim().split(/\s+/));
+        return { foto: i.currentSrc.split('/').pop(), real: parseInt(anchos.find(([u]) => new URL(u, location).href === i.currentSrc)?.[1]), menor: Math.min(...anchos.map(([, a]) => parseInt(a))) };
+      });
+      if (m.real !== m.menor) fallos.push(`/${r} ${w}×3: la cabecera baja ${m.foto}, no la de ${m.menor} px`);
+      await ctx.close();
+    }
+  }
+  console.log('Galería y cabeceras en móvil de alta densidad (peso y nitidez):', fallos.length ? fallos.join('; ') : 'bien');
   // Mosaico de la portada: a cada ancho, el fichero que elige cada foto no es más estrecho que lo que se
   // pinta. Se mira el ancho del fichero en su srcset: naturalWidth solo repite lo que dice «sizes», y la
   // baldosa de la guía dice menos en el móvil a propósito (bajo su velo oscuro, 600 px no se distinguen de
@@ -578,6 +598,49 @@ const fotosMovil = async navegador => {
     console.log(ruta(r), 'fotos del mosaico a su tamaño:', borrosas.length ? borrosas.join('; ') : 'sí');
   }
   return malos;
+};
+// Al imprimir sin haber recorrido la página: todo lo que tiene texto o es una foto se ve, nada transparente,
+// recortado ni desplazado, y sin ambiente ni barra. Mira cada elemento y no una lista, para cazar un efecto
+// nuevo que deje algo oculto. SOLO=imprimir prueba solo esto.
+const imprimir = async navegador => {
+  const fallos = [];
+  for (const r of ['', 'en/', 'clan/', 'en/clan/', 'caceria/', 'combate/', 'galeria/', 'unete/', 'dinosaurios/', 'dinosaurios/triceratops/']) {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    await p.emulateMedia({ media: 'print' });
+    const m = await p.evaluate(() => {
+      const malos = new Set();
+      const quien = el => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : '');
+      for (const el of document.querySelectorAll('body *')) {
+        if (el.closest('dialog, [popover], .oculto, .cuenta, .barra, .subir, noscript, [hidden], script, style')) continue;
+        if (el.tagName !== 'IMG' && ![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
+        const caja = el.getBoundingClientRect();
+        if (!caja.width && !caja.height) continue;
+        for (let a = el; a; a = a.parentElement) {
+          const s = getComputedStyle(a);
+          // El pie va algo más tenue a propósito (0,8): esto caza lo que no se ve, no lo suave.
+          if (parseFloat(s.opacity) < .5) malos.add(`${quien(el)}: opacidad ${s.opacity}`);
+          if (s.visibility === 'hidden') malos.add(`${quien(el)}: oculto`);
+          if (s.clipPath !== 'none') malos.add(`${quien(el)}: recortado`);
+          if (s.translate !== 'none' && !/^(0(px|%)?\s*)+$/.test(s.translate)) malos.add(`${quien(el)}: desplazado ${s.translate}`);
+        }
+        const propio = getComputedStyle(el);
+        if (el.tagName !== 'IMG' && (propio.webkitBackgroundClip === 'text' || /, 0\)$/.test(propio.color) || propio.color === 'transparent')) malos.add(`${quien(el)}: letra hueca`);
+      }
+      return {
+        anim: document.documentElement.classList.contains('anim'),
+        malos: [...malos],
+        ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
+      };
+    });
+    if (!m.anim) fallos.push(`/${r}: la página no lleva «anim» y la prueba no demuestra nada`);
+    if (m.malos.length) fallos.push(`/${r}: ${m.malos.length} sin verse, como ${m.malos.slice(0, 3).join(', ')}`);
+    if (m.ambiente.length) fallos.push(`/${r}: al imprimir sale ${m.ambiente.slice(0, 3).join(', ')}`);
+    await ctx.close();
+  }
+  console.log('Al imprimir se ve todo:', fallos.length ? fallos.join('; ') : 'sí');
+  return fallos.length;
 };
 // «Ver la lista» de cada dato de una ficha: en una sola línea y con 44 px de alto para el dedo, de
 // verdad (se pulsa arriba y abajo del texto), sin pisar el enlace de al lado. SOLO=puesto prueba solo esto.
@@ -851,6 +914,11 @@ const ventana = async navegador => {
   }
   if (process.env.SOLO === 'fotos') {
     const n = await fotosMovil(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'imprimir') {
+    const n = await imprimir(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2455,6 +2523,7 @@ const ventana = async navegador => {
   malos += await ventana(navegador);
   malos += await fotosMovil(navegador);
   malos += await enlacesPuesto(navegador);
+  malos += await imprimir(navegador);
   await navegador.close();
   console.log(malos ? `${malos} casos con problemas` : 'Todo correcto');
   process.exit(malos ? 1 : 0);
