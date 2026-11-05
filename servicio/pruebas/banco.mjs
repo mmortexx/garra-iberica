@@ -169,11 +169,11 @@ export async function arrancarServicio({ discord, limites = {}, codigo, adminIds
     filas: async (sql, ...p) => (await db.prepare(sql).bind(...p).all()).results,
     todo: async () => {
       const salida = {};
-      for (const t of ['miembros', 'progreso', 'sesiones', 'entradas']) salida[t] = await s.filas(`SELECT * FROM ${t}`);
+      for (const t of ['miembros', 'progreso', 'sesiones', 'entradas', 'escrituras_diarias']) salida[t] = await s.filas(`SELECT * FROM ${t}`);
       return salida;
     },
     limpiar: async () => {
-      for (const t of ['progreso', 'sesiones', 'entradas', 'miembros']) await db.prepare(`DELETE FROM ${t}`).run();
+      for (const t of ['escrituras_diarias', 'progreso', 'sesiones', 'entradas', 'miembros']) await db.prepare(`DELETE FROM ${t}`).run();
       discord.llamadas.length = 0;
       discord.revocados.length = 0;
       discord.fallo = {};

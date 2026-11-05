@@ -11,10 +11,10 @@ Mientras `herramientas/cuentas.json` tenga `servicio` vacío, la página funcion
 Se hace una vez. Los comandos se ejecutan dentro de `servicio/`, con Node 22 o superior.
 
 Estado el 5 de noviembre de 2026: hechos los pasos 1 a 8, con el servicio en `https://garra-cuentas.garra-iberica.workers.dev`
-(la aplicación de Discord existe y los tres secretos están puestos en Cloudflare). **Faltan** la migración `0002`, publicar
+(la aplicación de Discord existe y los tres secretos están puestos en Cloudflare). **Faltan** las migraciones `0002` y `0003`, publicar
 el servicio de este repositorio y el paso 9. Lo publicado ahora es una versión anterior: no conoce los ids de logro de
 esta versión y rechazaría lo que la web nueva le mande. Por eso el paso 9 se hace en el orden de «Encender las cuentas»,
-no a la letra: **seguirlo tal cual desde el paso 5 saltaría la `0002` y el `deploy`**.
+no a la letra: **seguirlo tal cual desde el paso 5 saltaría la `0002`, la `0003` y el `deploy`**.
 
 1. Crea una cuenta en <https://dash.cloudflare.com/sign-up>.
 2. Instala y entra: `npm ci`, y `npx wrangler login` (abre el navegador).
@@ -39,7 +39,7 @@ no a la letra: **seguirlo tal cual desde el paso 5 saltaría la `0002` y el `dep
 
 En este orden, y **el servicio primero, la web después**. Cada paso, dentro de `servicio/` salvo el último.
 
-1. `npx wrangler d1 migrations apply garra-cuentas --remote`: aplica lo que falte (hoy, `0002`, un índice) y no toca los
+1. `npx wrangler d1 migrations apply garra-cuentas --remote`: aplica lo que falte (hoy, `0002`, un índice, y `0003`, la tabla del tope diario de filas) y no toca los
    datos. Comprueba con `npx wrangler d1 migrations list garra-cuentas --remote`: no debe quedar nada pendiente.
 2. `npx wrangler deploy`: publica el servicio de este repositorio.
 3. Comprueba el servicio solo, con la web aún sin cuentas: `curl https://garra-cuentas.garra-iberica.workers.dev/salud`
@@ -73,7 +73,7 @@ primero, el servicio después**:
 3. Si no se van a conservar los datos, bórralos todos y comprueba que no queda nada:
    `npx wrangler d1 execute garra-cuentas --remote --command "DELETE FROM miembros"` y luego
    `npx wrangler d1 execute garra-cuentas --remote --command "SELECT COUNT(*) AS n FROM miembros"` (debe dar 0). Las
-   sesiones, los códigos de entrada y los logros caen en cascada con cada miembro.
+   sesiones, los códigos de entrada, los logros y el contador diario caen en cascada con cada miembro.
    Si se conservan, **no se apaga**: no hay forma honesta de dejar datos guardados con un aviso que dice que no existen.
    Deja las cuentas encendidas.
 4. Solo con la base en 0: `servicio` vacío en `herramientas/cuentas.json`, `python herramientas/montar_web.py`,
@@ -135,7 +135,21 @@ sigue funcionando, dice que no hay conexión y guarda lo marcado para subirlo de
 
 Además, por petición (ajustes en `wrangler.toml`, por dirección o por miembro, por minuto): 20 entradas con Discord, 120 lecturas
 y **30 escrituras de logros por miembro**. Pasado el límite el servicio contesta «demasiadas peticiones» y la página reintenta
-sola; una persona marcando a mano no llega, y un script desbocado de una sola cuenta no agota las filas del día de todo el clan.
+sola. Eso por sí solo no basta: una importación completa son 535 filas, y 30 al minuto serían unas 16.000 filas por minuto, con
+lo que una sola cuenta con un script que marque y desmarque todo gastaría las 100.000 filas del día de todo el clan en unos
+6 minutos.
+
+Por eso hay además un tope de **2.000 filas escritas por miembro y día** (casi cuatro importaciones completas; el día
+cambia a las 00:00 UTC). Cuenta las filas que de verdad se ponen o se quitan: volver a mandar lo mismo no gasta nada. Si un
+guardado no cabe en lo que queda del día, el servicio lo rechaza entero (error 429, «tope diario»): no guarda nada de ese
+guardado y lo que ya había queda como estaba. La página lo explica, conserva las marcas en el navegador y las sube sola al día
+siguiente. Una persona marcando a mano ni se acerca, y una sola cuenta con un script desbocado, por mucho que repita, gasta
+como mucho sus 2.000 filas del día (más 1 fila por guardado, del propio contador) y deja el resto para todo el clan. El tope
+solo cambia en el código (`TOPE_FILAS_DIA`, en `src/progreso.js`).
+
+Un hueco que queda: quien borra su cuenta desde la página se lleva también su contador del día, y si vuelve a entrar con
+Discord empieza de cero. Cada vuelta exige entrar otra vez, y eso ya tiene su propio límite por dirección, pero con muchas
+vueltas seguidas el tope por miembro no basta por sí solo.
 
 ## Cambiar la lista de logros
 

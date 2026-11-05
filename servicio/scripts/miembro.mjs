@@ -28,7 +28,7 @@ export const sqlExportar = id => [
   `SELECT logro, nivel, fecha FROM progreso WHERE discord_id = '${id}' ORDER BY logro, nivel`,
 ];
 
-// Las sesiones, los códigos de entrada y el progreso caen en cascada con el miembro.
+// Las sesiones, los códigos de entrada, el progreso y el contador diario caen en cascada con el miembro.
 export const sqlBorrar = id => `DELETE FROM miembros WHERE discord_id = '${validar(id)}'`;
 
 function wrangler(sql, sitio) {

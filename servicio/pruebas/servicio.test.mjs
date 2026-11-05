@@ -18,7 +18,7 @@ import {
 } from './banco.mjs';
 
 // SERVICIO_PROGRESO: otro progreso.js, para ver estas pruebas fallar con una guarda quitada (mutaciones.mjs).
-const { aplicarCambios } = await import(pathToFileURL(process.env.SERVICIO_PROGRESO || join(SERVICIO, 'src/progreso.js')).href);
+const { aplicarCambios, TOPE_FILAS_DIA } = await import(pathToFileURL(process.env.SERVICIO_PROGRESO || join(SERVICIO, 'src/progreso.js')).href);
 let discord, s;
 before(async () => {
   discord = await arrancarDiscord();
@@ -433,7 +433,7 @@ describe('descargar y borrar', () => {
     assert.equal((await s.filas('SELECT * FROM progreso')).length, 2);
     assert.equal((await s.pedir('/yo/borrar', { method: 'POST', token: t, cuerpo: { confirmar: 'BORRAR' } })).status, 200);
     const todo = await s.todo();
-    assert.deepEqual([todo.miembros.length, todo.progreso.length, todo.sesiones.length, todo.entradas.length], [0, 0, 0, 0]);
+    assert.deepEqual([todo.miembros.length, todo.progreso.length, todo.sesiones.length, todo.entradas.length, todo.escrituras_diarias.length], [0, 0, 0, 0, 0]);
     assert.equal((await s.pedir('/yo', { token: t })).status, 401);
     assert.equal((await s.pedir('/yo', { token: otra })).status, 401);
   });
@@ -835,6 +835,124 @@ describe('los límites', () => {
   });
 });
 
+describe('tope diario de filas escritas', () => {
+  // Decidido: 2.000 filas por miembro y día UTC (casi cuatro importaciones completas). El plan gratuito da 100.000 al día a todo el clan.
+  const TOPE = 2000;
+  const ana = USUARIOS.ana.id;
+  const total = [...MAXIMOS.values()].reduce((a, n) => a + n, 0);
+  const todoMarcado = [...MAXIMOS].map(([logro, nivel]) => ({ logro, nivel }));
+  const todoACero = [...MAXIMOS.keys()].map(logro => ({ logro, nivel: 0 }));
+  // Los niveles que quitan justo n filas a quien lo tiene todo marcado.
+  const quitando = n => [...MAXIMOS].map(([logro, max]) => {
+    const q = Math.min(n, max);
+    n -= q;
+    return [logro, max - q];
+  });
+  const contador = async id => (await s.filas('SELECT dia, restantes FROM escrituras_diarias WHERE discord_id = ?1', id))[0];
+  const filasGuardadas = async id => (await s.filas('SELECT COUNT(*) AS n FROM progreso WHERE discord_id = ?1', id))[0].n;
+  const diaUtc = () => new Date().toISOString().slice(0, 10);
+  const hastaMedianoche = () => Math.ceil((Date.parse(diaUtc()) + 864e5 - Date.now()) / 1000);
+  // Cuántos guardados completos caben, y el mismo ciclo alterno (marcar todo, bajar todo, marcar todo...) que los llena.
+  const caben = Math.floor(TOPE / total);
+  const ciclo = i => (i % 2 === 0 ? todoMarcado : todoACero);
+
+  test('el tamaño de una importación completa encaja con el tope decidido', () => {
+    assert.ok(3 * total <= TOPE && 4 * total > TOPE, `${total} filas por importación: revisa el tope`);
+  });
+
+  describe('contra el servicio', () => {
+    test('el ciclo «marcar todo / bajar todo» se corta con 429 antes de pasar del tope y lo guardado queda intacto', async () => {
+      const token = await s.entrar('ana');
+      const estados = [];
+      let ultima, antes, despues;
+      for (let i = 0; i < caben + 5 && estados.at(-1) !== 429; i++) {
+        antes = hastaMedianoche();
+        ultima = await marcar(token, ciclo(i), 'fijar');
+        despues = hastaMedianoche();
+        estados.push(ultima.status);
+      }
+      assert.deepEqual(estados, [...new Array(caben).fill(200), 429]);
+      assert.deepEqual(await ultima.json(), { error: 'tope_diario' });
+      // Hasta que cambie el día, no «un minuto»; si la prueba cruzó justo la medianoche, no hay nada que comparar.
+      const espera = Number(ultima.headers.get('retry-after'));
+      if (despues <= antes) assert.ok(espera >= despues - 1 && espera <= antes, `Retry-After ${espera}, entre ${despues} y ${antes}`);
+      assert.equal(await filasGuardadas(ana), caben % 2 ? total : 0, 'el guardado rechazado no ha tocado nada');
+      assert.equal((await contador(ana)).restantes, TOPE - caben * total, 'no se cuentan filas que no se escribieron');
+      assert.equal((await s.pedir('/yo', { token })).status, 200);
+    });
+
+    test('lo que cabe sigue pasando, lo que no cambia nada no cuenta y otro miembro no se entera', async () => {
+      const token = await s.entrar('ana');
+      const bea = await s.entrar('bea');
+      for (let i = 0; i < caben; i++) assert.equal((await marcar(token, ciclo(i), 'fijar')).status, 200);
+      assert.equal((await marcar(token, ciclo(caben), 'fijar')).status, 429);
+      const girar = [{ logro: 'allo-exp', nivel: caben % 2 ? 0 : 1 }];
+      assert.equal((await marcar(token, girar, 'fijar')).status, 200, 'una fila sí cabe');
+      assert.equal((await contador(ana)).restantes, TOPE - caben * total - 1);
+      assert.equal((await marcar(token, girar, 'fijar')).status, 200);
+      assert.equal((await contador(ana)).restantes, TOPE - caben * total - 1, 'repetir lo mismo no gasta nada');
+      assert.equal((await marcar(bea, todoMarcado, 'fijar')).status, 200);
+      assert.equal((await contador(USUARIOS.bea.id)).restantes, TOPE - total);
+    });
+
+    test('al cambiar de día UTC el tope empieza de cero', async () => {
+      const token = await s.entrar('ana');
+      for (let i = 0; i < caben; i++) await marcar(token, ciclo(i), 'fijar');
+      assert.equal((await marcar(token, ciclo(caben), 'fijar')).status, 429);
+      await s.db.prepare("UPDATE escrituras_diarias SET dia = '2000-01-01'").run();
+      assert.equal((await marcar(token, ciclo(caben), 'fijar')).status, 200, 'con el contador de ayer, hoy empieza de cero');
+      assert.deepEqual(await contador(ana), { dia: diaUtc(), restantes: TOPE - total });
+    });
+  });
+
+  describe('contando filas', () => {
+    beforeEach(() => s.db.prepare("INSERT INTO miembros (discord_id, nombre, desde, ultimo_acceso) VALUES (?1, 'Ana', '2026-11-05', '2026-11-05')").bind(ana).run());
+    const aplicar = (cambios, dia = '2026-11-05') => aplicarCambios(s.db, ana, new Map(cambios), 'fijar', dia);
+    const aCero = () => [...MAXIMOS.keys()].map(logro => [logro, 0]);
+    const vaciar = () => s.db.batch(['escrituras_diarias', 'progreso'].map(t => s.db.prepare(`DELETE FROM ${t}`)));
+    // Tres guardados completos seguidos: 3 * total filas gastadas y todo marcado.
+    const tres = async dia => {
+      await aplicar([...MAXIMOS], dia);
+      await aplicar(aCero(), dia);
+      await aplicar([...MAXIMOS], dia);
+    };
+
+    test('el límite exacto y sus dos vecinos: TOPE - 1 y TOPE caben, TOPE + 1 no', async () => {
+      for (const [sobra, cabe] of [[-1, true], [0, true], [1, false]]) {
+        await vaciar();
+        await tres();
+        const filas = TOPE - 3 * total + sobra;
+        if (cabe) {
+          await aplicar(quitando(filas));
+          assert.equal((await contador(ana)).restantes, 0 - sobra, `con ${sobra}`);
+          assert.equal(await filasGuardadas(ana), total - filas);
+        } else {
+          await assert.rejects(aplicar(quitando(filas)), { name: 'TopeDiario' });
+          assert.equal((await contador(ana)).restantes, TOPE - 3 * total);
+          assert.equal(await filasGuardadas(ana), total, 'al pasarse no se escribe nada');
+        }
+      }
+    });
+
+    test('al cambiar de día el tope se reinicia', async () => {
+      await tres('2026-11-05');
+      await assert.rejects(aplicar(aCero(), '2026-11-05'), { name: 'TopeDiario' });
+      await aplicar(aCero(), '2026-11-06');
+      assert.deepEqual(await contador(ana), { dia: '2026-11-06', restantes: TOPE - total });
+    });
+
+    test('un guardado que no cambia nada no crea ni toca el contador', async () => {
+      await aplicar([...MAXIMOS]);
+      const antes = await contador(ana);
+      for (let i = 0; i < 5; i++) await aplicar([...MAXIMOS]);
+      assert.deepEqual(await contador(ana), antes);
+      await vaciar();
+      await aplicar([['allo-exp', 0]]);
+      assert.deepEqual(await s.filas('SELECT * FROM escrituras_diarias'), []);
+    });
+  });
+});
+
 describe('la dirección antigua', () => {
   test('la configuración publicada acepta solo la dirección nueva', () => {
     const { vars } = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
@@ -913,6 +1031,12 @@ describe('el README dice lo que hace el servicio', () => {
     assert.deepEqual(m.slice(1).map(Number), [limite.LIMITE_ENTRADA, limite.LIMITE_API, limite.LIMITE_ESCRITURA]);
   });
 
+  test('el tope diario de filas es el del código', () => {
+    const m = /tope de \*\*([\d.]+) filas escritas por miembro y día\*\*/.exec(readme);
+    assert.ok(m, 'servicio/README.md ya no cuenta el tope diario de filas');
+    assert.equal(Number(m[1].replaceAll('.', '')), TOPE_FILAS_DIA);
+  });
+
   test('la sesión dura los días que dice el README al dejar el clan', async () => {
     await s.entrar('ana');
     const [{ caduca }] = await s.filas('SELECT caduca FROM sesiones');
@@ -933,7 +1057,7 @@ describe('el README dice lo que hace el servicio', () => {
     await marcar(tokenBea, [{ logro: 'allo-exp', nivel: 1 }]);
     assert.ok((await s.filas('SELECT * FROM progreso')).length >= 2 && (await s.filas('SELECT * FROM sesiones')).length === 2);
     await s.db.prepare(orden(/--command "(DELETE FROM miembros)"/)).run();
-    for (const t of ['miembros', 'progreso', 'sesiones', 'entradas']) assert.equal((await s.filas(`SELECT * FROM ${t}`)).length, 0, t);
+    for (const t of ['miembros', 'progreso', 'sesiones', 'entradas', 'escrituras_diarias']) assert.equal((await s.filas(`SELECT * FROM ${t}`)).length, 0, t);
   });
 });
 
@@ -989,7 +1113,7 @@ describe('datos de un miembro a petición', () => {
 
   test('borrar se lleva todo lo suyo, sesiones incluidas, y no toca a otro', async () => {
     await s.db.prepare(sqlBorrar(ana)).run();
-    for (const tabla of ['miembros', 'progreso', 'sesiones', 'entradas']) {
+    for (const tabla of ['miembros', 'progreso', 'sesiones', 'entradas', 'escrituras_diarias']) {
       assert.deepEqual(await s.filas(`SELECT * FROM ${tabla} WHERE discord_id = ?1`, ana), [], tabla);
     }
     assert.equal((await s.filas('SELECT * FROM progreso WHERE discord_id = ?1', bea)).length, 2);

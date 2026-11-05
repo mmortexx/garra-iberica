@@ -4,7 +4,7 @@
 // en la cabecera Authorization: una clave aleatoria que la página guarda y de la que aquí solo queda la huella.
 // Sin cookies de sesión no hay CSRF: otra web no puede añadir esa cabecera. La única cookie es la del viaje a Discord.
 import { MAXIMOS } from './catalogo.js';
-import { aplicarCambios } from './progreso.js';
+import { TopeDiario, aplicarCambios } from './progreso.js';
 
 const DIA = 864e5;
 const DURACION_SESION = 30 * DIA; // No se alarga con el uso: al caducar se vuelve a comprobar que sigue en el clan.
@@ -20,10 +20,11 @@ const ID_DISCORD = /^\d{17,20}$/;
 const CONTROL = /[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g;
 
 class Fallo extends Error {
-  constructor(estado, codigo) {
+  constructor(estado, codigo, espera = 60) {
     super(codigo);
     this.estado = estado;
     this.codigo = codigo;
+    this.espera = espera; // Solo para los 429: segundos hasta poder volver a intentarlo.
   }
 }
 
@@ -31,6 +32,7 @@ const json = (estado, cuerpo, cabeceras = {}) => new Response(JSON.stringify(cue
   status: estado, headers: { 'Content-Type': 'application/json; charset=utf-8', ...cabeceras },
 });
 const hoy = () => new Date().toISOString().slice(0, 10);
+const segundosHastaManana = () => Math.ceil((Date.parse(hoy()) + DIA - Date.now()) / 1000);
 const aB64url = bytes => btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 const aleatorio = () => aB64url(crypto.getRandomValues(new Uint8Array(32)));
 const sha256 = async texto => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto)));
@@ -271,7 +273,14 @@ async function guardarProgreso(req, env) {
   if (!Array.isArray(cambios) || (modo !== 'fijar' && modo !== 'subir')) throw new Fallo(400, 'forma');
   if (cambios.length > MAX_CAMBIOS) throw new Fallo(413, 'demasiado_grande');
   const { validos, rechazados } = validarCambios(cambios);
-  if (validos.size) await aplicarCambios(env.DB, id, validos, modo, hoy());
+  if (validos.size) {
+    try {
+      await aplicarCambios(env.DB, id, validos, modo, hoy());
+    } catch (e) {
+      if (e instanceof TopeDiario) throw new Fallo(429, 'tope_diario', segundosHastaManana());
+      throw e;
+    }
+  }
   return json(200, { aplicados: validos.size, rechazados });
 }
 
@@ -381,7 +390,7 @@ export default {
       respuesta = await atender(req, env, new URL(req.url));
     } catch (e) {
       if (e instanceof Fallo) {
-        respuesta = json(e.estado, { error: e.codigo }, e.estado === 429 ? { 'Retry-After': '60' } : {});
+        respuesta = json(e.estado, { error: e.codigo }, e.estado === 429 ? { 'Retry-After': String(e.espera) } : {});
       } else {
         // Sin detalles hacia fuera ni datos de nadie en los registros.
         console.error('sin atender', e.name);

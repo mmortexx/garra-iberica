@@ -1,3 +1,19 @@
+// Filas que un miembro puede escribir (poner o quitar tramos) cada día UTC. El plan gratuito de D1 da 100.000 al día a todo el
+// clan y una importación completa son 535: sin tope, una sola cuenta con un script que marque y desmarque todo las gasta en
+// minutos y deja a todos sin entrar. El contador propio cuesta 1 fila por guardado y no entra en la cuenta.
+export const TOPE_FILAS_DIA = 2000;
+
+export class TopeDiario extends Error {
+  name = 'TopeDiario';
+}
+
+// Va el primero del lote: si no caben, la restricción tope_diario de la tabla lo tumba y no se escribe nada del progreso.
+// Con otro día en el contador, empieza de cero.
+const RESERVAR = `INSERT INTO escrituras_diarias (discord_id, dia, restantes) VALUES (?1, ?2, ?3 - ?4)
+  ON CONFLICT (discord_id) DO UPDATE SET
+    restantes = CASE WHEN dia = excluded.dia THEN restantes - ?4 ELSE excluded.restantes END,
+    dia = excluded.dia`;
+
 // Guardar solo lo que cambia: el plan gratuito cuenta cada fila leída y escrita, y marcar un tramo no debe costar 535.
 export async function aplicarCambios(db, id, validos, modo, fecha) {
   const { results, meta } = await db.prepare(`SELECT logro, nivel FROM progreso
@@ -17,7 +33,15 @@ export async function aplicarCambios(db, id, validos, modo, fecha) {
     sentencias.push(db.prepare(`INSERT OR IGNORE INTO progreso (discord_id, logro, nivel, fecha)
       SELECT ?1, j.value ->> '$[0]', j.value ->> '$[1]', ?2 FROM json_each(?3) j`).bind(id, fecha, JSON.stringify(poner)));
   }
-  const hechas = sentencias.length ? await db.batch(sentencias) : [];
+  if (!sentencias.length) return { leidas: meta.rows_read, escritas: 0 };
+  sentencias.unshift(db.prepare(RESERVAR).bind(id, fecha, TOPE_FILAS_DIA, quitar.length + poner.length));
+  let hechas;
+  try {
+    hechas = await db.batch(sentencias);
+  } catch (e) {
+    if (String(e?.message).includes('tope_diario')) throw new TopeDiario();
+    throw e;
+  }
   return {
     leidas: hechas.reduce((a, r) => a + r.meta.rows_read, meta.rows_read),
     escritas: hechas.reduce((a, r) => a + r.meta.rows_written, 0),
