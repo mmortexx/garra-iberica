@@ -270,11 +270,14 @@ def datos():
     anclas = [ancla(n) for n in nombres]
     if '' in anclas or len(set(anclas)) != len(anclas):
         sys.exit(f'{FICHAS.name}: dos especies dan el mismo enlace o uno vacío: {anclas}')
+    mut, mut_en = d.get('mut') or {}, d.get('mut_en') or {}
+    if set(mut) != set(mut_en):
+        sys.exit(f'{FICHAS.name}: «mut» y «mut_en» deben traer las mismas mutaciones; falta en mut_en: {sorted(set(mut) - set(mut_en))}, falta en mut: {sorted(set(mut_en) - set(mut))}')
     for f in d['fichas']:
         if f['dieta'] not in GRUPO:
             sys.exit(f'{FICHAS.name}: {f["nombre"]} con dieta desconocida «{f["dieta"]}»')
         for k in f['mut']:
-            if k not in d['mut'] or k not in d['mut_en']:
+            if k not in mut:
                 sys.exit(f'{FICHAS.name}: {f["nombre"]} recomienda la mutación desconocida {k}')
     return d
 

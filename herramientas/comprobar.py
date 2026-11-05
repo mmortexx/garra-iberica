@@ -911,10 +911,10 @@ def revisar_estilos(raiz, falla):
 def revisar_privacidad(raiz, falla):
     """El aviso legal promete que la web no guarda ni pide nada y nombra a dónde llevan sus enlaces:
     si el código o un enlace nuevo lo desmiente, falla hasta cambiar una de las dos cosas."""
-    for nombre in sorted(set(VERSIONADOS) - {'estilos.css'}):
-        guarda = re.search(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', leer(raiz, nombre), re.I)
+    for fichero in sorted(raiz.rglob('*.js')):
+        guarda = re.search(r'localStorage|sessionStorage|indexedDB|openDatabase|cookie|caches\.|serviceWorker', fichero.read_text(encoding='utf-8'), re.I)
         if guarda:
-            falla(f'{nombre} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
+            falla(f'{fichero.relative_to(raiz).as_posix()} usa {guarda.group(0)} y el aviso legal dice que la web no guarda nada en el navegador')
     dominios = set()
     for nombre in [*PAGINAS, '404.html']:
         html = leer(raiz, nombre)
@@ -1350,7 +1350,7 @@ def main(raiz, sin_apodos=False, avisa=print):
             falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
     # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
+    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, guia_dinos.FICHAS, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
         if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
             continue
         texto = fichero.read_text(encoding='utf-8')

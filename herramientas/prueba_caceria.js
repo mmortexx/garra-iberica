@@ -68,7 +68,7 @@ for (const [nombre, ahora, minutos, mult, horas, llega, alcanza] of conHoras) {
     const r = planCrecer(Date.parse(ahora), minutos, mult, horas);
     if (r.llega !== llega || r.alcanza !== Date.parse(alcanza)) throw new Error(`llega ${r.llega}, alcanza ${new Date(r.alcanza).toISOString()}`);
   } catch (e) {
-    malos++;
+    fallos++;
     console.log(`FALLO ${nombre}: ${e.message}`);
   }
 }
