@@ -85,6 +85,20 @@ Con la web ya sin servicio, quien tenía una sesión guardada en su navegador no
 no están disponibles, conserva sus marcas en ese navegador y no habla con ningún servicio. Si las cuentas vuelven sin
 haber borrado la base, esa sesión (si no ha caducado) y lo que quedó pendiente de subir siguen donde estaban.
 
+## Cuando alguien deja el clan
+
+Al dejar el servidor de Discord nadie recomprueba su pertenencia hasta que caduca su sesión: **30 días**, sin alargarse con
+el uso. Hasta entonces puede seguir viendo y marcando lo suyo. Sus datos no se borran solos (el aviso legal lo dice).
+
+- **Cortarle la sesión ya:** `npx wrangler d1 execute garra-cuentas --remote --command "DELETE FROM sesiones WHERE discord_id = 'ID'"`.
+  Sus logros se quedan hasta que pida borrarlos («Datos de un miembro a petición»).
+- **Si es de `ADMIN_IDS`** (quien descarga la copia de seguridad), lo importante es quitarlo de la lista:
+  `npx wrangler secret put ADMIN_IDS` con los identificadores que quedan, separados por comas. Se lee en cada petición, así
+  que los permisos de administración se acaban en el momento, pero su sesión de miembro sigue 30 días: córtala también con
+  el comando de arriba. Si ya tenía descargada una copia de seguridad, esa copia es suya: pídele que la borre.
+- **Si es uno de los tres de contacto del aviso legal** (Imaginary, Quilez o Ray), cambia sus nombres en
+  `paginas/es/legal.html`, `paginas/en/legal.html` y en la lista `JEFES` de `herramientas/comprobar.py`, y vuelve a montar.
+
 ## Copia de seguridad y vuelta atrás
 
 - **Descargarla:** entra en la ruta de logros con una cuenta de `ADMIN_IDS` y pulsa «Copia de seguridad del clan». Lleva
@@ -118,6 +132,10 @@ Las copias de seguridad que ya tengas no se tocan: se sustituyen por nuevas, y `
 Con el plan gratuito, al pasar un límite el servicio da error hasta el día siguiente y **no se cobra nada**. La página
 sigue funcionando, dice que no hay conexión y guarda lo marcado para subirlo después. La medida está en
 [MEDIDAS.md](MEDIDAS.md).
+
+Además, por petición (ajustes en `wrangler.toml`, por dirección o por miembro, por minuto): 20 entradas con Discord, 120 lecturas
+y **30 escrituras de logros por miembro**. Pasado el límite el servicio contesta «demasiadas peticiones» y la página reintenta
+sola; una persona marcando a mano no llega, y un script desbocado de una sola cuenta no agota las filas del día de todo el clan.
 
 ## Cambiar la lista de logros
 

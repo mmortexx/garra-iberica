@@ -895,6 +895,48 @@ describe('lo que promete el aviso legal', () => {
   });
 });
 
+// Lo que el README manda hacer o promete tiene que ser verdad: cada cifra y cada orden, atadas al código.
+describe('el README dice lo que hace el servicio', () => {
+  const readme = readFileSync(join(SERVICIO, 'README.md'), 'utf8');
+  const orden = patron => {
+    const m = patron.exec(readme);
+    assert.ok(m, `servicio/README.md ya no dice ${patron}`);
+    return m[1];
+  };
+  const ana = USUARIOS.ana.id;
+
+  test('los límites por minuto son los de wrangler.toml', () => {
+    const c = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    const limite = Object.fromEntries(c.ratelimits.map(r => [r.name, r.simple.limit]));
+    const m = /(\d+) entradas con Discord, (\d+) lecturas\s+y \*\*(\d+) escrituras de logros por miembro\*\*/.exec(readme);
+    assert.ok(m, 'servicio/README.md ya no cuenta los límites por petición');
+    assert.deepEqual(m.slice(1).map(Number), [limite.LIMITE_ENTRADA, limite.LIMITE_API, limite.LIMITE_ESCRITURA]);
+  });
+
+  test('la sesión dura los días que dice el README al dejar el clan', async () => {
+    await s.entrar('ana');
+    const [{ caduca }] = await s.filas('SELECT caduca FROM sesiones');
+    assert.equal(Number(orden(/caduca su sesión: \*\*(\d+) días\*\*/)), Math.round((caduca - Date.now()) / 86400000));
+  });
+
+  test('cortar la sesión de quien se va, tal como lo escribe el README, solo corta la suya', async () => {
+    const [tokenAna, tokenBea] = [await s.entrar('ana'), await s.entrar('bea')];
+    await s.db.prepare(orden(/--command "(DELETE FROM sesiones WHERE discord_id = 'ID')"/).replace('ID', ana)).run();
+    assert.equal((await s.pedir('/yo', { token: tokenAna })).status, 401);
+    assert.equal((await s.pedir('/yo', { token: tokenBea })).status, 200);
+    assert.equal((await s.filas('SELECT * FROM miembros')).length, 2, 'sus datos no se tocan');
+  });
+
+  test('apagar con el DELETE del README no deja nada de nadie en ninguna tabla', async () => {
+    const [tokenAna, tokenBea] = [await s.entrar('ana'), await s.entrar('bea')];
+    await marcar(tokenAna, [{ logro: 'addict', nivel: 2 }]);
+    await marcar(tokenBea, [{ logro: 'allo-exp', nivel: 1 }]);
+    assert.ok((await s.filas('SELECT * FROM progreso')).length >= 2 && (await s.filas('SELECT * FROM sesiones')).length === 2);
+    await s.db.prepare(orden(/--command "(DELETE FROM miembros)"/)).run();
+    for (const t of ['miembros', 'progreso', 'sesiones', 'entradas']) assert.equal((await s.filas(`SELECT * FROM ${t}`)).length, 0, t);
+  });
+});
+
 // El repositorio es público y el README manda crear en servicio/ ficheros con datos personales de los miembros.
 describe('datos personales fuera del repositorio', () => {
   const RAIZ = join(SERVICIO, '..');
