@@ -210,6 +210,9 @@ python herramientas/prueba_comprobar.py
 
   Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra.
 
+  Zarpazo saltado (`SOLO=transicion` prueba solo esto): se fuerza que la transición entre páginas se salte en la
+  página que se deja y en la que llega, y ninguna da error («Transition was skipped» sin atender).
+
   Ruta de logros, recuadro «Ahora toca» (`SOLO=ahora` prueba solo esto), en los dos idiomas: enseña la sesión que toca
   con su dino, qué hacer y sus tareas; marcar en el recuadro marca en la lista y al revés; completar la sesión avanza
   y lo dice; Anterior, Siguiente, Ir a la actual, el índice «Toda la ruta» y el acceso de «Tu progreso» llevan donde
