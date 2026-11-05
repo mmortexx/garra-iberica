@@ -47,6 +47,16 @@
     copiaFrenada: n => `Downloading the backup… ${n} rows. Waiting a minute for the request limit: keep this page open.`,
     copiaHecha: (m, p) => `Backup downloaded: ${m} members, ${p} rows of progress. Keep it somewhere safe: it has personal data.`,
     coord: c => `Copied: ${c}. Paste it into the Nexus map`,
+    ahora: {
+      sesion: (n, t) => `Session ${n} of ${t}`,
+      todas: t => `All ${t} sessions`,
+      estado: { actual: 'Up next', hecha: 'Done', pendiente: 'Pending' },
+      tareas: (a, b) => `${a} of ${b} tasks done`,
+      completada: t => `Session complete. Next: ${t}.`,
+      fin: 'Route complete',
+      rutaHecha: 'Route complete: you have done every session.',
+      toca: (n, t, titulo, dino) => `Next for you: session ${n} of ${t} · ${titulo} (${dino})`,
+    },
     nexus: {
       error: 'Error:',
       vacio: 'There is nothing to read: paste the list Nexus gives you.',
@@ -106,6 +116,16 @@
     copiaFrenada: n => `Descargando la copia… ${n} filas. Esperando un minuto por el límite de peticiones: no cierres la página.`,
     copiaHecha: (m, p) => `Copia descargada: ${m} miembros, ${p} filas de progreso. Guárdala en lugar seguro: lleva datos personales.`,
     coord: c => `Copiado: ${c}. Pégalo en el mapa de Nexus`,
+    ahora: {
+      sesion: (n, t) => `Sesión ${n} de ${t}`,
+      todas: t => `Las ${t} sesiones`,
+      estado: { actual: 'Ahora toca', hecha: 'Hecha', pendiente: 'Pendiente' },
+      tareas: (a, b) => `${a} de ${b} tareas hechas`,
+      completada: t => `Sesión completada. Ahora: ${t}.`,
+      fin: 'Ruta completada',
+      rutaHecha: 'Ruta completada: has hecho todas las sesiones.',
+      toca: (n, t, titulo, dino) => `Te toca: sesión ${n} de ${t} · ${titulo} (${dino})`,
+    },
     nexus: {
       error: 'Error:',
       vacio: 'No hay nada que leer: pega la lista que te da Nexus.',
@@ -212,14 +232,145 @@
     document.querySelectorAll('button[data-copiar]').forEach(b => { b.disabled = false; });
     document.querySelectorAll('.ruta-grupo').forEach(d => bloques.push({ d, filas: [...d.querySelectorAll('[data-fila]')], contador: d.querySelector('[data-contador]') }));
     document.querySelectorAll('[data-sesion]').forEach(li => sesiones.push({
-      li, d: li.querySelector('details'), contador: li.querySelector('[data-contador]'),
+      li,
       tareas: [...li.querySelectorAll('button[data-logro]')].map(b => [b.dataset.logro, +b.dataset.nivel]),
     }));
     for (const s of ['[data-resumen]', '[data-nexus-caja]', '[data-codigo-caja]']) ver(s, true);
     document.querySelector('[data-filtros]').hidden = false;
+    prepararAhora();
   }
 
   const hecha = s => s.tareas.every(([id, n]) => nivel(id) >= n);
+  const hechasDe = s => s.tareas.filter(([id, n]) => nivel(id) >= n).length;
+
+  // ---------- «Ahora toca»: la sesión que te toca, sacada de la lista de la página ----------
+  // Sus casillas son copias de las de la lista: mismo logro y tramo, y se marcan por el mismo camino.
+  const zona = document.querySelector('[data-ahora-zona]');
+  const enZona = sel => zona.querySelector(sel);
+  const DIETA = { C: 'dieta-carnivoro', H: 'dieta-herbivoro', O: 'dieta-omnivoro' };
+  // La sesión que se mira; null es la que toca, y entonces la sigue cuando cambia. -1: toda la ruta hecha.
+  let vista = null;
+  let montada = null;
+  const indiceActual = () => sesiones.findIndex(s => !hecha(s));
+
+  function prepararAhora() {
+    if (!zona) return;
+    const indice = enZona('[data-ahora-indice]');
+    sesiones.forEach((s, i) => {
+      const resumen = s.li.querySelector('summary');
+      s.titulo = resumen.querySelector('b').textContent;
+      s.dino = resumen.querySelector('small').textContent;
+      const nombre = document.createElement('span');
+      nombre.className = 'ruta-grupo-t';
+      nombre.append(Object.assign(document.createElement('b'), { textContent: s.titulo }), Object.assign(document.createElement('small'), { textContent: s.dino }));
+      s.estadoIndice = Object.assign(document.createElement('span'), { className: 'oculto' });
+      s.contadorIndice = Object.assign(document.createElement('span'), { className: 'contador' });
+      s.boton = Object.assign(document.createElement('button'), { type: 'button', className: 'ahora-li' });
+      s.boton.dataset.ahoraVer = String(i);
+      s.boton.append(Object.assign(document.createElement('span'), { className: 'sesion-n', textContent: String(i + 1) }), nombre, s.estadoIndice, s.contadorIndice);
+      const li = document.createElement('li');
+      li.append(s.boton);
+      indice.append(li);
+    });
+    // La lista plegable es para leer sin JavaScript: con él, el recuadro y su índice la sustituyen.
+    document.querySelector('[data-sesiones]').hidden = true;
+    zona.hidden = false;
+    ver('[data-toca]', true);
+  }
+
+  function montarAhora(i) {
+    const s = sesiones[i];
+    const tareas = enZona('[data-ahora-tareas]');
+    const conFoco = tareas.contains(document.activeElement);
+    montada = i;
+    enZona('[data-ahora-n]').textContent = s ? T.ahora.sesion(i + 1, sesiones.length) : T.ahora.todas(sesiones.length);
+    enZona('[data-ahora-titulo]').textContent = s ? s.titulo : T.ahora.fin;
+    for (const sel of ['.ahora-dino', '[data-ahora-que]', '[data-ahora-progreso]']) enZona(sel).hidden = !s;
+    enZona('[data-ahora-fin]').hidden = Boolean(s);
+    const suNota = s && s.li.querySelector('.sesion-nota');
+    enZona('[data-ahora-nota]').textContent = suNota ? suNota.textContent : '';
+    enZona('[data-ahora-nota]').hidden = !suNota;
+    enZona('[data-ahora-pasos]').replaceChildren(...(s ? [...s.li.querySelectorAll('.sesion-pasos > li')].map(li => li.cloneNode(true)) : []));
+    tareas.replaceChildren(...(s ? [...s.li.querySelectorAll('.tarea')].map(li => li.cloneNode(true)) : []));
+    if (s) {
+      enZona('[data-ahora-dino]').textContent = s.dino;
+      enZona('[data-ahora-dino]').className = `dieta ${DIETA[s.li.dataset.grupo] || ''}`;
+    }
+    // La casilla pulsada se ha ido con su sesión: el foco no se pierde, pasa al título de la nueva.
+    if (conFoco) enZona('[data-ahora-titulo]').focus();
+  }
+
+  const desactivar = (b, no) => b.setAttribute('aria-disabled', String(no));
+
+  function pintarAhora() {
+    if (!zona) return;
+    const actual = indiceActual();
+    if (vista === actual) vista = null;
+    const i = vista ?? actual;
+    const total = sesiones.length;
+    if (i !== montada) montarAhora(i);
+    const s = sesiones[i];
+    for (const b of enZona('[data-ahora-tareas]').querySelectorAll('button[data-logro]')) b.setAttribute('aria-pressed', String(nivel(b.dataset.logro) >= +b.dataset.nivel));
+    const estado = enZona('[data-ahora-estado]');
+    estado.hidden = !s;
+    if (s) {
+      const como = hecha(s) ? 'hecha' : i === actual ? 'actual' : 'pendiente';
+      estado.dataset.estado = como;
+      estado.textContent = T.ahora.estado[como];
+      const barra = enZona('[data-ahora-barra]');
+      barra.max = s.tareas.length;
+      barra.value = hechasDe(s);
+      enZona('[data-ahora-cuenta]').textContent = T.ahora.tareas(hechasDe(s), s.tareas.length);
+    }
+    desactivar(enZona('[data-ahora-ir="antes"]'), i === 0);
+    // Con toda la ruta hecha, tras la última sesión viene el final.
+    desactivar(enZona('[data-ahora-ir="despues"]'), i < 0 || (i === total - 1 && actual >= 0));
+    enZona('[data-ahora-ir="actual"]').hidden = vista === null || actual < 0;
+    sesiones.forEach((x, j) => {
+      const como = hecha(x) ? 'hecha' : j === actual ? 'actual' : 'pendiente';
+      x.boton.classList.toggle('sesion-hecha', como === 'hecha');
+      x.boton.classList.toggle('sesion-actual', como === 'actual');
+      x.estadoIndice.textContent = `, ${T.ahora.estado[como]}`;
+      x.contadorIndice.textContent = `${hechasDe(x)}/${x.tareas.length}`;
+      if (j === i) x.boton.setAttribute('aria-current', 'true');
+      else x.boton.removeAttribute('aria-current');
+    });
+    $('[data-toca-texto]').textContent = actual < 0 ? T.ahora.rutaHecha : T.ahora.toca(actual + 1, total, sesiones[actual].titulo, sesiones[actual].dino);
+  }
+
+  // Completar la sesión que se mira: el recuadro pasa a la siguiente y lo dice.
+  function avisarAvance(antes) {
+    if (!zona) return;
+    const ahora = indiceActual();
+    const aviso = enZona('[data-ahora-aviso]');
+    aviso.textContent = '';
+    if (antes < 0 || (ahora >= 0 && ahora <= antes) || (vista !== null && vista !== antes)) return;
+    vista = null;
+    aviso.textContent = ahora < 0 ? T.ahora.rutaHecha : T.ahora.completada(sesiones[ahora].titulo);
+  }
+
+  // llevar: desde lejos (el índice o «Tu progreso»), el recuadro se pone a la vista y el foco va a su título.
+  function mirar(destino, llevar) {
+    vista = destino;
+    enZona('[data-ahora-aviso]').textContent = '';
+    pintarAhora();
+    const i = vista ?? indiceActual();
+    const caja = enZona('[data-ahora]');
+    if (llevar) {
+      caja.scrollIntoView({ block: 'start' });
+      enZona('[data-ahora-titulo]').focus({ preventScroll: true });
+      return;
+    }
+    enZona('[data-ahora-voz]').textContent = i < 0 ? T.ahora.fin : `${T.ahora.sesion(i + 1, sesiones.length)}: ${sesiones[i].titulo}`;
+    if (caja.getBoundingClientRect().top < 0) caja.scrollIntoView({ block: 'start' });
+  }
+
+  function moverAhora(como) {
+    const i = vista ?? indiceActual();
+    if (como === 'actual') mirar(null, false);
+    else if (como === 'antes') mirar(i < 0 ? sesiones.length - 1 : i - 1, false);
+    else mirar(i === sesiones.length - 1 ? null : i + 1, false);
+  }
   let filtro = 'todos';
   let soloPendientes = false;
 
@@ -240,16 +391,7 @@
       for (const f of b.filas) f.hidden = soloPendientes && nivel(f.dataset.fila) >= MAXIMOS.get(f.dataset.fila);
       b.d.hidden = (filtro !== 'todos' && b.d.dataset.grupo !== filtro) || (soloPendientes && b.completo);
     }
-    const actual = sesiones.find(s => !hecha(s));
-    for (const s of sesiones) {
-      s.contador.textContent = `${s.tareas.filter(([id, n]) => nivel(id) >= n).length}/${s.tareas.length}`;
-      s.li.classList.toggle('sesion-hecha', hecha(s));
-      s.li.classList.toggle('sesion-actual', s === actual);
-    }
-    if (actual && actual !== pintarMarcas.abierta) {
-      actual.d.open = true;
-      pintarMarcas.abierta = actual;
-    }
+    pintarAhora();
     $('[data-barra]').max = total;
     $('[data-barra]').value = hechos;
     $('[data-total]').textContent = T.total(hechos, total);
@@ -421,8 +563,10 @@
 
   function marcar(id, n) {
     if (n === nivel(id)) return;
+    const antes = indiceActual();
     apuntar(id, n);
     guardar();
+    avisarAvance(antes);
     pintarMarcas();
     if (almacen.token) programarSubida();
   }
@@ -861,6 +1005,10 @@
     if (b.dataset.logro) {
       const n = +b.dataset.nivel;
       marcar(b.dataset.logro, nivel(b.dataset.logro) === n ? n - 1 : n);
+    } else if (b.dataset.ahoraIr) {
+      if (b.getAttribute('aria-disabled') !== 'true') moverAhora(b.dataset.ahoraIr);
+    } else if (b.dataset.ahoraVer) {
+      mirar(+b.dataset.ahoraVer, true);
     } else if (b.dataset.copiar) {
       const c = b.dataset.copiar;
       alPortapapeles(c, () => aviso(T.coord(c)), () => aviso(c));
@@ -906,6 +1054,13 @@
       guardar();
       pintarImportar();
     }
+  });
+
+  // «Te toca…» en «Tu progreso» lleva al recuadro con la sesión que toca, aunque se estuviera mirando otra.
+  $('[data-toca] a')?.addEventListener('click', e => {
+    if (!zona) return;
+    e.preventDefault();
+    mirar(null, true);
   });
 
   // Otra pestaña ha guardado: sin esto, lo siguiente que se guardara aquí pisaría lo suyo.

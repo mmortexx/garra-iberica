@@ -210,6 +210,11 @@ python herramientas/prueba_comprobar.py
 
   Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra.
 
+  Ruta de logros, recuadro «Ahora toca» (`SOLO=ahora` prueba solo esto), en los dos idiomas: enseña la sesión que toca
+  con su dino, qué hacer y sus tareas; marcar en el recuadro marca en la lista y al revés; completar la sesión avanza
+  y lo dice; Anterior, Siguiente, Ir a la actual, el índice «Toda la ruta» y el acceso de «Tu progreso» llevan donde
+  dicen; sin scroll de lado a 360 px, sin fallos de axe, y sin JavaScript no aparece y la ruta se lee entera.
+
 GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta todas estas comprobaciones en cada push y pull request.
 
 Las cifras de la portada y las batallas no se montan a mano: `herramientas/publicar_datos.py` las trae del proyecto del
