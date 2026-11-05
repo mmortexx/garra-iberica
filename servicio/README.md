@@ -10,7 +10,7 @@ Mientras `herramientas/cuentas.json` tenga `servicio` vacío, la página funcion
 
 Se hace una vez. Los comandos se ejecutan dentro de `servicio/`, con Node 22 o superior.
 
-Hechos el 5 de noviembre de 2026: pasos 1 a 6, con el servicio en `https://garra-cuentas.garra-cuentas.workers.dev`. Faltan los pasos 7 a 9.
+Hechos el 5 de noviembre de 2026: pasos 1 a 6, con el servicio en `https://garra-cuentas.garra-iberica.workers.dev`. Faltan los pasos 7 a 9.
 
 1. Crea una cuenta en <https://dash.cloudflare.com/sign-up>.
 2. Instala y entra: `npm ci`, y `npx wrangler login` (abre el navegador).

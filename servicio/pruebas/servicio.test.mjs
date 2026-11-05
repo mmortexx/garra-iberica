@@ -440,7 +440,7 @@ describe('CORS, CSRF y cabeceras', () => {
 
   test('desde otro origen no se puede ni leer ni escribir', async () => {
     const t = await s.entrar('ana');
-    for (const origen of ['https://malo.prueba', 'https://garra-iberica.pages.dev.malo.prueba', 'http://mmortexx.github.io', 'https://mmortexx.github.io:8443', 'null', 'https://otro.github.io']) {
+    for (const origen of ['https://malo.prueba', 'https://clan.garra-iberica.workers.dev.malo.prueba', 'http://mmortexx.github.io', 'https://mmortexx.github.io:8443', 'null', 'https://otro.github.io']) {
       const pre = await s.pedir('/yo/progreso', { method: 'OPTIONS', origen, cabeceras: { 'Access-Control-Request-Method': 'PUT', 'Access-Control-Request-Headers': 'authorization,content-type' } });
       assert.equal(pre.headers.get('access-control-allow-origin'), null, origen);
       assert.equal(pre.status, 403, origen);

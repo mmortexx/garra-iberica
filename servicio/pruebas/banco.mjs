@@ -10,7 +10,7 @@ import { Miniflare } from 'miniflare';
 const AQUI = dirname(fileURLToPath(import.meta.url));
 export const SERVICIO = join(AQUI, '..');
 export const GUILD = '1564701916452229202';
-export const ORIGEN = 'https://garra-iberica.pages.dev';
+export const ORIGEN = 'https://clan.garra-iberica.workers.dev';
 export const PAGINA_ES = `${ORIGEN}/ruta/`;
 export const PAGINA_EN = `${ORIGEN}/en/route/`;
 export const URL_SERVICIO = 'https://cuentas.prueba';

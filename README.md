@@ -1,10 +1,10 @@
 # Código de la web
 
-**La web está en https://garra-iberica.pages.dev/**. Esto es solo su código.
+**La web está en https://clan.garra-iberica.workers.dev/**. Esto es solo su código.
 
-Web estática publicada con Cloudflare Pages desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages sigue publicando la misma carpeta solo para que la dirección antigua lleve a la nueva (`docs/efectos.js`). Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+Web estática publicada en Cloudflare (`wrangler.jsonc`) desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages sigue publicando la misma carpeta para dos cosas: que la dirección antigua lleve a la nueva (`docs/efectos.js`) y servir los vídeos (`docs/_redirects`), porque Cloudflare los entrega enteros y no por trozos, y sin trozos no se puede saltar a un punto del vídeo. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
 
-Dirección: https://garra-iberica.pages.dev/ (inglés en `/en/`).
+Dirección: https://clan.garra-iberica.workers.dev/ (inglés en `/en/`).
 
 ## Qué hay
 

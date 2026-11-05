@@ -141,7 +141,7 @@ def csp(pagina):
     """La misma en toda la web; solo la ruta de logros, que es la que lo usa, puede hablar con el servicio de cuentas."""
     conectar = ' '.join(filter(None, ["'self'", logros_web.servicio() if pagina == 'ruta' else '']))
     return (f"default-src 'none'; script-src 'self'; connect-src {conectar}; style-src 'self'; font-src 'self'; "
-            "img-src 'self' data:; media-src 'self'; base-uri 'none'; form-action 'none'")
+            "img-src 'self' data:; media-src 'self' https://mmortexx.github.io; base-uri 'none'; form-action 'none'")
 
 
 ACERO = ('<svg class="oculto" aria-hidden="true" focusable="false"><defs><linearGradient id="acero" x1="0" y1="0" x2="1" y2="1">'
