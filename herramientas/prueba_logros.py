@@ -125,6 +125,37 @@ def caza_configuracion_desalineada():
         assert any('data-servicio' in x for x in m), f'no caza data-servicio distinto: {m}'
 
 
+def el_aviso_solo_describe_cuentas_que_existen():
+    texto = 'a<!--si-cuentas-->con<!--sin-cuentas-->sin<!--fin-cuentas-->b'
+    assert montar_web.segun_cuentas(texto, True) == 'aconb'
+    assert montar_web.segun_cuentas(texto, False) == 'asinb'
+    try:
+        montar_web.segun_cuentas('<!--si-cuentas-->con', False)
+        raise AssertionError('deja pasar un trozo sin cerrar')
+    except SystemExit:
+        pass
+    with tempfile.TemporaryDirectory() as t:
+        raiz = Path(t) / 'docs'
+        copia_web(raiz)
+        base = guia_dinos.base_web(raiz)
+        real = comprobar.SERVICIO_CUENTAS
+        for sitio, frase in (('legal', 'Si entras con Discord'), ('en/legal', 'If you sign in with Discord')):
+            pagina = raiz / sitio / 'index.html'
+            bien = pagina.read_bytes()
+            assert frase.encode() not in bien, f'{sitio}: describe cuentas mientras cuentas.json está vacío'
+            pagina.write_bytes(bien.replace(b'</main>', f'<p>{frase}</p></main>'.encode()))
+            m = mensajes(lambda f: comprobar.revisar_cuentas(raiz, base, f, real))
+            assert any('aviso legal' in x and sitio in x for x in m), f'no caza {sitio} describiendo cuentas: {m}'
+            pagina.write_bytes(bien)
+        direccion = logros_web.servicio
+        logros_web.servicio = lambda: 'https://cuentas.prueba'
+        try:
+            m = mensajes(lambda f: comprobar.revisar_cuentas(raiz, base, f, real))
+        finally:
+            logros_web.servicio = direccion
+        assert any('aviso legal' in x for x in m), f'con servicio, no caza un aviso que no describe las cuentas: {m}'
+
+
 def caza_lo_que_desmiente_el_aviso():
     with tempfile.TemporaryDirectory() as t:
         raiz = Path(t) / 'docs'
@@ -155,6 +186,7 @@ def main():
     prueba('los datos de la página son los del catálogo', datos_de_la_pagina)
     prueba('una dirección de servicio mal escrita para el montaje', direccion_mal_escrita)
     prueba('comprobar.py caza web y servicio desalineados', caza_configuracion_desalineada)
+    prueba('el aviso legal solo describe cuentas que existen', el_aviso_solo_describe_cuentas_que_existen)
     prueba('comprobar.py caza lo que desmiente el aviso legal', caza_lo_que_desmiente_el_aviso)
     if fallos:
         sys.exit(f'{fallos} pruebas fallan')

@@ -956,6 +956,8 @@ def revisar_cuentas(raiz, base, falla, servicio=SERVICIO_CUENTAS):
             falla(f'{nombre}: connect-src debe ser «{esperado}» y es «{conecta and conecta.group(1)}»')
         if pagina == 'ruta' and f'data-servicio="{direccion}"' not in html:
             falla(f'{nombre}: data-servicio no es «{direccion}», lo que dice {logros_web.CUENTAS.name}')
+        if pagina == 'legal' and any(f in html for f in ('Si entras con Discord', 'If you sign in with Discord')) != bool(direccion):
+            falla(f'{nombre}: el aviso legal tiene que describir las cuentas si existen, y solo entonces ({logros_web.CUENTAS.name})')
 
 
 def guia_del_discord(posts, titulo):

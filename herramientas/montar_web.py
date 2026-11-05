@@ -137,6 +137,16 @@ VERIFICACION = [('google-site-verification', 'TjZ3UO9z_tfPs5RZnAKtSvgGJ08vOeuVpI
                 ('msvalidate.01', '06F63226A2F1AE3F8270F972B3FCA4D2')]
 
 
+def segun_cuentas(cuerpo, activas):
+    """Un texto puede decir dos cosas: <!--si-cuentas-->con cuentas<!--sin-cuentas-->sin ellas<!--fin-cuentas-->.
+    Los avisos no pueden describir un servicio que aún no existe."""
+    trozo = r'<!--si-cuentas-->(.*?)<!--sin-cuentas-->(.*?)<!--fin-cuentas-->'
+    limpio = re.sub(trozo, lambda m: m[1 if activas else 2], cuerpo, flags=re.S)
+    if '-cuentas-->' in limpio:
+        sys.exit('un trozo <!--si-cuentas--> está sin cerrar')
+    return limpio
+
+
 def csp(pagina):
     """La misma en toda la web; solo la ruta de logros, que es la que lo usa, puede hablar con el servicio de cuentas."""
     conectar = ' '.join(filter(None, ["'self'", logros_web.servicio() if pagina == 'ruta' else '']))
@@ -280,7 +290,7 @@ def rellenar(cuerpo, pagina, lang, base, d):
         if m.group(1) not in valores or m.group(2):
             sys.exit(f'paginas/{lang}/{pagina}.html: marcador desconocido {m.group(0)}')
         return valores[m.group(1)]()
-    cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, cuerpo)
+    cuerpo = re.sub(r'\{\{(\w+)(?::([^}]+))?\}\}', poner, segun_cuentas(cuerpo, bool(logros_web.servicio())))
     if pagina == 'inicio':
         cuerpo = textos_tira(cuerpo, lang)
     pre = prefijo(RUTA[pagina, lang])
