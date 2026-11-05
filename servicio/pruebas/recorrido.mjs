@@ -433,6 +433,36 @@ test('servicio caído con sesión: lo marcado no se pierde, se dice y sube solo 
   await ctx.close();
 });
 
+// El tope de filas del día (429 tope_diario) no es un servicio caído: la página dice qué pasa, guarda las marcas y las sube al cambiar el día.
+for (const [idioma, ruta, dice, ahora] of [['es', '/ruta/', /límite de guardado de hoy.*pendientes de subir: 1.*mañana/, /Guardado en tu cuenta/], ['en', '/en/route/', /today's saving limit.*waiting to upload: 1.*tomorrow/, /Saved to your account/]]) {
+  test(`tope diario de filas (${idioma}): lo dice, no lo toma por servicio caído y sube las marcas al cambiar el día`, async () => {
+    const { ctx, abrir } = await dispositivo();
+    const p = await abrir(ruta);
+    await dentro(p);
+    const id = USUARIOS.ana.id;
+    await s.db.prepare("INSERT INTO escrituras_diarias (discord_id, dia, restantes) VALUES (?1, ?2, 0) ON CONFLICT (discord_id) DO UPDATE SET dia = excluded.dia, restantes = 0")
+      .bind(id, new Date().toISOString().slice(0, 10)).run();
+    let intentos = 0;
+    ctx.on('request', q => { if (q.method() === 'PUT' && q.url().startsWith(`${URL_API}/yo/progreso`)) intentos++; });
+    await pulsar(p, 'allo-prime');
+    await hasta(async () => dice.test(await texto(p, '[data-estado]')), 'el aviso del tope diario');
+    // No insiste mientras dura el tope: el siguiente intento es de minutos.
+    const hastaAqui = intentos;
+    await new Promise(r => { setTimeout(r, 2500); });
+    assert.equal(intentos, hastaAqui, 'sigue llamando al servicio sin parar');
+    assert.doesNotMatch(await texto(p, '[data-estado]'), /Sin conexión|No connection|no responde|not responding/);
+    assert.equal(await pulsado(p, 'allo-prime'), 'true');
+    assert.deepEqual(await filasDe('ana'), []);
+    assert.deepEqual((await guardado(p)).subidas, { 'allo-prime': 1 });
+    await s.db.prepare("UPDATE escrituras_diarias SET dia = '2000-01-01'").run();
+    await avisar(p);
+    await subido('ana', 'allo-prime', 1);
+    await hasta(async () => ahora.test(await texto(p, '[data-estado]')), 'el estado guardado');
+    assert.deepEqual((await guardado(p)).subidas, {});
+    await ctx.close();
+  });
+}
+
 test('leer del servicio no pisa lo que aún no ha subido, ni al marcar ni al desmarcar', async () => {
   const { ctx, abrir } = await dispositivo();
   let p = await abrir();

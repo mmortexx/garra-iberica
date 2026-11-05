@@ -23,6 +23,7 @@
     subiendo: n => `Saving… (${n})`,
     pendientes: n => `No connection to the service. Ticks waiting to upload: ${n}. They are safe in this browser and will upload on their own when it comes back.`,
     caido: 'The accounts service is not responding. The page still works: your ticks are saved in this browser.',
+    topeDiario: n => `You have reached today's saving limit for your account. Your ticks are safe in this browser (waiting to upload: ${n}) and will upload on their own tomorrow, after midnight UTC.`,
     sinServicio: 'Accounts are not available yet. Your ticks are saved in this browser only: copy your code from time to time.',
     caducada: n => `Your session has expired. Sign in again.${n ? ` Ticks waiting to upload: ${n}. They stay here until then.` : ''}`,
     sinAlmacen: 'This browser does not allow saving: your ticks will be lost when you close it. Copy your code first.',
@@ -81,6 +82,7 @@
     subiendo: n => `Guardando… (${n})`,
     pendientes: n => `Sin conexión con el servicio. Marcas pendientes de subir: ${n}. Están a salvo en este navegador y se subirán solas cuando vuelva.`,
     caido: 'El servicio de cuentas no responde. La página sigue funcionando: tus marcas se guardan en este navegador.',
+    topeDiario: n => `Has llegado al límite de guardado de hoy en tu cuenta. Tus marcas siguen a salvo en este navegador (pendientes de subir: ${n}) y se subirán solas mañana, pasada la medianoche UTC (la 1 o las 2 de la madrugada en España).`,
     sinServicio: 'Las cuentas aún no están disponibles. Tus marcas se guardan solo en este navegador: copia tu código de vez en cuando.',
     caducada: n => `Tu sesión ha caducado. Entra otra vez.${n ? ` Marcas pendientes de subir: ${n}. Siguen aquí hasta entonces.` : ''}`,
     sinAlmacen: 'Este navegador no deja guardar: tus marcas se perderán al cerrarlo. Copia antes tu código.',
@@ -195,6 +197,7 @@
   const bloques = [];
   const sesiones = [];
   let servicioCaido = false;
+  let topeDiario = false;
   let caducada = false;
   let enVuelo = false;
   let cuenta = null;
@@ -259,6 +262,7 @@
     if (!hayAlmacen) texto = T.sinAlmacen;
     else if (!SERVICIO) texto = T.sinServicio;
     else if (caducada) texto = T.caducada(n);
+    else if (almacen.token && topeDiario && n) texto = T.topeDiario(n);
     else if (almacen.token && servicioCaido) texto = n ? T.pendientes(n) : T.caido;
     else if (almacen.token && n) texto = T.subiendo(n);
     else if (almacen.token) texto = T.nube;
@@ -266,7 +270,7 @@
     else texto = T.soloNavegador;
     estado.textContent = texto;
     estado.hidden = false;
-    estado.classList.toggle('ruta-estado-mal', !hayAlmacen || caducada || servicioCaido);
+    estado.classList.toggle('ruta-estado-mal', !hayAlmacen || caducada || servicioCaido || (topeDiario && n > 0));
   }
 
   function aviso(texto) {
@@ -360,6 +364,8 @@
     if (!cambios.length) return [];
     const r = await pedir('/yo/progreso', { metodo: 'PUT', cuerpo: { cambios, modo } });
     if (r.status === 401) throw Object.assign(new Error('sesión'), { caducada: true });
+    // El tope de filas del día no se arregla en un minuto: no se confunde con un servicio caído.
+    if (r.status === 429 && (await r.json().catch(() => ({}))).error === 'tope_diario') throw Object.assign(new Error('tope'), { tope: true });
     if (!r.ok) throw new Error(String(r.status));
     return (await r.json()).rechazados || [];
   }
@@ -382,10 +388,15 @@
       anotarHistorial(bajadas, subidas, rechazados);
       intentos = 0;
       servicioCaido = false;
+      topeDiario = false;
       guardar();
     } catch (e) {
       if (e.caducada) alCaducar();
-      else {
+      else if (e.tope) {
+        topeDiario = true;
+        pintarEstado();
+        programarSubida(ESPERAS.at(-1));
+      } else {
         servicioCaido = true;
         pintarEstado();
         programarSubida(ESPERAS[Math.min(intentos++, ESPERAS.length - 1)]);
@@ -393,7 +404,7 @@
     } finally {
       enVuelo = false;
     }
-    if (almacen.token && !servicioCaido && porSubir()) programarSubida();
+    if (almacen.token && !servicioCaido && !topeDiario && porSubir()) programarSubida();
   }
 
   // Subir nunca baja lo que otro dispositivo marcó de más; por eso, tras bajar algo, lo último que se marque ahí se fija.
