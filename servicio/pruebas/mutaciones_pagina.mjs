@@ -7,6 +7,7 @@ import { SERVICIO } from './banco.mjs';
 
 const ORIGINAL = readFileSync(join(SERVICIO, '..', 'docs', 'ruta.js'), 'utf8');
 const MUTANTE = join(tmpdir(), `ruta-mutante-${process.pid}.js`);
+const ESPERA = Number(process.env.MUTACIONES_ESPERA) || 180000;
 
 const GUARDAS = [
   ['guardar en el navegador', 'localStorage.setItem(CLAVE, JSON.stringify(almacen));', '', 'servicio caído con sesión'],
@@ -48,19 +49,36 @@ const GUARDAS = [
   ['errores por idioma', "if (error) aviso(Object.hasOwn(T.errores, error) ? T.errores[error] : T.errores.canje);", '', 'no miembro'],
   ['la sesión que toca se abre', 'actual.d.open = true;', '', 'la ruta:'],
   ['pendientes', 'f.hidden = soloPendientes &&', 'f.hidden = false &&', 'los filtros'],
+  ['los ids de antes se traducen', 'const nuevo = ANTIGUOS.get(k) ?? k;', 'const nuevo = k;', 'ids por posición'],
+  ['la dirección antigua no toca nada', "if (location.hostname === 'mmortexx.github.io') return;", '', 'dirección antigua'],
+  ['lo rechazado se queda pendiente', 'almacen.subidas[k] === v && !retener.has(k)', 'almacen.subidas[k] === v', 'rechaza'],
+  ['lo rechazado no se reintenta sin parar', '.filter(k => !retenidas.has(k))', '', 'rechaza'],
 ];
 
+const SOLO = process.env.MUTACIONES_SOLO ? GUARDAS.slice(0, Number(process.env.MUTACIONES_SOLO)) : GUARDAS;
+
+// Sin resumen no se sabe nada: se ha colgado o se ha caído el recorrido, y eso no es una guarda viva.
 function recorrido(patron) {
   const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', `--test-name-pattern=${patron}`, 'pruebas/recorrido.mjs'], {
-    cwd: SERVICIO, encoding: 'utf8', timeout: 180000, env: { ...process.env, RUTA_JS: MUTANTE, CAPTURAS: '' },
+    cwd: SERVICIO, encoding: 'utf8', timeout: ESPERA, env: { ...process.env, RUTA_JS: MUTANTE, CAPTURAS: '' },
   });
-  const fallos = /ℹ fail (\d+)/.exec(r.stdout)?.[1];
-  const buenas = /ℹ pass (\d+)/.exec(r.stdout)?.[1];
-  return { fallos: Number(fallos ?? -1), buenas: Number(buenas ?? -1) };
+  const fallos = /ℹ fail (\d+)/.exec(r.stdout ?? '')?.[1];
+  const buenas = /ℹ pass (\d+)/.exec(r.stdout ?? '')?.[1];
+  if (fallos === undefined || buenas === undefined) return { sinResumen: r.error?.code ?? `salida ${r.status}` };
+  return { fallos: Number(fallos), buenas: Number(buenas) };
+}
+
+// Una prueba inestable puede dar cualquier cosa una vez: antes de concluir, se repite.
+function conReintento(patron) {
+  const primera = recorrido(patron);
+  if (primera.fallos > 0) return primera;
+  const segunda = recorrido(patron);
+  return segunda.fallos > 0 || segunda.sinResumen ? { ...segunda, aLaSegunda: true } : segunda;
 }
 
 let vivas = 0;
-for (const [que, texto, cambio, patron] of GUARDAS) {
+let sinResolver = 0;
+for (const [que, texto, cambio, patron] of SOLO) {
   const veces = ORIGINAL.split(texto).length - 1;
   if (veces !== 1) {
     console.log(`MAL     ${que}: su texto sale ${veces} veces en ruta.js`);
@@ -68,13 +86,20 @@ for (const [que, texto, cambio, patron] of GUARDAS) {
     continue;
   }
   writeFileSync(MUTANTE, ORIGINAL.replace(texto, () => cambio));
-  const { fallos, buenas } = recorrido(patron);
-  if (fallos > 0) console.log(`cazada  ${que}  (${fallos} en rojo, ${buenas} en verde)`);
-  else {
+  const { fallos, buenas, sinResumen, aLaSegunda } = conReintento(patron);
+  if (sinResumen) {
+    console.log(`SIN RESUMEN  ${que}: el recorrido no ha acabado (${sinResumen}), repetido dos veces`);
+    sinResolver++;
+  } else if (fallos > 0) console.log(`cazada  ${que}  (${fallos} en rojo, ${buenas} en verde)${aLaSegunda ? ', a la segunda: prueba inestable' : ''}`);
+  else if (buenas === 0) {
+    console.log(`MAL     ${que}: «${patron}» no elige ninguna prueba`);
+    vivas++;
+  } else {
     console.log(`VIVA    ${que}  (${buenas} en verde)`);
     vivas++;
   }
 }
 rmSync(MUTANTE, { force: true });
-console.log(`\n${GUARDAS.length - vivas} de ${GUARDAS.length} guardas quitadas se cazan`);
-process.exit(vivas ? 1 : 0);
+console.log(`\n${SOLO.length - vivas - sinResolver} de ${SOLO.length} guardas quitadas se cazan`);
+if (sinResolver) console.log(`${sinResolver} sin resolver: el recorrido no acabó, no son guardas vivas`);
+process.exit(vivas || sinResolver ? 1 : 0);

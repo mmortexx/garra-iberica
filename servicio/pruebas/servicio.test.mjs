@@ -1,11 +1,17 @@
 // Comportamiento del servicio, visto desde fuera: por HTTP, como lo ve la página o quien lo ataca.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import { unstable_readConfig } from 'wrangler';
-import { MAXIMOS } from '../src/catalogo.js';
+import lista from '../../herramientas/logros.json' with { type: 'json' };
+import congelados from '../../herramientas/logros_congelados.json' with { type: 'json' };
+import { MAXIMOS, calcular } from '../src/catalogo.js';
 import { aplicarCambios } from '../src/progreso.js';
+import { leerBorrados, sqlBorrar, sqlExportar } from '../scripts/miembro.mjs';
+import { sqlDeCopia } from '../scripts/restaurar.mjs';
 import {
   CLAVE_CLIENTE, GUILD, ORIGEN, PAGINA_EN, PAGINA_ES, SERVICIO, USUARIOS, URL_SERVICIO, aleatorio, aplicarEsquema,
   arrancarDiscord, arrancarServicio, huella, retoDe,
@@ -375,7 +381,7 @@ describe('guardar logros', () => {
 
   test('acepta los logros de Oviraptor, ocultos en la web, para no perderlos', async () => {
     const t = await s.entrar('ana');
-    const j = await (await marcar(t, [{ logro: 'ovi-exp', nivel: 1 }, { logro: 'fed-13', nivel: 2 }])).json();
+    const j = await (await marcar(t, [{ logro: 'ovi-exp', nivel: 1 }, { logro: 'fed-ovi', nivel: 2 }])).json();
     assert.equal(j.aplicados, 2);
   });
 
@@ -826,3 +832,178 @@ describe('los límites', () => {
     }
   });
 });
+
+describe('la dirección antigua', () => {
+  test('la configuración publicada acepta solo la dirección nueva', () => {
+    const { vars } = unstable_readConfig({ config: join(SERVICIO, 'wrangler.toml') });
+    assert.equal(new URL(vars.PAGINA_ES).origin, 'https://clan.garra-iberica.workers.dev');
+    assert.equal(new URL(vars.PAGINA_EN).origin, 'https://clan.garra-iberica.workers.dev');
+  });
+
+  test('desde GitHub Pages no se puede ni canjear ni usar una sesión', async () => {
+    const t = await arrancarServicio({ discord, paginaEs: 'https://clan.garra-iberica.workers.dev/ruta/', paginaEn: 'https://clan.garra-iberica.workers.dev/en/route/' });
+    try {
+      const nueva = await t.pedir('/salud', { origen: 'https://clan.garra-iberica.workers.dev' });
+      assert.equal(nueva.headers.get('access-control-allow-origin'), 'https://clan.garra-iberica.workers.dev');
+      for (const [ruta, opciones] of [['/sesion', { method: 'POST', cuerpo: { codigo: 'x', verificador: 'y' } }], ['/yo', {}]]) {
+        const antigua = await t.pedir(ruta, { ...opciones, origen: 'https://mmortexx.github.io' });
+        assert.equal(antigua.status, 403, `${ruta} da ${antigua.status}`);
+        assert.equal(antigua.headers.get('access-control-allow-origin'), null);
+      }
+    } finally {
+      await t.parar();
+    }
+  });
+});
+
+describe('lo que promete el aviso legal', () => {
+  const aviso = lang => readFileSync(join(SERVICIO, '..', 'paginas', lang, 'legal.html'), 'utf8');
+  const FRASES = {
+    es: { cookie: /cookie técnica durante (\d+) minutos/, sesion: /La sesión dura (\d+) días/, copias: /recuperación automáticas desaparecen en (\d+) días/ },
+    en: { cookie: /technical cookie for (\d+) minutes/, sesion: /A session lasts (\d+) days/, copias: /recovery copies disappear within (\d+) days/ },
+  };
+  const dice = (lang, que) => {
+    const m = FRASES[lang][que].exec(aviso(lang));
+    assert.ok(m, `paginas/${lang}/legal.html ya no dice «${FRASES[lang][que]}»`);
+    return Number(m[1]);
+  };
+
+  test('la cookie y la sesión duran lo que dice, en los dos idiomas', async () => {
+    const inicio = await s.pedir(`/auth/discord?reto=${retoDe(aleatorio())}`, { origen: null });
+    const segundos = Number(/Max-Age=(\d+)/.exec(inicio.headers.get('set-cookie'))[1]);
+    await s.entrar('ana');
+    const [{ caduca }] = await s.filas('SELECT caduca FROM sesiones');
+    const dias = Math.round((caduca - Date.now()) / 86400000);
+    for (const lang of ['es', 'en']) {
+      assert.equal(dice(lang, 'cookie') * 60, segundos, `${lang}: cookie`);
+      assert.equal(dice(lang, 'sesion'), dias, `${lang}: sesión`);
+    }
+  });
+
+  // Los 7 días son de Cloudflare (plan gratuito), no de este código: lo único que se puede atar es el README, que lo cita.
+  test('las copias de recuperación: lo mismo en el aviso y en el README', () => {
+    const readme = Number(/D1 guarda (\d+) días de vuelta atrás/.exec(readFileSync(join(SERVICIO, 'README.md'), 'utf8'))[1]);
+    for (const lang of ['es', 'en']) assert.equal(dice(lang, 'copias'), readme, lang);
+  });
+
+  test('quien ya se fue tiene un camino para pedirlo, en los dos idiomas', () => {
+    assert.match(aviso('es'), /Si ya te fuiste, escribe por mensaje privado de Discord/);
+    assert.match(aviso('en'), /If you have already left, send a private Discord message/);
+    assert.match(readFileSync(join(SERVICIO, 'README.md'), 'utf8'), /scripts\/miembro\.mjs borrar ID/);
+  });
+});
+
+describe('datos de un miembro a petición', () => {
+  const [ana, bea] = [USUARIOS.ana.id, USUARIOS.bea.id];
+  const copia = async () => ({
+    formato: 'garra-copia-1',
+    miembros: await s.filas('SELECT * FROM miembros'),
+    progreso: await s.filas('SELECT * FROM progreso'),
+  });
+  const ejecutar = async sql => { for (const orden of sql.split('\n').filter(Boolean)) await s.db.prepare(orden).run(); };
+
+  beforeEach(async () => {
+    for (const quien of ['ana', 'bea']) {
+      const token = await s.entrar(quien);
+      await marcar(token, [{ logro: 'addict', nivel: 2 }]);
+    }
+  });
+
+  test('exportar da lo suyo y nada de otro', async () => {
+    const [miembro, progreso] = await Promise.all(sqlExportar(ana).map(sql => s.filas(sql)));
+    assert.deepEqual(miembro.map(m => m.discord_id), [ana]);
+    assert.equal(progreso.length, 2);
+    assert.ok(progreso.every(p => p.logro === 'addict' && p.fecha && !('discord_id' in p)));
+  });
+
+  test('borrar se lleva todo lo suyo, sesiones incluidas, y no toca a otro', async () => {
+    await s.db.prepare(sqlBorrar(ana)).run();
+    for (const tabla of ['miembros', 'progreso', 'sesiones', 'entradas']) {
+      assert.deepEqual(await s.filas(`SELECT * FROM ${tabla} WHERE discord_id = ?1`, ana), [], tabla);
+    }
+    assert.equal((await s.filas('SELECT * FROM progreso WHERE discord_id = ?1', bea)).length, 2);
+    assert.equal((await s.filas('SELECT * FROM sesiones WHERE discord_id = ?1', bea)).length, 1);
+  });
+
+  test('restaurar una copia antigua no revive a quien se borró a petición', async () => {
+    const antigua = await copia();
+    await s.db.prepare(sqlBorrar(ana)).run();
+    await ejecutar(sqlDeCopia(antigua, [ana]));
+    assert.deepEqual(await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', ana), []);
+    assert.deepEqual(await s.filas('SELECT * FROM progreso WHERE discord_id = ?1', ana), []);
+    assert.equal((await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', bea)).length, 1);
+  });
+
+  test('un identificador raro no llega a la base, y la lista de borrados se lee bien', () => {
+    for (const malo of ["1' OR '1'='1", '', undefined, '123']) {
+      assert.throws(() => sqlBorrar(malo), /no es un identificador/);
+      assert.throws(() => sqlExportar(malo), /no es un identificador/);
+    }
+    const carpeta = mkdtempSync(join(tmpdir(), 'garra-borrados-'));
+    try {
+      const lista = join(carpeta, 'b.txt');
+      assert.deepEqual(leerBorrados(lista), []);
+      writeFileSync(lista, `${ana}\r\n\n${bea}\n${ana}\n`);
+      assert.deepEqual(leerBorrados(lista), [ana, bea]);
+      writeFileSync(lista, 'no-es-un-id\n');
+      assert.throws(() => leerBorrados(lista), /no es un identificador/);
+    } finally {
+      rmSync(carpeta, { recursive: true, force: true });
+    }
+    assert.ok(!existsSync(join(SERVICIO, 'borrados.local.txt')) || /\*\.local\.txt/.test(readFileSync(join(SERVICIO, '..', '.gitignore'), 'utf8')));
+  });
+});
+
+describe('las mutaciones de la página', () => {
+  test('un recorrido sin resumen no se cuenta como guarda viva', () => {
+    const r = spawnSync(process.execPath, ['pruebas/mutaciones_pagina.mjs'], {
+      cwd: SERVICIO, encoding: 'utf8', env: { ...process.env, MUTACIONES_ESPERA: '1', MUTACIONES_SOLO: '1' },
+    });
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /SIN RESUMEN/);
+    assert.doesNotMatch(r.stdout, /VIVA/);
+    assert.match(r.stdout, /1 sin resolver/);
+  });
+});
+
+describe('los ids de los logros', () => {
+  const DECIDIR = 'Hay que decidir qué pasa con lo ya guardado antes de tocar esto (ver servicio/README.md, «Cambiar la lista de logros»)';
+
+  test('son los congelados: cualquier cambio obliga a decidir la migración', () => {
+    const ahora = Object.fromEntries(MAXIMOS);
+    const quitados = Object.keys(congelados.logros).filter(k => !(k in ahora));
+    const recortados = Object.keys(congelados.logros).filter(k => k in ahora && ahora[k] !== congelados.logros[k]);
+    const nuevos = Object.keys(ahora).filter(k => !(k in congelados.logros));
+    assert.deepEqual({ quitados, recortados, nuevos }, { quitados: [], recortados: [], nuevos: [] }, DECIDIR);
+  });
+
+  test('cambiar el orden de la lista no cambia ningún id', () => {
+    const revuelta = structuredClone(lista);
+    revuelta.especies.reverse();
+    revuelta.muertes.especies.reverse();
+    for (const e of revuelta.especies) e.cazas.reverse();
+    assert.deepEqual([...calcular(revuelta)].sort(), [...MAXIMOS].sort());
+  });
+
+  test('la tabla de los de antes lleva a ids que existen y no pisa ninguno de ahora', () => {
+    const antiguos = Object.entries(lista.ids_antiguos);
+    assert.equal(antiguos.length, 26 + 20);
+    for (const [antes, ahora] of antiguos) {
+      assert.ok(MAXIMOS.has(ahora), `${antes} lleva a ${ahora}, que no existe`);
+      assert.ok(!MAXIMOS.has(antes), `${antes} sigue siendo un id de ahora: se confundirían`);
+    }
+    assert.equal(new Set(antiguos.map(([, ahora]) => ahora)).size, antiguos.length, 'dos de antes llevan al mismo');
+    const [primera] = lista.muertes.especies;
+    assert.equal(lista.ids_antiguos['fed-0'], `fed-${lista.especies.find(e => e.nombre === primera).id}`);
+  });
+
+  test('no repetir el tipo de cacería en una especie, ni nombrar una muerte por una especie que no existe', () => {
+    const rota = structuredClone(lista);
+    rota.especies[0].cazas.push({ ...rota.especies[0].cazas[0] });
+    assert.throws(() => calcular(rota), /repetid/);
+    const otra = structuredClone(lista);
+    otra.muertes.especies.push('Nadie');
+    assert.throws(() => calcular(otra), /no es una especie/);
+  });
+});
+

@@ -3,6 +3,7 @@ las cuentas rotas o desmentiría el aviso legal.
 
 Uso: python herramientas/prueba_logros.py
 """
+from html import unescape
 import json
 import re
 import shutil
@@ -42,6 +43,25 @@ def cuenta_del_catalogo():
     assert len(d['plan']) == 23, f'{len(d["plan"])} sesiones'
 
 
+def ids_congelados():
+    congelados = json.loads((logros_web.HERRAMIENTAS / 'logros_congelados.json').read_text(encoding='utf-8'))['logros']
+    ahora = logros_web.maximos(d)
+    assert ahora == congelados, ('hay que decidir qué pasa con lo ya guardado antes de tocar los ids (servicio/README.md): '
+                                 f'quitados {sorted(set(congelados) - set(ahora))}, nuevos {sorted(set(ahora) - set(congelados))}, '
+                                 f'tramos distintos {[k for k in ahora if k in congelados and ahora[k] != congelados[k]]}')
+    revuelta = json.loads(json.dumps(d))
+    revuelta['especies'].reverse()
+    revuelta['muertes']['especies'].reverse()
+    for e in revuelta['especies']:
+        e['cazas'].reverse()
+    assert logros_web.maximos(revuelta) == ahora, 'cambiar el orden de la lista cambia los ids'
+    for antes, despues in d['ids_antiguos'].items():
+        assert despues in ahora and antes not in ahora, f'{antes} → {despues}'
+    assert len(set(d['ids_antiguos'].values())) == len(d['ids_antiguos']) == 46
+    # Lo que ve la página: los mismos ids y la misma tabla, sin pasar por el orden de nada.
+    assert json.loads(unescape(logros_web.antiguos_pagina(d))) == d['ids_antiguos']
+
+
 def oculto_fuera():
     ocultas = [e for e in d['especies'] if e.get('oculto')]
     assert [e['id'] for e in ocultas] == ['ovi'], 'lo oculto debe seguir siendo decisión de borradores/'
@@ -49,8 +69,8 @@ def oculto_fuera():
         for lang, html in HTML.items():
             assert e['nombre'].casefold() not in html.casefold(), f'{e["nombre"]} sale en {lang}'
             assert f'"{e["id"]}-' not in html, f'{e["id"]} tiene botones en {lang}'
-    assert all(k in MAX for k in ('ovi-exp', 'fed-13')), 'sus marcas se tienen que seguir aceptando'
-    assert not [k for k in VISIBLES if k.startswith('ovi-') or k == 'fed-13']
+    assert all(k in MAX for k in ('ovi-exp', 'fed-ovi')), 'sus marcas se tienen que seguir aceptando'
+    assert not [k for k in VISIBLES if k.startswith('ovi-') or k == 'fed-ovi']
 
 
 def cada_tramo_tiene_boton():
@@ -180,6 +200,7 @@ def caza_lo_que_desmiente_el_aviso():
 def main():
     sys.stdout.reconfigure(encoding='utf-8')
     prueba('la lista tiene lo que tenía la página de origen', cuenta_del_catalogo)
+    prueba('los ids de los logros son los congelados y no dependen del orden', ids_congelados)
     prueba('lo oculto no se enseña y se sigue aceptando', oculto_fuera)
     prueba('cada tramo visible tiene su botón, una vez', cada_tramo_tiene_boton)
     prueba('cada punto del mapa está en una sesión y solo una', cada_punto_en_una_sesion)

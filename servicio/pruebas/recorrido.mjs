@@ -877,7 +877,7 @@ test('los filtros enseñan lo que dicen', async () => {
 test('lo oculto no se enseña, pero se guarda', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
-  assert.equal(await p.locator('[data-fila^="ovi-"], button[data-logro^="ovi-"], button[data-logro="fed-13"]').count(), 0);
+  assert.equal(await p.locator('[data-fila^="ovi-"], button[data-logro^="ovi-"], button[data-logro="fed-ovi"]').count(), 0);
   assert.ok(!(await p.content()).toLowerCase().includes('oviraptor'));
   await dentro(p);
   await p.fill('[data-codigo]', `GR1.${Buffer.from(JSON.stringify({ 'ovi-grow': 4 })).toString('base64')}`);
@@ -885,3 +885,84 @@ test('lo oculto no se enseña, pero se guarda', async () => {
   await subido('ana', 'ovi-grow', 4);
   await ctx.close();
 });
+
+test('en la dirección antigua la página no lee, no guarda y no canjea nada', async () => {
+  const { ctx } = await dispositivo();
+  const ANTIGUA = 'https://mmortexx.github.io';
+  await ctx.route(`${ANTIGUA}/**`, async q => q.fulfill({ response: await q.fetch({ url: q.request().url().replace(`${ANTIGUA}/garra-iberica`, URL_WEB) }) }));
+  // efectos.js llevaría a la dirección nueva antes de que ruta.js hiciera nada: aquí se prueba solo ruta.js.
+  await ctx.route(/efectos\.js/, q => q.abort());
+  const sesion = JSON.stringify({ marcas: {}, cuenta: '1', nombre: 'Ana', token: 'x'.repeat(40), tokenDe: '1', caduca: Date.now() + 1e7 });
+  const alServicio = [];
+  ctx.on('request', q => { if (q.url().startsWith(URL_API)) alServicio.push(`${q.method()} ${q.url()}`); });
+  const p = await ctx.newPage();
+  await p.addInitScript(valor => { if (!localStorage.getItem('garra-ruta-v1')) localStorage.setItem('garra-ruta-v1', valor); }, sesion);
+  for (const hash of ['', `#entrada=${'a'.repeat(30)}`]) {
+    await p.goto(`${ANTIGUA}/garra-iberica/ruta/${hash}`, { waitUntil: 'load' });
+    await p.waitForTimeout(1500);
+    assert.ok(await p.evaluate(() => performance.getEntriesByType('resource').some(e => /ruta\.js/.test(e.name))), 'ruta.js se ha cargado');
+    assert.deepEqual(alServicio, [], `no habla con el servicio${hash ? ' ni canjea la entrada' : ' con la sesión guardada'}`);
+    assert.equal(await p.evaluate(() => localStorage.getItem('garra-ruta-v1')), sesion, 'no toca lo guardado');
+    assert.equal(await p.evaluate(() => location.hash), hash, 'no gasta el código de entrada');
+  }
+  await ctx.close();
+});
+
+test('si el servicio rechaza lo nuevo: se avisa bien, se conserva, no se reintenta sin parar y sube cuando lo acepta', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  let puts = 0;
+  await ctx.route(`${URL_API}/yo/progreso`, async q => {
+    if (q.request().method() !== 'PUT') return q.continue();
+    puts++;
+    return q.fulfill({
+      status: 200, contentType: 'application/json',
+      headers: { 'access-control-allow-origin': URL_WEB },
+      body: JSON.stringify({ aplicados: 0, rechazados: [{ logro: 'allo-exp', motivo: 'desconocido' }] }),
+    });
+  });
+  await pulsar(p, 'allo-exp');
+  await hasta(async () => /no acepta 1 marcas/.test(await texto(p, '[data-mensaje]')), 'el aviso de lo rechazado');
+  assert.ok(!/ya no están en la lista/.test(await texto(p, '[data-mensaje]')), 'el aviso no miente');
+  assert.deepEqual((await guardado(p)).subidas, { 'allo-exp': 1 }, 'sigue pendiente');
+  assert.equal(await pulsado(p, 'allo-exp'), 'true');
+  const antes = puts;
+  await p.waitForTimeout(2500);
+  assert.equal(puts, antes, 'no se reintenta sin parar');
+  assert.deepEqual(await filasDe('ana'), []);
+  await ctx.unroute(`${URL_API}/yo/progreso`);
+  await p.reload();
+  await subido('ana', 'allo-exp', 1);
+  assert.deepEqual((await guardado(p)).subidas, {});
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
+test('lo guardado y los códigos de antes, con los ids por posición, siguen valiendo', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const antes = { marcas: { 'allo-h0': 3, 'fed-0': 2, 'rex-h1': 1 }, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 };
+  const p = await ctx.newPage();
+  await p.addInitScript(valor => { if (!localStorage.getItem('garra-ruta-v1')) localStorage.setItem('garra-ruta-v1', valor); }, JSON.stringify(antes));
+  await p.goto(`${URL_WEB}/ruta/`, { waitUntil: 'load' });
+  // allo-h0 era la cacería de herbívoros de Allosaurus; fed-0, la muerte por Tyrannosaurus; rex-h1, su cacería de carnívoros.
+  assert.equal(await pulsado(p, 'allo-h-H', 3), 'true');
+  assert.equal(await pulsado(p, 'allo-h-H', 4), 'false');
+  assert.equal(await pulsado(p, 'fed-rex', 2), 'true');
+  assert.equal(await pulsado(p, 'rex-h-C', 1), 'true');
+  await pulsar(p, 'allo-exp');
+  assert.deepEqual((await guardado(p)).marcas, { 'allo-h-H': 3, 'fed-rex': 2, 'rex-h-C': 1, 'allo-exp': 1 }, 'lo guardado vuelve a escribirse con los ids de ahora');
+
+  const otro = await dispositivo();
+  const q = await otro.abrir();
+  const codigo = `GR1.${Buffer.from(JSON.stringify({ 'allo-h1': 9, 'dryo-h0': 1, 'allo-h0': 2 })).toString('base64')}`;
+  await q.fill('[data-codigo]', codigo);
+  await q.click('[data-traer]');
+  assert.equal(await pulsado(q, 'allo-h-H', 2), 'true');
+  assert.equal(await pulsado(q, 'allo-h-H', 3), 'false');
+  assert.deepEqual(Object.keys((await guardado(q)).marcas), ['allo-h-H']);
+  await ctx.close();
+  await otro.ctx.close();
+  assert.deepEqual(errores, []);
+});
+

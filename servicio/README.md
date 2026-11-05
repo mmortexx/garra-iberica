@@ -38,12 +38,27 @@ Hechos el 5 de noviembre de 2026: pasos 1 a 6, con el servicio en `https://garra
   datos personales: guárdala en lugar seguro y sustituye las viejas.
 - **Cargarla:** `node scripts/restaurar.mjs COPIA.json > restaurar.sql` y
   `npx wrangler d1 execute garra-cuentas --remote --file=restaurar.sql`. Las sesiones no se copian: cada uno vuelve a entrar.
-  Solo añade lo que falte: lo que ya esté en la base se queda como está. Lo que alguien haya borrado después de hacer esa
-  copia vuelve con ella: hay que volver a borrarlo.
+  Solo añade lo que falte: lo que ya esté en la base se queda como está, y se salta a quien esté en
+  `borrados.local.txt`. Lo que alguien borró con el botón de la web después de hacer esa copia sí vuelve con ella: no queda
+  rastro de esos borrados. Al cargar una copia, avísalo en el Discord con su fecha para que quien borró lo suyo después
+  pueda volver a borrarlo.
 - **Con muchísimos datos:** la copia desde la página espera al límite de peticiones (unas 120.000 filas por minuto) y carga
   todo en el navegador, así que deja de servir hacia el millón de filas. Entonces, `npx wrangler d1 export garra-cuentas --remote --output=copia.sql`.
 - **Un error de los últimos días:** D1 guarda 7 días de vuelta atrás (30 en el plan de pago),
-  `npx wrangler d1 time-travel restore garra-cuentas --timestamp=FECHA`.
+  `npx wrangler d1 time-travel restore garra-cuentas --timestamp=FECHA`. Luego, `node scripts/miembro.mjs reborrar`
+  y el mismo aviso en el Discord.
+
+## Datos de un miembro a petición
+
+Quien deja el clan no puede entrar, así que no tiene los botones de la página: lo pide por mensaje privado de Discord desde
+su cuenta (el aviso legal da ese camino). Eso mismo lo identifica: se atiende solo a la cuenta que escribe, nunca a otra,
+y en un mes como máximo. Su identificador se copia de su perfil de Discord (modo desarrollador → «Copiar ID»).
+
+- **Enviarle sus datos:** `node scripts/miembro.mjs exportar ID > datos.json`, y se le pasa ese fichero. Bórralo después.
+- **Borrarlos:** `node scripts/miembro.mjs borrar ID`. Lo anota en `borrados.local.txt`, un fichero que no se sube nunca:
+  guárdalo con las copias de seguridad. Sin él, una copia antigua lo devolvería al restaurarla.
+
+Las copias de seguridad que ya tengas no se tocan: se sustituyen por nuevas, y `restaurar.mjs` se salta a los anotados.
 
 ## Límites
 
@@ -53,8 +68,17 @@ sigue funcionando, dice que no hay conexión y guarda lo marcado para subirlo de
 
 ## Cambiar la lista de logros
 
-La lista es `herramientas/logros.json`, para la página y para el servicio. Al cambiarla hay que montar la web **y** volver a
-publicar el servicio (`npx wrangler deploy`). Quitar un logro no borra lo guardado; solo deja de enseñarse.
+La lista es `herramientas/logros.json`, para la página y para el servicio. Al cambiarla, **primero** se publica el servicio
+(`npx wrangler deploy`) y **después** se sube la web: al revés, el servicio rechazaría lo nuevo. La página no pierde esas
+marcas (las guarda, lo dice y las sube cuando el servicio las acepte), pero nadie las vería en otro dispositivo hasta
+entonces. Quitar un logro no borra lo guardado; solo deja de enseñarse.
+
+Cada logro se identifica por especie y tipo (`allo-h-H`, `fed-rex`), no por su posición: reordenar la lista no cambia
+ningún id. Los ids y sus tramos están congelados en `herramientas/logros_congelados.json` y una prueba falla con cualquier
+cambio (logro quitado, tramos recortados o logro nuevo), para que alguien decida qué pasa con lo ya guardado: renombrar
+(se añade a `ids_antiguos` de `logros.json` y la página traduce lo que traiga un navegador o un código GR1), o recortar o
+retirar (lo guardado se queda de más y no cuenta, o se borra a mano). Solo entonces se actualiza la lista congelada.
+`ids_antiguos` recoge cómo se llamaban antes (por posición) los 46 logros de caza y de muerte, y no se edita.
 
 ## Cambiar de dirección de la web
 
