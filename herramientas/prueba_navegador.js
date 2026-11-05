@@ -626,7 +626,8 @@ const imprimir = async navegador => {
           if (s.translate !== 'none' && !/^(0(px|%)?\s*)+$/.test(s.translate)) malos.add(`${quien(el)}: desplazado ${s.translate}`);
         }
         const propio = getComputedStyle(el);
-        if (el.tagName !== 'IMG' && (propio.webkitBackgroundClip === 'text' || /, 0\)$/.test(propio.color) || propio.color === 'transparent')) malos.add(`${quien(el)}: letra hueca`);
+        // Lo decorativo puede ser transparente a propósito: el ✓ de un logro sin marcar en la ruta.
+        if (el.tagName !== 'IMG' && !el.closest('[aria-hidden="true"]') && (propio.webkitBackgroundClip === 'text' || /, 0\)$/.test(propio.color) || propio.color === 'transparent')) malos.add(`${quien(el)}: letra hueca`);
       }
       return {
         anim: document.documentElement.classList.contains('anim'),
