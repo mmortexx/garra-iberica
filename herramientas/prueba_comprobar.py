@@ -210,7 +210,7 @@ def cambiando_legal(antes, despues):
 
 
 def mensajes_de_legal(cambiar):
-    return con_cuentas(cambiar, lambda web: [m for m in comprobar.main(web, avisa=lambda _: None) if 'legal' in m])
+    return con_cuentas(cambiar, lambda web: [m for m in comprobar.main(web, avisa=lambda _: None) if m.startswith(tuple(montar_web.RUTA['legal', l] for l in montar_web.LANGS))])
 
 
 def jefes_en_el_aviso_legal():
@@ -300,6 +300,109 @@ def cabecera_quitada_por_otro_bloque():
     assert any('X-Frame-Options' in m for m in mensajes), f'quitar X-Frame-Options en /ruta/* pasa: {mensajes}'
 
 
+MIEMBRO_FALSO = 'MiembroDePrueba1'
+
+
+def perfiles_de(manada):
+    """Un perfiles.json con la estructura del real: la jefatura (los tres jefes) y la manada (los miembros)."""
+    return {'jefatura': [{'nombre': n, 'url': 'https://ejemplo.invalid/'} for n in comprobar.JEFES],
+            'manada': [{'nombre': n, 'url': 'https://ejemplo.invalid/'} for n in manada]}
+
+
+def con_repositorio(ficheros, sin_versionar=None, perfiles=perfiles_de((MIEMBRO_FALSO,))):
+    """Ejecuta comprobar.main sobre docs/ real, pero con un repositorio de mentira (ficheros versionados y, aparte,
+    sin_versionar) y un perfiles.json de mentira (un dict, un texto tal cual o None para que no exista). Vigila APODO_FALSO
+    y a los tres jefes desde la lista local, como la real. Devuelve (fallos, avisos)."""
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        repo = d / 'repo'
+        for ruta, contenido in {**ficheros, **(sin_versionar or {})}.items():
+            (repo / ruta).parent.mkdir(parents=True, exist_ok=True)
+            (repo / ruta).write_bytes(contenido if isinstance(contenido, bytes) else contenido.encode('utf-8'))
+        subprocess.run(['git', 'init', '-q'], cwd=repo, check=True)
+        subprocess.run(['git', '-c', 'core.autocrlf=false', 'add', '--', *ficheros], cwd=repo, check=True)
+        (d / 'vigilar.txt').write_text('\n'.join((APODO_FALSO, *comprobar.JEFES)) + '\n', encoding='utf-8')
+        if perfiles is not None:
+            (d / 'perfiles.json').write_text(perfiles if isinstance(perfiles, str) else json.dumps(perfiles), encoding='utf-8')
+        reales = comprobar.VIGILAR, comprobar.PERFILES_ORIGINAL, comprobar.PROYECTO
+        comprobar.VIGILAR, comprobar.PERFILES_ORIGINAL, comprobar.PROYECTO = d / 'vigilar.txt', d / 'perfiles.json', repo
+        avisos = []
+        try:
+            return comprobar.main(DOCS, avisa=avisos.append), avisos
+        finally:
+            comprobar.VIGILAR, comprobar.PERFILES_ORIGINAL, comprobar.PROYECTO = reales
+
+
+def mensajes_de_ids(mensajes):
+    return [m for m in mensajes if '100000000000000001' in m]
+
+
+def ficheros_con_fallo_de_apodos(mensajes):
+    return {m.split(':')[0] for m in mensajes if 'dato de miembro' in m}
+
+
+def miembro_de_perfiles_en_paginas():
+    mensajes, _ = con_repositorio({'paginas/es/prueba.html': f'<p>Lo dijo {MIEMBRO_FALSO}.</p>\n'})
+    assert ficheros_con_fallo_de_apodos(mensajes) == {'paginas/es/prueba.html'}, f'un miembro de perfiles.json en paginas/ pasa: {mensajes}'
+
+
+def apodo_de_la_lista_en_servicio():
+    mensajes, _ = con_repositorio({'servicio/src/prueba.js': f'// {APODO_FALSO}\n'})
+    assert ficheros_con_fallo_de_apodos(mensajes) == {'servicio/src/prueba.js'}, f'un apodo de la lista en servicio/ pasa: {mensajes}'
+
+
+def apodo_en_la_raiz_y_en_herramientas():
+    mensajes, _ = con_repositorio({'README.md': f'{MIEMBRO_FALSO}\n', 'herramientas/prueba.py': f'# {APODO_FALSO}\n'})
+    assert ficheros_con_fallo_de_apodos(mensajes) == {'README.md', 'herramientas/prueba.py'}, mensajes
+
+
+def jefes_cortos_y_palabras_parecidas_no_fallan():
+    texto = f'Imaginary, Quilez y Ray. Al lado, ★★★. {MIEMBRO_FALSO}0 no es {MIEMBRO_FALSO[:-1]}.\n'
+    mensajes, _ = con_repositorio({'paginas/es/prueba.html': texto, 'servicio/src/prueba.js': '// Imaginary, Quilez, Ray\n'}, perfiles=perfiles_de((MIEMBRO_FALSO, 'Al', '★★★', *comprobar.JEFES)))
+    assert not ficheros_con_fallo_de_apodos(mensajes), mensajes
+
+
+def id_de_prueba_fuera_de_la_web():
+    mensajes, _ = con_repositorio({'servicio/pruebas/banco.mjs': "const id = '100000000000000001';\n"})
+    assert not mensajes_de_ids(mensajes), mensajes
+
+
+def id_en_la_web_sigue_fallando():
+    with tempfile.TemporaryDirectory() as d:
+        web = Path(d) / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        robots = web / 'robots.txt'
+        texto = robots.read_text(encoding='utf-8')
+        robots.unlink()
+        robots.write_text(texto + '\n# 100000000000000001\n', encoding='utf-8')
+        mensajes = comprobar.main(web, sin_apodos=True, avisa=lambda _: None)
+    assert any(m.startswith('robots.txt:') and '100000000000000001' in m for m in mensajes), mensajes
+
+
+def cuenta_de_nombres_vigilados_e_ignorados():
+    _, avisos = con_repositorio({'README.md': 'nada\n'}, perfiles=perfiles_de((MIEMBRO_FALSO, 'Al', '★★★', *comprobar.JEFES)))
+    cuenta = [a for a in avisos if 'perfiles.json' in a]
+    assert len(cuenta) == 1 and 'vigilados: 1' in cuenta[0] and cuenta[0].endswith('solo símbolos: 2'), f'avisos: {avisos}'
+
+
+def binarios_y_sin_versionar_no_se_miran():
+    mensajes, _ = con_repositorio(
+        {'paginas/es/prueba.html': MIEMBRO_FALSO, 'paginas/prueba.png': b'\x89PNG\0\0 ' + MIEMBRO_FALSO.encode()},
+        sin_versionar={'herramientas/vigilar.local.txt': f'{APODO_FALSO}\n{MIEMBRO_FALSO}\n', 'herramientas/otro.txt': MIEMBRO_FALSO})
+    assert ficheros_con_fallo_de_apodos(mensajes) == {'paginas/es/prueba.html'}, mensajes
+
+
+def sin_perfiles_avisa_de_que_la_lista_es_la_del_secreto():
+    mensajes, avisos = con_repositorio({'README.md': 'nada\n'}, perfiles=None)
+    assert not ficheros_con_fallo_de_apodos(mensajes), mensajes
+    assert any(a.startswith('sin perfiles.json') for a in avisos), f'avisos: {avisos}'
+
+
+def perfiles_ilegible_falla():
+    mensajes, _ = con_repositorio({'README.md': 'nada\n'}, perfiles='{"manada": 3}')
+    assert any('perfiles.json' in m for m in mensajes), f'un perfiles.json sin lista de la manada pasa: {mensajes}'
+
+
 prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
 prueba('el aviso legal con cuentas nombra a los tres jefes y pasa', jefes_en_el_aviso_legal)
 prueba('un cuarto nombre en el aviso legal falla', un_nombre_mas_en_el_aviso_legal)
@@ -327,6 +430,16 @@ for linea in CABECERAS:
 prueba('docs/_headers con frame-ancestors distinto de none', cabecera_con_otro_valor('frame-ancestors', "frame-ancestors 'none'", "frame-ancestors 'self'"))
 prueba('docs/_headers con X-Frame-Options distinto de DENY', cabecera_con_otro_valor('X-Frame-Options', 'X-Frame-Options: DENY', 'X-Frame-Options: SAMEORIGIN'))
 prueba('docs/_headers con X-Frame-Options quitada por otro bloque', cabecera_quitada_por_otro_bloque)
+prueba('un miembro de perfiles.json en paginas/ falla', miembro_de_perfiles_en_paginas)
+prueba('un apodo de la lista local en servicio/ falla', apodo_de_la_lista_en_servicio)
+prueba('un apodo en la raíz y en herramientas/ falla', apodo_en_la_raiz_y_en_herramientas)
+prueba('los tres jefes, un nombre corto, un símbolo y una palabra parecida no fallan', jefes_cortos_y_palabras_parecidas_no_fallan)
+prueba('un ID de prueba fuera de la web no falla', id_de_prueba_fuera_de_la_web)
+prueba('un ID en la web sigue fallando', id_en_la_web_sigue_fallando)
+prueba('cuenta cuántos nombres de perfiles.json vigila y cuántos ignora', cuenta_de_nombres_vigilados_e_ignorados)
+prueba('los binarios y lo que no está versionado no se miran', binarios_y_sin_versionar_no_se_miran)
+prueba('sin perfiles.json avisa de que la lista es solo la del secreto', sin_perfiles_avisa_de_que_la_lista_es_la_del_secreto)
+prueba('un perfiles.json sin lista de la manada falla', perfiles_ilegible_falla)
 
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)

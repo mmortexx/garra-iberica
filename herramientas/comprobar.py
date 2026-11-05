@@ -3,14 +3,16 @@
 Uso: python herramientas/comprobar.py [carpeta] [--sin-apodos]   (por defecto, docs/ del proyecto)
 
 Los apodos a vigilar salen de herramientas/vigilar.local.txt o, si no existe, de la variable
-VIGILAR_APODOS (uno por línea; así los recibe la integración continua desde un secreto).
---sin-apodos se salta solo esa parte, y lo dice.
+VIGILAR_APODOS (uno por línea; así los recibe la integración continua desde un secreto). Si existe el perfiles.json
+del proyecto del Discord (GARRA_PERFILES), suma los nombres de su manada. La búsqueda recorre docs/ y todos los
+ficheros de texto versionados. --sin-apodos se salta solo esa parte, y lo dice.
 """
 import colorsys
 import datetime as dt
 import json
 import os
 import re
+import subprocess
 import sys
 import unicodedata
 import xml.etree.ElementTree as ET
@@ -52,6 +54,9 @@ MAX_MB_VIDEO = 40
 # herramientas/vigilar.local.txt (uno por línea), que git ignora para no publicarlos.
 ID_DISCORD = r'\b\d{17,20}\b'
 VIGILAR = Path(__file__).resolve().parent / 'vigilar.local.txt'
+# Los miembros (no los jefes) de la tarjeta de perfiles del Discord se vigilan también: en GitHub no está ese proyecto.
+PERFILES_ORIGINAL = Path(os.environ.get('GARRA_PERFILES') or Path.home() / 'Documents' / 'Cosas' / 'garra-iberica' / 'perfiles.json')
+PROYECTO = Path(__file__).resolve().parent.parent
 # Única excepción a los apodos: los tres jefes del clan, por decisión del clan (1/11/2026), y solo
 # donde los pone montar_web.alfas() con los nombres de la cita de la tarjeta #rangos, más la frase
 # del aviso legal que dice a quién escribir. Un nombre más, o estos mismos en cualquier otro sitio,
@@ -1251,6 +1256,59 @@ def revisar_cifras(falla, avisa):
         falla(f'{cifras.COPIA.name} no es igual que {cifras.ORIGINAL}: ejecuta herramientas/montar_web.py (la copia sola)')
 
 
+MIN_LETRAS_APODO = 3
+
+
+def apodos_de_perfiles(ruta):
+    """Los nombres de la manada (los miembros; la jefatura no) de perfiles.json, sin los tres jefes. Devuelve (vigilados,
+    ignorados): se ignoran los de menos de MIN_LETRAS_APODO letras o cifras, que darían falsos avisos con palabras normales.
+    Lanza ValueError si el fichero no tiene la estructura esperada: una guarda que no lee nada no puede pasar por buena."""
+    try:
+        manada = json.loads(ruta.read_text(encoding='utf-8'))['manada']
+        nombres = [p['nombre'].strip() for p in manada]
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
+        raise ValueError(f'{ruta.name}: no tiene la lista «manada» de objetos con «nombre» ({type(e).__name__})') from e
+    jefes = {j.casefold() for j in JEFES}
+    miembros = list(dict.fromkeys(n for n in nombres if n and n.casefold() not in jefes))
+    vigilados = [n for n in miembros if sum(c.isalnum() for c in n) >= MIN_LETRAS_APODO]
+    return vigilados, len(miembros) - len(vigilados)
+
+
+def patron_de_apodo(apodo):
+    """El apodo entero, sin distinguir mayúsculas y con cualquier espacio en blanco entre sus palabras. Se delimita con
+    «ni antes ni después una letra o cifra» y no con \\b: \\b no sirve si el nombre empieza o acaba en un símbolo."""
+    return r'(?i)(?<!\w)' + r'\s+'.join(re.escape(p) for p in apodo.split()) + r'(?!\w)'
+
+
+def ficheros_de_texto(raiz, proyecto, extra):
+    """Todo lo que la web publica y el repositorio sube: lo que hay en raiz (docs/), lo de extra y todo fichero versionado
+    de proyecto fuera de docs/ (paginas/, servicio/, herramientas/, README…). Se saltan los binarios (imágenes, vídeos,
+    fuentes), que se reconocen por tener un byte nulo al principio. Los no versionados, como vigilar.local.txt, no
+    salen en git ls-files y no se miran. Devuelve [(ruta, nombre para el mensaje, es la web o sus datos)]: la web y sus
+    datos se revisan con todo rigor; el resto del repositorio, solo en busca de apodos de miembros."""
+    r = subprocess.run(['git', '-C', str(proyecto), 'ls-files', '-z'], capture_output=True)
+    if r.returncode:
+        raise OSError(f'git ls-files falla en {proyecto.name}: {r.stderr.decode("utf-8", "replace").strip()}')
+    versionados = [proyecto / n for n in r.stdout.decode('utf-8').split('\0') if n and Path(n).parts[0] != 'docs']
+    vistos, salida = set(), []
+    candidatos = [(f, True) for f in [*sorted(raiz.rglob('*')), *extra]] + [(f, False) for f in versionados]
+    for fichero, es_web in candidatos:
+        if not fichero.is_file() or fichero.resolve() in vistos:
+            continue
+        vistos.add(fichero.resolve())
+        with fichero.open('rb') as f:
+            if b'\0' in f.read(8192):
+                continue
+        if fichero.is_relative_to(raiz):
+            nombre = fichero.relative_to(raiz).as_posix()
+        elif fichero.is_relative_to(proyecto):
+            nombre = fichero.relative_to(proyecto).as_posix()
+        else:
+            nombre = f'herramientas/{fichero.name}'
+        salida.append((fichero, nombre, es_web))
+    return salida
+
+
 def main(raiz, sin_apodos=False, avisa=print):
     fallos = []
     falla = fallos.append
@@ -1263,7 +1321,22 @@ def main(raiz, sin_apodos=False, avisa=print):
         apodos = [l.strip() for l in os.environ['VIGILAR_APODOS'].splitlines() if l.strip()]
     else:
         return [f'Falta herramientas/{VIGILAR.name} (o la variable VIGILAR_APODOS): los apodos de miembros que no deben aparecer, uno por línea']
-    prohibidos = [ID_DISCORD] + [r'(?i)\b' + re.escape(a) + r'\b' for a in apodos]
+    if not sin_apodos:
+        if PERFILES_ORIGINAL.is_file():
+            try:
+                miembros, ignorados = apodos_de_perfiles(PERFILES_ORIGINAL)
+            except ValueError as e:
+                return [str(e)]
+            apodos += miembros
+            avisa(f'{PERFILES_ORIGINAL.name}: nombres de la manada vigilados: {len(miembros)}, ignorados por cortos o solo símbolos: {ignorados}')
+        else:
+            avisa(f'sin {PERFILES_ORIGINAL.name} ({PERFILES_ORIGINAL}): solo se vigilan los apodos de {VIGILAR.name} o del secreto VIGILAR_APODOS')
+    jefes = {j.casefold() for j in JEFES}
+    # (primera palabra en minúsculas, expresión): si la palabra no está en el texto, la expresión no puede casar y se ahorra.
+    prohibidos = [(None, ID_DISCORD)] + [(a.split()[0].casefold(), patron_de_apodo(a)) for a in dict.fromkeys(apodos)]
+    # Fuera de la web y sus datos no hay IDs que vigilar (los de prueba de servicio/ lo son) y los tres jefes, públicos por
+    # decisión del clan, salen en su código y sus pruebas; la web ya los restringe a sus sitios.
+    resto = [(a.split()[0].casefold(), patron_de_apodo(a)) for a in dict.fromkeys(apodos) if a.casefold() not in jefes]
 
     for nombre in [*PAGINAS, '404.html', 'estilos.css', 'robots.txt', 'sitemap.xml', *VERSIONADOS]:
         if not (raiz / nombre).is_file():
@@ -1424,15 +1497,19 @@ def main(raiz, sin_apodos=False, avisa=print):
         if video.stat().st_size > MAX_MB_VIDEO * 2**20:
             falla(f'video/{video.name} pesa {video.stat().st_size / 2**20:.0f} MB (máximo {MAX_MB_VIDEO} MB)')
 
-    # También el extracto de herramientas/: el repositorio es público.
-    for fichero in [*sorted(raiz.rglob('*')), DATOS, batallas_web.COPIA, guia_dinos.FICHAS, *([cifras.COPIA] if cifras.COPIA.is_file() else [])]:
-        if fichero.suffix not in ('.html', '.css', '.js', '.txt', '.xml', '.json', '.md', '.ics'):
-            continue
-        texto = fichero.read_text(encoding='utf-8')
+    # Todo el repositorio, no solo docs/: es público. Los datos de herramientas/ se nombran aparte por si se cambian de sitio.
+    try:
+        ficheros = ficheros_de_texto(raiz, PROYECTO, [DATOS, batallas_web.COPIA, guia_dinos.FICHAS, *([cifras.COPIA] if cifras.COPIA.is_file() else [])])
+    except OSError as e:
+        return [*fallos, str(e)]
+    for fichero, nombre, es_web in ficheros:
+        texto = fichero.read_text(encoding='utf-8', errors='replace')
         for fragmento in permitidos.get(fichero.resolve(), ()):
             texto = texto.replace(fragmento, '')
-        nombre = fichero.relative_to(raiz).as_posix() if fichero.is_relative_to(raiz) else f'herramientas/{fichero.name}'
-        for patron in prohibidos:
+        bajo = texto.casefold()
+        for clave, patron in prohibidos if es_web else resto:
+            if clave is not None and clave not in bajo:
+                continue
             for m in re.finditer(patron, texto):
                 linea = texto.count('\n', 0, m.start()) + 1
                 falla(f'{nombre}:{linea}: dato de miembro o de Discord en la web pública: «{m.group(0)}»')
