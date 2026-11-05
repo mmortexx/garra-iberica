@@ -25,8 +25,10 @@ BUENAS = {'bajas': 587, 'horas': 1608.4, 'misiones': 2047, 'jugadores': 9, 'fech
 BATALLAS = {'batallas': [{'clave': 'smoke-1', 'rival': 'Smoke', 'nosotros': 3, 'ellos': 6, 'resultado': 'victoria'}]}
 MONTAR = """import os, pathlib, sys
 aqui = pathlib.Path('herramientas')
-(aqui / 'cifras.json').write_bytes(pathlib.Path(os.environ['GARRA_CIFRAS']).read_bytes())
-(aqui / 'batallas.json').write_bytes(pathlib.Path(os.environ['GARRA_BATALLAS']).read_bytes())
+for nombre, variable in (('cifras.json', 'GARRA_CIFRAS'), ('batallas.json', 'GARRA_BATALLAS')):
+    original = pathlib.Path(os.environ[variable])
+    if original.is_file():
+        (aqui / nombre).write_bytes(original.read_bytes())
 pathlib.Path('docs/index.html').write_bytes((aqui / 'cifras.json').read_bytes())
 if pathlib.Path('herramientas/ensuciar').exists():
     pathlib.Path('docs/otra.html').write_text('cambio ajeno')
@@ -221,6 +223,82 @@ def otro_subio_antes(m):
     assert json.loads(m.subido('herramientas/cifras.json'))['bajas'] == 600
 
 
+def batalla_nueva(m):
+    m.datos(m.batallas, {'batallas': BATALLAS['batallas'] + [{'clave': 'x-1', 'rival': 'X', 'nosotros': 4, 'ellos': 5, 'resultado': 'derrota'}]})
+
+
+def batallas_rotas(m):
+    m.datos(m.batallas, {'batallas': [{'clave': 'x'}]})
+
+
+def error_de_publicar(m, **opciones):
+    try:
+        P.publicar(**opciones)
+    except P.NoPublico as e:
+        return str(e)
+    raise AssertionError('no ha avisado de lo que se queda sin publicar')
+
+
+def titulo_subido(m):
+    return cmd('git', '--git-dir', str(m.origin), 'log', '-1', '--format=%s', 'main', cwd=m.repo)
+
+
+def cifras_raras_no_frenan_batallas(m):
+    nuevas(m, bajas=100)
+    batalla_nueva(m)
+    error = error_de_publicar(m)
+    assert 'bajas' in error, f'no dice por qué se quedan las cifras: {error}'
+    assert 'x-1' in m.subido('herramientas/batallas.json'), 'las cifras raras han frenado las batallas'
+    assert json.loads(m.subido('herramientas/cifras.json'))['bajas'] == 587, 'ha subido las cifras raras'
+    assert json.loads(m.subido('docs/index.html'))['bajas'] == 587, 'las cifras raras han llegado a la portada'
+    assert titulo_subido(m).endswith(': batallas'), f'el commit dice «{titulo_subido(m)}»'
+    m.limpio()
+    antes = m.en_origin()
+    assert 'bajas' in error_de_publicar(m), 'a la noche siguiente ya no avisa'
+    assert m.en_origin() == antes, 'publica dos veces lo mismo'
+    m.limpio()
+
+
+def batallas_rotas_no_frenan_cifras(m):
+    nuevas(m, bajas=600)
+    batallas_rotas(m)
+    assert 'rival' in error_de_publicar(m)
+    assert json.loads(m.subido('docs/index.html'))['bajas'] == 600, 'las batallas rotas han frenado las cifras'
+    assert 'x-1' not in m.subido('herramientas/batallas.json') and json.loads(m.subido('herramientas/batallas.json')) == BATALLAS, 'han subido las batallas rotas'
+    assert 'cifras del 2026-11-03' in titulo_subido(m)
+    assert 'batallas' not in titulo_subido(m)
+    m.limpio()
+
+
+def las_dos_mal(m):
+    nuevas(m, bajas=100)
+    batallas_rotas(m)
+    antes = m.en_origin()
+    error = error_de_publicar(m)
+    assert 'bajas' in error and 'rival' in error, f'no cuenta los dos motivos: {error}'
+    assert m.en_origin() == antes, 'ha subido algo'
+    m.limpio()
+
+
+def retenidas_y_comprobar_en_rojo(m):
+    nuevas(m, bajas=100)
+    batalla_nueva(m)
+    antes = m.en_origin()
+    error = error_de_publicar(m)
+    assert 'bajas' in error and 'está mal' in error, f'calla uno de los dos motivos: {error}'
+    assert m.en_origin() == antes, 'ha subido con comprobar.py en rojo'
+    m.limpio()
+
+
+def vista_con_retenidas(m):
+    nuevas(m, bajas=100)
+    batalla_nueva(m)
+    antes = m.en_origin()
+    assert 'bajas' in error_de_publicar(m, vista=True)
+    assert m.en_origin() == antes, 'la vista ha subido algo'
+    m.limpio()
+
+
 def copias_huerfanas(m):
     temporal = Path(tempfile.gettempdir())
     vieja, reciente = Path(tempfile.mkdtemp(prefix='garra-datos-')), Path(tempfile.mkdtemp(prefix='garra-datos-'))
@@ -263,6 +341,11 @@ prueba('GitHub rechaza la subida: lo dice y no deja nada', push_rechazado)
 prueba('el error nunca enseña un apodo', apodo_en_el_error, extra=['chivar'])
 prueba('si otro subió antes, se basa en lo último', otro_subio_antes)
 prueba('la copia de una tarea que murió se limpia sola', copias_huerfanas)
+prueba('cifras raras: las batallas suben igual y avisa cada noche', cifras_raras_no_frenan_batallas)
+prueba('batallas rotas: las cifras suben igual y avisa', batallas_rotas_no_frenan_cifras)
+prueba('las dos mal: no sube nada y da los dos motivos', las_dos_mal)
+prueba('cifras retenidas y comprobar.py en rojo: no sube y da los dos motivos', retenidas_y_comprobar_en_rojo, extra=['romper'])
+prueba('la vista con cifras retenidas no sube y avisa', vista_con_retenidas)
 
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)

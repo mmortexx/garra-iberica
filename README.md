@@ -199,8 +199,9 @@ GitHub Actions (`.github/workflows/comprobar.yml`) ejecuta las cuatro en cada pu
 
 Las cifras de la portada y las batallas no se montan a mano: `herramientas/publicar_datos.py` las trae del proyecto del
 Discord, monta en una copia temporal de lo último de GitHub, pasa `comprobar.py` y sube. Lo lanza la tarea nocturna del
-ranking al acabar. No publica si las cifras caen más de un 20 %, son más viejas que las de la web, cambia algún fichero que no
-sea de esos datos o falla una comprobación: lo dice y no sube nada. `--vista` hace todo menos subir. El vigilante del Discord
+ranking al acabar. Cada dato se revisa por su cuenta: unas cifras que caen más de un 20 % o son más viejas que las de la web, o
+unas batallas mal escritas, se quedan fuera sin frenar al otro dato, y la tarea acaba en error diciendo por qué. Si cambia algún
+fichero que no sea de esos datos o falla una comprobación, no sube nada. `--vista` hace todo menos subir. El vigilante del Discord
 avisa en #mando si la portada no coincide con `ranking/cifras.json` o estas comprobaciones salen en rojo.
 `python herramientas/prueba_publicar.py` lo prueba con git de verdad sobre un repositorio de mentira.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
