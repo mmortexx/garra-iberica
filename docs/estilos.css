@@ -591,7 +591,7 @@ h2::after {
   background: linear-gradient(180deg, var(--ascua-viva), rgba(255, 53, 31, 0)); box-shadow: 0 0 10px rgba(255, 53, 31, .6);
 }
 .ficha.luz::before { inset: -1rem -1rem -1rem 0; }
-.ficha h3 { color: var(--rojo-claro); }
+.ficha h3 { color: var(--rojo-claro); text-transform: uppercase; letter-spacing: .02em; }
 .ficha dl { margin: 0; }
 .ficha dl div { display: grid; grid-template-columns: 7.5rem 1fr; gap: .8rem; padding: .65rem 0; border-top: 1px solid var(--linea); }
 .ficha dl div:first-child { border-top: 0; }
@@ -817,7 +817,7 @@ html:has(.visor[open]) { overflow: hidden; }
 /* Normas */
 .normas { display: grid; gap: 1.2rem 2.6rem; margin-top: 2rem; }
 @media (min-width: 860px) { .normas { grid-template-columns: repeat(3, 1fr); } }
-.bloque { padding: 1.6rem 0 .6rem; border-top: 1px solid var(--linea); }
+.bloque { position: relative; padding: 1.6rem 0 .6rem; border-top: 1px solid var(--linea); }
 .bloque h3 { display: flex; align-items: center; gap: .75rem; text-transform: uppercase; }
 .bloque h3 img { width: 2.5rem; height: 2.5rem; }
 .bloque ul { margin: 0; padding: 0; list-style: none; }
@@ -983,7 +983,11 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pagina-404 h1 { font-size: clamp(2.2rem, 7vw, 4rem); text-transform: uppercase; }
 .pagina-404 .marca { display: inline-flex; margin-bottom: 2.4rem; }
 .acciones-404 { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; margin: 1.6rem 0 0; }
+/* En el móvil, los dos botones de cada idioma a lo ancho, como en la portada: si no, cada uno medía lo de su texto. */
+@media (max-width: 560px) { .acciones-404 { flex-direction: column; align-items: stretch; } }
 .pagina-404 h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); text-transform: uppercase; }
+/* El título en inglés repite al de arriba: sin los arañazos que el principal no lleva. */
+.pagina-404 h2::after { content: none; }
 .ingles-404 { margin-top: 2.4rem; padding-top: 2.2rem; border-top: 1px solid var(--linea); }
 .llamada p.enlaces-404 { margin: 1.1rem 0 0; font-size: 1rem; }
 .enlaces-404 a { display: inline-block; padding-block: .3rem; color: var(--suave); }
@@ -1085,6 +1089,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   transition: color .2s, border-color .2s, background .2s;
 }
 .indice-grupo li a:hover { color: var(--hueso); border-color: var(--ascua); background: rgba(255, 53, 31, .08); }
+/* Bajo las especies, la guía: separada por una línea para que no parezca una especie más. */
+.indice-grupo + .saltos-guia { margin-top: 1.8rem; padding-top: 1.5rem; border-top: 1px solid var(--linea); }
 .dinos { display: grid; gap: 1rem 2.6rem; margin-top: 2.2rem; }
 @media (min-width: 860px) { .dinos { grid-template-columns: repeat(2, 1fr); align-items: start; } }
 /* Fichas plegadas de la guía: una fila cada una; el + de las preguntas dice que se abren. */

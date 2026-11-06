@@ -670,10 +670,14 @@ def contenido_especie(nombre, lang, d=None):
         '  </section>',
         '',
     ]
-    if otras:
-        lineas += [
-            '  <section class="seccion" id="otras" aria-labelledby="t-otras">',
-            '    <div class="envoltura">',
+    # La guía entera, la dieta y cómo leer las fichas, juntos bajo las otras especies: en una sección
+    # aparte eran dos botones sueltos entre dos divisores.
+    a_la_guia = (f'      <p class="saltos saltos-guia revelar"><a href="{guia}">{t["esp_todas"].format(n=n)}</a>'
+                 f'<a href="{guia}#{t["nutri_id"]}">{t["nutri_corto"]}</a><a href="{guia}#{t["leer_id"]}">{t["leer_h2"]}</a></p>')
+    lineas += [
+        '  <section class="seccion" id="otras"' + (' aria-labelledby="t-otras">' if otras else '>'),
+        '    <div class="envoltura">',
+        *([
             '      <div class="revelar">',
             f'        <p class="antetitulo">{t["esp_otras_ante"]}</p>',
             f'        <h2 id="t-otras">{otras_h2}</h2>',
@@ -683,15 +687,12 @@ def contenido_especie(nombre, lang, d=None):
             *[f'          <li><a href="@/{ruta_especie(o["nombre"], lang)}">{escape(o["nombre"])}</a></li>' for o in otras],
             '        </ul>',
             '      </div>',
-            f'      <p class="saltos revelar"><a href="{guia}">{t["esp_todas"].format(n=n)}</a></p>',
-            '    </div>',
-            '  </section>',
-            '',
-        ]
-    lineas += ['  <section class="seccion">', '    <div class="envoltura">',
-               f'      <p class="saltos revelar"><a href="{guia}#{t["nutri_id"]}">{t["nutri_corto"]}</a><a href="{guia}#{t["leer_id"]}">{t["leer_h2"]}</a></p>',
-               '    </div>', '  </section>', '',
-               *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
+        ] if otras else []),
+        a_la_guia,
+        '    </div>',
+        '  </section>',
+        '',
+        *llamada(t, t['esp_cta_h2'].format(nombre=escape(nombre)), t['esp_volver'], guia, 'especie-nombre')]
     resto = t['esp_resto'][0 if f['mut'] else 1]
     pagina = {'titulo': t['esp_titulo'][0 if f['mut'] else 1].format(nombre=nombre), 'h1': nombre,
               'descripcion': t['esp_desc'].format(nombre=nombre, peso=peso, crece=crece, grupo=f['grupo'], resto=resto)}
