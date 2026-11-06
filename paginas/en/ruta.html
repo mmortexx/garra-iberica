@@ -2,7 +2,7 @@ titulo: Asura achievements route – GARRA IBÉRICA, The Isle Evrima
 descripcion: The Asura achievements, session by session: what comes next with each dino, and your ticks saved so you keep what you have.
 h1: Achievements route
 ---
-  <section class="cabecera cabecera-baja cabecera-corta" id="inicio" aria-labelledby="titulo" data-ascuas>
+  <section class="cabecera cabecera-baja cabecera-corta" id="top" aria-labelledby="titulo" data-ascuas>
     <img class="cabecera-fondo" src="@/img/galeria-colina-1000.webp" srcset="@/img/galeria-colina-600.webp 600w, @/img/galeria-colina-1000.webp 1000w, @/img/galeria-colina-1300.webp 1300w" sizes="(max-width: 700px) 45vw, 100vw" alt="" width="1300" height="523" fetchpriority="high">
     <div class="envoltura cabecera-in">
       {{migas}}
@@ -29,8 +29,8 @@ h1: Achievements route
 
       <div class="ruta-paneles">
         <div class="ruta-panel ruta-resumen" data-resumen hidden>
-          <p class="ruta-total" data-total></p>
-          <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
+          <p class="ruta-total" id="ruta-total" data-total></p>
+          <progress data-barra max="1" value="0" aria-labelledby="t-cuenta" aria-describedby="ruta-total"></progress>
           <p class="ruta-estado" data-estado role="status" hidden></p>
           <div class="ruta-toca" data-toca hidden>
             <p class="ruta-toca-t"><span class="ruta-toca-n" data-toca-n></span><span class="ruta-toca-sitio" data-toca-sitio></span><span class="ruta-toca-dino" data-toca-dino></span></p>
