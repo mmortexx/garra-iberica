@@ -989,6 +989,32 @@ def revisar_cabeceras(raiz, falla):
     politicas = [[p.split() for p in v.split(';')] for v in cabeceras.get(('/*', 'content-security-policy'), [])]
     if not any(p[:2] == ['frame-ancestors', "'none'"] and len(p) == 2 for v in politicas for p in v):
         falla("_headers: el bloque /* debe llevar «Content-Security-Policy» con «frame-ancestors 'none'»")
+    # Solo HTTPS (la dirección http:// responde sin redirigir) y el mismo referente que el <meta> de las páginas, que el
+    # 404 no lleva.
+    hsts = cabeceras.get(('/*', 'strict-transport-security'), [])
+    if len(hsts) != 1 or not (m := re.fullmatch(r'max-age=(\d+)', hsts[0])) or int(m[1]) < 15552000:
+        falla(f'_headers: el bloque /* debe llevar «Strict-Transport-Security: max-age=31536000» y lleva {hsts or "nada"}')
+    referente = cabeceras.get(('/*', 'referrer-policy'), [])
+    if referente != ['strict-origin-when-cross-origin']:
+        falla(f'_headers: el bloque /* debe llevar «Referrer-Policy: strict-origin-when-cross-origin» y lleva {referente or "nada"}')
+    # Caché: la hoja y los scripts llevan ?v=<huella> en cada página, así que el navegador puede guardarlos un año sin
+    # preguntar; las fuentes y las fotos no la llevan y se guardan poco. Sin estas reglas, Cloudflare manda
+    # max-age=0 y el navegador vuelve a preguntar por cada fichero en cada página.
+    # Que cada página los pida con su ?v= lo vigila revisar_enlaces (VERSIONADOS).
+    inmutables = sorted(VERSIONADOS)
+    for sin_huella in sorted({p.name for p in (*raiz.glob('*.css'), *raiz.glob('*.js'))} - set(VERSIONADOS)):
+        falla(f'{sin_huella}: no está en VERSIONADOS de montar_web.py, así que las páginas lo piden sin ?v= y no puede tener caché larga')
+    for nombre in inmutables:
+        valor = cabeceras.get((f'/{nombre}', 'cache-control'), [])
+        if valor != ['public, max-age=31536000, immutable']:
+            falla(f'_headers: falta el bloque /{nombre} con «Cache-Control: public, max-age=31536000, immutable» (lleva {valor or "nada"})')
+    for (ruta_bloque, nombre), valores in cabeceras.items():
+        if nombre == 'cache-control' and any('immutable' in v for v in valores) and ruta_bloque.lstrip('/') not in inmutables:
+            falla(f'_headers: {ruta_bloque} es inmutable, pero no es una hoja ni un script de la raíz con huella ?v=')
+    for carpeta in ('fonts', 'img'):
+        valor = cabeceras.get((f'/{carpeta}/*', 'cache-control'), [])
+        if len(valor) != 1 or 'immutable' in valor[0] or not re.fullmatch(r'public, max-age=([1-9]\d*)', valor[0]):
+            falla(f'_headers: el bloque /{carpeta}/* debe llevar «Cache-Control: public, max-age=N» sin immutable (no llevan huella) y lleva {valor or "nada"}')
 
 
 def revisar_cuentas(raiz, base, falla, servicio=SERVICIO_CUENTAS):

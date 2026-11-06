@@ -5,6 +5,7 @@ Uso: python herramientas/prueba_comprobar.py
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -239,7 +240,8 @@ def la_frase_de_los_jefes_dos_veces():
     assert sum('sale 2 veces' in m for m in mensajes) == 2, f'repetir la frase de los jefes pasa en alguna de las dos páginas: {mensajes}'
 
 
-CABECERAS = ('X-Content-Type-Options: nosniff', 'X-Frame-Options: DENY', "Content-Security-Policy: frame-ancestors 'none'")
+CABECERAS = ('X-Content-Type-Options: nosniff', 'X-Frame-Options: DENY', "Content-Security-Policy: frame-ancestors 'none'",
+             'Strict-Transport-Security: max-age=31536000', 'Referrer-Policy: strict-origin-when-cross-origin')
 
 
 def mensajes_de_cabeceras(nuevas):
@@ -298,6 +300,48 @@ def cabecera_con_otro_valor(nombre, antes, despues):
 def cabecera_quitada_por_otro_bloque():
     mensajes = mensajes_de_cabeceras(lambda texto: texto.rstrip('\n') + '\n/ruta/*\n  ! X-Frame-Options\n')
     assert any('X-Frame-Options' in m for m in mensajes), f'quitar X-Frame-Options en /ruta/* pasa: {mensajes}'
+
+
+def script_sin_cache_larga():
+    bloque = '/ruta.js\n  Cache-Control: public, max-age=31536000, immutable\n'
+    def quitar(texto):
+        assert texto.count(bloque) == 1, 'docs/_headers ya no lleva el bloque de /ruta.js una sola vez'
+        return texto.replace(bloque, '')
+    mensajes = mensajes_de_cabeceras(quitar)
+    assert any('/ruta.js' in m for m in mensajes), f'sin caché larga en /ruta.js pasa: {mensajes}'
+
+
+def fotos_inmutables():
+    antes = '/img/*\n  Cache-Control: public, max-age=86400\n'
+    def cambiar(texto):
+        assert texto.count(antes) == 1, 'docs/_headers ya no lleva el bloque de /img/* una sola vez'
+        return texto.replace(antes, '/img/*\n  Cache-Control: public, max-age=31536000, immutable\n')
+    mensajes = mensajes_de_cabeceras(cambiar)
+    assert any('/img/*' in m for m in mensajes), f'fotos sin huella con caché inmutable pasa: {mensajes}'
+
+
+def script_sin_huella():
+    """Con la caché de un año, un script cargado sin ?v= se quedaría viejo en el navegador para siempre."""
+    with tempfile.TemporaryDirectory() as d:
+        web = Path(d) / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        pagina = web / 'index.html'
+        texto = pagina.read_text(encoding='utf-8')
+        nuevo, n = re.subn(r'efectos\.js\?v=[0-9a-f]+', 'efectos.js', texto)
+        assert n == 1, f'docs/index.html carga efectos.js con huella {n} veces, no 1'
+        pagina.unlink()
+        pagina.write_text(nuevo, encoding='utf-8')
+        mensajes = comprobar.main(web, sin_apodos=True, avisa=lambda _: None)
+    assert any('efectos.js' in m and '?v=' in m for m in mensajes), f'efectos.js sin ?v= pasa: {mensajes}'
+
+
+def script_nuevo_sin_versionar():
+    with tempfile.TemporaryDirectory() as d:
+        web = Path(d) / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        (web / 'nuevo.js').write_text('', encoding='utf-8')
+        mensajes = comprobar.main(web, sin_apodos=True, avisa=lambda _: None)
+    assert any(m.startswith('nuevo.js') and 'VERSIONADOS' in m for m in mensajes), f'un script sin versionar pasa: {mensajes}'
 
 
 MIEMBRO_FALSO = 'MiembroDePrueba1'
@@ -430,6 +474,10 @@ for linea in CABECERAS:
 prueba('docs/_headers con frame-ancestors distinto de none', cabecera_con_otro_valor('frame-ancestors', "frame-ancestors 'none'", "frame-ancestors 'self'"))
 prueba('docs/_headers con X-Frame-Options distinto de DENY', cabecera_con_otro_valor('X-Frame-Options', 'X-Frame-Options: DENY', 'X-Frame-Options: SAMEORIGIN'))
 prueba('docs/_headers con X-Frame-Options quitada por otro bloque', cabecera_quitada_por_otro_bloque)
+prueba('docs/_headers sin caché larga para un script', script_sin_cache_larga)
+prueba('docs/_headers con las fotos inmutables', fotos_inmutables)
+prueba('un script cargado sin ?v= con caché larga', script_sin_huella)
+prueba('un script nuevo en la raíz sin versionar', script_nuevo_sin_versionar)
 prueba('un miembro de perfiles.json en paginas/ falla', miembro_de_perfiles_en_paginas)
 prueba('un apodo de la lista local en servicio/ falla', apodo_de_la_lista_en_servicio)
 prueba('un apodo en la raíz y en herramientas/ falla', apodo_en_la_raiz_y_en_herramientas)

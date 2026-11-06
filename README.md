@@ -154,7 +154,10 @@ python herramientas/prueba_comprobar.py
   y los tres jefes no se miran. También exige que `docs/_headers` lleve en el bloque `/*`
   `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` y `Content-Security-Policy` con
   `frame-ancestors 'none'`: desde `<meta>` no funcionan y, sin ellas, otra web podría meter la
-  nuestra en un marco invisible.
+  nuestra en un marco invisible. Y, en `/*`, `Strict-Transport-Security` y `Referrer-Policy`; un
+  bloque con caché de un año (`immutable`) por cada fichero de `VERSIONADOS`, que las páginas piden
+  con `?v=<huella>` (una hoja o un script de la raíz que no esté en esa lista falla); y caché corta,
+  sin `immutable`, en `/fonts/*` e `/img/*`, que no llevan huella.
   También exige que la web diga lo mismo que `herramientas/datos_clan.json`: los plazos de ascenso
   y la franja horaria de la Cacería en Latinoamérica (calculada con las zonas horarias de cada país
   para todos los sábados de este año y el siguiente). Ese fichero es un extracto, sin IDs ni más
