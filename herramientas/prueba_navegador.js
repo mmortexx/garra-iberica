@@ -1000,6 +1000,110 @@ const transicionSaltada = async navegador => {
   console.log('Zarpazo saltado sin errores en la página:', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
+// Pulido: lo que, roto, no da error y solo se ve mirando la página. SOLO=pulido prueba solo esto.
+const pulido = async navegador => {
+  const fallos = [];
+  const abrir = async (r, opts = {}) => {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, reducedMotion: 'reduce', ...opts });
+    const p = await ctx.newPage();
+    await p.goto(BASE + r, { waitUntil: 'load' });
+    return { ctx, p };
+  };
+  // Menú de escritorio: pasar el ratón por un enlace no lo deja igual que la página en la que estás.
+  for (const r of ['clan/', 'en/clan/']) {
+    const { ctx, p } = await abrir(r);
+    await p.locator('.menu a:not([aria-current])').nth(1).hover();
+    await p.waitForTimeout(150);
+    const m = await p.evaluate(() => {
+      const enlaces = [...document.querySelectorAll('.menu a')];
+      const actual = enlaces.find(a => a.hasAttribute('aria-current'));
+      const encima = enlaces.find(a => a.matches(':hover'));
+      if (!actual || !encima) return { falta: !actual ? 'actual' : 'encima' };
+      const raya = a => getComputedStyle(a, '::after').backgroundColor;
+      const fondo = a => { const s = getComputedStyle(a); return s.backgroundImage + s.backgroundColor; };
+      return { rayaActual: raya(actual), rayaEncima: raya(encima), fondoActual: fondo(actual), fondoEncima: fondo(encima), visible: getComputedStyle(encima, '::after').transform };
+    });
+    if (m.falta || m.rayaActual === m.rayaEncima || m.fondoActual === m.fondoEncima || m.visible === 'none' || /matrix\(0,/.test(m.visible)) fallos.push(`/${r} menú: pasar el ratón se confunde con la página actual ${JSON.stringify(m)}`);
+    await ctx.close();
+  }
+  // Vídeos de las batallas: antes de darle al play, solo el botón grande (sin la barra del navegador debajo);
+  // al reproducir, la barra; al acabar, otra vez el botón. Sin JavaScript, la barra del navegador.
+  for (const [r, js] of [['clan/', true], ['en/clan/', true], ['clan/', false]]) {
+    const { ctx, p } = await abrir(r, { javaScriptEnabled: js });
+    const v = await p.evaluate(() => {
+      const video = document.querySelector('.batalla-video video');
+      const antes = video.controls;
+      if (!document.querySelector('.video-play')) return { antes };
+      video.dispatchEvent(new Event('play'));
+      const alReproducir = video.controls;
+      video.dispatchEvent(new Event('ended'));
+      return { antes, alReproducir, alAcabar: video.controls };
+    });
+    const bien = js ? v.antes === false && v.alReproducir === true && v.alAcabar === false : v.antes === true;
+    if (!bien) fallos.push(`/${r} controles del vídeo ${js ? 'con' : 'sin'} JavaScript: ${JSON.stringify(v)}`);
+    await ctx.close();
+  }
+  // Bloques de texto en fila (la dieta y cómo leer las fichas, en la guía): las listas de una misma fila empiezan a la
+  // misma altura. Un título que baja a dos líneas desalineaba las tres columnas.
+  for (const [r, ancho] of [['dinosaurios/', 1366], ['en/dinosaurs/', 1366], ['dinosaurios/', 1100], ['en/dinosaurs/', 1100]]) {
+    const { ctx, p } = await abrir(r, { viewport: { width: ancho, height: 850 } });
+    const malas = await p.evaluate(() => {
+      const filas = new Map();
+      for (const b of document.querySelectorAll('.seccion .bloque')) {
+        const ul = b.querySelector('ul');
+        if (!ul) continue;
+        const y = Math.round(b.getBoundingClientRect().top + scrollY);
+        if (!filas.has(y)) filas.set(y, []);
+        filas.get(y).push([b.querySelector('h3')?.textContent, Math.round(ul.getBoundingClientRect().top + scrollY)]);
+      }
+      return [...filas.values()].filter(f => f.length > 1 && Math.max(...f.map(x => x[1])) - Math.min(...f.map(x => x[1])) > 2).map(f => f.map(x => x[0]).join(' | '));
+    });
+    if (malas.length) fallos.push(`/${r} a ${ancho} px, listas desalineadas en: ${malas.join('; ')}`);
+    await ctx.close();
+  }
+  // Preguntas de Únete en dos columnas: ninguna acaba mucho más abajo que la otra (un hueco de cuatro preguntas
+  // quedaba vacío bajo «Ya en el clan»).
+  for (const r of ['unete/', 'en/join/']) {
+    const { ctx, p } = await abrir(r);
+    const h = await p.evaluate(() => [...document.querySelectorAll('.faq-col')].map(c => Math.round(c.getBoundingClientRect().bottom)));
+    if (h.length !== 2 || Math.abs(h[0] - h[1]) > 160) fallos.push(`/${r} columnas de preguntas descompensadas: acaban en ${h.join(' y ')}`);
+    await ctx.close();
+  }
+  // Ruta, con «Ahora toca» al lado de toda la ruta (≥1100 px): al bajar por la lista, la tarjeta acompaña si cabe
+  // entera en la ventana; si no cabe, no se queda fija (se perdería su parte de abajo).
+  for (const [r, alto, fija] of [['ruta/', 900, true], ['en/route/', 900, true], ['ruta/', 560, false]]) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 1280, height: alto } });
+    await p.waitForSelector('[data-ahora-zona]:not([hidden])');
+    const t = await p.evaluate(async () => {
+      const lista = document.querySelector('.ahora-indice').getBoundingClientRect();
+      scrollTo({ top: lista.top + scrollY + lista.height * .75 - innerHeight / 2, behavior: 'instant' });
+      await new Promise(z => requestAnimationFrame(() => requestAnimationFrame(z)));
+      const c = document.querySelector('.ahora').getBoundingClientRect();
+      const barra = document.querySelector('.barra').getBoundingClientRect().bottom;
+      return { arriba: Math.round(c.top), abajo: Math.round(c.bottom), barra: Math.round(barra), ventana: innerHeight, pos: getComputedStyle(document.querySelector('.ahora')).position };
+    });
+    const vista = t.arriba >= t.barra && t.abajo <= t.ventana;
+    if (fija ? !vista : t.pos === 'sticky') fallos.push(`/${r} a 1280×${alto}, «Ahora toca» ${fija ? 'no acompaña al bajar por la ruta' : 'fija sin caber en la ventana'}: ${JSON.stringify(t)}`);
+    await ctx.close();
+  }
+  // Ruta: el texto bajo un botón no va pegado a él; en el móvil, los botones de una fila miden lo mismo.
+  for (const [ancho, sel] of [[1366, '[data-nexus-caja]'], [390, '[data-nexus-caja]'], [390, '[data-codigo-caja]']]) {
+    const { ctx, p } = await abrir('ruta/', { viewport: { width: ancho, height: 850 } });
+    await p.waitForSelector(`${sel}:not([hidden])`);
+    const m = await p.evaluate(s => {
+      const caja = document.querySelector(s);
+      const fila = caja.querySelector('.ruta-botones');
+      const nota = [...caja.querySelectorAll('.ruta-botones ~ .ruta-nota')][0];
+      const botones = [...fila.querySelectorAll('.boton')].map(b => Math.round(b.getBoundingClientRect().width));
+      return { hueco: nota ? Math.round(nota.getBoundingClientRect().top - fila.getBoundingClientRect().bottom) : null, botones, fila: Math.round(fila.getBoundingClientRect().width) };
+    }, sel);
+    if (m.hueco !== null && m.hueco < 8) fallos.push(`ruta a ${ancho} px, ${sel}: texto pegado al botón (${m.hueco} px)`);
+    if (ancho < 520 && m.botones.length > 1 && Math.max(...m.botones) - Math.min(...m.botones) > 2) fallos.push(`ruta a ${ancho} px, ${sel}: botones de distinto ancho ${m.botones.join('/')}`);
+    await ctx.close();
+  }
+  console.log('Pulido (menú, vídeos, columnas, ruta):', fallos.length ? fallos.join('; ') : 'bien');
+  return fallos.length;
+};
 // La ruta de logros, recuadro «Ahora toca»: la sesión que te toca y qué hacer, marcar ahí o en la lista, avanzar al
 // completarla, ir de una a otra y llegar desde «Tu progreso». SOLO=ahora prueba solo esto.
 const AHORA = {
@@ -1232,6 +1336,11 @@ const ahoraToca = async navegador => {
   }
   if (process.env.SOLO === 'ahora') {
     const n = await ahoraToca(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'pulido') {
+    const n = await pulido(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -2885,6 +2994,7 @@ const ahoraToca = async navegador => {
   malos += await imprimir(navegador);
   malos += await ahoraToca(navegador);
   malos += await transicionSaltada(navegador);
+  malos += await pulido(navegador);
   await navegador.close();
   if (SALIDAS.length) {
     malos++;

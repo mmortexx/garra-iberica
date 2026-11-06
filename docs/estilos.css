@@ -215,8 +215,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .menu, .menu[popover] { gap: .15rem; }
   .menu a { padding: .6rem .85rem; border-radius: 3px; transition: color .25s, background-color .25s; }
   .menu a::after { left: .85rem; right: .85rem; bottom: 0; }
-  .menu a:hover { background: rgba(239, 239, 239, .05); }
   .menu a[aria-current] { background: linear-gradient(180deg, rgba(255, 53, 31, 0), rgba(255, 53, 31, .13)); }
+  /* Pasar el ratón no imita a la página actual: sin velo y con un trazo fino de hueso, no de ascua. */
+  .menu a:not([aria-current])::after { height: 1px; background: rgba(231, 231, 231, .55); box-shadow: none; }
 }
 /* Con los siete enlaces, hasta 1200 px las pestañas se estrechan para no pegarse a la marca. */
 @media (min-width: 1020px) and (max-width: 1199px) {
@@ -821,6 +822,14 @@ html:has(.visor[open]) { overflow: hidden; }
 .bloque { position: relative; padding: 1.6rem 0 .6rem; border-top: 1px solid var(--linea); }
 .bloque h3 { display: flex; align-items: center; gap: .75rem; text-transform: uppercase; }
 .bloque h3 img { width: 2.5rem; height: 2.5rem; }
+/* Aclaración bajo el título (la dieta: «Con dos a la vez» y cuánto sube el tope), en letra de texto. */
+.bloque h3:has(small) { flex-direction: column; align-items: flex-start; gap: .25rem; }
+.bloque h3 small { color: var(--suave); font: 400 1rem/1.4 var(--cuerpo); text-transform: none; }
+.bloque h3 small::first-letter { text-transform: uppercase; }
+/* En fila, las listas empiezan a la misma altura aunque un título ocupe más: título y lista, dos filas compartidas. */
+@supports (grid-template-rows: subgrid) {
+  .normas > .bloque:has(> h3 + ul:last-child) { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; align-content: start; }
+}
 .bloque ul { margin: 0; padding: 0; list-style: none; }
 .bloque li { position: relative; padding: 0 0 .8rem 1.35rem; color: var(--texto); font-size: 1rem; }
 .bloque li::before, .dino-lista li::before { content: ""; position: absolute; left: .1rem; top: .62em; width: 6px; height: 6px; rotate: 45deg; background: var(--ascua); box-shadow: 0 0 8px rgba(255, 53, 31, .8); }
@@ -1469,6 +1478,11 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 @media (min-width: 900px) { .faq { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .faq-col + .faq-col details:first-of-type { border-top: 1px solid var(--linea); } }
 @media (max-width: 899px) { .faq-col + .faq-col { margin-top: 2.2rem; } }
 .faq .nivel-titulo { margin-bottom: .8rem; }
+/* Tras la última pregunta, a quién preguntar lo que falta: un hueco punteado, una invitación y no una pregunta más. */
+.faq-otra { margin-top: 1.6rem; padding: 1.2rem 1.3rem 1.3rem; border: 1px dashed rgba(240, 134, 122, .4); border-radius: 4px; color: var(--suave); }
+.faq-otra p { margin: 0; }
+.faq-otra b { display: block; margin-bottom: .35rem; color: var(--hueso); font: 400 1.3rem/1.15 var(--titulos); letter-spacing: .02em; text-transform: uppercase; }
+.faq-otra-botones { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem !important; }
 
 /* Entre páginas: la nueva entra por tres zarpazos que se abren uno tras otro y se enfrían de ascua
    a su color; la vieja se apaga detrás. La barra no se mueve. Sin «reducir movimiento» y solo
@@ -1762,7 +1776,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 }
 @media (min-width: 2400px) {
   .faq-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr)); column-gap: 2.6rem; align-items: start; }
-  .faq-col > .nivel-titulo { grid-column: 1 / -1; }
+  .faq-col > .nivel-titulo, .faq-col > .faq-otra { grid-column: 1 / -1; }
   .faq-col details:nth-of-type(2) { border-top: 1px solid var(--linea); }
 }
 @media (min-width: 2900px) {
@@ -1783,6 +1797,10 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .ruta-aviso-abajo { margin: .8rem 0 0; }
 .ruta-aviso-mal { border-color: var(--ascua); border-left-width: 5px; }
 .ruta-botones { display: flex; flex-wrap: wrap; gap: .6rem; margin: .9rem 0 0; }
+/* La explicación bajo los botones, separada de ellos: pegada parecía la letra pequeña del botón. */
+.ruta-panel .ruta-botones ~ .ruta-nota { margin-top: 1rem; }
+/* En el móvil, los botones de una fila a partes iguales: cada uno a su ancho quedaban en escalera. */
+@media (max-width: 519px) { .ruta-botones > .boton, .faq-otra-botones > .boton { flex: 1 1 0; min-width: max-content; } }
 .ruta-campo { box-sizing: border-box; width: 100%; min-height: 44px; padding: .5rem .8rem; border: 1px solid rgba(231, 231, 231, .35); border-radius: 4px; background: rgba(8, 8, 8, .6); color: var(--hueso); font: inherit; }
 .ruta-campo::placeholder { color: var(--suave); }
 .ruta-campo:hover { border-color: var(--borde-fuerte); }
@@ -1890,6 +1908,10 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   .ahora-zona { grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem); grid-template-rows: auto 1fr; align-items: start; }
   .ahora-zona .ahora { grid-row: 1 / span 2; max-width: none; }
   .ahora-toda, .ahora-indice { grid-column: 2; }
+  /* Al bajar por toda la ruta, la tarjeta acompaña; solo si cabe entera en la ventana (lo mide ruta.js). */
+  /* --arriba, en rem: ruta.js lo lee para saber si cabe. */
+  .ahora { --arriba: 6rem; }
+  .ahora.ahora-fija { position: sticky; top: var(--arriba); }
 }
 .ahora { box-sizing: border-box; min-width: 0; max-width: 48rem; margin: 0; padding: clamp(1.1rem, 3.5vw, 1.9rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-left: 2px solid var(--ascua); border-radius: 4px; box-shadow: var(--cristal-brillo); scroll-margin-top: 6.5rem; }
 .ahora-arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .8rem; margin: 0 0 .7rem; }

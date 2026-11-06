@@ -288,6 +288,16 @@
     document.querySelector('[data-sesiones]').hidden = true;
     zona.hidden = false;
     ver('[data-toca]', true);
+    // Con toda la ruta al lado (≥1100 px), la tarjeta acompaña al bajar por la lista, pero solo si cabe entera bajo
+    // la barra: fija y más alta que la ventana, su parte de abajo (las casillas, «Siguiente») no se vería nunca.
+    const caja = enZona('[data-ahora]');
+    const ancha = matchMedia('(min-width: 1100px)');
+    const encajar = () => {
+      const arriba = parseFloat(getComputedStyle(caja).getPropertyValue('--arriba')) * parseFloat(getComputedStyle(document.documentElement).fontSize);
+      caja.classList.toggle('ahora-fija', ancha.matches && caja.offsetHeight + arriba + 16 <= innerHeight);
+    };
+    new ResizeObserver(encajar).observe(caja);
+    addEventListener('resize', encajar);
   }
 
   function montarAhora(i) {
@@ -378,7 +388,9 @@
     const i = vista ?? indiceActual();
     const caja = enZona('[data-ahora]');
     if (llevar) {
-      caja.scrollIntoView({ block: 'start' });
+      // Fija junto al índice ya está a la vista: moverla sería un salto sin motivo.
+      const r = caja.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) caja.scrollIntoView({ block: 'start' });
       enZona('[data-ahora-titulo]').focus({ preventScroll: true });
       return;
     }

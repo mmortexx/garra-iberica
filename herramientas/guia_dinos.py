@@ -112,7 +112,9 @@ T = {
                 '<b>γ Lípidos:</b> las fracturas se curan antes (hasta 10 %).',
                 '<b>α Carbohidratos:</b> el sangrado se corta antes (hasta 10 %).',
             ], []),
-            ('Con dos a la vez (el tope de esos dos sube +10 %)', [
+            # La aclaración del título, en una línea propia bajo él: en el mismo título bajaba a dos líneas y
+            # desalineaba las tres columnas. Mismas palabras que en el Discord.
+            ('Con dos a la vez<span class="oculto">,</span> <small>el tope de esos dos sube +10 %</small>', [
                 '<b>β + α:</b> resistes el sangrado (hasta 10 %).',
                 '<b>β + γ:</b> resistes las fracturas (hasta 10 %).',
                 '<b>α + γ:</b> regeneras la vida bloqueada (hasta 10 %).',
@@ -227,7 +229,7 @@ T = {
                 '<b>γ Lipids:</b> fractures heal faster (up to 10%).',
                 '<b>α Carbohydrates:</b> bleeding stops faster (up to 10%).',
             ], []),
-            ('Two at once (the cap of those two goes up +10%)', [
+            ('Two at once<span class="oculto">,</span> <small>the cap of those two goes up +10%</small>', [
                 '<b>β + α:</b> you resist bleeding (up to 10%).',
                 '<b>β + γ:</b> you resist fractures (up to 10%).',
                 '<b>α + γ:</b> you regenerate locked health (up to 10%).',

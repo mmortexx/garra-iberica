@@ -424,14 +424,20 @@
   }
 
   // Botón grande de reproducir sobre la portada. Le da al play y se aparta; vuelve al acabar el vídeo.
-  // Los controles del navegador siguen ahí (y son lo que queda sin esto).
+  // Mientras está, la barra del navegador se esconde (eran dos «play» a la vez); vuelve al reproducir.
+  // Sin esto, la barra del navegador es lo que queda.
   const playTexto = raiz.lang.startsWith('en') ? 'Play:' : 'Reproducir:';
   document.querySelectorAll('.batalla-video video').forEach(v => {
+    v.controls = false;
+    v.addEventListener('play', () => { v.controls = true; });
+    v.addEventListener('ended', () => { v.controls = false; });
     const boton = document.createElement('button');
     boton.type = 'button';
     boton.className = 'video-play';
     boton.setAttribute('aria-label', `${playTexto} ${v.getAttribute('aria-label')}`);
     boton.addEventListener('click', () => {
+      // Con su barra puede recibir el foco: el teclado sigue en el vídeo y no en un botón que se esconde.
+      v.controls = true;
       v.focus();
       const pedido = v.play();
       if (pedido) pedido.catch(() => { boton.hidden = false; });
