@@ -91,7 +91,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   margin: 0 0 .7rem;
   display: flex; align-items: center; gap: .7rem;
 }
-.antetitulo::before { content: ""; width: 2rem; height: 2px; background: linear-gradient(90deg, transparent, var(--ascua)); box-shadow: 0 0 10px var(--ascua); }
+/* La raya, a la altura de la primera línea: si el rótulo se parte en el móvil, centrada quedaba entre las dos. */
+.antetitulo::before { content: ""; flex: none; align-self: flex-start; margin-top: calc(.6em - 1px); width: 2rem; height: 2px; background: linear-gradient(90deg, transparent, var(--ascua)); box-shadow: 0 0 10px var(--ascua); }
 
 /* Barra superior */
 .barra {
@@ -627,7 +628,7 @@ h2::after {
 
 /* Tarjetas */
 .tarjetas { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; gap: 0 2.4rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-.tarjeta { padding: 1.7rem 0 2rem; border-top: 1px solid var(--linea); }
+.tarjeta { position: relative; padding: 1.7rem 0 2rem; border-top: 1px solid var(--linea); }
 .tarjeta img { width: 3.25rem; height: 3.25rem; margin-bottom: 1.1rem; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .6)); transition: transform .6s var(--suave-salida), filter .4s; }
 @media (hover: hover) { .tarjeta:hover img { transform: translateY(-3px) rotate(-6deg) scale(1.06); filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .6)) drop-shadow(0 0 10px rgba(255, 53, 31, .45)); } }
 .tarjeta h3 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: .02em; transition: color .3s; }
@@ -853,6 +854,9 @@ html:has(.visor[open]) { overflow: hidden; }
   border: 1px solid var(--borde-fuerte); border-radius: 3px; background: rgba(255, 53, 31, .08);
   font: 1.1rem/1 var(--titulos); letter-spacing: 0; color: var(--ascua-viva);
 }
+/* Los apartados 3 y 4 (encima de sus tarjetas) con la letra de los demás apartados numerados, no de rótulo. */
+.nivel-titulo:has(> .bloque-num) { gap: .75rem; margin: 2.2rem 0 0; font: 1.35rem/1.1 var(--titulos); letter-spacing: .02em; color: var(--hueso); }
+.nivel-titulo:has(> .bloque-num):first-of-type { margin-top: 1.6rem; }
 .bloque-aviso { border-top-color: rgba(255, 53, 31, .55); }
 .bloque-aviso h3 { color: var(--rojo-claro); }
 .senales { list-style: none; margin: 1.1rem 0 2.8rem; padding: 0; display: grid; gap: 1rem; }
@@ -877,6 +881,8 @@ kbd { padding: .05rem .4rem; border: 1px solid var(--borde); border-bottom-width
 .texto-legal h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
 /* Cada apartado ya lleva su línea encima: sin los arañazos debajo, que lo encerraban entre dos adornos. */
 .texto-legal h2::after { content: none; }
+/* Las listas, a la letra de los párrafos: más pequeñas parecían letra menuda. */
+.texto-legal .bloque li { font-size: inherit; }
 
 /* Rangos: una escalera. Cada peldaño, más alto que el anterior, con su escalón encendido. */
 .escalera { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; gap: 2.4rem; }
@@ -1064,7 +1070,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .anim .cifras .revelar b { scale: .72; transform-origin: left bottom; transition: scale .5s cubic-bezier(.2, 1.3, .4, 1) calc(var(--i, 0) * 70ms); }
 .anim .cifras .revelar.visible b { scale: 1; }
 /* De dónde salen las cifras y a qué día: una línea bajo ellas, sin la barra de cada cifra. */
-.cifras .cifras-nota { grid-column: 1 / -1; padding-left: 0; border-left: 0; margin-top: -.6rem; }
+/* Pegada a la fila de Nexus, de la que habla, y lejos de la de batallas. */
+.cifras .cifras-nota { grid-column: 1 / -1; padding-left: 0; border-left: 0; margin: -1.1rem 0 .6rem; }
 .cifras .cifras-nota span { font-size: .9rem; letter-spacing: .04em; text-transform: none; }
 /* Podio de especies bajo las cifras: puesto, nombre (enlace a su ficha) y bajas; toda la fila se pulsa. */
 .podio { padding: clamp(2.2rem, 5vw, 3.4rem) 16px 0; }
@@ -1128,7 +1135,7 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .comparar-lista dt a::before { content: ""; position: absolute; inset: 0; }
 .comparar-lista .dieta { padding: .25rem .55rem; font-size: .8rem; }
 .comparar-lista dd { margin: 0; color: var(--hueso); font-weight: 600; }
-.comparar-lista small { display: block; font-size: .85rem; font-weight: 400; line-height: 1.3; color: var(--suave); }
+.comparar-lista small { display: block; font-size: .85rem; font-weight: 400; line-height: 1.3; color: var(--suave); text-wrap: balance; }
 @media (hover: hover) { .comparar-lista > div:hover { background: rgba(255, 53, 31, .07); } .comparar-lista > div:hover dt a { color: var(--ascua-viva); } }
 .comparar-lista > div:active { background: rgba(255, 53, 31, .16); transition-duration: .06s; }
 .comparar-lista > div:active dt a { color: var(--ascua-viva); }
@@ -1393,7 +1400,8 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 @media (max-width: 759px) { .baldosa-dinos::before { background: linear-gradient(180deg, rgba(8, 8, 8, .72) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .94) 100%); } }
 .baldosa-caceria { background: radial-gradient(ellipse 70% 90% at 100% 0%, rgba(255, 48, 25, .26), transparent 70%), linear-gradient(160deg, rgba(48, 18, 15, .55), rgba(11, 11, 11, .9)); }
 .baldosa h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-size: clamp(1.45rem, 2.6vw, 2rem); text-transform: uppercase; margin-bottom: .45rem; }
-.baldosa h3::after { content: "➜"; content: "➜" / ""; font: 1.1rem/1 var(--cuerpo); color: var(--ascua); transition: translate .4s var(--suave-salida); }
+/* Con sombra: en el móvil la flecha cae sobre la foto (en «Cómo entrar», sobre la cabeza del dino). */
+.baldosa h3::after { content: "➜"; content: "➜" / ""; font: 1.1rem/1 var(--cuerpo); color: var(--ascua-viva); text-shadow: 0 0 6px #000000, 0 0 12px rgba(0, 0, 0, .8); transition: translate .4s var(--suave-salida); }
 .baldosa-enlace { color: var(--hueso); text-decoration: none; }
 .baldosa-enlace::after { content: ""; position: absolute; inset: 0; z-index: 1; }
 .baldosa-enlace:hover { color: var(--hueso); }
@@ -1751,6 +1759,8 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .ruta-resumen progress::-webkit-progress-value, .ahora-progreso progress::-webkit-progress-value { background: var(--ascua); }
 .ruta-resumen progress::-moz-progress-bar, .ahora-progreso progress::-moz-progress-bar { background: var(--ascua); }
 .ruta-nota { color: var(--suave); font-size: .95rem; }
+/* La nota del final de cada sección, separada de la última fila de la lista. */
+.seccion .envoltura > .ruta-nota:last-child { margin: 1.6rem 0 0; }
 .ruta-aviso { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid var(--borde-fuerte); border-radius: 4px; color: var(--hueso); overflow-wrap: anywhere; }
 .ruta-aviso-abajo { margin: .8rem 0 0; }
 .ruta-aviso-mal { border-color: var(--ascua); border-left-width: 5px; }
