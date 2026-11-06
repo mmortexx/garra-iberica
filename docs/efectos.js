@@ -511,11 +511,8 @@
     medicion = requestAnimationFrame(paso);
   };
   alCambiarReposo.push(() => { if (pendiente && !enReposo) medirFluidez(); });
-  // Un zarpazo saltado (en modo ligero, o por el navegador si llega otra navegación encima) rechaza su «ready»:
-  // es lo previsto, y sin atenderlo sale como error en la página que se deja o en la que llega.
-  const atenderSalto = t => { t?.ready.catch(() => {}); };
-  addEventListener('pageswap', e => { atenderSalto(e.viewTransition); if (ligera) e.viewTransition?.skipTransition(); });
-  addEventListener('pagereveal', e => { atenderSalto(e.viewTransition); });
+  // En modo ligero no hay zarpazo. Su «ready» rechazado lo atiende el guion en línea de la cabecera (montar_web.py).
+  addEventListener('pageswap', e => { if (ligera) e.viewTransition?.skipTransition(); });
   addEventListener('resize', () => { clearTimeout(cambioVentana); cambioVentana = setTimeout(medirFluidez, 400); });
 
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer

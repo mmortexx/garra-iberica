@@ -15,85 +15,95 @@ h1: Ruta de logros
     <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}" data-nexus="{{logros_nexus}}">
       <h2 id="t-cuenta">Tu progreso</h2>
       <noscript><p class="ruta-aviso">Esta página necesita JavaScript para marcar y guardar. Sin él puedes leer toda la ruta aquí abajo.</p></noscript>
-      <div class="ruta-paso ruta-guia">
+      <div class="ruta-guia">
         <h3>Cómo empezar</h3>
-        <ol class="ruta-pasos">
-          <li><b>Entra con Discord</b> con el botón de aquí abajo. Discord te pregunta si dejas que la web sepa quién eres y compruebe que estás en el servidor del clan: acepta. Si prefieres no entrar, tus marcas se quedan solo en este navegador.</li>
-          <li><b>Trae tus logros de Nexus</b>: abre tu lista, cópiala entera y pégala en el recuadro «Tu lista de Nexus». Lo que ya tienes se marca solo, sin ir uno a uno.</li>
-          <li><b>Sigue la ruta</b>: más abajo, en «Ahora toca», tienes la sesión que te toca, con el dino y lo que hay que hacer en ella, paso a paso.</li>
+        <ol class="pasos escalonado ruta-guia-pasos" role="list">
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h4>Entra con Discord</h4><p>Con el botón de tu cuenta, aquí abajo. Discord te pregunta si dejas que la web sepa quién eres y compruebe que estás en el servidor del clan: acepta. Si prefieres no entrar, tus marcas se quedan solo en este navegador.</p></div></li>
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h4>Trae tus logros de Nexus</h4><p>Abre tu lista, cópiala entera y pégala en «Tu lista de Nexus». Lo que ya tienes se marca solo, sin ir uno a uno.</p></div></li>
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h4>Sigue la ruta</h4><p>En «Ahora toca» tienes la sesión que te toca, con el dino y lo que hay que hacer en ella, paso a paso.</p></div></li>
         </ol>
         <p class="ruta-nota">Cuando consigas logros nuevos, vuelve a pegar la lista de Nexus o márcalos a mano: nunca se borra nada de lo que ya tenías. En otro móvil u ordenador, entra con Discord y lo verás todo.</p>
       </div>
-      <div class="ruta-resumen" data-resumen hidden>
-        <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
-        <p data-total></p>
-        <p class="ruta-toca" data-toca hidden><span data-toca-texto></span> — <a href="#ahora">Ir</a></p>
-      </div>
-      <p class="ruta-estado" data-estado role="status" hidden></p>
       <p class="ruta-aviso" data-mensaje role="alert" hidden></p>
 
-      <div class="ruta-paso" data-fuera hidden>
-        <p>Entra con tu cuenta de Discord para no perder nada y verlo en cualquier dispositivo. Solo miembros del servidor del clan. Guardamos tu identificador de Discord, tu nombre, tus logros y sus fechas: ni correo, ni contraseña, ni lista de amigos, y solo tú ves lo tuyo. <a href="@/legal/#cuentas">Todos los detalles</a>.</p>
-        <p><button type="button" class="boton" data-entrar>Entrar con Discord</button></p>
-        <p class="ruta-nota">Sin entrar también funciona: tus marcas se guardan solo en este navegador.</p>
-      </div>
+      <div class="ruta-paneles">
+        <div class="ruta-panel ruta-resumen" data-resumen hidden>
+          <p class="ruta-total" data-total></p>
+          <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
+          <p class="ruta-estado" data-estado role="status" hidden></p>
+          <div class="ruta-toca" data-toca hidden>
+            <p class="ruta-toca-t"><span class="ruta-toca-n" data-toca-n></span><span class="ruta-toca-sitio" data-toca-sitio></span><span class="ruta-toca-dino" data-toca-dino></span></p>
+            <a class="boton boton-mini" href="#ahora" data-toca-ir>Ir a la sesión</a>
+          </div>
+        </div>
 
-      <div class="ruta-paso" data-dentro hidden>
-        <p>Hola, <b data-nombre-miembro></b>. Tus marcas se guardan en tu cuenta.</p>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-sec boton-mini" data-descargar>Descargar mis datos</button>
-          <button type="button" class="boton boton-sec boton-mini" data-salir>Salir</button>
-          <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Salir en todos mis dispositivos</button>
-          <button type="button" class="boton boton-sec boton-mini" data-borrar>Borrar mis datos</button>
-          <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Copia de seguridad del clan</button>
-        </p>
-        <div class="ruta-confirmar" data-confirmar hidden>
-          <p>Se borrarán tu cuenta, todos tus logros y sus fechas. No se puede deshacer: descarga antes tus datos si los quieres conservar. Las copias de recuperación se renuevan en unos días (<a href="@/legal/#cuentas">detalles</a>).</p>
+        <div class="ruta-panel" data-fuera hidden>
+          <h3>Tu cuenta</h3>
+          <p>Entra con tu cuenta de Discord para no perder nada y verlo en cualquier dispositivo. Solo miembros del servidor del clan. Guardamos tu identificador de Discord, tu nombre, tus logros y sus fechas: ni correo, ni contraseña, ni lista de amigos, y solo tú ves lo tuyo. <a href="@/legal/#cuentas">Todos los detalles</a>.</p>
+          <p><button type="button" class="boton" data-entrar>Entrar con Discord</button></p>
+          <p class="ruta-nota">Sin entrar también funciona: tus marcas se guardan solo en este navegador.</p>
+        </div>
+
+        <div class="ruta-panel" data-dentro hidden>
+          <h3>Tu cuenta</h3>
+          <p>Hola, <b data-nombre-miembro></b>. Tus marcas se guardan en tu cuenta.</p>
           <p class="ruta-botones">
-            <button type="button" class="boton boton-mini" data-borrar-si>Sí, borrar todo</button>
-            <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, dejarlo</button>
+            <button type="button" class="boton boton-sec boton-mini" data-descargar>Descargar mis datos</button>
+            <button type="button" class="boton boton-sec boton-mini" data-salir>Salir</button>
+            <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Salir en todos mis dispositivos</button>
+            <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Copia de seguridad del clan</button>
+          </p>
+          <p class="ruta-botones ruta-peligro">
+            <button type="button" class="boton boton-sec boton-mini" data-borrar>Borrar mis datos</button>
+          </p>
+          <div class="ruta-confirmar" data-confirmar hidden>
+            <p>Se borrarán tu cuenta, todos tus logros y sus fechas. No se puede deshacer: descarga antes tus datos si los quieres conservar. Las copias de recuperación se renuevan en unos días (<a href="@/legal/#cuentas">detalles</a>).</p>
+            <p class="ruta-botones">
+              <button type="button" class="boton boton-mini" data-borrar-si>Sí, borrar todo</button>
+              <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, dejarlo</button>
+            </p>
+          </div>
+        </div>
+
+        <div class="ruta-panel ruta-ancho ruta-confirmar" data-importar hidden>
+          <p data-importar-texto></p>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-importar-si>Añadirlas a mi cuenta</button>
+            <button type="button" class="boton boton-sec boton-mini" data-importar-no>Descartarlas</button>
           </p>
         </div>
-      </div>
 
-      <div class="ruta-paso ruta-confirmar" data-importar hidden>
-        <p data-importar-texto></p>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-mini" data-importar-si>Añadirlas a mi cuenta</button>
-          <button type="button" class="boton boton-sec boton-mini" data-importar-no>Descartarlas</button>
-        </p>
-      </div>
+        <div class="ruta-panel ruta-nexus" data-nexus-caja hidden>
+          <h3>Trae tus logros de Nexus</h3>
+          <ol class="ruta-pasos">
+            <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Abre tu lista de logros en Nexus<span class="oculto"> (se abre en una pestaña nueva)</span></a>. Se ve como un texto raro: es normal. Si solo pone «Unauthorized», entra antes en Nexus y vuelve a abrirla.</li>
+            <li>Copia toda la página: Ctrl+A y Ctrl+C. En el móvil, mantén pulsado el texto y elige «Seleccionar todo». En Firefox, abre antes la segunda pestaña de arriba (datos sin procesar, «Raw Data»).</li>
+            <li>Vuelve aquí y pégala en este recuadro: tus logros se marcan solos.</li>
+          </ol>
+          <label class="ruta-etiqueta" for="nexus-pegar">Tu lista de Nexus</label>
+          <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-nexus-traer>Marcar mis logros</button>
+          </p>
+          <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
+          <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
+          <p class="ruta-nota">Lo que pegas se lee solo en tu navegador y ese texto no se envía a ningún sitio: solo se guardan las marcas que salen de él, en este navegador y, si has entrado, en tu cuenta. Nunca quita nada: solo añade lo que te faltaba, y puedes seguir marcando a mano.</p>
+        </div>
 
-      <div class="ruta-paso ruta-nexus" data-nexus-caja hidden>
-        <h3>Trae tus logros de Nexus</h3>
-        <ol class="ruta-pasos">
-          <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Abre tu lista de logros en Nexus<span class="oculto"> (se abre en una pestaña nueva)</span></a>. Se ve como un texto raro: es normal. Si solo pone «Unauthorized», entra antes en Nexus y vuelve a abrirla.</li>
-          <li>Copia toda la página: Ctrl+A y Ctrl+C. En el móvil, mantén pulsado el texto y elige «Seleccionar todo». En Firefox, abre antes la segunda pestaña de arriba (datos sin procesar, «Raw Data»).</li>
-          <li>Vuelve aquí y pégala en este recuadro: tus logros se marcan solos.</li>
-        </ol>
-        <label class="ruta-etiqueta" for="nexus-pegar">Tu lista de Nexus</label>
-        <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-mini" data-nexus-traer>Marcar mis logros</button>
-        </p>
-        <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
-        <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
-        <p class="ruta-nota">Lo que pegas se lee solo en tu navegador y ese texto no se envía a ningún sitio: solo se guardan las marcas que salen de él, en este navegador y, si has entrado, en tu cuenta. Nunca quita nada: solo añade lo que te faltaba, y puedes seguir marcando a mano.</p>
-      </div>
+        <div class="ruta-panel" data-codigo-caja hidden>
+          <h3 id="t-codigo">¿Ya usabas la ruta? Trae tu código</h3>
+          <p class="ruta-nota">Pega el código que empieza por GR1. Nunca quita nada: solo añade lo que te faltaba. También puedes copiar el tuyo, para llevarlo a otro navegador sin cuenta.</p>
+          <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-sec boton-mini" data-traer>Traer mi progreso</button>
+            <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copiar mi código</button>
+          </p>
+        </div>
 
-      <div class="ruta-paso" data-codigo-caja hidden>
-        <h3 id="t-codigo">¿Ya usabas la ruta? Trae tu código</h3>
-        <p class="ruta-nota">Pega el código que empieza por GR1. Nunca quita nada: solo añade lo que te faltaba. También puedes copiar el tuyo, para llevarlo a otro navegador sin cuenta.</p>
-        <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-sec boton-mini" data-traer>Traer mi progreso</button>
-          <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copiar mi código</button>
-        </p>
-      </div>
-
-      <div class="ruta-paso" data-trayectoria-caja hidden>
-        <h3>Tu trayectoria</h3>
-        <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+        <div class="ruta-panel ruta-ancho" data-trayectoria-caja hidden>
+          <h3>Tu trayectoria</h3>
+          <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+        </div>
       </div>
     </div>
   </section>

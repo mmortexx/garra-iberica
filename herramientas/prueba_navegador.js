@@ -934,6 +934,42 @@ const transicionSaltada = async navegador => {
     if (errores.length) fallos.push(`saltada en ${lado}: ${JSON.stringify(errores)}`);
     await ctx.close();
   }
+  // El caso de la batería: con efectos.js aún sin llegar (va con defer), Chrome salta la transición de la página que
+  // llega antes de «pagereveal», que la entrega vacía, y su «ready» se rechaza sin que ningún código pueda atenderlo.
+  // Se fuerza retrasando efectos.js en la página que llega (y saltándola si aun así llegara); sin modo ligero, para
+  // que la página que se deja no la salte antes. Solo vale si el rechazo llega antes de que corra efectos.js.
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() => {
+      window.garraModoFijo = true;
+      addEventListener('pagereveal', e => e.viewTransition?.skipTransition());
+      addEventListener('unhandledrejection', e => {
+        if (!/transition/i.test(e.reason?.message || '')) return;
+        // Sin efectos.js todavía, la página conserva la clase con la que llega.
+        try { sessionStorage.setItem('saltada', document.documentElement.classList.contains('ligera') ? 'antes' : 'después'); } catch { /* about:blank */ }
+      });
+    });
+    let pedidas = 0;
+    await ctx.route(/\/efectos\.js/, async r => {
+      if (pedidas++) await new Promise(s => setTimeout(s, 1500));
+      await r.continue();
+    });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(`${p.url()}: ${e.message}`));
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForTimeout(300);
+    await p.tap('.menu-boton');
+    await p.waitForTimeout(400);
+    const cargada = p.waitForEvent('load', { timeout: 8000 }).then(() => true, () => false);
+    await p.tap('.menu a[href="clan/"]');
+    if (!(await cargada)) fallos.push('antes de efectos.js: no llega a clan/');
+    await p.waitForTimeout(500);
+    const cuando = await p.evaluate(() => sessionStorage.getItem('saltada'));
+    if (cuando !== 'antes') fallos.push(`antes de efectos.js: ${cuando ? 'efectos.js ya había corrido' : 'no hubo rechazo de transición'}, la prueba no demuestra nada`);
+    if (errores.length) fallos.push(`saltada en pagereveal antes de efectos.js: ${JSON.stringify(errores)}`);
+    await ctx.close();
+  }
   console.log('Zarpazo saltado sin errores en la página:', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
@@ -963,7 +999,7 @@ const ahoraToca = async navegador => {
       indice: z ? z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]').length : 0,
       marcada: z ? [...z.querySelectorAll('[data-ahora-indice] [data-ahora-ver]')].findIndex(b => b.getAttribute('aria-current') === 'true') : -1,
       foco: document.activeElement === q('[data-ahora-titulo]'),
-      toca: document.querySelector('[data-toca]')?.innerText.trim() || '', tocaVisible: Boolean(document.querySelector('[data-toca]')?.getClientRects().length),
+      toca: document.querySelector('[data-toca]')?.textContent.trim() || '', tocaVisible: Boolean(document.querySelector('[data-toca]')?.getClientRects().length),
       listaVisible: Boolean(document.querySelector('[data-sesiones]')?.getClientRects().length),
     };
   });
@@ -1429,7 +1465,8 @@ const ahoraToca = async navegador => {
     const ctx = await navegador.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
     const errores = [];
-    p.on('pageerror', e => errores.push(e.message));
+    // Qué página lo da y con qué pila: un error suelto sin sitio no dice qué arreglar.
+    p.on('pageerror', e => errores.push(`${p.url()}: ${e.name}: ${e.message}${e.stack ? ` (${e.stack.split('\n').slice(0, 3).join(' / ')})` : ''}`));
     await p.goto(BASE + lang, { waitUntil: 'load' });
     const fallos = [];
     const destinos = await p.evaluate(() => [...document.querySelectorAll('.menu a:not(.menu-idioma)')].map(a => a.href));

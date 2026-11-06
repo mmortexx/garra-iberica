@@ -29,6 +29,7 @@ En los textos de paginas/:
 Uso: python herramientas/montar_web.py   (tras tocar paginas/, las fichas, estilos.css o los .js)
 comprobar.py falla si docs/ no es lo que sale de aquí.
 """
+import base64
 import hashlib
 import json
 import re
@@ -148,10 +149,18 @@ def segun_cuentas(cuerpo, activas):
     return limpio
 
 
+# Un zarpazo saltado rechaza la promesa «ready» de su transición. Si el navegador lo salta antes de que llegue
+# efectos.js (va con defer; pasa con la máquina cargada), «pagereveal» llega sin transición y esa promesa no la
+# recibe ningún código: solo se puede atender así, en línea y lo primero de la página, autorizado por su huella.
+ATENDER_SALTO = ("addEventListener('unhandledrejection',e=>{const r=e.reason;"
+                 "if(r instanceof DOMException&&r.name==='AbortError'&&/transition/i.test(r.message))e.preventDefault()})")
+HUELLA_SALTO = base64.b64encode(hashlib.sha256(ATENDER_SALTO.encode()).digest()).decode()
+
+
 def csp(pagina):
     """La misma en toda la web; solo la ruta de logros, que es la que lo usa, puede hablar con el servicio de cuentas."""
     conectar = ' '.join(filter(None, ["'self'", logros_web.servicio() if pagina == 'ruta' else '']))
-    return (f"default-src 'none'; script-src 'self'; connect-src {conectar}; style-src 'self'; font-src 'self'; "
+    return (f"default-src 'none'; script-src 'self' 'sha256-{HUELLA_SALTO}'; connect-src {conectar}; style-src 'self'; font-src 'self'; "
             "img-src 'self' data:; media-src 'self' https://mmortexx.github.io; base-uri 'none'; form-action 'none'")
 
 
@@ -500,6 +509,7 @@ def pagina_web(pagina, lang, base=None, d=None, docs=DOCS):
         '<meta name="robots" content="max-image-preview:large, max-snippet:-1">',
         *[f'<meta name="{n}" content="{c}">' for n, c in VERIFICACION if (pagina, lang) == ('inicio', 'es')],
         f'<meta http-equiv="Content-Security-Policy" content="{csp(pagina)}">',
+        f'<script>{ATENDER_SALTO}</script>',
         '<meta name="referrer" content="strict-origin-when-cross-origin">',
         '<meta name="theme-color" content="#080808">',
         f'<link rel="canonical" href="{url}">',

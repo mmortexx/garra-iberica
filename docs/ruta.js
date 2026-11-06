@@ -17,7 +17,7 @@
   const ESPERAS = [5000, 15000, 60000, 300000];
 
   const T = en ? {
-    total: (a, b) => `${a} of ${b} achievement steps`,
+    total: t => ` of ${t} achievement steps`,
     soloNavegador: 'Saved in this browser only.',
     nube: 'Saved to your account.',
     subiendo: n => `Saving… (${n})`,
@@ -55,7 +55,10 @@
       completada: t => `Session complete. Next: ${t}.`,
       fin: 'Route complete',
       rutaHecha: 'Route complete: you have done every session.',
-      toca: (n, t, titulo, dino) => `Next for you: session ${n} of ${t} · ${titulo} (${dino})`,
+      toca: (n, t) => `Next for you: session ${n} of ${t}`,
+      hechasTodas: 'You have done every session.',
+      irSesion: 'Go to the session',
+      irFin: 'See the route',
     },
     nexus: {
       error: 'Error:',
@@ -86,7 +89,7 @@
       canje: 'The sign-in could not be completed. Please try again.',
     },
   } : {
-    total: (a, b) => `${a} de ${b} tramos de logros`,
+    total: t => ` de ${t} tramos de logros`,
     soloNavegador: 'Guardado solo en este navegador.',
     nube: 'Guardado en tu cuenta.',
     subiendo: n => `Guardando… (${n})`,
@@ -124,7 +127,10 @@
       completada: t => `Sesión completada. Ahora: ${t}.`,
       fin: 'Ruta completada',
       rutaHecha: 'Ruta completada: has hecho todas las sesiones.',
-      toca: (n, t, titulo, dino) => `Te toca: sesión ${n} de ${t} · ${titulo} (${dino})`,
+      toca: (n, t) => `Te toca: sesión ${n} de ${t}`,
+      hechasTodas: 'Has hecho todas las sesiones.',
+      irSesion: 'Ir a la sesión',
+      irFin: 'Ver la ruta',
     },
     nexus: {
       error: 'Error:',
@@ -265,9 +271,15 @@
       nombre.append(Object.assign(document.createElement('b'), { textContent: s.titulo }), Object.assign(document.createElement('small'), { textContent: s.dino }));
       s.estadoIndice = Object.assign(document.createElement('span'), { className: 'oculto' });
       s.contadorIndice = Object.assign(document.createElement('span'), { className: 'contador' });
+      s.barraIndice = Object.assign(document.createElement('span'), { className: 'ahora-li-barra' });
+      s.barraIndice.setAttribute('aria-hidden', 'true');
+      // La que toca lo dice también con letras, no solo con el color; el lector ya lo oye por estadoIndice.
+      const chip = Object.assign(document.createElement('span'), { className: 'ahora-li-chip', textContent: T.ahora.estado.actual });
+      chip.setAttribute('aria-hidden', 'true');
+      nombre.append(chip);
       s.boton = Object.assign(document.createElement('button'), { type: 'button', className: 'ahora-li' });
       s.boton.dataset.ahoraVer = String(i);
-      s.boton.append(Object.assign(document.createElement('span'), { className: 'sesion-n', textContent: String(i + 1) }), nombre, s.estadoIndice, s.contadorIndice);
+      s.boton.append(Object.assign(document.createElement('span'), { className: 'sesion-n', textContent: String(i + 1) }), nombre, s.estadoIndice, s.contadorIndice, s.barraIndice);
       const li = document.createElement('li');
       li.append(s.boton);
       indice.append(li);
@@ -332,10 +344,19 @@
       x.boton.classList.toggle('sesion-actual', como === 'actual');
       x.estadoIndice.textContent = `, ${T.ahora.estado[como]}`;
       x.contadorIndice.textContent = `${hechasDe(x)}/${x.tareas.length}`;
+      x.barraIndice.style.setProperty('--hecho', x.tareas.length ? hechasDe(x) / x.tareas.length : 1);
       if (j === i) x.boton.setAttribute('aria-current', 'true');
       else x.boton.removeAttribute('aria-current');
     });
-    $('[data-toca-texto]').textContent = actual < 0 ? T.ahora.rutaHecha : T.ahora.toca(actual + 1, total, sesiones[actual].titulo, sesiones[actual].dino);
+    const toca = sesiones[actual];
+    $('[data-toca]').classList.toggle('ruta-toca-fin', !toca);
+    $('[data-toca-n]').textContent = toca ? T.ahora.toca(actual + 1, total) : T.ahora.fin;
+    $('[data-toca-sitio]').textContent = toca ? toca.titulo : T.ahora.hechasTodas;
+    const tocaDino = $('[data-toca-dino]');
+    tocaDino.hidden = !toca;
+    tocaDino.textContent = toca ? toca.dino : '';
+    tocaDino.className = `ruta-toca-dino dieta ${toca ? DIETA[toca.li.dataset.grupo] || '' : ''}`;
+    $('[data-toca-ir]').textContent = toca ? T.ahora.irSesion : T.ahora.irFin;
   }
 
   // Completar la sesión que se mira: el recuadro pasa a la siguiente y lo dice.
@@ -388,13 +409,14 @@
       const tope = b.filas.reduce((a, f) => a + MAXIMOS.get(f.dataset.fila), 0);
       b.contador.textContent = `${suma}/${tope}`;
       b.completo = suma === tope;
+      b.d.classList.toggle('grupo-completo', b.completo);
       for (const f of b.filas) f.hidden = soloPendientes && nivel(f.dataset.fila) >= MAXIMOS.get(f.dataset.fila);
       b.d.hidden = (filtro !== 'todos' && b.d.dataset.grupo !== filtro) || (soloPendientes && b.completo);
     }
     pintarAhora();
     $('[data-barra]').max = total;
     $('[data-barra]').value = hechos;
-    $('[data-total]').textContent = T.total(hechos, total);
+    $('[data-total]').replaceChildren(Object.assign(document.createElement('b'), { textContent: String(hechos) }), T.total(total));
   }
 
   function pintarEstado() {
@@ -1005,6 +1027,12 @@
     if (b.dataset.logro) {
       const n = +b.dataset.nivel;
       marcar(b.dataset.logro, nivel(b.dataset.logro) === n ? n - 1 : n);
+      // Un toque breve en la casilla que se acaba de marcar (el CSS lo calla con menos movimiento o en modo ligero).
+      b.classList.remove('recien');
+      if (b.getAttribute('aria-pressed') === 'true' && b.isConnected) {
+        void b.offsetWidth;
+        b.classList.add('recien');
+      }
     } else if (b.dataset.ahoraIr) {
       if (b.getAttribute('aria-disabled') !== 'true') moverAhora(b.dataset.ahoraIr);
     } else if (b.dataset.ahoraVer) {
@@ -1057,7 +1085,7 @@
   });
 
   // «Te toca…» en «Tu progreso» lleva al recuadro con la sesión que toca, aunque se estuviera mirando otra.
-  $('[data-toca] a')?.addEventListener('click', e => {
+  $('[data-toca-ir]')?.addEventListener('click', e => {
     if (!zona) return;
     e.preventDefault();
     mirar(null, true);

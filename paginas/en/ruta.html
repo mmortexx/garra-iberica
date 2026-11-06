@@ -15,85 +15,95 @@ h1: Achievements route
     <div class="envoltura ruta-cuenta" data-miembro data-servicio="{{servicio}}" data-logros="{{logros_datos}}" data-antiguos="{{logros_antiguos}}" data-nexus="{{logros_nexus}}">
       <h2 id="t-cuenta">Your progress</h2>
       <noscript><p class="ruta-aviso">This page needs JavaScript to tick and save. Without it you can still read the whole route below.</p></noscript>
-      <div class="ruta-paso ruta-guia">
+      <div class="ruta-guia">
         <h3>How to start</h3>
-        <ol class="ruta-pasos">
-          <li><b>Sign in with Discord</b> with the button below. Discord asks whether you let the site know who you are and check that you are on the clan server: accept. If you would rather not sign in, your ticks stay in this browser only.</li>
-          <li><b>Bring your achievements from Nexus</b>: open your list, copy all of it and paste it into the “Your Nexus list” box. What you already have gets ticked by itself, without going one by one.</li>
-          <li><b>Follow the route</b>: further down, under “Up next”, you have the session that is next for you, with the dino and what to do in it, step by step.</li>
+        <ol class="pasos escalonado ruta-guia-pasos" role="list">
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>1</span></span><div><h4>Sign in with Discord</h4><p>With the button in your account, below. Discord asks whether you let the site know who you are and check that you are on the clan server: accept. If you would rather not sign in, your ticks stay in this browser only.</p></div></li>
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>2</span></span><div><h4>Bring your achievements from Nexus</h4><p>Open your list, copy all of it and paste it into “Your Nexus list”. What you already have gets ticked by itself, without going one by one.</p></div></li>
+          <li class="panel luz revelar"><span class="hex" aria-hidden="true"><svg viewBox="0 0 60 52"><path class="hex-fondo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/><path class="hex-brillo" d="M15 1.5H45L58.5 26L45 50.5H15L1.5 26Z"/></svg><span>3</span></span><div><h4>Follow the route</h4><p>Under “Up next” you have the session that is next for you, with the dino and what to do in it, step by step.</p></div></li>
         </ol>
         <p class="ruta-nota">When you get new achievements, paste your Nexus list again or tick them by hand: nothing you already had is ever removed. On another phone or computer, sign in with Discord and you will see everything.</p>
       </div>
-      <div class="ruta-resumen" data-resumen hidden>
-        <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
-        <p data-total></p>
-        <p class="ruta-toca" data-toca hidden><span data-toca-texto></span> — <a href="#up-next">Go</a></p>
-      </div>
-      <p class="ruta-estado" data-estado role="status" hidden></p>
       <p class="ruta-aviso" data-mensaje role="alert" hidden></p>
 
-      <div class="ruta-paso" data-fuera hidden>
-        <p>Sign in with your Discord account to lose nothing and see it on any device. Clan server members only. We keep your Discord ID, your name, your achievements and their dates: no email, no password, no friends list, and only you see what is yours. <a href="@/en/legal/#accounts">Full details</a>.</p>
-        <p><button type="button" class="boton" data-entrar>Sign in with Discord</button></p>
-        <p class="ruta-nota">It works without signing in too: your ticks are saved in this browser only.</p>
-      </div>
+      <div class="ruta-paneles">
+        <div class="ruta-panel ruta-resumen" data-resumen hidden>
+          <p class="ruta-total" data-total></p>
+          <progress data-barra max="1" value="0" aria-labelledby="t-cuenta"></progress>
+          <p class="ruta-estado" data-estado role="status" hidden></p>
+          <div class="ruta-toca" data-toca hidden>
+            <p class="ruta-toca-t"><span class="ruta-toca-n" data-toca-n></span><span class="ruta-toca-sitio" data-toca-sitio></span><span class="ruta-toca-dino" data-toca-dino></span></p>
+            <a class="boton boton-mini" href="#up-next" data-toca-ir>Go to the session</a>
+          </div>
+        </div>
 
-      <div class="ruta-paso" data-dentro hidden>
-        <p>Hi, <b data-nombre-miembro></b>. Your ticks are saved to your account.</p>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-sec boton-mini" data-descargar>Download my data</button>
-          <button type="button" class="boton boton-sec boton-mini" data-salir>Sign out</button>
-          <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Sign out on all my devices</button>
-          <button type="button" class="boton boton-sec boton-mini" data-borrar>Delete my data</button>
-          <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Clan backup</button>
-        </p>
-        <div class="ruta-confirmar" data-confirmar hidden>
-          <p>This deletes your account, all your achievements and their dates. It cannot be undone: download your data first if you want to keep it. Recovery copies renew within a few days (<a href="@/en/legal/#accounts">details</a>).</p>
+        <div class="ruta-panel" data-fuera hidden>
+          <h3>Your account</h3>
+          <p>Sign in with your Discord account to lose nothing and see it on any device. Clan server members only. We keep your Discord ID, your name, your achievements and their dates: no email, no password, no friends list, and only you see what is yours. <a href="@/en/legal/#accounts">Full details</a>.</p>
+          <p><button type="button" class="boton" data-entrar>Sign in with Discord</button></p>
+          <p class="ruta-nota">It works without signing in too: your ticks are saved in this browser only.</p>
+        </div>
+
+        <div class="ruta-panel" data-dentro hidden>
+          <h3>Your account</h3>
+          <p>Hi, <b data-nombre-miembro></b>. Your ticks are saved to your account.</p>
           <p class="ruta-botones">
-            <button type="button" class="boton boton-mini" data-borrar-si>Yes, delete everything</button>
-            <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, keep it</button>
+            <button type="button" class="boton boton-sec boton-mini" data-descargar>Download my data</button>
+            <button type="button" class="boton boton-sec boton-mini" data-salir>Sign out</button>
+            <button type="button" class="boton boton-sec boton-mini" data-salir-todos>Sign out on all my devices</button>
+            <button type="button" class="boton boton-sec boton-mini" data-copia hidden>Clan backup</button>
+          </p>
+          <p class="ruta-botones ruta-peligro">
+            <button type="button" class="boton boton-sec boton-mini" data-borrar>Delete my data</button>
+          </p>
+          <div class="ruta-confirmar" data-confirmar hidden>
+            <p>This deletes your account, all your achievements and their dates. It cannot be undone: download your data first if you want to keep it. Recovery copies renew within a few days (<a href="@/en/legal/#accounts">details</a>).</p>
+            <p class="ruta-botones">
+              <button type="button" class="boton boton-mini" data-borrar-si>Yes, delete everything</button>
+              <button type="button" class="boton boton-sec boton-mini" data-borrar-no>No, keep it</button>
+            </p>
+          </div>
+        </div>
+
+        <div class="ruta-panel ruta-ancho ruta-confirmar" data-importar hidden>
+          <p data-importar-texto></p>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-importar-si>Add them to my account</button>
+            <button type="button" class="boton boton-sec boton-mini" data-importar-no>Discard them</button>
           </p>
         </div>
-      </div>
 
-      <div class="ruta-paso ruta-confirmar" data-importar hidden>
-        <p data-importar-texto></p>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-mini" data-importar-si>Add them to my account</button>
-          <button type="button" class="boton boton-sec boton-mini" data-importar-no>Discard them</button>
-        </p>
-      </div>
+        <div class="ruta-panel ruta-nexus" data-nexus-caja hidden>
+          <h3>Bring your achievements from Nexus</h3>
+          <ol class="ruta-pasos">
+            <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Open your achievements list on Nexus<span class="oculto"> (opens in a new tab)</span></a>. It looks like strange text: that is normal. If it only says “Unauthorized”, sign in to Nexus first and open it again.</li>
+            <li>Copy the whole page: Ctrl+A and Ctrl+C. On a phone, press and hold the text and choose “Select all”. In Firefox, first open the second tab at the top (Raw Data).</li>
+            <li>Come back here and paste it into this box: your achievements tick themselves.</li>
+          </ol>
+          <label class="ruta-etiqueta" for="nexus-pegar">Your Nexus list</label>
+          <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-mini" data-nexus-traer>Tick my achievements</button>
+          </p>
+          <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
+          <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
+          <p class="ruta-nota">What you paste is read only in your browser and that text is not sent anywhere: only the ticks that come from it are saved, in this browser and, if you are signed in, in your account. It never removes anything: it only adds what you were missing, and you can keep ticking by hand.</p>
+        </div>
 
-      <div class="ruta-paso ruta-nexus" data-nexus-caja hidden>
-        <h3>Bring your achievements from Nexus</h3>
-        <ol class="ruta-pasos">
-          <li><a href="https://nexus.asura-theisle.com/achievements/api/list" rel="noopener noreferrer" target="_blank">Open your achievements list on Nexus<span class="oculto"> (opens in a new tab)</span></a>. It looks like strange text: that is normal. If it only says “Unauthorized”, sign in to Nexus first and open it again.</li>
-          <li>Copy the whole page: Ctrl+A and Ctrl+C. On a phone, press and hold the text and choose “Select all”. In Firefox, first open the second tab at the top (Raw Data).</li>
-          <li>Come back here and paste it into this box: your achievements tick themselves.</li>
-        </ol>
-        <label class="ruta-etiqueta" for="nexus-pegar">Your Nexus list</label>
-        <textarea class="ruta-campo" id="nexus-pegar" data-nexus-pegar rows="3" autocomplete="off" spellcheck="false"></textarea>
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-mini" data-nexus-traer>Tick my achievements</button>
-        </p>
-        <p class="ruta-aviso ruta-aviso-abajo" data-nexus-mensaje data-nexus-bien role="status" hidden></p>
-        <p class="ruta-aviso ruta-aviso-abajo ruta-aviso-mal" data-nexus-mensaje data-nexus-mal role="alert" hidden></p>
-        <p class="ruta-nota">What you paste is read only in your browser and that text is not sent anywhere: only the ticks that come from it are saved, in this browser and, if you are signed in, in your account. It never removes anything: it only adds what you were missing, and you can keep ticking by hand.</p>
-      </div>
+        <div class="ruta-panel" data-codigo-caja hidden>
+          <h3 id="t-codigo">Already using the route? Bring your code</h3>
+          <p class="ruta-nota">Paste the code that starts with GR1. It never removes anything: it only adds what you were missing. You can also copy yours, to take it to another browser without an account.</p>
+          <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
+          <p class="ruta-botones">
+            <button type="button" class="boton boton-sec boton-mini" data-traer>Bring my progress</button>
+            <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copy my code</button>
+          </p>
+        </div>
 
-      <div class="ruta-paso" data-codigo-caja hidden>
-        <h3 id="t-codigo">Already using the route? Bring your code</h3>
-        <p class="ruta-nota">Paste the code that starts with GR1. It never removes anything: it only adds what you were missing. You can also copy yours, to take it to another browser without an account.</p>
-        <input class="ruta-campo" data-codigo type="text" autocomplete="off" spellcheck="false" aria-labelledby="t-codigo" placeholder="GR1.">
-        <p class="ruta-botones">
-          <button type="button" class="boton boton-sec boton-mini" data-traer>Bring my progress</button>
-          <button type="button" class="boton boton-sec boton-mini" data-copiar-codigo>Copy my code</button>
-        </p>
-      </div>
-
-      <div class="ruta-paso" data-trayectoria-caja hidden>
-        <h3>Your history</h3>
-        <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+        <div class="ruta-panel ruta-ancho" data-trayectoria-caja hidden>
+          <h3>Your history</h3>
+          <ol class="ruta-trayectoria" role="list" data-trayectoria></ol>
+        </div>
       </div>
     </div>
   </section>
