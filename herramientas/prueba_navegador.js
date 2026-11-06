@@ -2541,13 +2541,24 @@ const ahoraToca = async navegador => {
   //   píxel más claro detrás de cada línea (percentil 95) da el contraste con su color (WCAG: 4,5, o
   //   3 en letra grande);
   // - lo que se pulsa mide al menos 24 px (o lleva su capa invisible de 44), salvo enlaces en un párrafo.
+  // Y de paso, sin coste: ningún adorno absoluto (::before/::after) cuelga de un elemento sin posición propia. Así
+  // el trazo de ascua de las tarjetas del aviso legal, la Cacería y Únete acababa apilado en el borde de la pantalla.
+  // Los enlaces sí pueden: su ::after cubre a propósito la tarjeta entera, para pulsarla toda.
   for (const [ancho, alto] of [[375, 812], [1366, 800]]) for (const [r] of PAGINAS) {
     const fallos = [];
     const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: ancho < 800, hasTouch: ancho < 800, reducedMotion: 'reduce', bypassCSP: true });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
     await p.waitForTimeout(400);
-    const { lineas, pequenos } = await p.evaluate(() => {
+    const { lineas, pequenos, sueltos } = await p.evaluate(() => {
+      const sueltos = new Set();
+      for (const el of document.querySelectorAll('main *:not(a)')) {
+        if (getComputedStyle(el).position !== 'static') continue;
+        for (const ps of ['::before', '::after']) {
+          const c = getComputedStyle(el, ps);
+          if (c.content !== 'none' && c.position === 'absolute') sueltos.add(`${el.tagName.toLowerCase()}${[...el.classList].map(c => '.' + c).join('')}${ps}`);
+        }
+      }
       const lineas = [];
       for (const zona of document.querySelectorAll('.portada, .cabecera, .baldosa')) {
         const w = document.createTreeWalker(zona, NodeFilter.SHOW_TEXT);
@@ -2571,9 +2582,10 @@ const ahoraToca = async navegador => {
         const capa = getComputedStyle(el, '::before');
         if ((q.width < 24 || q.height < 24) && !(capa.content !== 'none' && parseFloat(capa.height) >= 44)) pequenos.push(`«${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 25)}» ${Math.round(q.width)}x${Math.round(q.height)}`);
       }
-      return { lineas, pequenos };
+      return { lineas, pequenos, sueltos: [...sueltos] };
     });
     if (pequenos.length) fallos.push(`pequeño para pulsar: ${pequenos.join(', ')}`);
+    if (sueltos.length) fallos.push(`adorno fuera de su caja (sin position): ${sueltos.join(', ')}`);
     if (lineas.length) {
       // Sin la hoja de estilos de la página (la política de seguridad no deja estilos sueltos; aquí se salta).
       await p.addStyleTag({ content: '* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-decoration-color: transparent !important; text-shadow: none !important; } .boton, .cuenta-grande { visibility: hidden !important; }' });
@@ -2606,7 +2618,7 @@ const ahoraToca = async navegador => {
     await ctx.close();
     if (fallos.length) { malos++; console.log(ruta(r), `accesibilidad a ${ancho} px:`, fallos.join('; ')); }
   }
-  console.log(ruta(''), `accesibilidad (contraste sobre fotos y tamaño para pulsar) en ${PAGINAS.length} páginas a 375 y 1366 px: revisada`);
+  console.log(ruta(''), `accesibilidad (contraste sobre fotos y tamaño para pulsar) y adornos en su caja en ${PAGINAS.length} páginas a 375 y 1366 px: revisada`);
   // Alto contraste de Windows: el sistema borra los fondos, y los iconos dibujados con fondo (menú,
   // cerrar, abrir pregunta) se quedaban en blanco. Deben conservar un color distinto del de su botón.
   {
