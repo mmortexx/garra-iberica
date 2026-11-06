@@ -106,6 +106,33 @@ const scrollSinRaton = async navegador => {
   await p.waitForTimeout(60);
   if (!(await bajoElRaton(sitio.x + 6)).dentro) fallos.push('con un botón pulsado (seleccionar, arrastrar) el scroll corta el arrastre');
   await p.mouse.up();
+  // Un clic nada más soltar la rueda, sin mover el ratón, tiene que llegar una sola vez a lo que hay debajo: con el
+  // body sin eventos, el pulsado caía en <html> y el clic no llegaba al enlace. La baldosa se busca por su caja, porque
+  // mientras dura el scroll elementFromPoint tampoco la ve.
+  // Soltar el botón encima de la baldosa ya era un clic en su enlace: se vuelve a la portada.
+  await p.goto(BASE, { waitUntil: 'load' });
+  await p.evaluate(() => {
+    const r = document.querySelector('.baldosa-ruta').getBoundingClientRect();
+    scrollTo({ top: r.top + scrollY + r.height / 2 - 650, behavior: 'instant' });
+  });
+  await p.waitForTimeout(600);
+  await p.evaluate(() => {
+    window.__clics = [];
+    window.__contar = e => { window.__clics.push(e.target.closest?.('.baldosa-enlace') ? 'enlace' : e.target.nodeName); e.preventDefault(); };
+    addEventListener('click', window.__contar, { capture: true });
+  });
+  await p.mouse.wheel(0, 10);
+  await p.waitForTimeout(40);
+  const encima = await p.evaluate(([cx]) => [...document.querySelectorAll('.baldosa')].some(b => {
+    const r = b.getBoundingClientRect();
+    return cx > r.left + 8 && cx < r.right - 8 && 650 > r.top + 8 && 650 < r.bottom - 8;
+  }), [sitio.x + 6]);
+  await p.mouse.down();
+  await p.mouse.up();
+  await p.waitForTimeout(80);
+  const clics = await p.evaluate(() => { removeEventListener('click', window.__contar, { capture: true }); return window.__clics; });
+  if (!encima) fallos.push('la prueba del clic tras la rueda no tiene una baldosa debajo del ratón');
+  else if (clics.join() !== 'enlace') fallos.push(`un clic justo después de la rueda, sin mover el ratón, no llega una vez al enlace (llegan: ${clics.join(', ') || 'ninguno'})`);
   await ctx.close();
   const tacto = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const m = await tacto.newPage();

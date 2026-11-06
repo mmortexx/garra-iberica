@@ -77,8 +77,20 @@
     addEventListener('pointermove', ev => {
       if ((ev.movementX || ev.movementY) && performance.now() - ultimoScroll > 60) responder();
     }, { passive: true });
-    addEventListener('pointerdown', () => { pulsado = true; responder(); }, { passive: true });
+    // Pulsar en plena pausa cae en <html> (el body no recibe nada), y el clic, que va al antepasado común del
+    // pulsar y el soltar, también: se le devuelve a lo que de verdad hay debajo, una sola vez.
+    let rescatar = false;
+    addEventListener('pointerdown', () => { rescatar = raiz.classList.contains('desplazando'); pulsado = true; responder(); }, { passive: true });
     for (const fin of ['pointerup', 'pointercancel']) addEventListener(fin, () => { pulsado = false; }, { passive: true });
+    addEventListener('click', ev => {
+      if (!rescatar) return;
+      rescatar = false;
+      if (ev.target !== raiz) return;
+      const debajo = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (!debajo || debajo === raiz || debajo === document.body) return;
+      ev.stopImmediatePropagation();
+      debajo.click();
+    }, true);
   }
 
   // Menú a pantalla completa (móvil): mientras está abierto, el foco no se escapa a la página de
