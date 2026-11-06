@@ -1000,7 +1000,10 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pie-marca img { width: 3rem; height: 3rem; flex: none; }
 .pie-marca p { margin: 0; }
 .pie-marca b { font: 1.3rem/1.4 var(--titulos); letter-spacing: .04em; }
-.pie-menu { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; }
+/* En columnas, como un índice: en fila, «Ruta de logros» se quedaba sola en la segunda línea. */
+.pie-menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, 100%), 12rem)); gap: .1rem 1.4rem; }
+.pie-menu a { justify-self: start; }
+@media (max-width: 559px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .pie-menu a, .pie-enlaces a { color: var(--suave); text-decoration: none; font: 600 1rem/1.8 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase; }
 .pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
 /* Un trazo de ascua se desliza bajo el enlace al pasar, como en el menú de arriba. */
