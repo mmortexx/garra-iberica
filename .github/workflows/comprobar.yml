@@ -13,7 +13,8 @@ jobs:
   web:
     name: Web, datos y navegador
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # La batería del navegador ya tarda unos 25 min en GitHub; con margen para que crezca.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
