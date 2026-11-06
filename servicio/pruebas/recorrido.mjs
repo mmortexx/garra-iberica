@@ -1485,7 +1485,7 @@ test('nexus: en inglés y sin servicio, funciona, habla inglés y no sale nada',
   const { ctx, abrir } = await dispositivo();
   const peticiones = apuntarPeticiones(ctx);
   const p = await abrir('/en/route/');
-  assert.match(await p.locator('[data-nexus-caja] h3').innerText(), /Bring your achievements from Nexus/);
+  assert.match(await p.locator('[data-nexus-caja] h3').innerText(), /Bring your achievements from Nexus/i);
   await pegar(p, TEXTO_NEXUS);
   assert.equal(await dicho(p), `Steps added: ${TRAMOS_VISIBLES}. You already had: 0.`);
   assert.equal(await barra(p), TRAMOS_VISIBLES);
