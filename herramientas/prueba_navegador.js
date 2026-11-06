@@ -1095,6 +1095,13 @@ const pulido = async navegador => {
     if (Math.max(...d) - Math.min(...d) > 2) fallos.push(`/${r} a 1920 px, «Ahora toca» con filas de distinto ancho (borde derecho ${d.join('/')})`);
     await ctx.close();
   }
+  // Pie: las nueve páginas en tres columnas de tres (dos en el móvil); con cuatro, «Ruta de logros» se quedaba sola.
+  for (const [ancho, columnas] of [[390, 2], [1280, 3], [1920, 3], [2560, 3]]) {
+    const { ctx, p } = await abrir('', { viewport: { width: ancho, height: 900 } });
+    const x = await p.evaluate(() => new Set([...document.querySelectorAll('.pie-menu a')].map(a => Math.round(a.getBoundingClientRect().left))).size);
+    if (x !== columnas) fallos.push(`pie a ${ancho} px: ${x} columnas (deben ser ${columnas})`);
+    await ctx.close();
+  }
   // Ruta: el texto bajo un botón no va pegado a él; en el móvil, los botones de una fila miden lo mismo.
   for (const [ancho, sel] of [[1366, '[data-nexus-caja]'], [390, '[data-nexus-caja]'], [390, '[data-codigo-caja]']]) {
     const { ctx, p } = await abrir('ruta/', { viewport: { width: ancho, height: 850 } });

@@ -1021,6 +1021,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .pie-menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, 100%), 12rem)); gap: .1rem 1.4rem; }
 .pie-menu a { justify-self: start; }
 @media (max-width: 559px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Nueve páginas, tres columnas de tres en cualquier ventana ancha: con cuatro, la última se quedaba sola. */
+@media (min-width: 560px) { .pie-menu { grid-template-columns: repeat(3, minmax(0, 12rem)); } }
 .pie-menu a, .pie-enlaces a { color: var(--suave); text-decoration: none; font: 600 1rem/1.8 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase; }
 .pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
 /* Un trazo de ascua se desliza bajo el enlace al pasar, como en el menú de arriba. */
