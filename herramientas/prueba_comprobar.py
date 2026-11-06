@@ -344,6 +344,20 @@ def script_nuevo_sin_versionar():
     assert any(m.startswith('nuevo.js') and 'VERSIONADOS' in m for m in mensajes), f'un script sin versionar pasa: {mensajes}'
 
 
+def portada_sin_la_ruta():
+    with tempfile.TemporaryDirectory() as d:
+        web = Path(d) / 'docs'
+        shutil.copytree(DOCS, web, copy_function=os.link)
+        pagina = web / 'en' / 'index.html'
+        texto = pagina.read_text(encoding='utf-8')
+        nuevo, n = re.subn(r'<article class="baldosa baldosa-ruta.*?</article>', '', texto, flags=re.S)
+        assert n == 1, f'docs/en/index.html lleva {n} baldosas de la ruta, no 1'
+        pagina.unlink()
+        pagina.write_text(nuevo, encoding='utf-8')
+        mensajes = comprobar.main(web, sin_apodos=True, avisa=lambda _: None)
+    assert any(m.startswith('en/index.html') and 'ruta de logros' in m for m in mensajes), f'la portada sin la ruta pasa: {mensajes}'
+
+
 MIEMBRO_FALSO = 'MiembroDePrueba1'
 
 
@@ -478,6 +492,7 @@ prueba('docs/_headers sin caché larga para un script', script_sin_cache_larga)
 prueba('docs/_headers con las fotos inmutables', fotos_inmutables)
 prueba('un script cargado sin ?v= con caché larga', script_sin_huella)
 prueba('un script nuevo en la raíz sin versionar', script_nuevo_sin_versionar)
+prueba('la portada inglesa sin la baldosa de la ruta', portada_sin_la_ruta)
 prueba('un miembro de perfiles.json en paginas/ falla', miembro_de_perfiles_en_paginas)
 prueba('un apodo de la lista local en servicio/ falla', apodo_de_la_lista_en_servicio)
 prueba('un apodo en la raíz y en herramientas/ falla', apodo_en_la_raiz_y_en_herramientas)

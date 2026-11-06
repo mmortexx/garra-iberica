@@ -1381,7 +1381,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .mosaico { display: grid; gap: 1rem; margin-top: 2.4rem; }
 @media (min-width: 760px) {
   .mosaico { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .baldosa-dinos, .baldosa-caceria, .baldosa-galeria { grid-column: 1 / -1; }
+  .baldosa-dinos, .baldosa-caceria, .baldosa-galeria, .baldosa-ruta { grid-column: 1 / -1; }
 }
 @media (min-width: 1000px) {
   .mosaico { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(14rem, auto); }
@@ -1398,6 +1398,22 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .baldosa-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .72; transition: scale 1.4s var(--suave-salida), opacity .5s; }
 .baldosa::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8, 8, 8, .05) 0%, rgba(8, 8, 8, .55) 45%, rgba(8, 8, 8, .94) 100%); }
 @media (max-width: 759px) { .baldosa-dinos::before { background: linear-gradient(180deg, rgba(8, 8, 8, .72) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .94) 100%); } }
+/* La ruta, una franja a lo ancho sin foto: la brasa sube desde la izquierda, al revés que en la cacería. */
+/* Con los tres pasos de la propia ruta: a lo ancho, el texto a la izquierda y los pasos a la derecha. */
+.baldosa-ruta { gap: 1.3rem; background: radial-gradient(ellipse 55% 140% at 0% 100%, rgba(255, 48, 25, .22), transparent 70%), linear-gradient(160deg, rgba(48, 18, 15, .55), rgba(11, 11, 11, .9)); }
+@media (min-width: 1000px) { .baldosa-ruta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: end; gap: 2.4rem; } }
+.baldosa-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+@media (min-width: 560px) { .baldosa-pasos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.baldosa-pasos li {
+  display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem;
+  border: 1px solid var(--linea); border-radius: 4px; background: rgba(8, 8, 8, .5);
+  font: 600 .95rem/1.25 var(--etiquetas); letter-spacing: .04em; text-transform: uppercase; color: var(--hueso);
+}
+.baldosa-pasos span {
+  flex: none; display: grid; place-items: center; width: 2.1rem; height: 1.85rem;
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  background: var(--ascua); color: #080808; font: 1.05rem/1 var(--titulos); letter-spacing: 0;
+}
 .baldosa-caceria { background: radial-gradient(ellipse 70% 90% at 100% 0%, rgba(255, 48, 25, .26), transparent 70%), linear-gradient(160deg, rgba(48, 18, 15, .55), rgba(11, 11, 11, .9)); }
 .baldosa h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-size: clamp(1.45rem, 2.6vw, 2rem); text-transform: uppercase; margin-bottom: .45rem; }
 /* Con sombra: en el móvil la flecha cae sobre la foto (en «Cómo entrar», sobre la cabeza del dino). */

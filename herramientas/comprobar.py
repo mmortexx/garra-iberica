@@ -1017,6 +1017,15 @@ def revisar_cabeceras(raiz, falla):
             falla(f'_headers: el bloque /{carpeta}/* debe llevar «Cache-Control: public, max-age=N» sin immutable (no llevan huella) y lleva {valor or "nada"}')
 
 
+def revisar_portada(raiz, falla):
+    """La ruta de logros no está en el menú (README: siete páginas); su baldosa de la portada es la entrada visible.
+    Sin ella solo queda el enlace del pie."""
+    for lang in ('es', 'en'):
+        html = leer(raiz, RUTA['inicio', lang] + 'index.html')
+        if not re.search(rf'<article class="baldosa baldosa-ruta[^"]*">\s*<div>\s*<h3><a class="baldosa-enlace" href="[^"]*{re.escape(RUTA["ruta", lang])}"', html):
+            falla(f'{RUTA["inicio", lang]}index.html: falta la baldosa que lleva a la ruta de logros ({RUTA["ruta", lang]})')
+
+
 def revisar_cuentas(raiz, base, falla, servicio=SERVICIO_CUENTAS):
     """La web y el servicio de cuentas tienen que apuntarse el uno al otro: si no, entrar falla ya publicado, sin que
     nada avise. Y solo la ruta de logros puede hablar con el servicio."""
@@ -1400,6 +1409,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_cabeceras(raiz, falla)
+    revisar_portada(raiz, falla)
     revisar_cuentas(raiz, guia_dinos.base_web(raiz), falla)
     revisar_estilos(raiz, falla)
     revisar_datos(raiz, falla, avisa)
