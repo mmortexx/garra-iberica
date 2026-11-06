@@ -1049,6 +1049,8 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
     opacity: 1 !important; visibility: visible !important; translate: none !important; scale: none !important; rotate: none !important; clip-path: none !important;
   }
   .hex-brillo { stroke-dashoffset: 0 !important; }
+  /* El hexágono de los pasos de la ruta, en papel, un número sin recortar. */
+  .baldosa-pasos span { clip-path: none !important; }
   .h1-marca, .cifras b {
     background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
     color: var(--ascua) !important; filter: none !important; clip-path: none !important;
