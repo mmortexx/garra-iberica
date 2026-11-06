@@ -1101,7 +1101,24 @@ const pulido = async navegador => {
     if (ancho < 520 && m.botones.length > 1 && Math.max(...m.botones) - Math.min(...m.botones) > 2) fallos.push(`ruta a ${ancho} px, ${sel}: botones de distinto ancho ${m.botones.join('/')}`);
     await ctx.close();
   }
-  console.log('Pulido (menú, vídeos, columnas, ruta):', fallos.length ? fallos.join('; ') : 'bien');
+  // Accesos de la cabecera (Batallas, Rangos, Tus datos…): cada uno lleva a algo que existe y lo deja bajo la barra
+  // fija, no tapado por ella.
+  for (const r of PAGINAS.map(([x]) => x)) {
+    const { ctx, p } = await abrir(r);
+    const n = await p.locator('.cabecera .saltos a[href^="#"]').count();
+    for (let i = 0; i < n; i++) {
+      const a = p.locator('.cabecera .saltos a[href^="#"]').nth(i);
+      const destino = await a.getAttribute('href');
+      if (!await p.locator(destino).count()) { fallos.push(`/${r} ${destino}: no existe`); continue; }
+      await p.evaluate(() => scrollTo(0, 0));
+      await a.click();
+      await p.waitForTimeout(250);
+      const t = await p.evaluate(sel => ({ arriba: Math.round(document.querySelector(sel).getBoundingClientRect().top), barra: Math.round(document.querySelector('.barra').getBoundingClientRect().bottom) }), destino);
+      if (t.arriba < t.barra - 1) fallos.push(`/${r} ${destino} queda bajo la barra (${t.arriba} < ${t.barra})`);
+    }
+    await ctx.close();
+  }
+  console.log('Pulido (menú, vídeos, columnas, ruta, accesos):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
 // La ruta de logros, recuadro «Ahora toca»: la sesión que te toca y qué hacer, marcar ahí o en la lista, avanzar al

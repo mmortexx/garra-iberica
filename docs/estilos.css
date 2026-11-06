@@ -888,6 +888,8 @@ kbd { padding: .05rem .4rem; border: 1px solid var(--borde); border-bottom-width
 /* Aviso legal: texto corrido, a una columna. */
 .texto-legal > * { max-width: 48rem; }
 .texto-legal h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
+/* Los accesos de la cabecera llevan a cada apartado: que no quede bajo la barra fija. */
+.texto-legal .bloque, .texto-legal h2 { scroll-margin-top: 5.5rem; }
 /* Cada apartado ya lleva su línea encima: sin los arañazos debajo, que lo encerraban entre dos adornos. */
 .texto-legal h2::after { content: none; }
 /* Las listas, a la letra de los párrafos: más pequeñas parecían letra menuda. */
