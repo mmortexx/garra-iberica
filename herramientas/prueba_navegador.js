@@ -1086,6 +1086,15 @@ const pulido = async navegador => {
     if (fija ? !vista : t.pos === 'sticky') fallos.push(`/${r} a 1280×${alto}, «Ahora toca» ${fija ? 'no acompaña al bajar por la ruta' : 'fija sin caber en la ventana'}: ${JSON.stringify(t)}`);
     await ctx.close();
   }
+  // Ruta en ventanas grandes: la fila de arriba de «Ahora toca» (sesión y su estado) y la de «Anterior/Siguiente» van a
+  // todo el ancho de la tarjeta, como su barra de progreso; el tope de las líneas de lectura las cortaba a media tarjeta.
+  for (const r of ['ruta/', 'en/route/']) {
+    const { ctx, p } = await abrir(r, { viewport: { width: 1920, height: 1080 } });
+    await p.waitForSelector('[data-ahora-zona]:not([hidden])');
+    const d = await p.evaluate(() => ['.ahora-arriba', '.ahora-ir', '.ahora-progreso'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().right)));
+    if (Math.max(...d) - Math.min(...d) > 2) fallos.push(`/${r} a 1920 px, «Ahora toca» con filas de distinto ancho (borde derecho ${d.join('/')})`);
+    await ctx.close();
+  }
   // Ruta: el texto bajo un botón no va pegado a él; en el móvil, los botones de una fila miden lo mismo.
   for (const [ancho, sel] of [[1366, '[data-nexus-caja]'], [390, '[data-nexus-caja]'], [390, '[data-codigo-caja]']]) {
     const { ctx, p } = await abrir('ruta/', { viewport: { width: ancho, height: 850 } });

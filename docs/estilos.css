@@ -1695,7 +1695,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 /* Ventanas grandes: lo mismo, con más columnas. Hasta 1440 px no cambia nada. El texto corrido no pasa de unas
    85 letras por línea aunque su caja crezca; lo que sobra se llena con más columnas, no con líneas más largas. */
 @media (min-width: 1441px) {
-  main .envoltura p:not(.compartir, .saltos, .acciones, .plan-resultado, .nota, .comparar-cabeza, .cuenta-falta), .cabecera .entrada, .bloque li, .dino-lista li, .rangos p, .glosario dd, .ranking dd, .tarjeta p, .especies dd { max-width: var(--lectura); }
+  main .envoltura p:not(.compartir, .saltos, .acciones, .plan-resultado, .nota, .comparar-cabeza, .cuenta-falta, .ahora-arriba, .ahora-ir, .ruta-botones, .faq-otra-botones), .cabecera .entrada, .bloque li, .dino-lista li, .rangos p, .glosario dd, .ranking dd, .tarjeta p, .especies dd { max-width: var(--lectura); }
   .intro, .cierre-normas, .apuntarte-pie { max-width: var(--lectura); }
   .envoltura.centro p { margin-inline: auto; }
   .envoltura .nota { max-width: calc(var(--lectura) + 4.5rem); }
