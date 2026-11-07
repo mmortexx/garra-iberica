@@ -255,8 +255,11 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         falla(f'{nombre}: <h1> es «{" ".join(doc.textos["h1"].split())}» y debe ser «{h1}»')
     # Google y los lectores de pantalla leen el encabezado de corrido: ni números pegados a la primera palabra
     # ni un enlace añadido, que pasaría a formar parte del título.
-    for dentro in re.findall(r'<h[1-6][^>]*>(.*?)</h[1-6]>', html, re.S):
+    for atributos, dentro in re.findall(r'<h[1-6]([^>]*)>(.*?)</h[1-6]>', html, re.S):
         junto = re.sub(r'<[^>]+>', '', dentro).strip()
+        # Un encabezado vacío se anuncia como «encabezado» sin nada. Solo vale si lo rellena un script (lleva su data-).
+        if not junto and 'aria-label' not in atributos and not re.search(r'\sdata-[\w-]+', atributos):
+            falla(f'{nombre}: encabezado vacío <h…{atributos}>')
         if re.match(r'\d+[^\W\d]', junto):
             falla(f'{nombre}: encabezado con el número pegado al texto: «{junto}»')
         enlaces = re.findall(r'<a [^>]*>(.*?)</a>', dentro, re.S)
@@ -564,13 +567,13 @@ def revisar_datos(raiz, falla, avisa):
         if pagina != 'clan':
             continue
         # En español, el rango tal cual; en inglés, «Recruit (Recluta)»: primero el idioma de quien lee y, entre
-        # paréntesis, el nombre que verá en el Discord.
-        titulos = [rango if lang == 'es' or rango == ingles else f'{ingles} ({rango})' for rango, ingles in datos['rangos_en'].items()]
-        if re.findall(r'<h4>([^<]*)</h4>', html) != titulos:
+        # paréntesis y marcado como español para el lector de pantalla, el nombre que verá en el Discord.
+        titulos = [rango if lang == 'es' or rango == ingles else f'{ingles} (<span lang="es">{rango}</span>)' for rango, ingles in datos['rangos_en'].items()]
+        if re.findall(r'<h4>(.*?)</h4>', html) != titulos:
             falla(f'{nombre}: los rangos de la escalera no son {titulos} (datos_clan.json, rangos_en)')
         for a in datos['ascensos']:
             rango = re.escape(a['rango'])
-            titulo = rango if lang == 'es' else f'[^<(]*[(]{rango}[)]'
+            titulo = rango if lang == 'es' else f'[^<(]*[(]<span lang="es">{rango}</span>[)]'
             m = re.search(rf'<h4>{titulo}</h4><p>([^<]*)</p>', html)
             if not m:
                 falla(f'{nombre}: no encuentro la tarjeta del rango {a["rango"]}')
@@ -1278,15 +1281,29 @@ def revisar_detalles(raiz, falla):
     def visible(ruta):
         cuerpo = leer(raiz, ruta).split('<main', 1)[1].split('</main>', 1)[0]
         return re.sub(r'<script.*?</script>', '', cuerpo, flags=re.S)
-    for ruta in ('en/hunt/', 'en/join/', 'en/combat/'):
-        html = visible(ruta + 'index.html')
-        for texto in ('Canales y roles', 'avisadme', 'contacto en'):
+    # Solo el texto: en una dirección (el enlace a Google Calendar) el nombre va cifrado y no se lee en voz alta.
+    def solo_texto(html):
+        return re.sub(r'<[^>]*>', lambda t: re.sub(r'\s(?!lang=)[\w-]+="[^"]*"', '', t.group()), html)
+    for ruta in ('en/hunt/', 'en/join/', 'en/combat/', 'en/clan/'):
+        html = solo_texto(visible(ruta + 'index.html'))
+        for texto in ('Canales y roles', 'avisadme', 'contacto en', 'Te avisamos', 'Recluta', 'Rey de la cadena', 'Merienda de la isla',
+                      'Cacería del clan', 'Solicitud de ingreso', 'Líder de Escuadra'):
             for m in re.finditer(re.escape(texto), html):
                 if not re.search(r'lang="es"[^<]*$', html[max(0, m.start() - 40):m.start()]):
                     falla(f'{ruta}: «{texto}» sin marcar como español')
+    # Y al revés: las citas en inglés de las páginas en español (la web de Asura, Steam, Nexus y Firefox).
+    for ruta, textos in (('unete/', ('Start here if', 'Built for big fights', 'Always safelog', 'EVRIMA Public Branch')), ('ruta/', ('Unauthorized', 'Raw Data'))):
+        html = solo_texto(visible(ruta + 'index.html'))
+        for texto in textos:
+            hallados = list(re.finditer(re.escape(texto), html))
+            if not hallados:
+                falla(f'{ruta}: ya no dice «{texto}»: actualiza esta lista')
+            for m in hallados:
+                if not re.search(r'lang="en"[^<]*$', html[max(0, m.start() - 40):m.start()]):
+                    falla(f'{ruta}: «{texto}» sin marcar como inglés')
     # Las páginas en inglés con texto propio llevan el apóstrofo tipográfico. Las demás (combate, galería,
-    # rangos) copian el texto del Discord tal cual, y este apartado no las mira.
-    for ruta in ('en/index.html', 'en/legal/index.html', 'en/join/index.html'):
+    # rangos, guía de dinosaurios) copian el texto del Discord tal cual, y este apartado no las mira.
+    for ruta in ('en/index.html', 'en/legal/index.html', 'en/join/index.html', 'en/route/index.html'):
         for m in re.findall(r"(?<=>)[^<]*\w'\w[^<]*", visible(ruta)):
             falla(f'{ruta}: apóstrofo recto en «{m[:70]}»')
     # El canal de voz se llama así de verdad: en inglés no se traduce, se aclara.

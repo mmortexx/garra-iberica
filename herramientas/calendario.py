@@ -29,7 +29,7 @@ TEXTOS = {
         'titulo': 'Clan hunt · GARRA IBÉRICA',
         'lugar': 'Discord · Cacería 1 voice channel',
         'descripcion': 'Every Saturday at {hora} Spanish mainland time, in the Cacería 1 voice channel of the '
-                       'clan Discord. You need at least the Recluta (Recruit) rank. {web}',
+                       'clan Discord. You need at least the Recruit (Recluta) rank. {web}',
         'aviso': 'The clan hunt starts in 30 minutes',
     },
 }

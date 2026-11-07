@@ -28,8 +28,8 @@ DURATION:PT60M
 RRULE:FREQ=WEEKLY;BYDAY=SA
 SUMMARY:Clan hunt · GARRA IBÉRICA
 DESCRIPTION:Every Saturday at 22:00 Spanish mainland time\, in the Cacería
-  1 voice channel of the clan Discord. You need at least the Recluta (Recru
- it) rank. https://clan.garra-iberica.workers.dev/en/
+  1 voice channel of the clan Discord. You need at least the Recruit (Reclu
+ ta) rank. https://clan.garra-iberica.workers.dev/en/
 LOCATION:Discord · Cacería 1 voice channel
 URL:https://clan.garra-iberica.workers.dev/en/hunt/
 BEGIN:VALARM
