@@ -1692,12 +1692,10 @@ const ahoraToca = async navegador => {
     await p.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await p.waitForTimeout(400);
     await p.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight / 2, behavior: 'instant' }));
-    await p.waitForTimeout(400);
-    // Un poco más arriba: el primer salto aún llega con el pie a la vista, como al soltar la rueda a medias.
-    await p.evaluate(() => scrollBy({ top: -120, behavior: 'instant' }));
+    // De un salto, del pie a media página (como el «Volver» del navegador): el pie sale de la vista después.
     await p.waitForTimeout(800);
     const subir = await p.evaluate(() => { const s = document.querySelector('.subir'); return !!s && s.getBoundingClientRect().width > 0 && getComputedStyle(s).visibility !== 'hidden'; });
-    if (!subir) fallos.push('«Volver arriba» no se ve abajo del todo: no se puede probar que el menú lo tape');
+    if (!subir) fallos.push('«Volver arriba» no se ve tras saltar del pie a media página (y así no se puede probar que el menú lo tape)');
     await p.focus('.menu-boton');
     await p.keyboard.press('Enter');
     await p.waitForTimeout(500);

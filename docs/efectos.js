@@ -52,8 +52,9 @@
   const progreso = document.querySelector('.progreso');
   const progresoPorCss = window.CSS && CSS.supports('animation-timeline: scroll()');
   // Botón de volver arriba: aparece al subir (no al bajar leyendo) pasada pantalla y media, y se
-  // aparta cuando el pie, que tiene su propio «Volver arriba», está a la vista.
-  let yAntes = scrollY, pieVisto = false;
+  // aparta cuando el pie, que tiene su propio «Volver arriba», está a la vista. Se recuerda hacia dónde
+  // se fue la última vez: al saltar del pie a media página, el pie sale de la vista después del salto.
+  let yAntes = scrollY, pieVisto = false, subio = false;
   const pie = document.querySelector('.pie');
   if (pie) new IntersectionObserver(([e]) => { pieVisto = e.isIntersecting; alDesplazar(); }).observe(pie);
   const alDesplazar = () => {
@@ -61,9 +62,8 @@
     if (y > 60) barra.classList.add('compacta');
     else if (y < 20) barra.classList.remove('compacta');
     const subiendo = y < yAntes - 4 ? true : y > yAntes + 4 ? false : null;
-    if (subiendo !== null) yAntes = y;
-    if (y < innerHeight * 1.5 || pieVisto || subiendo === false) raiz.classList.remove('ver-subir');
-    else if (subiendo) raiz.classList.add('ver-subir');
+    if (subiendo !== null) { yAntes = y; subio = subiendo; }
+    raiz.classList.toggle('ver-subir', subio && !pieVisto && y >= innerHeight * 1.5);
     if (progresoPorCss) return;
     const total = raiz.scrollHeight - innerHeight;
     progreso.style.transform = `scaleX(${total > 0 ? Math.min(1, y / total) : 0})`;
