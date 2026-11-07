@@ -97,7 +97,7 @@ T = {
         'esp_desc': '{nombre} en The Isle Evrima: hasta {peso}, adulto en {crece} (1×) y grupo máx. de {grupo}. {resto}',
         'esp_resto': ('Controles, consejo y mutaciones recomendadas.', 'Controles y consejo.'),
         'esp_ficha_ante': 'Su ficha', 'esp_ficha_h2': 'Cómo se juega {nombre}',
-        'esp_puestos': {'peso': 'en peso', 'crece': 'en crecer antes', 'grupo': 'en tamaño de grupo'},
+        'esp_puestos': {'peso': 'en peso', 'crece': 'en rapidez de crecimiento', 'grupo': 'en tamaño de grupo'},
         'esp_puesto': 'n.º {n} de {total} {criterio}', 'esp_lista': 'ver la lista',
         'esp_empata': lambda e: ' (empata con otra)' if e == 1 else f' (empata con otras {e})',
         'esp_otras_ante': 'Más especies', 'esp_otras': 'Otros {grupo}', 'esp_todas': 'Las {n} especies en la guía',
