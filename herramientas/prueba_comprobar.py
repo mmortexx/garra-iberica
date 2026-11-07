@@ -1,7 +1,8 @@
 """Prueba de lo que comprobar.py y los scripts de montar deben parar: un script de más que guarde algo en el navegador,
-un ID o un apodo en fichas_dinos.json, mutaciones sin traducir y una foto de la tira que no está en la galería.
+un ID o un apodo en fichas_dinos.json, mutaciones sin traducir, una foto de la tira que no está en la galería y lo que
+ven los buscadores (títulos, descripciones, canonical, idiomas, datos estructurados y mapa del sitio).
 
-Uso: python herramientas/prueba_comprobar.py
+Uso: python herramientas/prueba_comprobar.py [trozo del nombre]   (con él, solo las pruebas que lo llevan, p. ej. SEO)
 """
 import json
 import os
@@ -27,8 +28,13 @@ APODO_FALSO = 'ApodoDePruebaXyz'
 fallos = 0
 
 
+FILTRO = sys.argv[1] if len(sys.argv) > 1 else ''
+
+
 def prueba(nombre, comprobar_algo):
     global fallos
+    if FILTRO not in nombre:
+        return
     try:
         comprobar_algo()
         print('ok   ', nombre)
@@ -461,6 +467,82 @@ def perfiles_ilegible_falla():
     assert any('perfiles.json' in m for m in mensajes), f'un perfiles.json sin lista de la manada pasa: {mensajes}'
 
 
+BASE = guia_dinos.base_web(DOCS)
+
+
+def seo(cambios):
+    """Mensajes de revisar_seo sobre una copia de docs/ con cambios {fichero: (viejo, nuevo)} o {fichero: texto entero}."""
+    d = copia_web()
+    try:
+        for nombre, cambio in cambios.items():
+            f = d / nombre
+            if isinstance(cambio, tuple):
+                texto = f.read_bytes().decode('utf-8')
+                assert texto.count(cambio[0]) == 1, f'{nombre}: «{cambio[0][:70]}» aparece {texto.count(cambio[0])} veces'
+                texto = texto.replace(*cambio)
+            else:
+                texto = cambio
+                f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_bytes(texto.encode('utf-8'))
+        mensajes = []
+        comprobar.revisar_seo(d, BASE, mensajes.append)
+        return mensajes
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def de_la_web(nombre, patron):
+    return re.search(patron, (DOCS / nombre).read_text(encoding='utf-8')).group(0)
+
+
+def seo_falla(cambios, *trozos):
+    """La revisión SEO tiene que dar un mensaje que lleve todos los trozos."""
+    def f():
+        mensajes = seo(cambios() if callable(cambios) else cambios)
+        assert any(all(t in m for t in trozos) for m in mensajes), f'no avisa de {trozos}: {mensajes}'
+    return f
+
+
+def seo_tal_cual():
+    mensajes = seo({})
+    assert not mensajes, mensajes
+
+
+TITULO = r'<title>[^<]*</title>'
+DESCRIPCION = r'<meta name="description" content="[^"]*">'
+NORMAS, RULES = 'normas/index.html', 'en/rules/index.html'
+ALTERNA_ES = f'<link rel="alternate" hreflang="es" href="{BASE}normas/">\n<link rel="alternate" hreflang="en" href="{BASE}en/rules/">\n<link rel="alternate" hreflang="x-default" href="{BASE}normas/">'
+
+
+def alternas_es(destino):
+    return {RULES: (ALTERNA_ES, ALTERNA_ES.replace(f'{BASE}normas/', destino))}
+
+
+def sin_normas_en_el_mapa():
+    mapa = (DOCS / 'sitemap.xml').read_text(encoding='utf-8')
+    bloque = re.search(rf'  <url>\n    <loc>{re.escape(BASE)}normas/</loc>.*?</url>\n', mapa, re.S).group(0)
+    return {'sitemap.xml': (bloque, '')}
+
+
+prueba('SEO: la web publicada pasa', seo_tal_cual)
+prueba('SEO: dos páginas con el mismo título', seo_falla(lambda: {NORMAS: (de_la_web(NORMAS, TITULO), de_la_web('clan/index.html', TITULO))}, NORMAS, 'el mismo título'))
+prueba('SEO: un título de más de 60 caracteres', seo_falla(lambda: {NORMAS: (de_la_web(NORMAS, TITULO), f'<title>{"x" * 61}</title>')}, NORMAS, 'mide 61'))
+prueba('SEO: una página sin título', seo_falla(lambda: {NORMAS: (de_la_web(NORMAS, TITULO), '<title></title>')}, NORMAS, 'mide 0'))
+prueba('SEO: una descripción corta', seo_falla(lambda: {NORMAS: (de_la_web(NORMAS, DESCRIPCION), '<meta name="description" content="Corta">')}, NORMAS, 'description mide 5'))
+prueba('SEO: dos páginas con la misma descripción', seo_falla(lambda: {NORMAS: (de_la_web(NORMAS, DESCRIPCION), de_la_web('clan/index.html', DESCRIPCION))}, NORMAS, 'la misma descripción'))
+prueba('SEO: canonical a otra página', seo_falla({NORMAS: (f'<link rel="canonical" href="{BASE}normas/">', f'<link rel="canonical" href="{BASE}">')}, NORMAS, 'canonical'))
+prueba('SEO: hreflang que no devuelve el enlace', seo_falla(alternas_es(f'{BASE}clan/'), RULES, 'no recíproco'))
+prueba('SEO: hreflang a una página que no existe', seo_falla(alternas_es(f'{BASE}no-existe/'), RULES, 'no es una página indexable'))
+prueba('SEO: hreflang es a una página en inglés', seo_falla(alternas_es(f'{BASE}en/clan/'), RULES, 'está en «en»'))
+prueba('SEO: sin hreflang x-default', seo_falla({RULES: (f'\n<link rel="alternate" hreflang="x-default" href="{BASE}normas/">', '')}, RULES, 'deben ser es, en y x-default'))
+prueba('SEO: JSON-LD que no se puede leer', seo_falla({NORMAS: ('"@graph": [', '"@graph": [,')}, NORMAS, 'JSON-LD no válido'))
+prueba('SEO: JSON-LD con un nodo sin @type', seo_falla({NORMAS: ('"@graph": [', '"@graph": [{},')}, NORMAS, 'JSON-LD no válido'))
+prueba('SEO: dos bloques JSON-LD', seo_falla({NORMAS: ('</head>', '<script type="application/ld+json">{}</script>\n</head>')}, NORMAS, '2 bloques JSON-LD'))
+prueba('SEO: una página que falta en el mapa del sitio', seo_falla(sin_normas_en_el_mapa, NORMAS, 'no está en sitemap.xml'))
+prueba('SEO: una página suelta que nadie genera', seo_falla(lambda: {'suelta/index.html': (DOCS / NORMAS).read_text(encoding='utf-8')}, 'suelta/index.html', 'no está en sitemap.xml'))
+prueba('SEO: el mapa con una página que no existe', seo_falla({'sitemap.xml': ('</urlset>', f'  <url><loc>{BASE}no-existe/</loc></url>\n</urlset>')}, f'sitemap.xml: {BASE}no-existe/', 'no es una página indexable'))
+prueba('SEO: el mapa con una página noindex', seo_falla({NORMAS: ('<meta name="robots" content="max-image-preview:large, max-snippet:-1">', '<meta name="robots" content="noindex">')}, f'sitemap.xml: {BASE}normas/', 'no es una página indexable'))
+prueba('SEO: la 404 sin noindex', seo_falla({'404.html': ('<meta name="robots" content="noindex">\n', '')}, '404.html sin'))
 prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
 prueba('el aviso legal con cuentas nombra a los tres jefes y pasa', jefes_en_el_aviso_legal)
 prueba('un cuarto nombre en el aviso legal falla', un_nombre_mas_en_el_aviso_legal)

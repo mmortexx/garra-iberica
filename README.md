@@ -176,7 +176,10 @@ python herramientas/prueba_pages.py
   Vigila también lo que promete el aviso legal: ningún `.js` de la web guarda nada en el navegador (salvo `ruta.js`, la ruta de logros, en `localStorage`), ninguna página tiene formularios y cada sitio al que sacan los enlaces (`SITIOS_FUERA`) está nombrado en él.
   También revisa que `datos_clan.json` no lleve apodos ni IDs (el repositorio es público) y que la 404 solo enlace fuera de la web a la invitación de Discord.
 - `prueba_comprobar.py` prueba que se paren un script de más que guarde algo en el navegador, un ID o un apodo en
-  `fichas_dinos.json`, una mutación sin traducir y una foto de la tira de la portada que no está en la galería.
+  `fichas_dinos.json`, una mutación sin traducir, una foto de la tira de la portada que no está en la galería y cada
+  regla de lo que ven los buscadores (`revisar_seo`): títulos y descripciones únicos y de buena medida, canonical a sí
+  misma, idiomas enlazados en los dos sentidos, JSON-LD legible, la 404 con noindex y el mapa del sitio igual a las
+  páginas que se pueden indexar. `python herramientas/prueba_comprobar.py SEO` lanza solo esas.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_pages.py` revisa lo que publica GitHub Pages: solo los vídeos y un aviso noindex por página que lleva a la
   misma página en Cloudflare, y que su 404 nunca mande a otra web.

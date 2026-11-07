@@ -227,14 +227,20 @@ def medidas_jpeg(fichero):
     return None
 
 
-def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, con_faq, og):
-    html = leer(raiz, nombre)
-    doc = Lector()
-    doc.feed(html)
+def cabeza(doc):
+    """(metas, canonical, alternativas de idioma) de una página leída con Lector."""
     metas = {a.get('name') or a.get('property'): a.get('content') for t, a in doc.etiquetas if t == 'meta'}
     canon = [a.get('href') for t, a in doc.etiquetas if t == 'link' and a.get('rel') == 'canonical']
     alternas = {a.get('hreflang'): a.get('href') for t, a in doc.etiquetas
                 if t == 'link' and a.get('rel') == 'alternate' and a.get('hreflang')}
+    return metas, canon, alternas
+
+
+def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, con_faq, og):
+    html = leer(raiz, nombre)
+    doc = Lector()
+    doc.feed(html)
+    metas, _, alternas = cabeza(doc)
     csp = next((a.get('content') for t, a in doc.etiquetas if t == 'meta' and a.get('http-equiv') == 'Content-Security-Policy'), '')
 
     if doc.lang != lang:
@@ -247,12 +253,6 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         falla(f'{nombre}: tiene {doc.h1} <h1> y debe tener 1')
     if ' '.join(doc.textos['h1'].split()) != h1:
         falla(f'{nombre}: <h1> es «{" ".join(doc.textos["h1"].split())}» y debe ser «{h1}»')
-    # Google no pone un máximo, pero corta por el ancho del resultado: pasado esto se pierde lo último, que es el nombre del clan.
-    if len(titulo) > 60:
-        falla(f'{nombre}: <title> mide {len(titulo)} caracteres (máximo 60): «{titulo}»')
-    desc = metas.get('description') or ''
-    if not 70 <= len(desc) <= 155:
-        falla(f'{nombre}: meta description mide {len(desc)} caracteres (70–155)')
     # Google y los lectores de pantalla leen el encabezado de corrido: ni números pegados a la primera palabra
     # ni un enlace añadido, que pasaría a formar parte del título.
     for dentro in re.findall(r'<h[1-6][^>]*>(.*?)</h[1-6]>', html, re.S):
@@ -262,8 +262,6 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         enlaces = re.findall(r'<a [^>]*>(.*?)</a>', dentro, re.S)
         if enlaces and plano(' '.join(enlaces)) != plano(dentro):
             falla(f'{nombre}: encabezado con un enlace que no es todo el título: «{plano(dentro)}»')
-    if canon != [base + sufijo]:
-        falla(f'{nombre}: canonical {canon} y debe ser {base + sufijo}')
     if alternas != {'es': base + pareja[0], 'en': base + pareja[1], 'x-default': base + pareja[0]}:
         falla(f'{nombre}: hreflang {alternas} no enlaza bien las versiones es/en')
     for clave, valor in {'og:url': base + sufijo, 'og:image': base + 'img/' + og, 'og:image:type': 'image/jpeg'}.items():
@@ -288,9 +286,7 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
     if "script-src 'self'" not in csp or "default-src 'none'" not in csp:
         falla(f'{nombre}: falta la política de seguridad (CSP) o es más laxa de lo previsto')
 
-    if len(doc.jsonld) != 1:
-        falla(f'{nombre}: hay {len(doc.jsonld)} bloques JSON-LD y debe haber 1')
-    else:
+    if len(doc.jsonld) == 1:  # Cuántos hay y si se leen lo mira revisar_seo, en todas las páginas.
         try:
             grafo = json.loads(doc.jsonld[0])['@graph']
             tipos = {n.get('@type'): n for n in grafo}
@@ -394,6 +390,75 @@ def revisar_pagina(raiz, nombre, lang, sufijo, titulo, base, falla, h1, pareja, 
         if f'id="{ancla}"' not in html:
             falla(f'{nombre}: enlace interno #{ancla} sin destino')
     return usados
+
+
+SITEMAP_NS = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml',
+              'i': 'http://www.google.com/schemas/sitemap-image/1.1'}
+
+
+def revisar_seo(raiz, base, falla):
+    """Lo que ven los buscadores, leído de lo publicado y no de las fuentes: cada página que se puede indexar tiene
+    título y descripción propios y de buena medida, canonical a sí misma, sus dos idiomas enlazados en los dos
+    sentidos, un bloque de datos estructurados que se puede leer y su sitio en el mapa; las demás llevan noindex y no
+    están en el mapa. Una página suelta en docs/ que nadie genera también cuenta: los buscadores la verían igual."""
+    paginas = {}
+    for f in sorted(raiz.rglob('*.html')):
+        doc = Lector()
+        doc.feed(f.read_text(encoding='utf-8'))
+        paginas[f.relative_to(raiz).as_posix()] = (doc, *cabeza(doc))
+    url = {n: base + n.removesuffix('index.html') for n in paginas}
+    de_url = {u: n for n, u in url.items()}
+    indexables = {n for n, (_, metas, _, _) in paginas.items()
+                  if not {'noindex', 'none'} & {p.strip() for p in (metas.get('robots') or '').split(',')}}
+    if '404.html' in indexables:
+        falla('404.html sin <meta name="robots" content="noindex">: los buscadores la guardarían como una página más')
+    vistos = {}
+    for n in sorted(indexables):
+        doc, metas, canon, alternas = paginas[n]
+        titulo = ' '.join(doc.textos['title'].split())
+        desc = metas.get('description') or ''
+        # Google no pone un máximo, pero corta por el ancho del resultado: pasado esto se pierde lo último, que es el nombre del clan.
+        if not titulo or len(titulo) > 60:
+            falla(f'{n}: <title> mide {len(titulo)} caracteres (1–60): «{titulo}»')
+        if not 70 <= len(desc) <= 155:
+            falla(f'{n}: meta description mide {len(desc)} caracteres (70–155)')
+        # Repetidos, los buscadores enseñan solo una de las páginas.
+        for campo, valor in (('el mismo título', titulo), ('la misma descripción', desc)):
+            if (campo, valor) in vistos:
+                falla(f'{n}: {campo} que {vistos[campo, valor]}: «{valor}»')
+            vistos[campo, valor] = n
+        if canon != [url[n]]:
+            falla(f'{n}: canonical {canon} y debe ser su propia dirección, {url[n]}')
+        if set(alternas) != {'es', 'en', 'x-default'} or alternas['x-default'] != alternas['es'] or alternas.get(doc.lang) != url[n]:
+            falla(f'{n}: hreflang {alternas}: deben ser es, en y x-default (= es), y el de su idioma ({doc.lang}) ella misma')
+        else:
+            for lang in ('es', 'en'):
+                otra = de_url.get(alternas[lang])
+                if otra not in indexables:
+                    falla(f'{n}: hreflang {lang} lleva a {alternas[lang]}, que no es una página indexable de la web')
+                elif paginas[otra][0].lang != lang:
+                    falla(f'{n}: hreflang {lang} lleva a {otra}, que está en «{paginas[otra][0].lang}»')
+                elif paginas[otra][3] != alternas:
+                    falla(f'{n}: hreflang {lang} lleva a {otra} y esa no devuelve el enlace (no recíproco): {paginas[otra][3]}')
+        if len(doc.jsonld) != 1:
+            falla(f'{n}: hay {len(doc.jsonld)} bloques JSON-LD y debe haber 1')
+        else:
+            try:
+                grafo = json.loads(doc.jsonld[0])['@graph']
+                if not grafo or not all(isinstance(nodo, dict) and nodo.get('@type') for nodo in grafo):
+                    raise ValueError('@graph vacío o con nodos sin @type')
+            except (ValueError, KeyError, TypeError) as e:
+                falla(f'{n}: JSON-LD no válido: {e!r}')
+    try:
+        mapa = {u.find('s:loc', SITEMAP_NS).text for u in ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', SITEMAP_NS)}
+    except (ET.ParseError, AttributeError) as e:
+        falla(f'sitemap.xml no es válido: {e}')
+        return
+    for n in sorted(indexables):
+        if url[n] not in mapa:
+            falla(f'{n}: se puede indexar y no está en sitemap.xml (ponle noindex o añádela al mapa)')
+    for u in sorted(mapa - {url[n] for n in indexables}):
+        falla(f'sitemap.xml: {u} no es una página indexable de la web (no existe o lleva noindex)')
 
 
 def franja_latinoamerica(datos, anios):
@@ -1389,18 +1454,13 @@ def main(raiz, sin_apodos=False, avisa=print):
         return [f'{guia_dinos.FICHAS.name}: {e}']
 
     usados = set()
-    vistos = {}
     for nombre, (pagina, lang) in PAGINAS.items():
         datos = montar_web.contenido(pagina, lang, d)[0]
-        # Cada página con su título y su descripción: repetidos, los buscadores muestran solo una.
-        for campo in ('titulo', 'descripcion'):
-            if (campo, datos[campo]) in vistos:
-                falla(f'{nombre}: misma {campo} que {vistos[campo, datos[campo]]}')
-            vistos[campo, datos[campo]] = nombre
         pareja = (RUTA[pagina, 'es'], RUTA[pagina, 'en'])
         usados |= revisar_pagina(raiz, nombre, lang, RUTA[pagina, lang], datos['titulo'], base, falla,
                                  h1=datos['h1'], pareja=pareja, con_faq=pagina == 'unete',
                                  og=montar_web.imagen_og(pagina, lang)[0])
+    revisar_seo(raiz, base, falla)
     revisar_montaje(raiz, d, falla)
     revisar_especies(raiz, base, falla)
     revisar_busquedas(raiz, base, falla)
@@ -1424,8 +1484,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     if f'Sitemap: {base}sitemap.xml' not in leer(raiz, 'robots.txt'):
         falla('robots.txt no apunta al sitemap de la dirección canónica')
     try:
-        ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9', 'x': 'http://www.w3.org/1999/xhtml',
-              'i': 'http://www.google.com/schemas/sitemap-image/1.1'}
+        ns = SITEMAP_NS
         urls = ET.fromstring(leer(raiz, 'sitemap.xml').encode('utf-8')).findall('s:url', ns)
         locs = [u.find('s:loc', ns).text for u in urls]
         esperadas = [base + RUTA[p, lang] for p in montar_web.ORDEN for lang in montar_web.LANGS]
