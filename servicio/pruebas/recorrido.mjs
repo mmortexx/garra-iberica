@@ -163,6 +163,10 @@ test('sin servicio configurado la página funciona, lo dice y no ofrece entrar',
   p.on('request', r => { if (!r.url().startsWith(URL_WEB)) pedidas.push(r.url()); });
   assert.match(await texto(p, '[data-estado]'), /aún no están disponibles/);
   assert.equal(await visible(p, '[data-entrar]'), false);
+  const rojos = () => p.$$eval('main .boton:not(.boton-sec)', bs => bs.filter(b => b.checkVisibility()).map(b => Object.keys(b.dataset).join()));
+  await hasta(async () => JSON.stringify(await rojos()) === '["tocaIr"]', 'sin servicio, solo «Ir a la sesión» en rojo').catch(async e => {
+    throw new Error(`${e.message}; en rojo: ${JSON.stringify(await rojos())}`);
+  });
   await pulsar(p, 'allo-exp');
   await p.reload();
   assert.equal(await pulsado(p, 'allo-exp'), 'true');
@@ -812,7 +816,7 @@ test('descargar: un fichero con lo tuyo y nada de otro', async () => {
   assert.deepEqual(errores, []);
 });
 
-test('un solo botón rojo a la vista: «Ir a la sesión», o el «Sí» de la pregunta abierta', async () => {
+test('un solo botón rojo a la vista: «Entrar», luego «Ir a la sesión», o el «Sí» de la pregunta abierta', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();
   const rojos = () => p.$$eval('main .boton:not(.boton-sec)', bs => bs.filter(b => b.checkVisibility()).map(b => Object.keys(b.dataset).join()));
@@ -821,7 +825,7 @@ test('un solo botón rojo a la vista: «Ir a la sesión», o el «Sí» de la pr
       throw new Error(`${e.message}; en rojo: ${JSON.stringify(await rojos())}`);
     });
   };
-  await solo('tocaIr', 'sin entrar');
+  await solo('entrar', 'sin entrar');
   await pulsar(p, 'allo-exp');
   await dentro(p);
   await solo('importarSi', 'preguntando por las marcas sin cuenta');

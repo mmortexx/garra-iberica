@@ -161,12 +161,15 @@
   };
 
   const $ = sel => raiz.querySelector(sel);
-  // Un solo botón rojo a la vista: el «Sí» de la pregunta abierta o, si no hay ninguna, «Ir a la sesión».
-  const PREGUNTAS = ['[data-confirmar]', '[data-importar]'];
-  const ver = (sel, visible) => {
-    $(sel).hidden = !visible;
-    if (PREGUNTAS.includes(sel)) $('[data-toca-ir]').classList.toggle('boton-sec', PREGUNTAS.some(s => !$(s).hidden));
+  // Un solo botón rojo a la vista, en el orden de «Cómo empezar»: el «Sí» de la pregunta abierta; si no, sin
+  // cuenta, «Entrar con Discord»; y con cuenta (o sin servicio), «Ir a la sesión».
+  const rojo = () => {
+    const pregunta = !$('[data-confirmar]').hidden || !$('[data-importar]').hidden;
+    const fuera = !$('[data-fuera]').hidden;
+    $('[data-entrar]').classList.toggle('boton-sec', pregunta || !fuera);
+    $('[data-toca-ir]').classList.toggle('boton-sec', pregunta || fuera);
   };
+  const ver = (sel, visible) => { $(sel).hidden = !visible; rojo(); };
 
   // ---------- lo guardado en este navegador ----------
   const vacio = () => ({ marcas: {}, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 });
