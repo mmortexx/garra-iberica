@@ -1071,6 +1071,16 @@ def revisar_cabeceras(raiz, falla):
     referente = cabeceras.get(('/*', 'referrer-policy'), [])
     if referente != ['strict-origin-when-cross-origin']:
         falla(f'_headers: el bloque /* debe llevar «Referrer-Policy: strict-origin-when-cross-origin» y lleva {referente or "nada"}')
+    # Sin cámara, micrófono ni ubicación, y sin que otra pestaña abierta desde aquí toque esta. Nada de Cross-Origin-Embedder-
+    # Policy: los vídeos vienen de github.io (_redirects) y dejarían de verse.
+    permisos = cabeceras.get(('/*', 'permissions-policy'), [])
+    if len(permisos) != 1 or not all(f'{p}=()' in permisos[0] for p in ('camera', 'microphone', 'geolocation')):
+        falla(f'_headers: el bloque /* debe llevar «Permissions-Policy» con camera=(), microphone=() y geolocation=() y lleva {permisos or "nada"}')
+    if cabeceras.get(('/*', 'cross-origin-opener-policy'), []) != ['same-origin']:
+        falla('_headers: el bloque /* debe llevar «Cross-Origin-Opener-Policy: same-origin»')
+    for (ruta_bloque, nombre), valores in cabeceras.items():
+        if nombre == 'cross-origin-embedder-policy':
+            falla(f'_headers: {ruta_bloque} lleva Cross-Origin-Embedder-Policy, que bloquearía los vídeos de github.io')
     # Caché: la hoja y los scripts llevan ?v=<huella> en cada página, así que el navegador puede guardarlos un año sin
     # preguntar; las fuentes y las fotos no la llevan y se guardan poco. Sin estas reglas, Cloudflare manda
     # max-age=0 y el navegador vuelve a preguntar por cada fichero en cada página.
@@ -1085,6 +1095,11 @@ def revisar_cabeceras(raiz, falla):
     for (ruta_bloque, nombre), valores in cabeceras.items():
         if nombre == 'cache-control' and any('immutable' in v for v in valores) and ruta_bloque.lstrip('/') not in inmutables:
             falla(f'_headers: {ruta_bloque} es inmutable, pero no es una hoja ni un script de la raíz con huella ?v=')
+    # Lo que se pide sin huella y cambia poco: sin esto Cloudflare manda max-age=0 y se revalida en cada visita.
+    for ruta_bloque in ('/favicon.ico', '/apple-touch-icon.png', '/caceria.ics', '/en/caceria.ics', '/sitemap.xml', '/robots.txt'):
+        valor = cabeceras.get((ruta_bloque, 'cache-control'), [])
+        if len(valor) != 1 or 'immutable' in valor[0] or not re.fullmatch(r'public, max-age=([1-9]\d*)', valor[0]):
+            falla(f'_headers: el bloque {ruta_bloque} debe llevar «Cache-Control: public, max-age=N» sin immutable y lleva {valor or "nada"}')
     for carpeta in ('fonts', 'img'):
         valor = cabeceras.get((f'/{carpeta}/*', 'cache-control'), [])
         if len(valor) != 1 or 'immutable' in valor[0] or not re.fullmatch(r'public, max-age=([1-9]\d*)', valor[0]):

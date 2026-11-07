@@ -499,6 +499,9 @@ describe('CORS, CSRF y cabeceras', () => {
     assert.equal((await s.pedir('/yo', { method: 'POST', cuerpo: {} })).status, 405);
     assert.equal((await s.pedir('/salud')).status, 200);
     assert.deepEqual(await (await s.pedir('/salud')).json(), { ok: true });
+    const cabeza = await s.pedir('/salud', { method: 'HEAD' });
+    assert.equal(cabeza.status, 200, 'HEAD /salud responde como GET');
+    assert.equal(await cabeza.text(), '');
   });
 });
 

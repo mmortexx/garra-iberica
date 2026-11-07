@@ -335,7 +335,8 @@ async function copia(req, env, url) {
 // ---------- el reparto ----------
 
 const RUTAS = {
-  '/salud': { GET: () => json(200, { ok: true }) },
+  // HEAD también: muchos vigilantes de caídas preguntan así, y un 405 lo daría por caído.
+  '/salud': { GET: () => json(200, { ok: true }), HEAD: () => new Response(null, { status: 200 }) },
   '/sesion': { POST: canjear, DELETE: salir },
   '/sesiones': { DELETE: salirDeTodas },
   '/yo': { GET: yo },
