@@ -659,6 +659,12 @@ BUSQUEDAS = {
 }
 # Lo mismo en el título, que es lo que más pesa y lo que se ve en el resultado.
 BUSQUEDAS_TITULO = {
+    'index.html': ['GARRA IBÉRICA', 'Clan español y latino', 'The Isle Evrima'],
+    'en/index.html': ['GARRA IBÉRICA', 'Spanish-Speaking', 'The Isle Evrima Clan'],
+    'combate/index.html': ['combate', 'The Isle'],
+    'en/combat/index.html': ['combat', 'The Isle'],
+    'caceria/index.html': ['Cacería', 'The Isle'],
+    'en/hunt/index.html': ['Hunt', 'The Isle'],
     'unete/index.html': ['clan', 'Discord', 'The Isle', 'español'],
     'en/join/index.html': ['Spanish', 'The Isle', 'Clan', 'Discord'],
     'dinosaurios/index.html': ['dinosaurios', 'mutaciones', 'dieta', 'The Isle'],

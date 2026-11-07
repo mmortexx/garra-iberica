@@ -2,28 +2,28 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://clan.garra-iberica.workers.dev/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/clan/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/clan/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/clan/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/clan/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/clan/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/clan/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/clan/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/clan/"/>
@@ -44,7 +44,7 @@
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/caceria/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/caceria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/hunt/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/caceria/"/>
@@ -52,7 +52,7 @@
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/hunt/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/caceria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/hunt/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/caceria/"/>
@@ -60,21 +60,21 @@
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/combate/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/combate/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/combat/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/combate/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/combat/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/combate/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/combat/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/combate/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/galeria/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/galeria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/gallery/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/galeria/"/>
@@ -106,7 +106,7 @@
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/gallery/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/galeria/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/gallery/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/galeria/"/>
@@ -138,56 +138,56 @@
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/unete/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/unete/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/join/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/unete/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/join/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/unete/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/join/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/unete/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/normas/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/normas/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/rules/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/normas/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/rules/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/normas/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/rules/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/normas/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/ruta/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/ruta/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/route/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/ruta/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/route/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/ruta/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/route/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/ruta/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/legal/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/legal/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/legal/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/legal/"/>
   </url>
   <url>
     <loc>https://clan.garra-iberica.workers.dev/en/legal/</loc>
-    <lastmod>2026-11-06</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <xhtml:link rel="alternate" hreflang="es" href="https://clan.garra-iberica.workers.dev/legal/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://clan.garra-iberica.workers.dev/en/legal/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://clan.garra-iberica.workers.dev/legal/"/>
