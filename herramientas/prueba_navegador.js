@@ -1219,6 +1219,20 @@ const pulido = async navegador => {
       await ctx.close();
     }
   }
+  // Un enlace a la respuesta que ya nombra la dirección no da «hashchange»: si se cerró a mano, se abre igual.
+  for (const [r, id, desde] of [['unete/#evrima', 'evrima', 'coste'], ['en/join/#evrima', 'evrima', 'cost']]) {
+    const { ctx, p } = await abrir(r);
+    await p.waitForTimeout(300);
+    await p.evaluate(([i, d]) => { document.getElementById(i).open = false; document.getElementById(d).open = true; }, [id, desde]);
+    const enlace = p.locator(`#${desde} a[href="#${id}"]`);
+    if (!await enlace.count()) fallos.push(`/${r}: #${desde} ya no enlaza a #${id}`);
+    else {
+      await enlace.click();
+      await p.waitForTimeout(300);
+      if (!await p.evaluate(i => document.getElementById(i).open, id)) fallos.push(`/${r}: el enlace a #${id}, ya en la dirección, no abre la respuesta cerrada`);
+    }
+    await ctx.close();
+  }
   console.log('Pulido (menú, vídeos, columnas, ruta, accesos):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };

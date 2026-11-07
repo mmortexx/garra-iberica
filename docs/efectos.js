@@ -36,6 +36,11 @@
   };
   addEventListener('hashchange', abrirNombrado);
   abrirNombrado();
+  // Un enlace a lo que ya nombra la dirección no da «hashchange»: si esa respuesta se cerró a mano, se abre igual.
+  document.addEventListener('click', e => {
+    const a = !e.defaultPrevented && e.target.closest?.('a[href*="#"]');
+    if (a && a.hash && a.hash === location.hash && a.pathname === location.pathname && a.origin === location.origin) abrirNombrado();
+  });
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)');
   const punteroFino = matchMedia('(hover: hover) and (pointer: fine)');
   const unaVezPorFotograma = fn => {
