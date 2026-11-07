@@ -581,6 +581,17 @@ def sitemap(base, d, fotos=None):
     return '\n'.join(lineas + ['</urlset>', ''])
 
 
+def redirecciones(paginas):
+    """docs/_redirects. Los vídeos los sirve GitHub Pages (docs/.assetsignore los deja fuera de Cloudflare). Cada
+    página sin la barra final, a la de con barra con un 301: sin regla, Cloudflare responde 307, que es temporal."""
+    lineas = ['/video/* https://mmortexx.github.io/garra-iberica/video/:splat 302']
+    for nombre in sorted(paginas):
+        if nombre.endswith('/index.html'):
+            ruta = '/' + nombre.removesuffix('/index.html')
+            lineas.append(f'{ruta} {ruta}/ 301')
+    return '\n'.join(lineas + [''])
+
+
 def pagina_404(texto, docs=DOCS):
     """404.html se escribe a mano; aquí solo se le pone al día la versión de la hoja de estilos."""
     nuevo, veces = re.subn(r'estilos\.css\?v=[0-9a-f]*"', f'estilos.css?v={huella(docs / "estilos.css")}"', texto)
@@ -602,6 +613,7 @@ def montar(docs=DOCS):
                 sys.exit(f'{nombre}: no encuentro el cartel de la Cacería para el mapa del sitio')
             fotos[p, lang] = [urljoin(base + RUTA[p, lang], cartel.group(1))]
     salida['sitemap.xml'] = sitemap(base, d, fotos)
+    salida['_redirects'] = redirecciones(FICHEROS)
     salida['404.html'] = pagina_404((docs / '404.html').read_bytes().decode('utf-8'), docs)
     return salida
 

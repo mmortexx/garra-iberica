@@ -23,6 +23,7 @@ Dirección: https://clan.garra-iberica.workers.dev/ (inglés en `/en/`).
 | `servicio/` | El servicio de cuentas, en Cloudflare; no se publica en la web. Cómo ponerlo en marcha, copias de seguridad y límites: [servicio/README.md](servicio/README.md). |
 | `docs/404.html` | Página de «no encontrada», en los dos idiomas a la vez (sin scripts no puede saber cuál toca): cada uno enlaza a su inicio, su guía, su Cacería y su Discord, y `comprobar.py` lo vigila. Se escribe a mano. |
 | `docs/robots.txt`, `docs/sitemap.xml` | Para los buscadores. |
+| `docs/_redirects` | Generado por `montar_web.py`: los vídeos, a GitHub Pages, y cada página sin la barra final (`/clan`) a la de con barra con un 301; sin regla, Cloudflare responde 307, que es temporal. `comprobar.py` vigila que estén todas y que ninguna dé un bucle. |
 | `docs/img/`, `docs/fonts/` | Generados; no se editan a mano. |
 | `herramientas/` | Scripts de mantenimiento (abajo). |
 

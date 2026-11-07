@@ -1106,6 +1106,24 @@ def revisar_cabeceras(raiz, falla):
             falla(f'_headers: el bloque /{carpeta}/* debe llevar «Cache-Control: public, max-age=N» sin immutable (no llevan huella) y lleva {valor or "nada"}')
 
 
+def revisar_redirecciones(raiz, falla):
+    """Cada página sin la barra final va a la de con barra con un 301: sin regla, Cloudflare responde 307 (temporal) y
+    los buscadores pueden quedarse con las dos direcciones. Una regla cuyo origen acabe en / daría un bucle."""
+    reglas = [l.split() for l in (raiz / '_redirects').read_text(encoding='utf-8').splitlines() if l.strip()]
+    for r in reglas:
+        if len(r) != 3:
+            falla(f'_redirects: «{" ".join(r)}» debe tener origen, destino y código')
+    paginas = {'/' + p.parent.relative_to(raiz).as_posix() for p in raiz.rglob('index.html') if p.parent != raiz}
+    hechas = {o for o, d, c in (r for r in reglas if len(r) == 3) if d == o + '/' and c == '301'}
+    for falta in sorted(paginas - hechas):
+        falla(f'_redirects: falta «{falta} {falta}/ 301» (sin ella, {falta} responde 307)')
+    for sobra in sorted(hechas - paginas):
+        falla(f'_redirects: «{sobra}» no es ninguna página de docs/')
+    for o, d, c in (r for r in reglas if len(r) == 3):
+        if o.endswith('/'):
+            falla(f'_redirects: el origen «{o}» acaba en / y la barra la pone Cloudflare: sería un bucle')
+
+
 def revisar_portada(raiz, falla):
     """La ruta de logros no está en el menú (README: siete páginas); su baldosa de la portada es la entrada visible.
     Sin ella solo queda el enlace del pie."""
@@ -1507,6 +1525,7 @@ def main(raiz, sin_apodos=False, avisa=print):
     revisar_movidas(raiz, falla)
     revisar_privacidad(raiz, falla)
     revisar_cabeceras(raiz, falla)
+    revisar_redirecciones(raiz, falla)
     revisar_portada(raiz, falla)
     revisar_cuentas(raiz, guia_dinos.base_web(raiz), falla)
     revisar_estilos(raiz, falla)
