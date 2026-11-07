@@ -31,10 +31,14 @@ fallos = 0
 FILTRO = sys.argv[1] if len(sys.argv) > 1 else ''
 
 
+hechas = 0
+
+
 def prueba(nombre, comprobar_algo):
-    global fallos
+    global fallos, hechas
     if FILTRO not in nombre:
         return
+    hechas += 1
     try:
         comprobar_algo()
         print('ok   ', nombre)
@@ -508,6 +512,23 @@ def seo_tal_cual():
     assert not mensajes, mensajes
 
 
+def seo_por_main():
+    """comprobar.py entero tiene que llamar a revisar_seo: sin ella no se miraría ningún título ni el mapa del sitio."""
+    d = copia_web()
+    try:
+        f = d / NORMAS
+        f.write_bytes(f.read_bytes().decode('utf-8').replace(de_la_web(NORMAS, TITULO), de_la_web('clan/index.html', TITULO)).encode('utf-8'))
+        mensajes = comprobar.main(d, sin_apodos=True, avisa=lambda t: None)
+        assert any(NORMAS in m and 'el mismo título' in m for m in mensajes), f'comprobar.py no avisa del título repetido: {mensajes[:5]}'
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def seo_robots_none_es_noindex():
+    mensajes = seo({'404.html': ('<meta name="robots" content="noindex">', '<meta name="robots" content="none">')})
+    assert not mensajes, mensajes
+
+
 TITULO = r'<title>[^<]*</title>'
 DESCRIPCION = r'<meta name="description" content="[^"]*">'
 NORMAS, RULES = 'normas/index.html', 'en/rules/index.html'
@@ -543,6 +564,9 @@ prueba('SEO: una página suelta que nadie genera', seo_falla(lambda: {'suelta/in
 prueba('SEO: el mapa con una página que no existe', seo_falla({'sitemap.xml': ('</urlset>', f'  <url><loc>{BASE}no-existe/</loc></url>\n</urlset>')}, f'sitemap.xml: {BASE}no-existe/', 'no es una página indexable'))
 prueba('SEO: el mapa con una página noindex', seo_falla({NORMAS: ('<meta name="robots" content="max-image-preview:large, max-snippet:-1">', '<meta name="robots" content="noindex">')}, f'sitemap.xml: {BASE}normas/', 'no es una página indexable'))
 prueba('SEO: la 404 sin noindex', seo_falla({'404.html': ('<meta name="robots" content="noindex">\n', '')}, '404.html sin'))
+prueba('SEO: robots «none» cuenta como noindex', seo_robots_none_es_noindex)
+prueba('SEO: x-default a la versión inglesa', seo_falla({RULES: (f'hreflang="x-default" href="{BASE}normas/"', f'hreflang="x-default" href="{BASE}en/rules/"')}, RULES, 'deben ser es, en y x-default'))
+prueba('SEO: comprobar.py entero hace la revisión SEO', seo_por_main)
 prueba('la web publicada no guarda nada en el navegador', web_tal_cual)
 prueba('el aviso legal con cuentas nombra a los tres jefes y pasa', jefes_en_el_aviso_legal)
 prueba('un cuarto nombre en el aviso legal falla', un_nombre_mas_en_el_aviso_legal)
@@ -586,5 +610,7 @@ prueba('los binarios y lo que no está versionado no se miran', binarios_y_sin_v
 prueba('sin perfiles.json avisa de que la lista es solo la del secreto', sin_perfiles_avisa_de_que_la_lista_es_la_del_secreto)
 prueba('un perfiles.json sin lista de la manada falla', perfiles_ilegible_falla)
 
+if not hechas:
+    sys.exit(f'Ninguna prueba lleva «{FILTRO}» en el nombre: no se ha probado nada')
 print(f'{fallos} fallos' if fallos else 'Todo correcto')
 sys.exit(1 if fallos else 0)

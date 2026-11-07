@@ -12,6 +12,7 @@ import shutil
 import sys
 from html import escape
 from pathlib import Path
+from urllib.parse import urlsplit
 
 HERRAMIENTAS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERRAMIENTAS))
@@ -54,9 +55,11 @@ def aviso(nombre, base):
 
 def aviso_404(base):
     """Cualquier dirección que Pages no tenga: la misma ruta en la web. Solo puede llevar a la web: una ruta como
-    //otro.sitio o https://otro.sitio sería otra web, así que si el destino no es de la web se va a la portada."""
+    //otro.sitio o https://otro.sitio sería otra web, así que si el destino no es de la web se va a la portada. Un vídeo
+    que no existe también va a la portada: la web manda video/ aquí (docs/_redirects) y sería un bucle."""
     script = (f"const B={base!r},P={PREFIJO_PAGES!r},r=location.pathname;"
               "let q=(r.startsWith(P)?r.slice(P.length):'')+location.search+location.hash,u;"
+              "if(q.startsWith('video/'))q='';"
               "try{u=new URL(q,B)}catch(e){u=new URL(B)}"
               "location.replace(u.origin===new URL(B).origin?u.href:B)")
     url = escape(base)
@@ -82,15 +85,18 @@ def aviso_404(base):
 def montar(docs=DOCS):
     """{ruta en Pages: texto (str) o fichero que se copia tal cual (Path)}. No escribe nada."""
     base = guia_dinos.base_web(docs)
+    if urlsplit(base).hostname.endswith('github.io'):
+        sys.exit(f'La web es {base}: si vive en GitHub Pages, cada aviso llevaría a sí mismo; este flujo no sirve')
     salida = {}
     for f in sorted(docs.rglob('*.html')):
         nombre = f.relative_to(docs).as_posix()
         salida[nombre] = aviso_404(base) if nombre == '404.html' else aviso(nombre, base)
-    videos = sorted((docs / 'video').glob('*.mp4'))
+    # Todo docs/video/: Cloudflare no sirve esa carpeta (docs/.assetsignore), solo la tiene Pages.
+    videos = sorted(f for f in (docs / 'video').rglob('*') if f.is_file())
     if not videos:
         sys.exit(f'{docs / "video"}: no hay vídeos que publicar')
     for v in videos:
-        salida[f'video/{v.name}'] = v
+        salida[v.relative_to(docs).as_posix()] = v
     return salida
 
 

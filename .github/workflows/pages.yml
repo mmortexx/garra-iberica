@@ -20,6 +20,9 @@ jobs:
     name: ¿Pages publica desde aquí?
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Leer los ajustes de Pages pide este permiso; sin él la API responde 403 y nunca se publicaría.
+    permissions:
+      pages: read
     outputs:
       modo: ${{ steps.modo.outputs.modo }}
     steps:

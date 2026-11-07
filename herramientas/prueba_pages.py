@@ -3,6 +3,7 @@
 Uso: python herramientas/prueba_pages.py   (necesita node en el PATH para probar la 404)
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -37,7 +38,8 @@ PAGINAS = sorted(f.relative_to(DOCS).as_posix() for f in DOCS.rglob('*.html'))
 
 
 def solo_videos_y_avisos():
-    videos = {f'video/{v.name}' for v in (DOCS / 'video').glob('*.mp4')}
+    # Todo lo que haya en docs/video, sea lo que sea: Cloudflare no sirve esa carpeta.
+    videos = {Path(d, f).relative_to(DOCS).as_posix() for d, _, fs in os.walk(DOCS / 'video') for f in fs}
     assert videos, 'docs/video sin vídeos'
     sobran = set(SALIDA) - videos - set(PAGINAS)
     assert not sobran, f'Pages publicaría además {sorted(sobran)}'
@@ -88,6 +90,9 @@ def la_404_lleva_a_la_misma_ruta():
         '/garra-iberica/dinosaurios/?x=1#dieta': BASE + 'dinosaurios/?x=1#dieta',
         '/garra-iberica/': BASE,
         '/otra-cosa/': BASE,
+        # La web manda video/ a Pages: devolverlo a la web sería un bucle.
+        '/garra-iberica/video/falta.mp4': BASE,
+        '/garra-iberica/video/': BASE,
     }
     for ruta, esperado in casos.items():
         assert a_donde_lleva_la_404(ruta) == esperado, f'{ruta} lleva a {a_donde_lleva_la_404(ruta)} y no a {esperado}'
@@ -106,6 +111,41 @@ def redirecciones_de_videos_coinciden():
     reglas = (DOCS / '_redirects').read_text(encoding='utf-8')
     esperado = f'/video/* https://mmortexx.github.io{copia_pages.PREFIJO_PAGES}video/:splat 302'
     assert esperado in reglas.splitlines(), f'_redirects no dice «{esperado}»'
+
+
+def web_de_mentira(canonical, extra=()):
+    d = Path(tempfile.mkdtemp())
+    pagina = f'<!doctype html><html lang="es"><head><link rel="canonical" href="{canonical}"></head><body><h1>Hola</h1></body></html>'
+    for nombre in ('index.html', '404.html', 'video/a.mp4', *extra):
+        (d / nombre).parent.mkdir(parents=True, exist_ok=True)
+        (d / nombre).write_bytes(pagina.encode('utf-8') if nombre.endswith('.html') else b'datos')
+    return d
+
+
+def publica_todo_lo_de_video():
+    d = web_de_mentira(BASE, ['video/sub/a.vtt', 'video/portada.webp'])
+    try:
+        publicados = {n for n in copia_pages.montar(d) if n.startswith('video/')}
+        assert publicados == {'video/a.mp4', 'video/sub/a.vtt', 'video/portada.webp'}, f'publica {sorted(publicados)}'
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def no_sirve_si_la_web_es_github_io():
+    d = web_de_mentira('https://mmortexx.github.io/garra-iberica/')
+    try:
+        copia_pages.montar(d)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError('con la web en github.io, cada aviso llevaría a sí mismo y no para')
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def escapa_la_direccion():
+    html = copia_pages.aviso('a&b"c/index.html', BASE)
+    assert 'a&amp;b&quot;c/' in html and 'a&b' not in html, html
 
 
 def escribe_en_carpeta_nueva():
@@ -133,6 +173,9 @@ prueba('la 404 de Pages lleva a la misma ruta en la web', la_404_lleva_a_la_mism
 prueba('la 404 de Pages no lleva a otra web', la_404_no_lleva_fuera)
 prueba('_redirects apunta a los vídeos de Pages', redirecciones_de_videos_coinciden)
 prueba('escribe en una carpeta nueva y no pisa una con ficheros', escribe_en_carpeta_nueva)
+prueba('publica todo lo de docs/video, no solo los .mp4', publica_todo_lo_de_video)
+prueba('para si la web vive en github.io', no_sirve_si_la_web_es_github_io)
+prueba('escapa la dirección en el aviso', escapa_la_direccion)
 
 if fallos:
     sys.exit(f'{fallos} prueba(s) con fallos')

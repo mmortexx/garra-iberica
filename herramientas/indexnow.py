@@ -45,7 +45,7 @@ def main():
         with urllib.request.urlopen(ubicacion, timeout=20) as r:
             publicada = r.read().decode('utf-8').strip()
     except urllib.error.URLError as e:
-        sys.exit(f'La clave aún no está publicada en {ubicacion} ({e}): sube la web y espera a que GitHub Pages termine')
+        sys.exit(f'La clave aún no está publicada en {ubicacion} ({e}): sube la web y espera a que Cloudflare termine de publicarla')
     if publicada != k:
         sys.exit(f'{ubicacion} no contiene la clave esperada')
     cuerpo = json.dumps({'host': urlsplit(base).hostname, 'key': k, 'keyLocation': ubicacion, 'urlList': urls}).encode('utf-8')
