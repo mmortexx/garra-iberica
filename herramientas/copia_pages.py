@@ -20,8 +20,8 @@ import guia_dinos  # noqa: E402
 DOCS = HERRAMIENTAS.parent / 'docs'
 # Dirección de Pages bajo la que cuelga la web (repositorio de proyecto: /<repo>/).
 PREFIJO_PAGES = '/garra-iberica/'
-AVISO = {'es': ('GARRA IBÉRICA está en', 'Si no pasas sola en un momento, sigue este enlace:'),
-         'en': ('GARRA IBÉRICA lives at', 'If you are not taken there in a moment, follow this link:')}
+AVISO = {'es': ('GARRA IBÉRICA está en', 'Si la página no se abre sola en un momento, sigue este enlace:'),
+         'en': ('GARRA IBÉRICA lives at', 'If the page does not open by itself in a moment, follow this link:')}
 
 
 def destino(nombre, base):
