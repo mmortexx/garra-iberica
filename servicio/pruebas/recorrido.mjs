@@ -1083,28 +1083,6 @@ test('lo oculto no se enseña, pero se guarda', async () => {
   await ctx.close();
 });
 
-test('en la dirección antigua la página no lee, no guarda y no canjea nada', async () => {
-  const { ctx } = await dispositivo();
-  const ANTIGUA = 'https://mmortexx.github.io';
-  await ctx.route(`${ANTIGUA}/**`, async q => q.fulfill({ response: await q.fetch({ url: q.request().url().replace(`${ANTIGUA}/garra-iberica`, URL_WEB) }) }));
-  // efectos.js llevaría a la dirección nueva antes de que ruta.js hiciera nada: aquí se prueba solo ruta.js.
-  await ctx.route(/efectos\.js/, q => q.abort());
-  const sesion = JSON.stringify({ marcas: {}, cuenta: '1', nombre: 'Ana', token: 'x'.repeat(40), tokenDe: '1', caduca: Date.now() + 1e7 });
-  const alServicio = [];
-  ctx.on('request', q => { if (q.url().startsWith(URL_API)) alServicio.push(`${q.method()} ${q.url()}`); });
-  const p = await ctx.newPage();
-  await p.addInitScript(valor => { if (!localStorage.getItem('garra-ruta-v1')) localStorage.setItem('garra-ruta-v1', valor); }, sesion);
-  for (const hash of ['', `#entrada=${'a'.repeat(30)}`]) {
-    await p.goto(`${ANTIGUA}/garra-iberica/ruta/${hash}`, { waitUntil: 'load' });
-    await p.waitForTimeout(1500);
-    assert.ok(await p.evaluate(() => performance.getEntriesByType('resource').some(e => /ruta\.js/.test(e.name))), 'ruta.js se ha cargado');
-    assert.deepEqual(alServicio, [], `no habla con el servicio${hash ? ' ni canjea la entrada' : ' con la sesión guardada'}`);
-    assert.equal(await p.evaluate(() => localStorage.getItem('garra-ruta-v1')), sesion, 'no toca lo guardado');
-    assert.equal(await p.evaluate(() => location.hash), hash, 'no gasta el código de entrada');
-  }
-  await ctx.close();
-});
-
 test('si el servicio rechaza lo nuevo: se avisa bien, se conserva, no se reintenta sin parar y sube cuando lo acepta', async () => {
   const { ctx, abrir } = await dispositivo();
   const p = await abrir();

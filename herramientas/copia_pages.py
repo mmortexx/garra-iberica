@@ -8,6 +8,7 @@ canonical y redirección inmediata; la 404 de Pages manda cualquier otra direcci
 
 Uso: python herramientas/copia_pages.py <carpeta vacía o nueva>
 """
+import json
 import shutil
 import sys
 from html import escape
@@ -30,6 +31,11 @@ def destino(nombre, base):
     return base + (nombre[:-len('index.html')] if nombre.endswith('index.html') else nombre)
 
 
+def en_script(texto):
+    """Cadena de JavaScript que no puede cerrar el <script> ni confundirse con HTML."""
+    return json.dumps(texto).replace('&', '\\u0026').replace('<', '\\u003c').replace('>', '\\u003e')
+
+
 def aviso(nombre, base):
     url = escape(destino(nombre, base))
     lang = 'en' if nombre.startswith('en/') else 'es'
@@ -43,6 +49,8 @@ def aviso(nombre, base):
         f'<title>{titulo} {url}</title>',
         '<meta name="robots" content="noindex">',
         f'<link rel="canonical" href="{url}">',
+        # El refresh lleva a la página aunque no haya JavaScript; el script, además, con la búsqueda y el ancla.
+        f'<script>location.replace({en_script(destino(nombre, base))}+location.search+location.hash)</script>',
         f'<meta http-equiv="refresh" content="0; url={url}">',
         '</head>',
         '<body>',

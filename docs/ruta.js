@@ -5,8 +5,6 @@
   'use strict';
   const raiz = document.querySelector('[data-miembro]');
   if (!raiz) return;
-  // La web vive en otra dirección y efectos.js lleva allí: en la antigua no se lee ni se guarda nada ni se canjea ninguna entrada.
-  if (location.hostname === 'mmortexx.github.io') return;
   const en = document.documentElement.lang === 'en';
   const SERVICIO = raiz.dataset.servicio || '';
   const MAXIMOS = new Map(Object.entries(JSON.parse(raiz.dataset.logros)));

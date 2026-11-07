@@ -2919,31 +2919,6 @@ const ahoraToca = async navegador => {
     if (fallos.length) malos++;
     console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');
   }
-  // La dirección antigua lleva a la misma página en la nueva, con su ancla; en la nueva no se mueve.
-  {
-    const fallos = [];
-    const ANTIGUA = 'https://mmortexx.github.io/garra-iberica/';
-    const NUEVA = (await (await fetch(BASE)).text()).match(/rel="canonical" href="([^"]+)"/)[1];
-    const ctx = await navegador.newContext({ bypassCSP: true });
-    for (const web of [ANTIGUA, NUEVA]) {
-      await ctx.route(web + '**', async q => q.fulfill({ response: await q.fetch({ url: q.request().url().replace(web, BASE) }) }));
-    }
-    const p = await ctx.newPage();
-    for (const [desde, hasta] of [
-      [`${ANTIGUA}en/route/#all-achievements`, `${NUEVA}en/route/#all-achievements`],
-      [`${ANTIGUA}?a=1`, `${NUEVA}?a=1`],
-      [`${NUEVA}clan/`, `${NUEVA}clan/`],
-    ]) {
-      await p.goto(desde, { waitUntil: 'load' });
-      await p.waitForTimeout(300);
-      if (p.url() !== hasta) fallos.push(`${desde} acaba en ${p.url()}`);
-    }
-    // Un desvío aún en vuelo al cerrar mataba node con TargetClosedError (visto en GitHub): se quitan antes.
-    await ctx.unrouteAll({ behavior: 'ignoreErrors' });
-    await ctx.close();
-    if (fallos.length) malos++;
-    console.log('Dirección antigua, a la nueva:', fallos.length ? fallos.join('; ') : 'bien');
-  }
   // Página 404: enlaza a la dirección pública, que aquí se sirve desde la copia local. Con red de
   // móvil, el título sale con la letra del clan (sin precargarla, «optional» la dejaba en Impact).
   {

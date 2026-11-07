@@ -1,10 +1,5 @@
 (() => {
   'use strict';
-  // La web vive en Cloudflare; GitHub Pages sigue publicando esta misma carpeta para no romper los enlaces antiguos.
-  if (location.hostname === 'mmortexx.github.io') {
-    location.replace(document.querySelector('link[rel="canonical"]').href + location.search + location.hash);
-    return;
-  }
   // Enlaces a secciones que antes estaban en la portada (/#normas): a su página nueva.
   const movidas = document.body.dataset.movidas && JSON.parse(document.body.dataset.movidas);
   const viejo = location.hash.slice(1);

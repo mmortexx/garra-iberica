@@ -67,9 +67,21 @@ def cada_pagina_es_un_aviso():
         assert '<main' not in html and (not h1 or h1.group(1) not in html), f'{nombre}: el aviso copia contenido de la página'
 
 
-def a_donde_lleva_la_404(ruta):
-    """Ejecuta el script de la 404 de Pages con location en `ruta` y devuelve a dónde manda."""
-    script = re.search(r'<script>(.*?)</script>', SALIDA['404.html'], re.S).group(1)
+def el_aviso_conserva_busqueda_y_ancla():
+    # El refresh solo lleva a la página: un enlace viejo a /en/route/#all-achievements perdería su ancla.
+    for nombre in ('index.html', 'en/route/index.html'):
+        url = BASE + nombre.removesuffix('index.html')
+        ruta = copia_pages.PREFIJO_PAGES + nombre.removesuffix('index.html')
+        for cola in ('', '#all-achievements', '?a=1#x'):
+            destino = a_donde_lleva_la_404(ruta + cola, nombre)
+            assert destino == url + cola, f'{nombre}{cola} lleva a {destino} y no a {url + cola}'
+
+
+def a_donde_lleva_la_404(ruta, pagina='404.html'):
+    """Ejecuta el script de `pagina` (la 404 de Pages o un aviso) con location en `ruta` y devuelve a dónde manda."""
+    script = re.search(r'<script>(.*?)</script>', SALIDA[pagina], re.S)
+    assert script, f'{pagina}: sin script que redirija'
+    script = script.group(1)
     partes = urlsplit(ruta)
     busqueda, ancla = ('?' + partes.query if partes.query else ''), ('#' + partes.fragment if partes.fragment else '')
     falso = (f'let destino;const location={{pathname:{json.dumps(partes.path)},search:{json.dumps(busqueda)},'
@@ -146,6 +158,8 @@ def no_sirve_si_la_web_es_github_io():
 def escapa_la_direccion():
     html = copia_pages.aviso('a&b"c/index.html', BASE)
     assert 'a&amp;b&quot;c/' in html and 'a&b' not in html, html
+    html = copia_pages.aviso('</script><b>/index.html', BASE)
+    assert html.count('</script>') == 1 and '<b>' not in html, html
 
 
 def escribe_en_carpeta_nueva():
@@ -169,6 +183,7 @@ def escribe_en_carpeta_nueva():
 
 prueba('Pages publica solo los vídeos y un aviso por página', solo_videos_y_avisos)
 prueba('cada aviso: noindex, canonical y redirección a la misma página', cada_pagina_es_un_aviso)
+prueba('cada aviso conserva la búsqueda y el ancla del enlace viejo', el_aviso_conserva_busqueda_y_ancla)
 prueba('la 404 de Pages lleva a la misma ruta en la web', la_404_lleva_a_la_misma_ruta)
 prueba('la 404 de Pages no lleva a otra web', la_404_no_lleva_fuera)
 prueba('_redirects apunta a los vídeos de Pages', redirecciones_de_videos_coinciden)
