@@ -2,7 +2,7 @@
 
 **La web está en https://clan.garra-iberica.workers.dev/**. Esto es solo su código.
 
-Web estática publicada en Cloudflare (`wrangler.toml`) desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages sigue publicando la misma carpeta para dos cosas: que la dirección antigua lleve a la nueva (`docs/efectos.js`) y servir los vídeos (`docs/_redirects`), porque Cloudflare los entrega enteros y no por trozos, y sin trozos no se puede saltar a un punto del vídeo. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
+Web estática publicada en Cloudflare (`wrangler.toml`) desde la carpeta `docs/`, cada vez que se sube algo a `main`. GitHub Pages solo hace falta para servir los vídeos (`docs/_redirects`), porque Cloudflare los entrega enteros y no por trozos, y sin trozos no se puede saltar a un punto del vídeo. Pages no debe publicar `docs/` entero: los buscadores verían dos webs iguales y a veces se quedan con la de github.io. `.github/workflows/pages.yml` publica allí solo los vídeos y, en lugar de cada página, un aviso noindex que lleva a la misma página en Cloudflare (`herramientas/copia_pages.py`, probado por `prueba_pages.py`); para eso, en GitHub, Settings → Pages → Source tiene que ser «GitHub Actions». Mientras siga siendo la rama, `docs/efectos.js` manda a la dirección nueva a quien abra la antigua, pero los buscadores que no ejecutan scripts siguen viendo la copia. Sin dependencias: HTML, CSS y un poco de JavaScript propio.
 
 Dirección: https://clan.garra-iberica.workers.dev/ (inglés en `/en/`).
 
@@ -46,6 +46,7 @@ python herramientas/prueba_cifras.py
 python herramientas/prueba_batallas.py
 python herramientas/prueba_borradores.py
 python herramientas/prueba_comprobar.py
+python herramientas/prueba_pages.py
 ```
 
 - `montar_web.py` genera las 20 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en
@@ -177,6 +178,8 @@ python herramientas/prueba_comprobar.py
 - `prueba_comprobar.py` prueba que se paren un script de más que guarde algo en el navegador, un ID o un apodo en
   `fichas_dinos.json`, una mutación sin traducir y una foto de la tira de la portada que no está en la galería.
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
+- `prueba_pages.py` revisa lo que publica GitHub Pages: solo los vídeos y un aviso noindex por página que lleva a la
+  misma página en Cloudflare, y que su 404 nunca mande a otra web.
 - `prueba_navegador.js` (opcional, necesita Playwright y axe-core y la web servida en local) abre las 18
   páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
   cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde 1020 px
@@ -231,7 +234,7 @@ fichero que no sea de esos datos o falla una comprobación, no sube nada. `--vis
 avisa en #mando si la portada no coincide con `ranking/cifras.json` o estas comprobaciones salen en rojo.
 `python herramientas/prueba_publicar.py` lo prueba con git de verdad sobre un repositorio de mentira.
 Los apodos los recibe de un secreto del repositorio, `VIGILAR_APODOS`, que se crea una vez con
-`gh secret set VIGILAR_APODOS < herramientas/vigilar.local.txt`. Pages publica aunque falle: si
+`gh secret set VIGILAR_APODOS < herramientas/vigilar.local.txt`. Cloudflare publica aunque falle: si
 sale en rojo, se arregla y se vuelve a subir.
 
 ## Cambiar la dirección
@@ -244,8 +247,8 @@ python herramientas/calendario.py
 python herramientas/montar_web.py
 ```
 
-Con un dominio propio (`https://dominio.es/`) es igual, y además hay que poner el dominio en
-GitHub (Settings → Pages → Custom domain), lo que crea `docs/CNAME`.
+Con un dominio propio (`https://dominio.es/`) es igual, y además hay que añadirlo en Cloudflare
+(Workers → clan → Settings → Domains & Routes). No se pone en GitHub Pages, que solo sirve los vídeos.
 
 ## Regenerar imágenes y fuentes
 

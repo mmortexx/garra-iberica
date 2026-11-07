@@ -1,4 +1,4 @@
-# Comprueba la web en cada push y pull request. GitHub Pages publica la rama aunque esto falle:
+# Comprueba la web en cada push y pull request. Cloudflare publica aunque esto falle:
 # si sale en rojo, hay que arreglarlo y volver a subir.
 name: Comprobar la web
 
@@ -42,6 +42,8 @@ jobs:
         run: python herramientas/prueba_comprobar.py
       - name: Prueba de la ruta de logros
         run: python herramientas/prueba_logros.py
+      - name: Prueba de lo que publica GitHub Pages
+        run: python herramientas/prueba_pages.py
       - name: Instalar Playwright y Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.60.0 axe-core@4.14.0

@@ -1,0 +1,65 @@
+# GitHub Pages solo sirve los vídeos (pesan más de lo que deja Cloudflare) y, en lugar de cada página, un aviso noindex
+# que lleva a la misma página en la web de Cloudflare: así los buscadores no ven dos webs iguales (copia_pages.py).
+# Solo publica si en Settings → Pages la fuente es «GitHub Actions»; mientras sea una rama, avisa y no hace nada.
+name: Publicar vídeos y avisos en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  fuente:
+    name: ¿Pages publica desde aquí?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      modo: ${{ steps.modo.outputs.modo }}
+    steps:
+      - id: modo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          modo="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type)"
+          echo "modo=$modo" >> "$GITHUB_OUTPUT"
+          if [ "$modo" != workflow ]; then
+            echo "::warning::GitHub Pages publica desde una rama ($modo): sigue sirviendo una copia entera de la web. Settings → Pages → Source: GitHub Actions."
+          fi
+
+  publicar:
+    name: Vídeos y avisos
+    needs: fuente
+    if: needs.fuente.outputs.modo == 'workflow'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.desplegar.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probar lo que se va a publicar
+        run: python herramientas/prueba_pages.py
+      - name: Montar la carpeta de Pages
+        run: python herramientas/copia_pages.py _pages
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _pages
+      - id: desplegar
+        uses: actions/deploy-pages@v4
