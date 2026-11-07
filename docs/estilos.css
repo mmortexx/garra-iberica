@@ -44,8 +44,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 /* El resaltado al tocar, en el rojo de la web: el del sistema es azul o gris. */
 /* La letra y con ella todo lo medido en rem crecen desde 1440 px: 17 px a 1920, 20 px a 3440 y ahí se quedan.
-   En porcentaje, para respetar la letra elegida en el navegador. */
-html { font-size: clamp(100%, 100% + (100vw - 1440px) * .002, 125%); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); -webkit-tap-highlight-color: rgba(255, 53, 31, .16); }
+   En porcentaje y desde 90em, para respetar la letra elegida en el navegador: al doble, crece desde 2880 px. */
+html { font-size: clamp(100%, 100% + (100vw - 90em) * .002, 125%); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); -webkit-tap-highlight-color: rgba(255, 53, 31, .16); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -146,10 +146,11 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
    cambiar cómo se ven. Solo donde no hay otro enlace encima o debajo a menos de esa distancia. */
 .marca, .idioma, .migas a, .enlace-cal, .menu-idioma, .cifras-enlace a { position: relative; }
 .marca::before, .idioma::before, .migas a::before, .enlace-cal::before, .menu-idioma::before, .cifras-enlace a::before { content: ""; position: absolute; inset: 50% 0 auto; height: 44px; translate: 0 -50%; }
-/* El menú en una fila (siete enlaces) necesita ~1000 px. Por debajo, un botón lo abre a pantalla completa. Sin
+/* El menú en una fila (siete enlaces) necesita ~1000 px con la letra normal. Por debajo, un botón lo abre a pantalla completa.
+   Los cortes van en em: con la letra del navegador al doble, el menú se recoge tras su botón en vez de cortarse. Sin
    popover (navegadores antiguos) baja a su propia fila y se parte en líneas si no cabe: nunca queda
    cortado. La prueba de navegador recorre los anchos y avisa de solapes y de enlaces fuera. */
-@media (max-width: 1019px) {
+@media not all and (min-width: 63.75em) {
   .barra-in { grid-template-columns: 1fr auto; row-gap: 0; }
   @supports selector(:popover-open) {
     .menu-boton { display: grid; }
@@ -211,7 +212,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 @keyframes menu-entra { from { opacity: 0; translate: -24px 0; } }
 @keyframes menu-zarpazo { from { opacity: 0; transform: skewX(-14deg) scaleY(.2); } }
 /* Escritorio: pestañas de esquinas rectas; la página actual, con un velo de ascua y su trazo. */
-@media (min-width: 1020px) {
+@media (min-width: 63.75em) {
   .menu, .menu[popover] { gap: .15rem; }
   .menu a { padding: .6rem .85rem; border-radius: 3px; transition: color .25s, background-color .25s; }
   .menu a::after { left: .85rem; right: .85rem; bottom: 0; }
@@ -220,7 +221,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .menu a:not([aria-current])::after { height: 1px; background: rgba(231, 231, 231, .55); box-shadow: none; }
 }
 /* Con los siete enlaces, hasta 1200 px las pestañas se estrechan para no pegarse a la marca. */
-@media (min-width: 1020px) and (max-width: 1199px) {
+@media (min-width: 63.75em) and (max-width: 74.99em) {
   .menu a { padding-inline: .6rem; }
   .menu a::after { left: .6rem; right: .6rem; }
 }
@@ -238,8 +239,8 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .menu-cerrar { position: absolute; top: .9rem; right: 16px; }
 .menu-cerrar::before, .menu-cerrar::after { content: ""; grid-area: 1 / 1; width: 18px; height: 2px; background: currentColor; rotate: 45deg; }
 .menu-cerrar::after { rotate: -45deg; }
-/* Móviles estrechos: marca, idioma, botón y menú no caben a su tamaño normal. */
-@media (max-width: 419px) {
+/* Móviles estrechos (420 y 360 px con la letra normal, en em como los del menú): marca, idioma, botón y menú no caben a su tamaño normal. */
+@media not all and (min-width: 26.25em) {
   .barra-in { column-gap: .5rem; }
   .marca { font-size: 1.12rem; gap: .45rem; }
   .marca img { width: 30px; height: 30px; }
@@ -248,7 +249,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   .barra-acciones .boton-mini::after { content: none; }
 }
 /* Por debajo de 360 px, con EN/ES también en la barra, la marca no cabe a 1.12rem. */
-@media (max-width: 359px) {
+@media not all and (min-width: 22.5em) {
   .marca { font-size: 1rem; gap: .35rem; }
   .marca img { width: 26px; height: 26px; }
   .barra-acciones { gap: .35rem; }
@@ -284,6 +285,9 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 .boton:active { transform: translateY(1px) scale(.985); transition-duration: .08s; box-shadow: 0 0 0 1px #4a0f08, 0 3px 10px -4px rgba(255, 44, 20, .6), inset 0 2px 6px rgba(74, 15, 8, .45); }
 /* El anillo rojo de siempre no se ve sobre el botón rojo. */
 .boton:focus-visible { outline-color: var(--hueso); }
+/* Mientras trabaja (la copia del clan) se ve apagado y no se eleva ni brilla al pasar. */
+.boton:disabled, .boton:disabled:hover, .boton:disabled:active { opacity: .55; cursor: not-allowed; transform: none; }
+.boton:disabled:hover::before, .boton:disabled:hover::after { transform: none; }
 .boton-sec { background: rgba(15, 15, 15, .55); color: var(--hueso); border-color: rgba(240, 134, 122, .55); box-shadow: inset 0 0 0 1px rgba(240, 134, 122, .12); }
 .boton-sec::before { background: linear-gradient(105deg, transparent 30%, rgba(240, 134, 122, .25) 48%, transparent 66%); }
 @media (hover: hover) { .boton-sec:hover { color: var(--hueso); background: rgba(138, 138, 138, .16); box-shadow: inset 0 0 0 1px rgba(240, 134, 122, .3), 0 10px 30px -10px rgba(240, 134, 122, .4); } }
@@ -611,11 +615,10 @@ h2::after {
 .cuenta-fecha { margin-top: .4rem !important; font: 1.55rem/1.15 var(--titulos); color: var(--hueso); text-transform: uppercase; letter-spacing: .02em; }
 .cuenta-falta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem 1.3rem; margin-top: .8rem !important; font: 600 1.45rem/1.2 var(--etiquetas); letter-spacing: .06em; color: var(--ascua-viva); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(255, 53, 31, .5); }
 .cuenta-falta .t { display: flex; flex-direction: column; min-width: 2.4ch; }
-.cuenta-falta .n { font-size: 2.3rem; line-height: 1; }
+.cuenta-falta .n { display: inline-block; font-size: 2.3rem; line-height: 1; }
 .cuenta-falta .u { margin-top: .4rem; font-size: .8rem; line-height: 1; letter-spacing: .18em; text-transform: uppercase; color: var(--suave); text-shadow: none; }
 .cuenta-local { margin-top: .4rem !important; color: var(--suave); font-size: .95rem; }
 .cuenta.en-curso .cuenta-falta { animation: respirar 2s ease-in-out infinite; }
-.cuenta-falta .n { display: inline-block; }
 .cuenta-falta [hidden] { display: none; }
 .calendario-botones { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.3rem; }
 .boton-cal::after { content: "+"; content: "+" / ""; font-size: 1.25em; line-height: .8; }
@@ -1023,13 +1026,13 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 @media (max-width: 559px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* Nueve páginas, tres columnas de tres en cualquier ventana ancha: con cuatro, la última se quedaba sola. */
 @media (min-width: 560px) { .pie-menu { grid-template-columns: repeat(3, minmax(0, 12rem)); } }
-.pie-menu a, .pie-enlaces a { color: var(--suave); text-decoration: none; font: 600 1rem/1.8 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase; }
-.pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
-/* Un trazo de ascua se desliza bajo el enlace al pasar, como en el menú de arriba. */
 .pie-menu a, .pie-enlaces a {
+  color: var(--suave); text-decoration: none; font: 600 1rem/1.8 var(--etiquetas); letter-spacing: .06em; text-transform: uppercase;
+  /* Un trazo de ascua se desliza bajo el enlace al pasar, como en el menú de arriba. */
   background: linear-gradient(var(--ascua), var(--ascua)) 0 100% / 0 2px no-repeat;
   transition: color .25s, background-size .35s var(--suave-salida);
 }
+.pie-menu a:hover, .pie-enlaces a:hover { color: var(--ascua-viva); }
 .pie-menu a:hover, .pie-enlaces a:hover, .pie-menu a:active, .pie-enlaces a:active { background-size: 100% 2px; }
 .pie-menu a:active, .pie-enlaces a:active, .migas a:active { color: var(--ascua-viva); }
 @media (forced-colors: active) { .pie-menu a:hover, .pie-enlaces a:hover { text-decoration: underline; } }
@@ -1056,7 +1059,12 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 /* Al imprimir nadie ha recorrido la página: sin esto faltan secciones enteras y los títulos con la letra
    recortada sobre el fondo salen huecos. Rojo, porque se lee igual con los fondos impresos y sin ellos. */
 @media print {
-  .subir, .barra, .ascuas, .bruma, .niebla, .ruta-nexus { display: none; }
+  .subir, .barra, .ascuas, .bruma, .niebla, .ruta-nexus, .ruta-filtros, .ruta-botones, .ahora-ir { display: none; }
+  /* La web es oscura; el papel, blanco. Sin esto, el navegador aclara el fondo y deja la letra en un gris de ≈3:1.
+     El ✓ de una casilla sin hacer sigue transparente: es decorativo y diría que está hecha. */
+  html, body { background: #fff !important; }
+  body, body *:not(.tramo-tarea, .tramo-tarea > span) { color: #111 !important; }
+  .tramo-tarea[aria-pressed="true"] { color: #111 !important; }
   *, *::before, *::after { animation: none !important; transition: none !important; text-shadow: none !important; }
   .revelar, .revelar :is(h2, img, li, b, i, div), .entra, .h1-sub, img.por-llegar {
     opacity: 1 !important; visibility: visible !important; translate: none !important; scale: none !important; rotate: none !important; clip-path: none !important;
@@ -1064,7 +1072,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
   .hex-brillo { stroke-dashoffset: 0 !important; }
   /* El hexágono de los pasos de la ruta, en papel, un número sin recortar. */
   .baldosa-pasos span { clip-path: none !important; }
-  .h1-marca, .cifras b {
+  :root .h1-marca, :root .cifras b {
     background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
     color: var(--ascua) !important; filter: none !important; clip-path: none !important;
   }
@@ -1104,9 +1112,6 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 
 /* Guía de dinosaurios */
 .guia-revisado { margin: 0; font: 600 .95rem/1.4 var(--etiquetas); letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }
-.indice-grupo p { margin: 0 0 .7rem; }
-.indice-grupo p a { font: 1.25rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
-.indice-grupo p a:hover { color: var(--ascua-viva); }
 .indice-grupo ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
 .indice-grupo li a {
   display: inline-block; padding: .35rem .75rem; border: 1px solid var(--borde); border-radius: 99px;
@@ -1660,6 +1665,9 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .menu a[aria-current] { text-decoration: underline 2px; text-underline-offset: .2em; }
   .comparar-lista > .marcada { outline: 2px solid Highlight; outline-offset: -2px; }
   .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { text-decoration: underline 2px; }
+  /* Ruta: el color transparente y los fondos se pierden aquí. La casilla sin hacer no enseña su ✓ y lo pulsado va relleno. */
+  .tramo-tarea:not([aria-pressed="true"]) > span { visibility: hidden; }
+  :root .ruta-filtro[aria-pressed="true"], :root .tramo[aria-pressed="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; transition: none; }
 }
 
 /* Cacería: botón en la cuenta atrás, selector de hora junto a la semana, ranking y formas de apuntarse. */
@@ -1790,7 +1798,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 /* Ruta de logros */
 .ruta-cuenta > :not(.ruta-guia, .ruta-paneles) { max-width: 48rem; }
 .ruta-cuenta [hidden], .ruta-filtros[hidden], .logro[hidden], .ahora-zona[hidden], .ahora-zona [hidden], .sesiones[hidden] { display: none; }
-.ruta-resumen progress, .ahora-progreso progress { display: block; width: 100%; height: .7rem; margin: .5rem 0; border: 1px solid var(--borde); border-radius: 99px; overflow: hidden; background: rgba(138, 138, 138, .15); appearance: none; }
+.ruta-resumen progress, .ahora-progreso progress { display: block; width: 100%; height: .7rem; border: 1px solid var(--borde); border-radius: 99px; overflow: hidden; background: rgba(138, 138, 138, .15); appearance: none; }
 .ruta-resumen progress::-webkit-progress-bar, .ahora-progreso progress::-webkit-progress-bar { background: transparent; }
 .ruta-resumen progress::-webkit-progress-value, .ahora-progreso progress::-webkit-progress-value { background: var(--ascua); }
 .ruta-resumen progress::-moz-progress-bar, .ahora-progreso progress::-moz-progress-bar { background: var(--ascua); }
@@ -1929,7 +1937,7 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
 .ahora .sesion-que { margin-bottom: .4rem; color: var(--hueso); }
 .ahora .sesion-pasos { margin-bottom: 1.4rem; }
 .ahora-progreso { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem 1rem; margin: 0 0 .6rem; }
-.ahora-progreso progress { flex: 1 1 12rem; margin: 0; }
+.ahora-progreso progress { flex: 1 1 12rem; }
 .ahora-progreso p { margin: 0; color: var(--suave); font-size: .95rem; font-variant-numeric: tabular-nums; }
 .ahora .tareas { margin: 0 0 1.2rem; }
 .ahora-fin { margin: 0 0 1rem; color: var(--hueso); }

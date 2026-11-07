@@ -183,10 +183,11 @@ python herramientas/prueba_pages.py
 - `prueba_caceria.js` revisa la cuenta atrás, incluidos los cambios de hora.
 - `prueba_pages.py` revisa lo que publica GitHub Pages: solo los vídeos y un aviso noindex por página que lleva a la
   misma página en Cloudflare, y que su 404 nunca mande a otra web.
-- `prueba_navegador.js` (opcional, necesita Playwright y axe-core y la web servida en local) abre las 18
-  páginas en un navegador real: todo visible con y sin JavaScript, sin errores, ningún texto
-  cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde 1020 px
-  o, por debajo, tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha
+- `prueba_navegador.js` (opcional, necesita Playwright y axe-core y la web servida en local) abre las 20
+  páginas fijas y 4 fichas de especie (y recorre las 44 fichas) en un navegador real: todo visible con y sin JavaScript,
+  sin errores, ningún texto cortado en móviles estrechos, la cabecera sin solapes y el menú entero en una fila desde
+  1020 px (63,75em: con la letra del navegador al 200 %, desde 2040 px, y la prueba lo mira así también) o, por debajo,
+  tras su botón; de 320 a 1440 px (cada 5) y a 1920 px, la página nunca más ancha
   que la pantalla y la marca de la cabecera en la misma vertical que los títulos de las secciones.
   En el móvil abre el menú, lo cierra con Escape y con la X y recorre todas las páginas desde él;
   prueba los enlaces viejos de la portada, usa el visor de la galería con ratón y con el dedo (enlace directo a una foto, pie, «Atrás», deslizar y pellizcar), que las fotos a lo ancho no se recorten,
@@ -217,7 +218,7 @@ python herramientas/prueba_pages.py
   Cifras y podio de la portada, con su formato de miles y su redondeo (`SOLO=cifras` prueba solo esto).
   «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
 
-  Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra.
+  Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra, con la letra a contraste de texto sobre el papel blanco (4,5:1; 3:1 la grande), y lo plegado se abre al imprimir y se vuelve a plegar después.
 
   Zarpazo saltado (`SOLO=transicion` prueba solo esto): se fuerza que la transición entre páginas se salte en la
   página que se deja y en la que llega, y ninguna da error («Transition was skipped» sin atender).

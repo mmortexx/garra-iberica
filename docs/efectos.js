@@ -10,12 +10,27 @@
   const viejo = location.hash.slice(1);
   if (movidas && Object.hasOwn(movidas, viejo)) { location.replace(movidas[viejo]); return; }
   const raiz = document.documentElement;
+  // Al imprimir se abre lo plegado (fichas, sesiones, preguntas): en papel no se puede desplegar. Después se deja como estaba.
+  let abiertas = [];
+  addEventListener('beforeprint', () => {
+    abiertas = [...document.querySelectorAll('details:not([open])')];
+    abiertas.forEach(d => { d.open = true; });
+  });
+  addEventListener('afterprint', () => {
+    abiertas.forEach(d => { d.open = false; });
+    abiertas = [];
+  });
   // La página llega en modo ligero (sin JavaScript se queda así) y sale de él solo si hay aceleración
   // gráfica: pintar los efectos con el procesador es lo que traba la carga y la ventana grande.
+  // Si preguntar por WebGL falla (políticas del sistema, extensiones), se queda en ligero en vez de romper la página.
   const sinAceleracion = () => {
-    const gl = document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
-    if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return !gl;
+    try {
+      const gl = document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
+      if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return !gl;
+    } catch {
+      return true;
+    }
   };
   let ligera = !window.garraModoFijo && sinAceleracion();
   if (!ligera) raiz.classList.remove('ligera');
@@ -98,7 +113,7 @@
   // al volver con «Atrás» a una página que se fue con él abierto.
   const menu = document.querySelector('.menu[popover]');
   if (menu && menu.showPopover) {
-    const detras = [...document.querySelectorAll('.saltar, .marca, .barra-acciones, main, .pie')];
+    const detras = [...document.querySelectorAll('.saltar, .marca, .barra-acciones, main, .pie, .subir')];
     let fundido = 0;
     menu.addEventListener('beforetoggle', e => {
       clearTimeout(fundido);
@@ -113,7 +128,7 @@
       menu.querySelector('a').focus();
     });
     const cerrar = () => { if (menu.matches(':popover-open')) menu.hidePopover(); };
-    matchMedia('(min-width: 1020px)').addEventListener('change', e => { if (e.matches) cerrar(); });
+    matchMedia('(min-width: 63.75em)').addEventListener('change', e => { if (e.matches) cerrar(); });
     addEventListener('pageshow', e => { if (e.persisted) cerrar(); });
   }
 
@@ -287,9 +302,21 @@
     visor.querySelector('.visor-pasar')?.addEventListener('click', () => {
       pasarEnlace(location.href, aviso, t.copiado, t.fallo);
     });
+    // Con el teclado, lo mismo que con el ratón: «+» amplía al centro, «−» vuelve a ajustar y, ampliada, las flechas la
+    // recorren. Con Ctrl o Cmd es el zoom del navegador y no se toca.
+    const PASO = 120;
+    const mover = { ArrowLeft: [-PASO, 0], ArrowRight: [PASO, 0], ArrowUp: [0, -PASO], ArrowDown: [0, PASO] };
     visor.addEventListener('keydown', ev => {
-      if (ev.key === 'ArrowLeft' && !enReal()) mostrar(actual - 1, -1);
-      else if (ev.key === 'ArrowRight' && !enReal()) mostrar(actual + 1, 1);
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if ((ev.key === '+' || ev.key === '=') && !enReal()) {
+        const z = zonaFoto();
+        ampliar(z.left + z.width / 2, z.top + z.height / 2);
+      } else if (ev.key === '-' && enReal()) ajustar();
+      else if (enReal() && mover[ev.key]) marco.scrollBy(mover[ev.key][0], mover[ev.key][1]);
+      else if (ev.key === 'ArrowLeft') mostrar(actual - 1, -1);
+      else if (ev.key === 'ArrowRight') mostrar(actual + 1, 1);
+      else return;
+      ev.preventDefault();
     });
     // Escape con la foto ampliada vuelve a ajustarla; si no, cierra.
     visor.addEventListener('cancel', ev => { if (enReal()) { ev.preventDefault(); ajustar(); } });

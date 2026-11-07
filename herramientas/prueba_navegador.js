@@ -477,6 +477,33 @@ const efectos = async navegador => {
     }
     await grande.close();
   }
+  // Letra del navegador al 200 % en un ordenador (no el zoom, que sí estrecha la página): el menú va entero en su fila o
+  // recogido tras su botón, y nada de la barra se sale. Con los cortes en px se cortaba a 1280 px sin forma de llegar.
+  {
+    const doble = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), args: ['--blink-settings=defaultFontSize=32'] });
+    const ctx = await sinSalir(await doble.newContext({ viewport: { width: 1280, height: 800 } }));
+    const p = await ctx.newPage();
+    for (const r of ['', 'en/']) {
+      await p.goto(BASE + r, { waitUntil: 'load' });
+      for (const ancho of [640, 700, 1280, 1366, 1920, 2040, 2100, 2560, 2880, 3000]) {
+        await p.setViewportSize({ width: ancho, height: 800 });
+        const m = await p.evaluate(() => {
+          const W = document.documentElement.clientWidth;
+          const enlaces = [...document.querySelectorAll('.menu a')].map(a => a.getBoundingClientRect()).filter(rc => rc.width);
+          const barra = [...document.querySelectorAll('.marca, .menu a, .idioma, .barra-acciones .boton, .menu-boton')].map(el => el.getBoundingClientRect()).filter(rc => rc.width);
+          return {
+            letra: parseFloat(getComputedStyle(document.documentElement).fontSize), enlaces: enlaces.length,
+            boton: !!document.querySelector('.menu-boton').getBoundingClientRect().width,
+            fuera: barra.filter(rc => rc.left < -0.5 || rc.right > W + 0.5).length, lineas: new Set(enlaces.map(rc => Math.round(rc.top))).size,
+          };
+        });
+        if (m.letra < 32) fallos.push(`la prueba de letra al 200 % no ha subido la letra: ${m.letra}px`);
+        const bien = m.boton ? m.enlaces === 0 && !m.fuera : m.enlaces === EN_MENU && m.lineas === 1 && !m.fuera;
+        if (!bien) fallos.push(`/${r} con letra al 200 % a ${ancho} px: ${m.enlaces} enlaces en ${m.lineas} líneas, ${m.fuera} cosas de la barra fuera, botón ${m.boton ? 'sí' : 'no'}`);
+      }
+    }
+    await doble.close();
+  }
   // Auditoría de accesibilidad. Sin movimiento, para medir los colores finales y no los de media animación.
   const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
   const auditar = async (p, donde) => {
@@ -681,6 +708,14 @@ const imprimir = async navegador => {
         const propio = getComputedStyle(el);
         // Lo decorativo puede ser transparente a propósito: el ✓ de un logro sin marcar en la ruta.
         if (el.tagName !== 'IMG' && !el.closest('[aria-hidden="true"]') && (propio.webkitBackgroundClip === 'text' || /, 0\)$/.test(propio.color) || propio.color === 'transparent')) malos.add(`${quien(el)}: letra hueca`);
+        // En papel blanco, la letra con contraste de texto (4,5:1; 3:1 la grande). La web oscura la dejaba en gris claro.
+        const rgb = el.tagName === 'IMG' || el.closest('[aria-hidden="true"]') ? null : (propio.color.match(/[\d.]+/g) || []).map(Number);
+        if (rgb && rgb.length >= 3 && (rgb[3] ?? 1) > 0) {
+          const lin = c => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+          const contraste = 1.05 / (0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]) + 0.05);
+          const tam = parseFloat(propio.fontSize), grande = tam >= 24 || (parseInt(propio.fontWeight, 10) >= 700 && tam >= 18.66);
+          if (contraste < (grande ? 3 : 4.5)) malos.add(`${quien(el)}: letra clara ${propio.color} (${contraste.toFixed(1)}:1)`);
+        }
       }
       return {
         anim: document.documentElement.classList.contains('anim'),
@@ -691,6 +726,19 @@ const imprimir = async navegador => {
     if (!m.anim) fallos.push(`/${r}: la página no lleva «anim» y la prueba no demuestra nada`);
     if (m.malos.length) fallos.push(`/${r}: ${m.malos.length} sin verse, como ${m.malos.slice(0, 3).join(', ')}`);
     if (m.ambiente.length) fallos.push(`/${r}: al imprimir sale ${m.ambiente.slice(0, 3).join(', ')}`);
+    // Lo plegado (fichas, sesiones, preguntas) se abre al imprimir, que en papel no se despliega, y después vuelve a plegarse.
+    // Sacar el PDF lanza beforeprint y afterprint como el diálogo de imprimir; este oyente va después del de la página.
+    const plegados = await p.evaluate(() => {
+      window.__alImprimir = [];
+      addEventListener('beforeprint', () => window.__alImprimir.push(document.querySelectorAll('details:not([open])').length));
+      return document.querySelectorAll('details:not([open])').length;
+    });
+    if (plegados) {
+      await p.pdf();
+      const [alImprimir] = await p.evaluate(() => window.__alImprimir);
+      const despues = await p.evaluate(() => document.querySelectorAll('details:not([open])').length);
+      if (alImprimir !== 0 || despues !== plegados) fallos.push(`/${r}: al imprimir quedan ${alImprimir} plegados de ${plegados} (después, ${despues})`);
+    }
     await ctx.close();
   }
   console.log('Al imprimir se ve todo:', fallos.length ? fallos.join('; ') : 'sí');
@@ -1640,7 +1688,16 @@ const ahoraToca = async navegador => {
     const fallos = [];
     const destinos = await p.evaluate(() => [...document.querySelectorAll('.menu a:not(.menu-idioma)')].map(a => a.href));
     // Con el teclado: el foco entra en el menú y, tabulando más veces que elementos tiene, nunca
-    // cae en la página tapada.
+    // cae en la página tapada. Con «Volver arriba» a la vista (sale al subir, lejos del principio y del pie): también queda tapado.
+    await p.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await p.waitForTimeout(400);
+    await p.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight / 2, behavior: 'instant' }));
+    await p.waitForTimeout(400);
+    // Un poco más arriba: el primer salto aún llega con el pie a la vista, como al soltar la rueda a medias.
+    await p.evaluate(() => scrollBy({ top: -120, behavior: 'instant' }));
+    await p.waitForTimeout(800);
+    const subir = await p.evaluate(() => { const s = document.querySelector('.subir'); return !!s && s.getBoundingClientRect().width > 0 && getComputedStyle(s).visibility !== 'hidden'; });
+    if (!subir) fallos.push('«Volver arriba» no se ve abajo del todo: no se puede probar que el menú lo tape');
     await p.focus('.menu-boton');
     await p.keyboard.press('Enter');
     await p.waitForTimeout(500);
@@ -2269,6 +2326,20 @@ const ahoraToca = async navegador => {
         await p.keyboard.press('Escape');
         e = await estado();
         if (e.real || !e.abierto) fallos.push(`Escape con la foto ampliada: ${JSON.stringify(e)}`);
+        // Solo con el teclado: «+» amplía, las flechas recorren la foto sin cambiarla y «−» vuelve a ajustarla.
+        await p.keyboard.press('+');
+        await p.waitForTimeout(400);
+        e = await estado();
+        if (!e.real || !e.recorre) fallos.push(`«+» no amplía: ${JSON.stringify(e)}`);
+        const antes = await p.evaluate(() => document.querySelector('.visor-marco').scrollLeft);
+        await p.keyboard.press('ArrowRight');
+        await p.waitForTimeout(300);
+        const despues = await p.evaluate(() => document.querySelector('.visor-marco').scrollLeft);
+        e = await estado();
+        if (despues <= antes || e.cuenta !== `2 / ${total}`) fallos.push(`ampliada, la flecha no recorre la foto: de ${antes} a ${despues}, ${e.cuenta}`);
+        await p.keyboard.press('-');
+        e = await estado();
+        if (e.real || !e.abierto) fallos.push(`«−» no vuelve a ajustar: ${JSON.stringify(e)}`);
         await p.keyboard.press('Escape');
       } else {
         await p.touchscreen.tap(...centro);
@@ -2815,6 +2886,35 @@ const ahoraToca = async navegador => {
       return { fila: fila && getComputedStyle(fila).outlineStyle, activa: activa && getComputedStyle(activa).textDecorationLine, otra: otra && getComputedStyle(otra).textDecorationLine };
     });
     if (resalte.fila === 'none' || !resalte.fila || resalte.activa !== 'underline' || resalte.otra !== 'none') fallos.push(`comparativa en alto contraste: ${JSON.stringify(resalte)}`);
+    // Ruta: el ✓ de una casilla sin hacer iba en color transparente, que aquí se pierde, y salían todas marcadas. Lo pulsado
+    // (filtro, tramo, casilla) se distinguía solo por el fondo, que aquí se borra.
+    await p.goto(`${BASE}ruta/`, { waitUntil: 'load' });
+    const casilla = '[data-ahora-tareas] .tramo-tarea';
+    const ver = () => p.evaluate(sel => {
+      const c = document.querySelector(sel), f = (q) => document.querySelector(q);
+      // El sistema borra los fondos, pero lo que Chromium mide aquí aún los lleva: se mira que lo pulsado salga del ajuste
+      // automático (forced-color-adjust: none) y vaya relleno con el color de resalte del sistema.
+      const relleno = el => el && getComputedStyle(el).forcedColorAdjust === 'none' && getComputedStyle(el).backgroundColor;
+      const muestra = document.createElement('i');
+      muestra.style.cssText = 'forced-color-adjust: none; background: Highlight';
+      document.body.append(muestra);
+      const resalte = getComputedStyle(muestra).backgroundColor;
+      muestra.remove();
+      return {
+        resalte,
+        hay: !!c, pulsada: c && c.getAttribute('aria-pressed'), marca: c && getComputedStyle(c.querySelector('span')).visibility,
+        filtroSi: relleno(f('.ruta-filtro[aria-pressed="true"]')), filtroNo: relleno(f('.ruta-filtro[aria-pressed="false"]')),
+      };
+    }, casilla);
+    let a = await ver();
+    if (!a.hay) fallos.push('ruta en alto contraste: no hay casillas en «Ahora toca» que probar');
+    else {
+      if (a.pulsada !== 'false' || a.marca !== 'hidden') fallos.push(`ruta en alto contraste: la casilla sin hacer enseña su ✓ (${JSON.stringify(a)})`);
+      if (a.filtroSi !== a.resalte || a.filtroNo) fallos.push(`ruta en alto contraste: el filtro pulsado no se distingue (${JSON.stringify(a)})`);
+      await p.locator(casilla).first().click();
+      a = await ver();
+      if (a.pulsada !== 'true' || a.marca !== 'visible') fallos.push(`ruta en alto contraste: la casilla hecha no enseña su ✓ (${JSON.stringify(a)})`);
+    }
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta('unete/'), 'iconos en alto contraste de Windows:', fallos.length ? fallos.join('; ') : 'se ven');
