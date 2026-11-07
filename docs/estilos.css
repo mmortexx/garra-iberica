@@ -45,7 +45,9 @@
 /* El resaltado al tocar, en el rojo de la web: el del sistema es azul o gris. */
 /* La letra y con ella todo lo medido en rem crecen desde 1440 px: 17 px a 1920, 20 px a 3440 y ahí se quedan.
    En porcentaje y desde 90em, para respetar la letra elegida en el navegador: al doble, crece desde 2880 px. */
-html { font-size: clamp(100%, 100% + (100vw - 90em) * .002, 125%); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); -webkit-tap-highlight-color: rgba(255, 53, 31, .16); }
+/* La barra fija mide unos 4,2rem: lo que se enfoca o a lo que se salta queda siempre debajo de ella. Los
+   scroll-margin-top de abajo se suman a esto. */
+html { font-size: clamp(100%, 100% + (100vw - 90em) * .002, 125%); scroll-behavior: smooth; scroll-padding-top: 4.75rem; -webkit-text-size-adjust: 100%; scrollbar-color: #6b241c var(--fondo); -webkit-tap-highlight-color: rgba(255, 53, 31, .16); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -455,7 +457,7 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
   @keyframes progreso { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
 /* overflow-x: clip: la luz de los paneles sobresale del margen y ensancharía la página. */
-.seccion { position: relative; padding: clamp(3rem, 6vw, 5rem) 16px; scroll-margin-top: 4.5rem; overflow-x: clip; }
+.seccion { position: relative; padding: clamp(3rem, 6vw, 5rem) 16px; overflow-x: clip; }
 .seccion + .seccion::before {
   content: ""; position: absolute; top: 0; left: 50%; translate: -50% 0;
   width: min(var(--ancho), calc(100% - 32px)); height: 1px;
@@ -649,7 +651,7 @@ h2::after {
    foto la llena; object-position mantiene al dinosaurio dentro en los recortes cuadrados. */
 .galeria { list-style: none; margin: 2.4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .9rem; }
 .foto {
-  position: relative; overflow: hidden; aspect-ratio: 1; margin: 0; scroll-margin-top: 6.5rem;
+  position: relative; overflow: hidden; aspect-ratio: 1; margin: 0; scroll-margin-top: 1.75rem;
   background: #0e0e0e; border: 1px solid var(--linea); border-radius: 4px;
   transition: border-color .4s, box-shadow .4s;
 }
@@ -892,7 +894,7 @@ kbd { padding: .05rem .4rem; border: 1px solid var(--borde); border-bottom-width
 .texto-legal > * { max-width: 48rem; }
 .texto-legal h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
 /* Los accesos de la cabecera llevan a cada apartado: que no quede bajo la barra fija. */
-.texto-legal .bloque, .texto-legal h2 { scroll-margin-top: 5.5rem; }
+.texto-legal .bloque, .texto-legal h2 { scroll-margin-top: .75rem; }
 /* Cada apartado ya lleva su línea encima: sin los arañazos debajo, que lo encerraban entre dos adornos. */
 .texto-legal h2::after { content: none; }
 /* Las listas, a la letra de los párrafos: más pequeñas parecían letra menuda. */
@@ -1150,7 +1152,7 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .comparar-lista > div { position: relative; padding: .8rem 0; border-bottom: 1px solid var(--linea); transition: background-color .25s; }
 .comparar-lista > div[hidden] { display: none; }
 .comparar-lista dt { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; }
-.comparar-lista dt a { font: 1.2rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
+.comparar-lista dt a { scroll-margin-top: 2.4rem; font: 1.2rem/1.2 var(--titulos); letter-spacing: .03em; text-transform: uppercase; color: var(--hueso); text-decoration: none; }
 /* Toda la fila lleva a la página de la especie. */
 .comparar-lista dt a::before { content: ""; position: absolute; inset: 0; }
 .comparar-lista .dieta { padding: .25rem .55rem; font-size: .8rem; }
@@ -1168,7 +1170,7 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
   .comparar-fila, .comparar-lista > div { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.75fr); align-items: center; }
   .comparar-cabeza > span:first-child { display: block; }
 }
-.dino, .faq details { scroll-margin-top: 6.5rem; }
+.dino, .faq details { scroll-margin-top: 1.75rem; }
 .dino { padding: 1.6rem 0 1.6rem; border-top: 1px solid var(--linea); }
 .dino-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: 1rem; }
 .dino-cabeza h3 { margin: 0; font-size: clamp(1.55rem, 3.6vw, 2rem); text-transform: uppercase; letter-spacing: .02em; }
@@ -1849,7 +1851,7 @@ textarea.ruta-campo { display: block; resize: vertical; }
 .ruta-trayectoria li { display: flex; flex-wrap: wrap; gap: 0 .8rem; padding: .45rem 0; border-bottom: 1px solid var(--linea); }
 .ruta-trayectoria time { min-width: 7rem; color: var(--suave); font-variant-numeric: tabular-nums; }
 /* Al llegar aquí con el teclado o por programa, el título no se queda bajo la barra fija. */
-.ruta-nexus, .ruta-nexus textarea { scroll-margin-top: 6.5rem; }
+.ruta-nexus, .ruta-nexus textarea { scroll-margin-top: 1.75rem; }
 
 /* El resumen: cuánto llevas y la sesión que te toca, con su botón. */
 .ruta-resumen { border-left: 2px solid var(--ascua); }
@@ -1925,7 +1927,7 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   .ahora { --arriba: 6rem; }
   .ahora.ahora-fija { position: sticky; top: var(--arriba); }
 }
-.ahora { box-sizing: border-box; min-width: 0; max-width: 48rem; margin: 0; padding: clamp(1.1rem, 3.5vw, 1.9rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-left: 2px solid var(--ascua); border-radius: 4px; box-shadow: var(--cristal-brillo); scroll-margin-top: 6.5rem; }
+.ahora { box-sizing: border-box; min-width: 0; max-width: 48rem; margin: 0; padding: clamp(1.1rem, 3.5vw, 1.9rem); background: var(--cristal); border: 1px solid var(--cristal-borde); border-left: 2px solid var(--ascua); border-radius: 4px; box-shadow: var(--cristal-brillo); scroll-margin-top: 1.75rem; }
 .ahora-arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem .8rem; margin: 0 0 .7rem; }
 .ahora-n { color: var(--suave); font: 600 .95rem/1.2 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; }
 .ahora-estado { padding: .35rem .75rem; border: 1px solid var(--borde); border-radius: 99px; color: var(--suave); font: 600 .85rem/1 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }

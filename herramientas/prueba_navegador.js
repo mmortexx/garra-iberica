@@ -1182,6 +1182,43 @@ const pulido = async navegador => {
     }
     await ctx.close();
   }
+  // Lo que se enfoca con el tabulador, hacia delante y hacia atrás, nunca queda bajo la barra fija ni bajo la cabecera
+  // pegada de la comparativa (WCAG 2.4.11); y los anclas que la web enlaza desde otra página, tampoco.
+  const tapado = () => {
+    const a = document.activeElement;
+    if (!a || a === document.body) return null;
+    const r = a.getBoundingClientRect();
+    if (!r.height || a.closest('.barra, .comparar-cabeza')) return '';
+    const encima = r.bottom <= 0 ? null : document.elementFromPoint(r.left + Math.min(r.width / 2, 40), Math.max(0, r.top) + 1);
+    if (r.bottom > 0 && !encima?.closest('.barra, .comparar-cabeza')) return '';
+    return `${a.tagName.toLowerCase()} «${(a.textContent || a.getAttribute('aria-label') || '').trim().slice(0, 25)}» (${Math.round(r.top)})`;
+  };
+  for (const [tam, opts] of [['1366', {}], ['390', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
+    for (const r of ['unete/', 'dinosaurios/', 'ruta/', 'en/join/']) {
+      const { ctx, p } = await abrir(r, opts);
+      const tapados = new Set();
+      const total = await p.evaluate(() => document.querySelectorAll('a[href], button, summary, input, textarea, select, [tabindex]').length + 5);
+      for (const [tecla, abajo] of [['Tab', false], ['Shift+Tab', true]]) {
+        await p.evaluate(b => { document.activeElement?.blur(); scrollTo(0, b ? document.documentElement.scrollHeight : 0); }, abajo);
+        await p.waitForTimeout(150);
+        for (let i = 0; i < total; i++) {
+          await p.keyboard.press(tecla);
+          const t = await p.evaluate(tapado);
+          if (t === null && i > 0) break;
+          if (t) tapados.add(t);
+        }
+      }
+      if (tapados.size) fallos.push(`/${r} a ${tam}: el foco queda bajo la barra en ${tapados.size}: ${[...tapados].slice(0, 3).join(', ')}`);
+      await ctx.close();
+    }
+    for (const r of ['combate/#g-3', 'caceria/#ranking', 'normas/#rangos', 'en/combat/#g-3', 'en/hunt/#ranking']) {
+      const { ctx, p } = await abrir(r, opts);
+      await p.waitForTimeout(300);
+      const t = await p.evaluate(id => ({ arriba: Math.round(document.getElementById(id).getBoundingClientRect().top), barra: Math.round(document.querySelector('.barra').getBoundingClientRect().bottom) }), r.split('#')[1]);
+      if (t.arriba < t.barra - 1) fallos.push(`/${r} a ${tam}: el destino queda bajo la barra (${t.arriba} < ${t.barra})`);
+      await ctx.close();
+    }
+  }
   console.log('Pulido (menú, vídeos, columnas, ruta, accesos):', fallos.length ? fallos.join('; ') : 'bien');
   return fallos.length;
 };
