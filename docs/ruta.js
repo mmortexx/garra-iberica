@@ -161,7 +161,12 @@
   };
 
   const $ = sel => raiz.querySelector(sel);
-  const ver = (sel, visible) => { $(sel).hidden = !visible; };
+  // Un solo botón rojo a la vista: el «Sí» de la pregunta abierta o, si no hay ninguna, «Ir a la sesión».
+  const PREGUNTAS = ['[data-confirmar]', '[data-importar]'];
+  const ver = (sel, visible) => {
+    $(sel).hidden = !visible;
+    if (PREGUNTAS.includes(sel)) $('[data-toca-ir]').classList.toggle('boton-sec', PREGUNTAS.some(s => !$(s).hidden));
+  };
 
   // ---------- lo guardado en este navegador ----------
   const vacio = () => ({ marcas: {}, subidas: {}, bajadas: {}, porImportar: {}, cuenta: null, nombre: '', token: null, tokenDe: null, caduca: 0 });

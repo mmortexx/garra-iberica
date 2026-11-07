@@ -812,6 +812,28 @@ test('descargar: un fichero con lo tuyo y nada de otro', async () => {
   assert.deepEqual(errores, []);
 });
 
+test('un solo botón rojo a la vista: «Ir a la sesión», o el «Sí» de la pregunta abierta', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  const rojos = () => p.$$eval('main .boton:not(.boton-sec)', bs => bs.filter(b => b.checkVisibility()).map(b => Object.keys(b.dataset).join()));
+  const solo = async (esperado, cuando) => {
+    await hasta(async () => JSON.stringify(await rojos()) === JSON.stringify([esperado]), `${cuando}: solo ${esperado} en rojo`).catch(async e => {
+      throw new Error(`${e.message}; en rojo: ${JSON.stringify(await rojos())}`);
+    });
+  };
+  await solo('tocaIr', 'sin entrar');
+  await pulsar(p, 'allo-exp');
+  await dentro(p);
+  await solo('importarSi', 'preguntando por las marcas sin cuenta');
+  await p.click('[data-importar-si]');
+  await solo('tocaIr', 'dentro');
+  await p.click('[data-borrar]');
+  await solo('borrarSi', 'confirmando el borrado');
+  await p.click('[data-borrar-no]');
+  await solo('tocaIr', 'tras cancelar el borrado');
+  await ctx.close();
+});
+
 test('borrar: pide confirmación, borra en el servicio y en este navegador, y no toca a otro', async () => {
   const otra = await dispositivo();
   const o = await otra.abrir();
