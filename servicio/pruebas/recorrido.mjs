@@ -280,6 +280,34 @@ test('entrar: sabe quién eres, guarda en tu cuenta y otro dispositivo lo ve', a
   assert.deepEqual(errores, []);
 });
 
+test('trayectoria: quitar un tramo y volver a ponerlo se ve sin recargar', async () => {
+  const { ctx, abrir } = await dispositivo();
+  const p = await abrir();
+  await dentro(p);
+  const enTrayectoria = async () => (await visible(p, '[data-trayectoria-caja]')) && /Crecer 80%/.test(await texto(p, '[data-trayectoria]'));
+  await pulsar(p, 'allo-grow', 3);
+  await subido('ana', 'allo-grow', 3);
+  await hasta(enTrayectoria, 'el tramo en la trayectoria');
+  // Se vuelve a poner mientras se guarda la bajada: la segunda subida va como «fijar» y también tiene que anotarlo.
+  let frenada = 'no';
+  await ctx.route(`${URL_API}/yo/progreso`, async r => {
+    if (frenada === 'no' && r.request().method() === 'PUT') {
+      frenada = 'en vuelo';
+      await new Promise(t => { setTimeout(t, 1500); });
+      frenada = 'hecha';
+    }
+    await r.fallback();
+  });
+  await pulsar(p, 'allo-grow', 3);
+  await hasta(() => frenada === 'en vuelo', 'la bajada saliendo');
+  await pulsar(p, 'allo-grow', 3);
+  await hasta(() => frenada === 'hecha', 'la bajada guardada');
+  await hasta(async () => (await filasDe('ana')).some(f => f.logro === 'allo-grow' && f.nivel === 3) && !await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('garra-ruta-v1')).bajadas).length), 'el tramo vuelto a poner, guardado');
+  await hasta(enTrayectoria, 'el tramo vuelto a poner, en la trayectoria sin recargar');
+  await ctx.close();
+  assert.deepEqual(errores, []);
+});
+
 test('en inglés: vuelve a la página en inglés y habla inglés', async () => {
   const { ctx, abrir } = await dispositivo({ ancho: 375, alto: 812 });
   const p = await abrir('/en/route/');
@@ -437,7 +465,7 @@ test('servicio caído con sesión: lo marcado no se pierde, se dice y sube solo 
 });
 
 // El tope de filas del día (429 tope_diario) no es un servicio caído: la página dice qué pasa, guarda las marcas y las sube al cambiar el día.
-for (const [idioma, ruta, dice, ahora] of [['es', '/ruta/', /límite de guardado de hoy.*pendientes de subir: 1.*mañana/, /Guardado en tu cuenta/], ['en', '/en/route/', /today's saving limit.*waiting to upload: 1.*tomorrow/, /Saved to your account/]]) {
+for (const [idioma, ruta, dice, ahora] of [['es', '/ruta/', /límite de guardado de hoy.*pendientes de subir: 1.*mañana/, /Guardado en tu cuenta/], ['en', '/en/route/', /today’s saving limit.*waiting to upload: 1.*tomorrow/, /Saved to your account/]]) {
   test(`tope diario de filas (${idioma}): lo dice, no lo toma por servicio caído y sube las marcas al cambiar el día`, async () => {
     const { ctx, abrir } = await dispositivo();
     const p = await abrir(ruta);
@@ -798,6 +826,7 @@ test('borrar: pide confirmación, borra en el servicio y en este navegador, y no
   await p.click('[data-borrar]');
   await capturar(p, 'es-1366-borrar');
   await p.click('[data-borrar-no]');
+  assert.equal(await p.evaluate(() => 'borrar' in document.activeElement.dataset), true, 'al cancelar, el foco vuelve a «Borrar mis datos»');
   assert.equal((await filasDe('ana')).length, 1);
   await p.click('[data-borrar]');
   await p.click('[data-borrar-si]');
@@ -805,6 +834,7 @@ test('borrar: pide confirmación, borra en el servicio y en este navegador, y no
   assert.deepEqual(await s.filas('SELECT * FROM miembros WHERE discord_id = ?1', USUARIOS.ana.id), []);
   assert.deepEqual(await s.filas('SELECT * FROM sesiones WHERE discord_id = ?1', USUARIOS.ana.id), []);
   await hasta(() => visible(p, '[data-entrar]'), 'volver a estar fuera');
+  assert.equal(await p.evaluate(() => 'entrar' in document.activeElement.dataset), true, 'tras borrar, el foco no vuelve al principio de la página');
   assert.match(await texto(p, '[data-mensaje]'), /se han borrado/);
   const local = await guardado(p);
   assert.equal(local.token, null);
@@ -823,6 +853,7 @@ test('si borrar falla, lo dice y no finge haberlo hecho', async () => {
   await p.click('[data-borrar]');
   await p.click('[data-borrar-si]');
   await hasta(async () => /No se ha podido borrar/.test(await texto(p, '[data-mensaje]')), 'el aviso');
+  assert.equal(await p.evaluate(() => 'borrar' in document.activeElement.dataset), true, 'si borrar falla, el foco vuelve a «Borrar mis datos»');
   assert.ok((await guardado(p)).token);
   await volver(ctx);
 
@@ -855,6 +886,7 @@ test('salir: avisa si queda algo sin subir, y después no deja nada en ese naveg
   await subido('ana', 'allo-exp', 1);
   await p.click('[data-salir]');
   await hasta(() => visible(p, '[data-entrar]'), 'salir');
+  assert.equal(await p.evaluate(() => 'entrar' in document.activeElement.dataset), true, 'tras salir, el foco queda en «Entrar con Discord»');
   await hasta(async () => (await s.todo()).sesiones.length === 0, 'la sesión borrada en el servicio');
   const local = await guardado(p);
   assert.equal(local.token, null);
@@ -1471,9 +1503,14 @@ test('nexus: también vale con formato, con algo alrededor y con el botón', asy
   await r.click('[data-nexus-traer]');
   assert.match(await dicho(r), new RegExp(`^Tramos añadidos: ${TRAMOS_VISIBLES}\\.`), 'escrito y con el botón');
   assert.equal(await r.locator(CAJA).inputValue(), '');
-  await r.locator(CAJA).fill('');
+  // Pegar ya lo marca y vacía el recuadro: pulsar después el botón es lo natural y no puede tapar el éxito con un error.
   await r.click('[data-nexus-traer]');
-  assert.match(await dicho(r), /nada que leer/);
+  assert.match(await dicho(r), new RegExp(`^Tramos añadidos: ${TRAMOS_VISIBLES}\\.`), 'el botón con el recuadro vacío no tapa lo que salió bien');
+  assert.equal(await visible(r, '[data-nexus-mal]'), false, 'tras un éxito, el botón vacío no saca un error');
+  const cuarto = await r.context().newPage();
+  await cuarto.goto(r.url());
+  await cuarto.click('[data-nexus-traer]');
+  assert.match(await dicho(cuarto), /nada que leer/, 'sin nada hecho antes, el botón vacío sí lo dice');
   await ctx.close();
   await otro.ctx.close();
   await tercero.ctx.close();

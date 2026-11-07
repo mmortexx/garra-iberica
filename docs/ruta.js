@@ -23,7 +23,7 @@
     subiendo: n => `Saving… (${n})`,
     pendientes: n => `No connection to the service. Ticks waiting to upload: ${n}. They are safe in this browser and will upload on their own when it comes back.`,
     caido: 'The accounts service is not responding. The page still works: your ticks are saved in this browser.',
-    topeDiario: n => `You have reached today's saving limit for your account. Your ticks are safe in this browser (waiting to upload: ${n}) and will upload on their own tomorrow, after midnight UTC.`,
+    topeDiario: n => `You have reached today’s saving limit for your account. Your ticks are safe in this browser (waiting to upload: ${n}) and will upload on their own tomorrow, after midnight UTC.`,
     sinServicio: 'Accounts are not available yet. Your ticks are saved in this browser only: copy your code from time to time.',
     caducada: n => `Your session has expired. Sign in again.${n ? ` Ticks waiting to upload: ${n}. They stay here until then.` : ''}`,
     sinAlmacen: 'This browser does not allow saving: your ticks will be lost when you close it. Copy your code first.',
@@ -515,15 +515,21 @@
     pintarCuenta();
   }
 
-  // Lo mismo que hace el servicio al guardar, para no volver a pedirle todo tras cada marca.
-  function anotarHistorial(bajadas, subidas, rechazados) {
-    const fuera = new Set(rechazados.map(r => r.logro));
+  // Lo mismo que hace el servicio al guardar (progreso.js): fijar quita lo de encima y, como subir, pone lo que falte hasta n.
+  function mezclarHistorial(bajadas, subidas, fuera) {
     const fecha = new Date().toISOString().slice(0, 10);
-    for (const [logro, n] of Object.entries(bajadas)) historial = historial.filter(f => f.logro !== logro || f.nivel <= n);
-    for (const [logro, n] of Object.entries(subidas)) {
+    for (const [logro, n] of Object.entries(bajadas)) {
+      if (!fuera.has(logro)) historial = historial.filter(f => f.logro !== logro || f.nivel <= n);
+    }
+    for (const [logro, n] of [...Object.entries(bajadas), ...Object.entries(subidas)]) {
       if (fuera.has(logro)) continue;
       for (let i = 1; i <= n; i++) if (!historial.some(f => f.logro === logro && f.nivel === i)) historial.push({ logro, nivel: i, fecha });
     }
+  }
+
+  // Para no volver a pedirle todo al servicio tras cada marca.
+  function anotarHistorial(bajadas, subidas, rechazados) {
+    mezclarHistorial(bajadas, subidas, new Set(rechazados.map(r => r.logro)));
     pintarTrayectoria();
   }
 
@@ -617,7 +623,9 @@
     almacen.marcas = marcas;
     almacen.nombre = datos.cuenta.nombre;
     cuenta = datos.cuenta;
-    historial = datos.progreso;
+    // Lo marcado mientras venía la respuesta aún no ha subido: la foto del servidor no lo borra de la trayectoria.
+    historial = [...datos.progreso];
+    mezclarHistorial(almacen.bajadas, almacen.subidas, retenidas);
     pintarTrayectoria();
   }
 
@@ -981,6 +989,8 @@
     guardar();
     pintarMarcas();
     pintarCuenta();
+    // El botón pulsado ya no existe: el foco sigue en la cuenta y no vuelve al principio de la página.
+    $('[data-entrar]').focus();
   }
 
   async function borrarTodo() {
@@ -992,6 +1002,7 @@
       aviso(T.borrado);
     } catch {
       ver('[data-confirmar]', false);
+      $('[data-borrar]').focus();
       aviso(T.falloBorrar);
     }
     return undefined;
@@ -1065,11 +1076,18 @@
     else if ('salirTodos' in b.dataset) salirDeTodos();
     else if ('descargar' in b.dataset) descargarDatos();
     else if ('borrar' in b.dataset) ver('[data-confirmar]', true);
-    else if ('borrarNo' in b.dataset) ver('[data-confirmar]', false);
+    else if ('borrarNo' in b.dataset) {
+      ver('[data-confirmar]', false);
+      $('[data-borrar]').focus();
+    }
     else if ('borrarSi' in b.dataset) borrarTodo();
     else if ('copia' in b.dataset) copiaDelClan();
     else if ('traer' in b.dataset) traerCodigo();
-    else if ('nexusTraer' in b.dataset) traerNexus($('[data-nexus-pegar]').value);
+    else if ('nexusTraer' in b.dataset) {
+      // Al pegar ya se leyó y se vació el recuadro: pulsar después no tapa el resultado con un error de «no hay nada».
+      const pegado = $('[data-nexus-pegar]').value;
+      if (pegado.trim() || $('[data-nexus-bien]').hidden) traerNexus(pegado);
+    }
     else if ('copiarCodigo' in b.dataset) {
       const c = codigoActual();
       const mal = () => {

@@ -84,6 +84,13 @@ def cada_tramo_tiene_boton():
         assert set(botones) == {(k, str(n)) for k in VISIBLES for n in range(1, MAX[k] + 1)}, f'la lista de {lang} no coincide con el catálogo'
 
 
+def ingles_sin_a_ante_vocal(html=None):
+    # Los nombres de especie entran por plantilla: «a Allosaurus» saldría en cada tramo y en su aria-label.
+    texto = unescape(html if html is not None else HTML['en'])
+    malos = sorted(set(re.findall(r'\b[Aa] ([AEIOU]\w*)', texto)))
+    assert not malos, f'«a» delante de vocal en inglés: {malos}'
+
+
 def cada_punto_en_una_sesion():
     for s in logros_web.sesiones(d):
         assert s['tareas'][0] == (f'{s["especie"]}-exp', 1)
@@ -362,6 +369,7 @@ def main():
     prueba('los ids de los logros son los congelados y no dependen del orden', ids_congelados)
     prueba('lo oculto no se enseña y se sigue aceptando', oculto_fuera)
     prueba('cada tramo visible tiene su botón, una vez', cada_tramo_tiene_boton)
+    prueba('en inglés no sale «a» delante de un nombre que empieza por vocal', ingles_sin_a_ante_vocal)
     prueba('cada punto del mapa está en una sesión y solo una', cada_punto_en_una_sesion)
     prueba('los datos de la página son los del catálogo', datos_de_la_pagina)
     prueba('Nexus y nuestra lista casan uno a uno, con los mismos tramos', nexus_casa_uno_a_uno)
