@@ -135,7 +135,10 @@ T = {
     },
 }
 # Solo en la portada en español: con ellas Google Search Console y Bing Webmaster verifican la web.
+# La segunda de Google es la de la propiedad https://clan.garra-iberica.workers.dev/ (2026-11-08); la primera venía
+# de la propiedad antigua de github.io.
 VERIFICACION = [('google-site-verification', 'TjZ3UO9z_tfPs5RZnAKtSvgGJ08vOeuVpI8ob2YMVbQ'),
+                ('google-site-verification', 'ADYVLL-T8e9rUK7yizldT3Q1wHFg_nGKjHQNWhK71Tc'),
                 ('msvalidate.01', '06F63226A2F1AE3F8270F972B3FCA4D2')]
 
 
