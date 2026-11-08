@@ -16,6 +16,9 @@ from urllib.parse import urlsplit
 
 DOCS = Path(__file__).resolve().parent.parent / 'docs'
 API = 'https://api.indexnow.org/indexnow'
+# Cloudflare responde 403 al agente por defecto de urllib («Python-urllib/…»): sin un nombre propio, la
+# comprobación de la clave fallaría aunque esté publicada.
+AGENTE = {'User-Agent': 'garra-iberica-indexnow/1.0'}
 RESPUESTAS = {
     200: 'aceptado', 202: 'recibido; la clave se validará en un rato',
     400: 'petición mal formada', 403: 'la clave no es válida o no se encuentra en la web',
@@ -42,14 +45,14 @@ def main():
     base = urls[0]
     ubicacion = f'{base}{k}.txt'
     try:
-        with urllib.request.urlopen(ubicacion, timeout=20) as r:
+        with urllib.request.urlopen(urllib.request.Request(ubicacion, headers=AGENTE), timeout=20) as r:
             publicada = r.read().decode('utf-8').strip()
     except urllib.error.URLError as e:
         sys.exit(f'La clave aún no está publicada en {ubicacion} ({e}): sube la web y espera a que Cloudflare termine de publicarla')
     if publicada != k:
         sys.exit(f'{ubicacion} no contiene la clave esperada')
     cuerpo = json.dumps({'host': urlsplit(base).hostname, 'key': k, 'keyLocation': ubicacion, 'urlList': urls}).encode('utf-8')
-    peticion = urllib.request.Request(API, data=cuerpo, headers={'Content-Type': 'application/json; charset=utf-8'})
+    peticion = urllib.request.Request(API, data=cuerpo, headers={'Content-Type': 'application/json; charset=utf-8', **AGENTE})
     try:
         with urllib.request.urlopen(peticion, timeout=30) as r:
             estado = r.status
