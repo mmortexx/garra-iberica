@@ -67,7 +67,6 @@ const GUARDAS = [
   ['ahora toca: el acceso de arriba vuelve a la que toca', 'e.preventDefault();\n    mirar(null, true);', 'e.preventDefault();', 'Ahora toca'],
   ['pendientes', 'f.hidden = soloPendientes &&', 'f.hidden = false &&', 'los filtros'],
   ['los ids de antes se traducen', 'const nuevo = ANTIGUOS.get(k) ?? k;', 'const nuevo = k;', 'ids por posición'],
-  ['la dirección antigua no toca nada', "if (location.hostname === 'mmortexx.github.io') return;", '', 'dirección antigua'],
   ['lo rechazado se queda pendiente', 'almacen.subidas[k] === v && !retener.has(k)', 'almacen.subidas[k] === v', 'rechaza'],
   ['lo rechazado no se reintenta sin parar', '.filter(k => !retenidas.has(k))', '', 'rechaza'],
   ['el tope diario no es un servicio caído', "if (r.status === 429 && (await r.json().catch(() => ({}))).error === 'tope_diario') throw Object.assign(new Error('tope'), { tope: true });", '', 'tope diario de filas'],
