@@ -12,7 +12,8 @@ permissions:
 jobs:
   web:
     name: Web, datos y navegador
-    runs-on: ubuntu-latest
+    # Fijo, no ubuntu-latest: Playwright 1.60 no instala Chromium en ubuntu 26.04 (desde el 2026-11-08).
+    runs-on: ubuntu-24.04
     # La batería del navegador ya tarda unos 25 min en GitHub; con margen para que crezca.
     timeout-minutes: 45
     steps:
@@ -56,7 +57,8 @@ jobs:
 
   cuentas:
     name: Servicio de cuentas y recorrido en navegador
-    runs-on: ubuntu-latest
+    # Fijo por lo mismo que el trabajo web.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
