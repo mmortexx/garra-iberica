@@ -67,7 +67,7 @@ body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .8 0 0 0 .063 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
     radial-gradient(ellipse 70% 55% at 85% 20%, rgba(255, 53, 30, .10), transparent 70%),
     radial-gradient(ellipse 60% 50% at 10% 85%, rgba(84, 84, 84, .10), transparent 70%),
-    linear-gradient(180deg, rgba(8, 8, 8, .35), rgba(8, 8, 8, .7) 60%, rgba(8, 8, 8, .9)),
+    linear-gradient(180deg, rgba(8, 8, 8, .22), rgba(8, 8, 8, .52) 60%, rgba(8, 8, 8, .82)),
     url("img/atmosfera.webp") center / cover no-repeat;
 }
 ::selection { background: rgba(255, 53, 31, .45); color: #ffffff; }
@@ -458,6 +458,15 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
 }
 /* overflow-x: clip: la luz de los paneles sobresale del margen y ensancharía la página. */
 .seccion { position: relative; padding: clamp(3rem, 6vw, 5rem) 16px; overflow-x: clip; }
+/* Fondo de las secciones, quieto y alternando de lado para que la página no sea un negro seguido: en
+   unas, el zarpazo del escudo en grande y una brasa a la derecha; en las otras, la brasa a la izquierda. */
+:root { --zarpazo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 800'%3E%3ClinearGradient id='a' x2='0' y2='1'%3E%3Cstop stop-color='%23ff351f' stop-opacity='0'/%3E%3Cstop offset='.35' stop-color='%23ff351f' stop-opacity='.13'/%3E%3Cstop offset='1' stop-color='%23ff5c4a' stop-opacity='.02'/%3E%3C/linearGradient%3E%3Cpath fill='url(%23a)' d='M200 70C190 280 135 520 30 720 118 540 172 300 200 70ZM360 0C348 240 290 540 170 800 262 560 330 260 360 0ZM500 110C490 310 440 560 345 760 425 580 474 330 500 110Z'/%3E%3C/svg%3E"); }
+.seccion:nth-of-type(odd) {
+  background:
+    var(--zarpazo) right max(-1rem, 50% - var(--ancho) / 2 - 6rem) top clamp(1.5rem, 5vw, 4rem) / min(62vw, 27rem) auto no-repeat,
+    radial-gradient(ellipse 48% 62% at 100% 28%, rgba(255, 48, 25, .1), transparent 72%);
+}
+.seccion:nth-of-type(even) { background: radial-gradient(ellipse 46% 60% at 0% 62%, rgba(255, 48, 25, .09), transparent 72%); }
 .seccion + .seccion::before {
   content: ""; position: absolute; top: 0; left: 50%; translate: -50% 0;
   width: min(var(--ancho), calc(100% - 32px)); height: 1px;
@@ -605,6 +614,9 @@ h2::after {
 .ficha dl div:first-child { border-top: 0; }
 .ficha dt { font: 600 .95rem/1.5 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
 .ficha dd { margin: 0; color: var(--hueso); }
+/* Cinco enlaces seguidos: el subrayado sigue (no se distinguen solo por el color), pero fino y apagado. */
+.ficha dd a { text-decoration-thickness: 1px; text-decoration-color: rgba(240, 134, 122, .5); }
+.ficha dd a:hover { text-decoration-color: currentColor; }
 /* Móviles estrechos: la etiqueta encima del dato, para que el dato no se parta en tres líneas. */
 @media (max-width: 419px) {
   .ficha dl div { grid-template-columns: 1fr; gap: .1rem; }
@@ -842,6 +854,8 @@ html:has(.visor[open]) { overflow: hidden; }
 /* Página de normas: los bloques numerados como en el Discord y las sanciones, en cadena. */
 .reglamento { display: grid; gap: 1.2rem 2.6rem; margin-top: 2rem; }
 @media (min-width: 860px) { .reglamento { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Tres bloques, tres columnas: en dos, el tercero se quedaba solo con media fila vacía al lado. */
+@media (min-width: 1100px) { .reglamento:not(.pelea-heridas):has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem 2.2rem; } }
 .reglas { margin: 0; padding: 0 0 0 2.1rem; }
 .bloque .reglas li { padding: 0 0 .9rem .35rem; }
 .bloque .reglas li::before { content: none; }
@@ -1014,7 +1028,20 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .llamada p.enlaces-404 { margin: 1.1rem 0 0; font-size: 1rem; }
 .enlaces-404 a { display: inline-block; padding-block: .3rem; color: var(--suave); }
 
-.pie { position: relative; border-top: 1px solid var(--borde); padding: 3rem 16px 2.4rem; font-size: .95rem; color: var(--suave); background: rgba(6, 6, 6, .7); }
+.pie {
+  position: relative; isolation: isolate; overflow: hidden; border-top: 1px solid var(--borde); padding: 3rem 16px clamp(3.4rem, 9vw, 7rem); font-size: .95rem; color: var(--suave);
+  background: radial-gradient(ellipse 62% 90% at 50% 128%, rgba(255, 48, 25, .2), transparent 70%), rgba(6, 6, 6, .7);
+}
+/* El nombre del clan en grande y solo en contorno, medio hundido en el borde de abajo. Es adorno:
+   el nombre de verdad ya está arriba, así que los lectores de pantalla no lo leen. */
+.pie::after {
+  content: "GARRA IBÉRICA"; content: "GARRA IBÉRICA" / "";
+  position: absolute; left: 50%; bottom: -.36em; z-index: -1; translate: -50% 0; pointer-events: none; white-space: nowrap;
+  font: clamp(3rem, 12.4vw, 14rem)/1 var(--titulos); letter-spacing: .03em;
+  color: transparent; -webkit-text-stroke: 1px rgba(255, 92, 74, .34);
+  -webkit-mask-image: linear-gradient(180deg, #000000 15%, transparent 70%); mask-image: linear-gradient(180deg, #000000 15%, transparent 70%);
+}
+@media (forced-colors: active) { .pie::after { content: none; } }
 .pie::before { content: ""; position: absolute; top: -1px; left: 50%; translate: -50% 0; width: min(28rem, 70%); height: 1px; background: linear-gradient(90deg, transparent, var(--ascua-viva), transparent); box-shadow: 0 0 14px rgba(255, 53, 31, .6); pointer-events: none; }
 .pie-in { display: grid; gap: 1.6rem; }
 @media (min-width: 860px) { .pie-in { grid-template-columns: 1.2fr 2fr; align-items: start; } .pie-enlaces, .pie-legal { grid-column: 1 / -1; } }
@@ -1062,6 +1089,7 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
    recortada sobre el fondo salen huecos. Rojo, porque se lee igual con los fondos impresos y sin ellos. */
 @media print {
   .subir, .barra, .ascuas, .bruma, .niebla, .ruta-nexus, .ruta-filtros, .ruta-botones, .ahora-ir { display: none; }
+  .pie::after { content: none; }
   /* La web es oscura; el papel, blanco. Sin esto, el navegador aclara el fondo y deja la letra en un gris de ≈3:1.
      El ✓ de una casilla sin hacer sigue transparente: es decorativo y diría que está hecha. */
   html, body { background: #fff !important; }
@@ -1096,8 +1124,10 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .anim .cifras .revelar.visible b { scale: 1; }
 /* De dónde salen las cifras y a qué día: una línea bajo ellas, sin la barra de cada cifra. */
 /* Pegada a la fila de Nexus, de la que habla, y lejos de la de batallas. */
-.cifras .cifras-nota { grid-column: 1 / -1; padding-left: 0; border-left: 0; margin: -1.1rem 0 .6rem; }
+.cifras .cifras-nota { grid-column: 1 / -1; padding: 0 0 1.5rem; border-left: 0; border-bottom: 1px solid var(--linea); margin: -.5rem 0 .3rem; }
 .cifras .cifras-nota span { font-size: .9rem; letter-spacing: .04em; text-transform: none; }
+/* Las batallas, un punto por debajo de las cifras del clan: son el detalle, no el titular. */
+.cifras .cifras-nota ~ li b { font-size: clamp(2.1rem, 4.6vw, 2.7rem); }
 /* Podio de especies bajo las cifras: puesto, nombre (enlace a su ficha) y bajas; toda la fila se pulsa. */
 .podio { padding: clamp(2.2rem, 5vw, 3.4rem) 16px 0; }
 .podio-titulo { margin: 0 0 1.1rem; font: 600 .95rem/1.3 var(--etiquetas); letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
@@ -1125,6 +1155,16 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 .indice-grupo + .saltos-guia { margin-top: 1.8rem; padding-top: 1.5rem; border-top: 1px solid var(--linea); }
 .dinos { display: grid; gap: 1rem 2.6rem; margin-top: 2.2rem; }
 @media (min-width: 860px) { .dinos { grid-template-columns: repeat(2, 1fr); align-items: start; } }
+/* La página de cada especie: los datos a un lado y las habilidades al otro; debajo, las mutaciones a lo ancho. */
+@media (min-width: 860px) {
+  .dinos:not(.dinos-plegadas) { grid-template-columns: minmax(0, 1fr); }
+  .dinos:not(.dinos-plegadas) > .dino:first-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; column-gap: 2.6rem; }
+  .dinos:not(.dinos-plegadas) > .dino:first-child > .dino-datos { grid-row: 1 / span 3; }
+  .dinos:not(.dinos-plegadas) > .dino:first-child > .dino-sub { margin-top: .75rem; }
+  .dinos:not(.dinos-plegadas) > .dino:first-child > .dino-consejo { align-self: start; }
+  .dinos:not(.dinos-plegadas) .dino-mut { columns: 2; column-gap: 2.6rem; }
+  .dinos:not(.dinos-plegadas) .dino-mut li { break-inside: avoid; }
+}
 /* Fichas plegadas de la guía: una fila cada una; el + de las preguntas dice que se abren. */
 .dinos-plegadas { row-gap: 0; }
 details.dino { padding: 0; border-bottom: 0; }
@@ -1342,10 +1382,10 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 .cabecera::before {
   content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(6, 6, 6, .92) calc(100% - var(--foto)), rgba(6, 6, 6, .66) calc(100% - .55 * var(--foto)), rgba(6, 6, 6, .18) calc(100% - .15 * var(--foto))),
-    linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .4) 35%, transparent 60%);
+    linear-gradient(90deg, rgba(6, 6, 6, .92) calc(100% - var(--foto)), rgba(6, 6, 6, .62) calc(100% - .55 * var(--foto)), rgba(6, 6, 6, .04) calc(100% - .2 * var(--foto))),
+    linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .3) 30%, transparent 55%);
 }
-@media (max-width: 700px) { .cabecera::before { background: linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .45) 100%); } }
+@media (max-width: 700px) { .cabecera::before { background: linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .82) 45%, rgba(8, 8, 8, .3) 100%); } }
 /* En el móvil las migas caen sobre la parte clara de la foto (en Combate, el cielo): van en una
    cápsula oscura para que se lean con cualquier foto. */
 @media (max-width: 700px) {
@@ -1406,7 +1446,8 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .baldosa-dinos, .baldosa-caceria, .baldosa-galeria, .baldosa-ruta { grid-column: 1 / -1; }
 }
 @media (min-width: 1000px) {
-  .mosaico { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(14rem, auto); }
+  /* Las dos primeras filas (fichas, cacería, clan y cómo entrar), con su alto mínimo; las franjas de debajo, lo que pidan. */
+  .mosaico { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(14rem, auto)); }
   .baldosa-dinos { grid-column: 1 / 3; grid-row: 1 / span 2; }
   .baldosa-caceria { grid-column: 3 / 5; grid-row: 1; }
 }
@@ -1423,7 +1464,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
 /* La ruta, una franja a lo ancho sin foto: la brasa sube desde la izquierda, al revés que en la cacería. */
 /* Con los tres pasos de la propia ruta: a lo ancho, el texto a la izquierda y los pasos a la derecha. */
 .baldosa-ruta { gap: 1.3rem; background: radial-gradient(ellipse 55% 140% at 0% 100%, rgba(255, 48, 25, .22), transparent 70%), linear-gradient(160deg, rgba(48, 18, 15, .55), rgba(11, 11, 11, .9)); }
-@media (min-width: 1000px) { .baldosa-ruta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: end; gap: 2.4rem; } }
+@media (min-width: 1000px) { .baldosa-ruta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; gap: 2.4rem; min-height: 0; padding-block: 1.9rem; } }
 .baldosa-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
 @media (min-width: 560px) { .baldosa-pasos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .baldosa-pasos li {
@@ -1727,16 +1768,15 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .normas { grid-template-columns: repeat(auto-fit, minmax(23rem, 1fr)); }
   /* La página de cada especie: la ficha, en dos columnas; las mutaciones, en la tercera. */
   .dinos:not(.dinos-plegadas):has(> :nth-child(2)) { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-  .dinos:not(.dinos-plegadas) > .dino:first-child { columns: 2; column-gap: 2.6rem; }
-  .dinos:not(.dinos-plegadas) > .dino:first-child > * { break-inside: avoid; }
+  .dinos:not(.dinos-plegadas) .dino-mut { columns: auto; }
   /* Dos avisos seguidos, uno junto al otro. */
   .nota:has(+ .nota), .nota + .nota { display: inline-flex; vertical-align: top; width: calc(50% - 1rem); }
   .nota:has(+ .nota) { margin-right: 1.5rem; }
   /* Con foto más estrecha que la ventana, el velo empieza en negro del todo para que no se vea dónde acaba. */
   .cabecera::before {
     background:
-      linear-gradient(90deg, #060606 calc(100% - var(--foto)), rgba(6, 6, 6, .66) calc(100% - .55 * var(--foto)), rgba(6, 6, 6, .18) calc(100% - .15 * var(--foto))),
-      linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .4) 35%, transparent 60%);
+      linear-gradient(90deg, #060606 calc(100% - var(--foto)), rgba(6, 6, 6, .62) calc(100% - .55 * var(--foto)), rgba(6, 6, 6, .04) calc(100% - .2 * var(--foto))),
+      linear-gradient(0deg, var(--fondo) 0%, rgba(8, 8, 8, .3) 30%, transparent 55%);
   }
   .reglamento:not(.pelea-heridas) { grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); }
   .bloque > ul:not(.pasos-sancion), .bloque > ol { columns: 26rem; column-gap: 2.6rem; }
