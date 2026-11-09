@@ -25,7 +25,7 @@ export function leerBorrados(fichero = BORRADOS) {
 
 export const sqlExportar = id => [
   `SELECT discord_id, nombre, desde, ultimo_acceso FROM miembros WHERE discord_id = '${validar(id)}'`,
-  `SELECT logro, nivel, fecha FROM progreso WHERE discord_id = '${id}' ORDER BY logro, nivel`,
+  `SELECT logro, nivel, fecha FROM progreso WHERE discord_id = '${validar(id)}' ORDER BY logro, nivel`,
 ];
 
 // Las sesiones, los códigos de entrada, el progreso y el contador diario caen en cascada con el miembro.

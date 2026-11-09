@@ -1258,6 +1258,11 @@ def revisar_entrenamiento(raiz, falla):
             falla(f'{nombre}: la sección #{ancla} da una cifra; el día, la hora y los datos del juego no están decididos ahí')
         if 'Discord' not in visible:
             falla(f'{nombre}: la sección #{ancla} no dice que el día y la hora se anuncian en el Discord')
+        # Es texto propio de la web, no copia del Discord: en inglés, con el apóstrofo tipográfico.
+        if lang == 'en':
+            for m in re.findall(r"(?<=>)[^<]*\w'\w[^<]*", seccion):
+                i = re.search(r"\w'\w", m).start()
+                falla(f'{nombre}: apóstrofo recto en la sección #{ancla}: «…{m[max(0, i - 35):i + 35]}…»')
 
 
 def medidas_webp(fichero):
@@ -1366,7 +1371,8 @@ def revisar_detalles(raiz, falla):
                 if not re.search(r'lang="en"[^<]*$', html[max(0, m.start() - 40):m.start()]):
                     falla(f'{ruta}: «{texto}» sin marcar como inglés')
     # Las páginas en inglés con texto propio llevan el apóstrofo tipográfico. Las demás (combate, galería,
-    # rangos, guía de dinosaurios) copian el texto del Discord tal cual, y este apartado no las mira.
+    # rangos, guía de dinosaurios) copian el texto del Discord tal cual, y este apartado no las mira; el
+    # entrenamiento de combate, que es propio, lo mira revisar_entrenamiento.
     for ruta in ('en/index.html', 'en/legal/index.html', 'en/join/index.html', 'en/route/index.html'):
         for m in re.findall(r"(?<=>)[^<]*\w'\w[^<]*", visible(ruta)):
             falla(f'{ruta}: apóstrofo recto en «{m[:70]}»')

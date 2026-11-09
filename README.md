@@ -48,6 +48,8 @@ python herramientas/prueba_batallas.py
 python herramientas/prueba_borradores.py
 python herramientas/prueba_comprobar.py
 python herramientas/prueba_pages.py
+python herramientas/prueba_publicar.py
+python herramientas/prueba_logros.py
 ```
 
 - `montar_web.py` genera las 20 páginas fijas, las de cada especie, el mapa del sitio y la versión de los estilos en

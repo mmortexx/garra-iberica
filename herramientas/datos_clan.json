@@ -77,17 +77,17 @@
         {"titulo": "Living together", "emoji": "aliado", "normas": [
           "Respect above all. No insults, racism, harassment or toxicity, here or in game.",
           "No NSFW, gore or spam. No advertising other servers without staff permission.",
-          "Don't share anyone's personal data (photos, addresses, accounts).",
+          "Don’t share anyone’s personal data (photos, addresses, accounts).",
           "Problems between members are sorted out in private or with the staff, not in the general chat."
         ]},
         {"titulo": "In game", "emoji": "caza", "normas": [
           "Using hacks, exploits or bugs to get an advantage is forbidden.",
-          "Never betray the pack: don't attack clan members or allies.",
+          "Never betray the pack: don’t attack clan members or allies.",
           "Nest locations, routes and clan plans never leave the Discord.",
           "In a group, follow the Squad Leader, Beta or Alfa leading the game."
         ]},
         {"titulo": "Ranks", "emoji": "veterano", "normas": [
-          "Every new member joins as Recluta (Recruit) for a trial period before becoming Miembro (Member)."
+          "Every new member joins as Recruit (Recluta) for a trial period before becoming Member (Miembro)."
         ]}
       ],
       "sanciones_titulo": "Sanctions",

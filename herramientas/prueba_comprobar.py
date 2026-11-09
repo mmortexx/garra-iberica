@@ -529,6 +529,34 @@ def seo_robots_none_es_noindex():
     assert not mensajes, mensajes
 
 
+def entrenamiento(cambiar):
+    """Mensajes de revisar_entrenamiento sobre una copia de la web con en/combat/ cambiada por cambiar(html)."""
+    d = copia_web()
+    try:
+        f = d / 'en/combat/index.html'
+        f.write_text(cambiar(f.read_text(encoding='utf-8')), encoding='utf-8', newline='\n')
+        mensajes = []
+        comprobar.revisar_entrenamiento(d, mensajes.append)
+        return mensajes
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def entrenamiento_tal_cual():
+    mensajes = entrenamiento(lambda html: html)
+    assert not mensajes, mensajes
+
+
+def entrenamiento_con_apostrofo_recto():
+    """#training es texto propio de la web, no copia del Discord: lleva el apóstrofo tipográfico."""
+    def cambiar(html):
+        antes, seccion = html.split('<section class="seccion" id="training"', 1)
+        seccion = seccion.replace('</p>', ' We don\'t keep score.</p>', 1)
+        return antes + '<section class="seccion" id="training"' + seccion
+    mensajes = entrenamiento(cambiar)
+    assert any('apóstrofo recto' in m and "don't" in m for m in mensajes), f'un «don\'t» en #training pasa: {mensajes}'
+
+
 TITULO = r'<title>[^<]*</title>'
 DESCRIPCION = r'<meta name="description" content="[^"]*">'
 NORMAS, RULES = 'normas/index.html', 'en/rules/index.html'
@@ -609,6 +637,8 @@ prueba('cuenta cuántos nombres de perfiles.json vigila y cuántos ignora', cuen
 prueba('los binarios y lo que no está versionado no se miran', binarios_y_sin_versionar_no_se_miran)
 prueba('sin perfiles.json avisa de que la lista es solo la del secreto', sin_perfiles_avisa_de_que_la_lista_es_la_del_secreto)
 prueba('un perfiles.json sin lista de la manada falla', perfiles_ilegible_falla)
+prueba('el entrenamiento publicado pasa', entrenamiento_tal_cual)
+prueba('un apóstrofo recto en el entrenamiento (#training) falla', entrenamiento_con_apostrofo_recto)
 
 if not hechas:
     sys.exit(f'Ninguna prueba lleva «{FILTRO}» en el nombre: no se ha probado nada')
