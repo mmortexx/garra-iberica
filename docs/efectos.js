@@ -486,6 +486,11 @@
     pedir.observe(tira);
   }
 
+  // Podio de la portada: cada especie lleva una barra que mide sus bajas frente a la primera.
+  const puestos = [...document.querySelectorAll('.podio-lista li')].map(li => [li, +(li.querySelector('b')?.textContent.replace(/\D/g, '') || 0)]);
+  const tope = Math.max(0, ...puestos.map(([, bajas]) => bajas));
+  if (tope) puestos.forEach(([li, bajas]) => li.style.setProperty('--p', (bajas / tope).toFixed(3)));
+
   if (sinMovimiento.matches) return;
 
   // Reposo: tras 20 s sin ratón, dedo, rueda ni teclado, con otra ventana delante o con el menú o
@@ -620,6 +625,36 @@
       }));
       bt.addEventListener('pointerleave', () => { bt.style.removeProperty('--bx'); bt.style.removeProperty('--by'); });
     });
+    // Las baldosas se inclinan un poco hacia el ratón, menos cuanto más anchas, y un destello lo sigue.
+    document.querySelectorAll('.baldosa').forEach(b => {
+      let r = null, medidoEn = -1;
+      b.classList.add('inclinable');
+      b.addEventListener('pointermove', unaVezPorFotograma(ev => {
+        if (ligera || !b.matches(':hover')) return;
+        if (!r || medidoEn !== desplazamientos) { r = b.getBoundingClientRect(); medidoEn = desplazamientos; }
+        const x = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height));
+        const grados = Math.min(2.6, 1300 / r.width);
+        b.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+        b.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+        b.style.setProperty('--gx', ((x - 0.5) * 2 * grados).toFixed(2));
+        b.style.setProperty('--gy', ((y - 0.5) * 2 * Math.min(grados, 1.8)).toFixed(2));
+      }));
+      b.addEventListener('pointerleave', () => { r = null; b.style.removeProperty('--gx'); b.style.removeProperty('--gy'); });
+    });
+    // Un foco de ascua sigue al ratón por detrás del contenido de toda la página.
+    const foco = document.createElement('div');
+    foco.className = 'foco';
+    foco.setAttribute('aria-hidden', 'true');
+    document.body.append(foco);
+    // Se coloca en el primer movimiento y se enciende en el siguiente: así aparece donde está el ratón, sin cruzar la pantalla.
+    let colocado = false;
+    addEventListener('pointermove', unaVezPorFotograma(ev => {
+      if (ligera || ev.pointerType === 'touch') return;
+      foco.style.translate = `${ev.clientX}px ${ev.clientY}px`;
+      if (colocado) foco.classList.add('encendido');
+      colocado = true;
+    }), { passive: true });
+    raiz.addEventListener('pointerleave', () => { colocado = false; foco.classList.remove('encendido'); });
   }
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean

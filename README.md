@@ -224,6 +224,7 @@ python herramientas/prueba_logros.py
   amplía más de 1,26× (las medias baldosas apaisadas, hasta 1,34×: se ve igual y pesan la mitad), las baldosas de la portada no salen borrosas a ningún ancho y la de la guía baja 600 px en el móvil.
   Cifras y podio de la portada, con su formato de miles y su redondeo (`SOLO=cifras` prueba solo esto).
   «Ver la lista» de las fichas (`SOLO=puesto` prueba solo esto): 44 px para el dedo, en una línea y sin pisar al de al lado.
+  Ambiente que sigue al ratón (`SOLO=ambiente` prueba solo esto): el foco de ascua va bajo el ratón, por detrás del contenido, y se apaga en reposo; las baldosas se inclinan hacia él y vuelven a su sitio; las barras del podio miden las bajas de cada especie frente a la primera. Con el dedo, con «reducir movimiento» y en modo ligero no hay foco ni inclinación, y las barras siguen.
 
   Al imprimir (`SOLO=imprimir` prueba solo esto): sin recorrer la página, cada texto y cada foto se ve, sin letra hueca, ambiente ni barra, con la letra a contraste de texto sobre el papel blanco (4,5:1; 3:1 la grande), y lo plegado se abre al imprimir y se vuelve a plegar después.
 

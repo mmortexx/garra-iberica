@@ -70,6 +70,17 @@ body::before {
     linear-gradient(180deg, rgba(8, 8, 8, .22), rgba(8, 8, 8, .52) 60%, rgba(8, 8, 8, .82)),
     url("img/atmosfera.webp") center / cover no-repeat;
 }
+/* Foco de ascua que sigue al ratón (lo crea efectos.js, solo con ratón): fijo, detrás de todo el contenido y
+   sobre el fondo de la página. Se apaga en reposo y no existe en modo ligero ni en alto contraste. */
+.foco {
+  position: fixed; left: 0; top: 0; z-index: -1; width: 46rem; height: 46rem; margin: -23rem 0 0 -23rem; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 60, 30, .13), rgba(255, 53, 31, .05) 45%, transparent 72%);
+  opacity: 0; transition: opacity .6s; will-change: translate;
+}
+.foco.encendido { opacity: 1; transition: opacity .6s, translate .35s var(--suave-salida); }
+.reposo .foco.encendido { opacity: 0; }
+.ligera .foco { display: none; }
+@media (forced-colors: active) { .foco { display: none; } .baldosa.inclinable::after, .podio-lista li::after { content: none; } }
 ::selection { background: rgba(255, 53, 31, .45); color: #ffffff; }
 img { max-width: 100%; height: auto; display: block; }
 a { color: var(--rojo-claro); text-underline-offset: .2em; transition: color .2s; }
@@ -589,6 +600,11 @@ h2::after {
   content: ""; position: absolute; inset: 0 -1.2rem; z-index: -1; border-radius: 16px; pointer-events: none;
   background: radial-gradient(380px circle at var(--mx) var(--my), rgba(255, 70, 50, .085), transparent 60%);
   opacity: 0; transition: opacity .45s;
+  /* La luz se desvanece hacia los bordes del bloque: sin esto, cerca de un borde se veía cortada en línea recta. */
+  -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent), linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent), linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-composite: intersect;
 }
 .luz:hover::before { opacity: 1; }
 .tarjeta::after, .bloque::after, .dino::after {
@@ -1088,8 +1104,9 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 /* Al imprimir nadie ha recorrido la página: sin esto faltan secciones enteras y los títulos con la letra
    recortada sobre el fondo salen huecos. Rojo, porque se lee igual con los fondos impresos y sin ellos. */
 @media print {
-  .subir, .barra, .ascuas, .bruma, .niebla, .ruta-nexus, .ruta-filtros, .ruta-botones, .ahora-ir { display: none; }
-  .pie::after { content: none; }
+  .subir, .barra, .ascuas, .bruma, .niebla, .foco, .ruta-nexus, .ruta-filtros, .ruta-botones, .ahora-ir { display: none; }
+  .pie::after, .podio-lista li::after, .baldosa.inclinable::after { content: none; }
+  .baldosa.inclinable:hover { transform: none; }
   /* La web es oscura; el papel, blanco. Sin esto, el navegador aclara el fondo y deja la letra en un gris de ≈3:1.
      El ✓ de una casilla sin hacer sigue transparente: es decorativo y diría que está hecha. */
   html, body { background: #fff !important; }
@@ -1135,6 +1152,15 @@ details p { margin: 0; padding: 0 3rem 1.5rem 0; color: var(--suave); }
 @media (min-width: 760px) { .podio-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .podio-lista li { position: relative; display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) auto; align-items: baseline; gap: 0 .7rem; padding: .7rem 1rem; border-left: 1px solid var(--linea); counter-increment: puesto; }
 .podio-lista li::before { content: counter(puesto); font: 1.3rem/1 var(--titulos); color: var(--ascua-viva); }
+/* La barra de cada especie: sus bajas frente a la primera (efectos.js pone --p). Sin JavaScript no hay medida y no se pinta. */
+.podio-lista li { isolation: isolate; }
+.podio-lista li::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 53, 31, .17), rgba(255, 53, 31, .03)); border-bottom: 1px solid rgba(255, 92, 74, .45);
+  transform-origin: left; transform: scaleX(var(--p, 0));
+}
+.anim .podio-lista li::after { transition: transform 1.1s var(--suave-salida) calc(.25s + var(--i, 0) * 70ms); }
+.anim .podio-lista li.revelar:not(.visible)::after { transform: scaleX(0); }
 .podio-nombre { font: 600 1.15rem/1.25 var(--etiquetas); letter-spacing: .04em; overflow-wrap: anywhere; }
 .podio-nombre a { color: var(--texto); text-decoration: none; }
 .podio-nombre a::after { content: ""; position: absolute; inset: 0; }
@@ -1456,7 +1482,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem;
   border: 1px solid var(--linea); border-radius: 6px;
   background: linear-gradient(160deg, rgba(48, 18, 15, .5), rgba(11, 11, 11, .85)); box-shadow: var(--cristal-brillo);
-  transition: border-color .4s, box-shadow .5s, translate .5s var(--suave-salida), scale .25s var(--suave-salida);
+  transition: border-color .4s, box-shadow .5s, translate .5s var(--suave-salida), scale .25s var(--suave-salida), transform .6s var(--suave-salida);
 }
 .baldosa-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: .72; transition: scale 1.4s var(--suave-salida), opacity .5s; }
 .baldosa::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8, 8, 8, .05) 0%, rgba(8, 8, 8, .55) 45%, rgba(8, 8, 8, .94) 100%); }
@@ -1492,6 +1518,16 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .baldosa:hover .baldosa-fondo { scale: 1.06; opacity: .88; }
   .baldosa:hover h3::after { translate: 5px 0; }
 }
+/* Con ratón, la baldosa se inclina un poco hacia él (efectos.js pone los grados) y un destello lo sigue por debajo del texto. */
+.baldosa.inclinable:hover { transform: perspective(64rem) rotateX(calc(var(--gy, 0) * -1deg)) rotateY(calc(var(--gx, 0) * 1deg)); }
+.baldosa.inclinable::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(24rem circle at var(--mx, 50%) var(--my, 50%), rgba(255, 110, 80, .16), transparent 62%);
+  opacity: 0; transition: opacity .5s;
+}
+.baldosa.inclinable:hover::after { opacity: 1; }
+.ligera .baldosa.inclinable:hover { transform: none; }
+.ligera .baldosa.inclinable::after { content: none; }
 /* Al pulsar se hunde un poco y se enciende el borde; con el dedo es la única respuesta que tiene. */
 .baldosa:active { border-color: var(--ascua); scale: .985; transition: border-color .1s, scale .1s; }
 .baldosa:active h3::after { translate: 5px 0; }

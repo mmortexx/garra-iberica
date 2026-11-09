@@ -9,7 +9,7 @@
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
-// scroll sin reaccionar al ratón,
+// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan y barras del podio,
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
@@ -1420,6 +1420,131 @@ const ahoraToca = async navegador => {
   console.log('Ruta de logros, «Ahora toca»:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
+// Lo que responde al ratón y a los datos sin decir nada si se rompe: el foco de ascua que lo sigue por detrás
+// del contenido, las baldosas que se inclinan hacia él y las barras del podio. Con el dedo, con «reducir
+// movimiento» y en modo ligero no hay foco ni inclinación; las barras son un dato y se quedan. SOLO=ambiente.
+const ambiente = async navegador => {
+  const fallos = [];
+  const abrir = async (opts = {}) => {
+    const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', e => errores.push(e.message));
+    await p.goto(BASE, { waitUntil: 'load' });
+    await p.waitForTimeout(300);
+    return { ctx, p, errores };
+  };
+  const foco = p => p.evaluate(() => {
+    const f = document.querySelector('.foco');
+    if (!f) return null;
+    const cs = getComputedStyle(f), r = f.getBoundingClientRect();
+    return {
+      oculto: f.getAttribute('aria-hidden'), eventos: cs.pointerEvents, posicion: cs.position, capa: cs.zIndex, ver: cs.display, opacidad: +cs.opacity,
+      cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2), lado: Math.round(r.width),
+      ancho: document.documentElement.scrollWidth - document.documentElement.clientWidth, alto: document.documentElement.scrollHeight,
+    };
+  });
+  {
+    const { ctx, p, errores } = await abrir();
+    const altoAntes = await p.evaluate(() => document.documentElement.scrollHeight);
+    const quieto = await foco(p);
+    if (!quieto) fallos.push('con ratón no hay foco de ascua');
+    else {
+      if (quieto.oculto !== 'true' || quieto.eventos !== 'none' || quieto.posicion !== 'fixed' || quieto.capa !== '-1') fallos.push(`el foco no es un adorno tras el contenido: ${JSON.stringify(quieto)}`);
+      if (quieto.opacidad !== 0) fallos.push('el foco se ve antes de mover el ratón');
+      await p.mouse.move(400, 300);
+      await p.mouse.move(420, 320);
+      await p.waitForTimeout(900);
+      const movido = await foco(p);
+      if (!(movido.opacidad > 0.9)) fallos.push(`al mover el ratón el foco no se enciende (opacidad ${movido.opacidad})`);
+      if (Math.abs(movido.cx - 420) > 3 || Math.abs(movido.cy - 320) > 3) fallos.push(`el foco no queda bajo el ratón: ${movido.cx}, ${movido.cy}`);
+      if (movido.lado < 400) fallos.push(`el foco mide ${movido.lado} px: no se nota`);
+      if (await p.evaluate(() => document.elementFromPoint(420, 320).closest('.foco') !== null)) fallos.push('el foco tapa lo que hay debajo del ratón');
+      await p.mouse.move(1362, 846);
+      await p.waitForTimeout(600);
+      const esquina = await foco(p);
+      if (esquina.ancho > 0 || esquina.alto !== altoAntes) fallos.push(`con el ratón en la esquina la página crece (${esquina.ancho} px de ancho, alto ${altoAntes} → ${esquina.alto})`);
+      await p.evaluate(() => dispatchEvent(new Event('blur')));
+      await p.waitForTimeout(900);
+      if ((await foco(p)).opacidad !== 0) fallos.push('en reposo el foco sigue encendido');
+      await p.evaluate(() => dispatchEvent(new Event('focus')));
+      await p.mouse.move(600, 400);
+      await p.waitForTimeout(900);
+      if (!((await foco(p)).opacidad > 0.9)) fallos.push('al volver del reposo el foco no se enciende');
+      await p.evaluate(() => document.documentElement.classList.add('ligera'));
+      if ((await foco(p)).ver !== 'none') fallos.push('en modo ligero el foco se sigue pintando');
+      await p.evaluate(() => document.documentElement.classList.remove('ligera'));
+    }
+    // Baldosas: se inclinan hacia el ratón, poco, y al salir vuelven a su sitio.
+    const caja = await p.evaluate(() => {
+      const b = document.querySelector('.baldosa-dinos'), r = b.getBoundingClientRect();
+      scrollTo({ top: r.top + scrollY - 200, behavior: 'instant' });
+      const q = b.getBoundingClientRect();
+      return { x: q.left, y: q.top, w: q.width, h: q.height };
+    });
+    await p.waitForTimeout(700);
+    const inclinacion = () => p.evaluate(() => {
+      const b = document.querySelector('.baldosa-dinos'), m = new DOMMatrix(getComputedStyle(b).transform);
+      return { plana: m.isIdentity, gx: parseFloat(b.style.getPropertyValue('--gx')) || 0, gy: parseFloat(b.style.getPropertyValue('--gy')) || 0, dentro: b.matches(':hover') };
+    });
+    await p.mouse.move(caja.x + caja.w * 0.5, caja.y + caja.h * 0.5);
+    await p.mouse.move(caja.x + caja.w * 0.2, caja.y + caja.h * 0.25);
+    await p.waitForTimeout(900);
+    const arriba = await inclinacion();
+    if (!arriba.dentro) fallos.push('la prueba de la baldosa no tiene el ratón encima');
+    else if (arriba.plana || !(arriba.gx < 0) || !(arriba.gy < 0)) fallos.push(`la baldosa no se inclina hacia el ratón: ${JSON.stringify(arriba)}`);
+    else if (Math.abs(arriba.gx) > 3 || Math.abs(arriba.gy) > 3) fallos.push(`la baldosa se inclina demasiado para leerla: ${JSON.stringify(arriba)}`);
+    await p.mouse.move(caja.x + caja.w * 0.5, caja.y - 60);
+    await p.waitForTimeout(1100);
+    const fuera = await inclinacion();
+    if (!fuera.plana) fallos.push(`al salir el ratón la baldosa se queda torcida: ${JSON.stringify(fuera)}`);
+    // Podio: la barra de cada especie mide sus bajas frente a la primera.
+    const podio = await p.evaluate(async () => {
+      const lista = document.querySelector('.podio-lista');
+      if (!lista) return null;
+      lista.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 2600));
+      return [...lista.children].map(li => {
+        const r = li.getBoundingClientRect(), barra = getComputedStyle(li, '::after');
+        return {
+          bajas: +li.querySelector('b').textContent.replace(/\D/g, ''), p: parseFloat(li.style.getPropertyValue('--p')),
+          escala: barra.content === 'none' ? null : new DOMMatrix(barra.transform).a, eventos: barra.pointerEvents,
+          enlace: !li.querySelector('a') || document.elementFromPoint(r.left + 30, r.bottom - 2)?.closest('a') === li.querySelector('a'),
+        };
+      });
+    });
+    if (podio && podio.length) {
+      const tope = Math.max(...podio.map(e => e.bajas));
+      for (const [i, e] of podio.entries()) {
+        const debe = e.bajas / tope;
+        if (!(Math.abs(e.p - debe) < 0.002)) fallos.push(`podio, puesto ${i + 1}: la barra dice ${e.p} y son ${e.bajas} de ${tope}`);
+        else if (e.escala === null || Math.abs(e.escala - debe) > 0.01) fallos.push(`podio, puesto ${i + 1}: la barra pintada mide ${e.escala} y debía ${debe.toFixed(3)}`);
+        if (e.eventos !== 'none' || !e.enlace) fallos.push(`podio, puesto ${i + 1}: la barra tapa el enlace`);
+      }
+    }
+    if (errores.length) fallos.push(`errores en la página: ${errores.join('; ')}`);
+    await ctx.close();
+  }
+  for (const [caso, opts] of [['con el dedo', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }], ['con «reducir movimiento»', { reducedMotion: 'reduce' }]]) {
+    const { ctx, p } = await abrir(opts);
+    const v = await p.evaluate(() => ({
+      foco: !!document.querySelector('.foco'), inclinables: document.querySelectorAll('.baldosa.inclinable').length,
+      barras: [...document.querySelectorAll('.podio-lista li')].map(li => new DOMMatrix(getComputedStyle(li, '::after').transform).a),
+    }));
+    if (v.foco) fallos.push(`${caso} hay foco de ascua`);
+    if (v.inclinables) fallos.push(`${caso} las baldosas se inclinan`);
+    if (caso !== 'con el dedo' && v.barras.length && !(v.barras[0] === 1 && v.barras.every(a => a > 0 && a <= 1))) fallos.push(`${caso} las barras del podio no están puestas: ${v.barras.join(', ')}`);
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await abrir({ javaScriptEnabled: false });
+    const barras = await p.evaluate(() => [...document.querySelectorAll('.podio-lista li')].map(li => new DOMMatrix(getComputedStyle(li, '::after').transform).a));
+    if (barras.some(a => a !== 0)) fallos.push(`sin JavaScript el podio pinta barras sin medida: ${barras.join(', ')}`);
+    await ctx.close();
+  }
+  console.log('Ambiente que sigue al ratón y barras del podio:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  return fallos.length;
+};
 (async () => {
   const navegador = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   // La web mide su fluidez al cargar y una máquina cargada la pondría en modo ligero al azar: se deja
@@ -1473,6 +1598,11 @@ const ahoraToca = async navegador => {
   }
   if (process.env.SOLO === 'pulido') {
     const n = await pulido(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'ambiente') {
+    const n = await ambiente(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -3152,6 +3282,7 @@ const ahoraToca = async navegador => {
   malos += await ahoraToca(navegador);
   malos += await transicionSaltada(navegador);
   malos += await pulido(navegador);
+  malos += await ambiente(navegador);
   await navegador.close();
   if (SALIDAS.length) {
     malos++;
