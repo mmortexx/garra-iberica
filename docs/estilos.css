@@ -2097,10 +2097,10 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   .seccion:has(.mosaico) > .envoltura > .revelar:first-child { max-width: var(--ancho); margin: 0 auto; padding: 0 16px; }
   .mosaico { display: block; margin-top: 2.4rem; }
   .mosaico .baldosa {
-    min-height: 100svh; padding: 6rem clamp(16px, 6vw, 7rem) clamp(3rem, 9vh, 6rem); justify-content: flex-end; align-content: end; align-items: end;
+    min-height: 100svh; padding: 6rem clamp(16px, 6vw, 7rem) clamp(3rem, 9vh, 6rem); justify-content: flex-end; align-content: end; align-items: stretch;
     border: 0; border-top: 1px solid var(--linea); border-radius: 0; box-shadow: none; background: var(--fondo);
   }
-  .mosaico .baldosa-dinos, .mosaico .baldosa-caceria { align-items: stretch; }
+  .mosaico .baldosa-ruta { align-items: end; }
   .mosaico .baldosa-galeria { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 1.6rem; }
   .mosaico .baldosa-fondo { opacity: 1; }
   .mosaico .baldosa::before {
@@ -2129,3 +2129,44 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   }
 }
 .ligera .escena-fondo { animation: none; }
+/* Cine en movimiento, todo atado al scroll (nada al ratón): la foto del cartel se acerca mientras el título
+   se va; cada escena llega con la foto asentándose y el título subiendo desde abajo; en ordenador, la escena
+   que queda debajo se hunde y se apaga bajo la siguiente. */
+@media screen {
+  .cifras b { font-size: clamp(2.9rem, 7.4vw, 6.4rem); }
+  .cifras .cifras-nota ~ li b { font-size: clamp(2.3rem, 5vw, 3.6rem); }
+}
+@supports (animation-timeline: view()) {
+  @media screen and (prefers-reduced-motion: no-preference) {
+    @keyframes salir-portada { to { opacity: 0; translate: 0 -90px; scale: 1.05; } }
+    @keyframes fondo-lento { to { translate: 0 22%; transform: scale(1.24); } }
+    .portada-in { transform-origin: left bottom; }
+    .mosaico .baldosa { view-timeline-name: --escena; }
+    .mosaico .baldosa-fondo { animation: baldosa-lenta linear both, asentar linear both; animation-timeline: view(), --escena; animation-range: normal, entry 0% entry 100%; }
+    @keyframes asentar { from { scale: 1.28; } }
+    .anim .mosaico .baldosa h3 { animation: titulo-sube linear both; animation-timeline: --escena; animation-range: entry 35% entry 100%; }
+    @keyframes titulo-sube { from { translate: 0 .9em; clip-path: inset(0 0 100% 0); } to { translate: 0 0; clip-path: inset(-.2em -1em -.3em -.2em); } }
+    .anim .mosaico .baldosa > div > p, .anim .mosaico .baldosa :is(.cuenta, .especies, .baldosa-pasos, .tira-marco) { animation: texto-llega linear both; animation-timeline: --escena; animation-range: entry 60% entry 100%; }
+    @keyframes texto-llega { from { opacity: 0; translate: 0 2.2rem; } }
+    /* La entrada general de los bloques sobra aquí: la escena entera ya entra tapando a la anterior. */
+    .anim .mosaico .baldosa.revelar { animation: none; }
+    @media (min-width: 1000px) and (min-height: 640px) {
+      .mosaico { timeline-scope: --e2, --e3, --e4, --e5, --e6; }
+      .mosaico .baldosa:nth-child(2) { view-timeline-name: --escena, --e2; }
+      .mosaico .baldosa:nth-child(3) { view-timeline-name: --escena, --e3; }
+      .mosaico .baldosa:nth-child(4) { view-timeline-name: --escena, --e4; }
+      .mosaico .baldosa:nth-child(5) { view-timeline-name: --escena, --e5; }
+      .mosaico .baldosa:nth-child(6) { view-timeline-name: --escena, --e6; }
+      .mosaico .baldosa > div, .mosaico .baldosa > ol { animation: hundirse linear both; animation-range: entry 0% entry 100%; }
+      .mosaico .baldosa:nth-child(1) > :is(div, ol) { animation-timeline: --e2; }
+      .mosaico .baldosa:nth-child(2) > :is(div, ol) { animation-timeline: --e3; }
+      .mosaico .baldosa:nth-child(3) > :is(div, ol) { animation-timeline: --e4; }
+      .mosaico .baldosa:nth-child(4) > :is(div, ol) { animation-timeline: --e5; }
+      .mosaico .baldosa:nth-child(5) > :is(div, ol) { animation-timeline: --e6; }
+      .mosaico .baldosa:nth-child(6) > :is(div, ol) { animation: none; }
+      @keyframes hundirse { to { opacity: 0; translate: 0 -5rem; scale: .94; } }
+    }
+  }
+}
+.ligera .mosaico .baldosa :is(h3, p, .cuenta, .especies, .baldosa-pasos, .tira-marco, .baldosa-fondo), .ligera .mosaico .baldosa > :is(div, ol) { animation: none; }
+
