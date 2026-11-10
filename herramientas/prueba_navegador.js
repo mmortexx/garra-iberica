@@ -9,8 +9,9 @@
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
-// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan y barras del podio, composición
-// (fondos de sección, pie, cifras, baldosa de la ruta, columnas de combate y de la ficha de especie),
+// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan, barras del podio y cifras que cuentan,
+// composición (fondos de sección, pie, cifras, baldosa de la ruta, columnas de combate y de la ficha de especie,
+// barras de la comparativa y marca del menú a pantalla completa),
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
@@ -723,14 +724,14 @@ const imprimir = async navegador => {
         malos: [...malos],
         ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra, .foco')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
         // Adornos pintados con ::after: en papel, ni barras del podio, ni destello de las baldosas, ni el nombre de fondo del pie.
-        adornos: [['.podio-lista li', 'barras del podio'], ['.baldosa.inclinable', 'destello de las baldosas'], ['.pie', 'nombre de fondo del pie']].map(([sel, que]) => {
+        adornos: [['.podio-lista li', 'barras del podio', ''], ['.baldosa.inclinable', 'destello de las baldosas', ''], ['.pie', 'nombre de fondo del pie', ''], ['.comparar-lista dd > span', 'barras de la comparativa', 'dinosaurios/']].map(([sel, que, donde]) => {
           const suyos = [...document.querySelectorAll(sel)];
-          return [que, suyos.length, suyos.filter(e => getComputedStyle(e, '::after').content !== 'none').length];
+          return [que, suyos.length, suyos.filter(e => getComputedStyle(e, '::after').content !== 'none').length, donde];
         }),
       };
     });
-    for (const [que, hay, pintados] of m.adornos) {
-      if (r === '' && !hay) fallos.push(`/: la prueba no encuentra dónde irían: ${que}`);
+    for (const [que, hay, pintados, donde] of m.adornos) {
+      if (r === donde && !hay) fallos.push(`/${r}: la prueba no encuentra dónde irían: ${que}`);
       if (pintados) fallos.push(`/${r}: al imprimir sale ${que}`);
     }
     if (!m.anim) fallos.push(`/${r}: la página no lleva «anim» y la prueba no demuestra nada`);
@@ -1600,6 +1601,48 @@ const ambiente = async navegador => {
     }
     await ctx.close();
   }
+  // Cifras y podio: al aparecer cuentan desde cero hasta su valor, sin que antes se vea el valor final, y al acabar
+  // queda el texto tal cual venía. Quien no ve la pantalla oye siempre el valor de verdad, y con «reducir movimiento»
+  // no cuentan. Se apunta lo que se ve cada 40 ms desde antes de que la página empiece a moverse.
+  {
+    const sinGuiones = await abrir({ javaScriptEnabled: false });
+    const verdad = await sinGuiones.p.evaluate(() => [...document.querySelectorAll('.cifras li:not(.cifras-nota) b')].slice(0, 4).concat([...document.querySelectorAll('.podio-lista b')]).map(b => b.textContent));
+    await sinGuiones.ctx.close();
+    if (verdad.length < 6) fallos.push(`la prueba no encuentra las cifras y el podio en la página: ${verdad}`);
+    for (const [caso, opts] of [['con movimiento', {}], ['con «reducir movimiento»', { reducedMotion: 'reduce' }]]) {
+      const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
+      await ctx.addInitScript(siempre => addEventListener('DOMContentLoaded', () => {
+        const bs = [...document.querySelectorAll('.cifras li:not(.cifras-nota) b')].slice(0, 4).concat([...document.querySelectorAll('.podio-lista b')]);
+        const datos = bs.map(() => ({ vistas: [], oidas: [] }));
+        window.__cuentas = { bs, datos };
+        setInterval(() => bs.forEach((b, k) => {
+          if (!siempre && !b.closest('.revelar')?.classList.contains('visible')) return;
+          const visto = b.querySelector('[aria-hidden="true"]'), oido = b.querySelector('.oculto');
+          const ve = visto ? visto.textContent : b.textContent, oye = oido ? oido.textContent : b.textContent;
+          if (datos[k].vistas.at(-1) !== ve) datos[k].vistas.push(ve);
+          if (!datos[k].oidas.includes(oye)) datos[k].oidas.push(oye);
+        }), 40);
+      }), !!opts.reducedMotion);
+      const p = await ctx.newPage();
+      await p.goto(BASE, { waitUntil: 'load' });
+      await p.waitForTimeout(2200);
+      await p.evaluate(() => document.querySelector('.podio-lista')?.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await p.waitForTimeout(2600);
+      const cuentas = await p.evaluate(() => window.__cuentas.bs.map((b, k) => ({ ...window.__cuentas.datos[k], fin: b.textContent, hijos: b.childElementCount, ancho: b.style.minWidth })));
+      if (cuentas.length !== verdad.length) fallos.push(`${caso}: la página tiene ${cuentas.length} cifras y sin JavaScript ${verdad.length}`);
+      for (const [k, c] of cuentas.entries()) {
+        const escrito = verdad[k], valor = +escrito.replace(/\D/g, ''), pasos = c.vistas.map(t => +t.replace(/\D/g, ''));
+        if (c.fin !== escrito || c.hijos || c.ancho) fallos.push(`${caso}: ${escrito}: al acabar queda «${c.fin}» (${c.hijos} elementos dentro, ancho fijado «${c.ancho}»)`);
+        if (c.oidas.length !== 1 || c.oidas[0] !== escrito) fallos.push(`${caso}: ${escrito}: un lector de pantalla oiría ${c.oidas.join(' y ')}`);
+        if (caso !== 'con movimiento') { if (c.vistas.length !== 1) fallos.push(`${caso}: ${escrito} se mueve: ${c.vistas}`); continue; }
+        if (valor < 20) continue;
+        if (c.vistas.length < 5) fallos.push(`con movimiento: ${escrito} no cuenta al aparecer: ${c.vistas}`);
+        else if (pasos[0] > valor * 0.6) fallos.push(`con movimiento: ${escrito} se ve entero antes de empezar a contar: ${c.vistas.slice(0, 4)}`);
+        else if (pasos.some((n, i) => n > valor || (i && n < pasos[i - 1]))) fallos.push(`con movimiento: ${escrito} cuenta hacia atrás o se pasa: ${c.vistas}`);
+      }
+      await ctx.close();
+    }
+  }
   {
     const { ctx, p } = await abrir({ javaScriptEnabled: false });
     const barras = await p.evaluate(() => [...document.querySelectorAll('.podio-lista li')].map(li => new DOMMatrix(getComputedStyle(li, '::after').transform).a));
@@ -1612,7 +1655,8 @@ const ambiente = async navegador => {
 };
 // Composición: lo que, roto, deja la página entera pero peor puesta, sin ningún error. Los fondos que alternan
 // entre secciones, el pie con su línea de ascua y el nombre en contorno, la nota de las cifras a pie de su
-// fila, la baldosa de la ruta sin hueco, el entrenamiento en tres columnas y la ficha de especie en dos.
+// fila, la baldosa de la ruta sin hueco, el entrenamiento en tres columnas, la ficha de especie en dos, las
+// barras de la comparativa de especies y la marca del clan en el menú a pantalla completa.
 // SOLO=composicion prueba solo esto.
 const composicion = async navegador => {
   const fallos = [];
@@ -1685,8 +1729,47 @@ const composicion = async navegador => {
       if (!(v.mutArriba >= v.fichaAbajo) || v.mutColumnas !== '2' || v.mutAncho < v.fichaAncho * 0.8) fallos.push(`/${r}: las mutaciones no van debajo, a lo ancho y en dos columnas: ${JSON.stringify(v)}`);
     }
   }
+  // Comparativa de especies: bajo cada cifra, una barra que la mide frente a la mayor de su columna, sin tapar el enlace de la fila.
+  for (const r of ['dinosaurios/', 'en/dinosaurs/']) {
+    await ir(r);
+    const filas = await p.evaluate(async () => {
+      const lista = document.querySelector('[data-comparar-lista]');
+      lista.children[4].scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 2200));
+      return [...lista.children].map((f, i) => {
+        const fila = { nombre: f.dataset.nombre };
+        for (const k of ['peso', 'crece', 'grupo']) {
+          const celda = f.querySelector('.c-' + k), barra = getComputedStyle(celda, '::after'), c = celda.getBoundingClientRect();
+          fila[k] = { valor: +f.dataset[k], escala: barra.content === 'none' ? null : new DOMMatrix(barra.transform).a, alto: parseFloat(barra.height), enlace: i !== 4 || document.elementFromPoint(c.left + 4, c.bottom - 1) === f.querySelector('a') };
+        }
+        return fila;
+      });
+    });
+    if (filas.length < 10) fallos.push(`/${r}: la prueba no encuentra las filas de la comparativa`);
+    for (const k of ['peso', 'crece', 'grupo']) {
+      const tope = Math.max(...filas.map(f => f[k].valor));
+      const mal = filas.filter(f => f[k].escala === null || !(f[k].alto >= 2) || Math.abs(f[k].escala - Math.max(f[k].valor / tope, 0.02)) > 0.005 || !f[k].enlace);
+      if (mal.length) fallos.push(`/${r}: ${mal.length} barras de «${k}» no miden su cifra frente a la mayor (${tope}) o tapan el enlace, como ${mal[0].nombre}: ${JSON.stringify(mal[0][k])}`);
+    }
+  }
   await ctx.close();
-  console.log('Composición (fondos, pie, cifras, ruta, combate y ficha):', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  // Menú a pantalla completa: arriba a la izquierda lleva la marca del clan, sin pisar el primer enlace; apaisado no cabe y no sale.
+  for (const [caso, ancho, alto] of [['móvil', 390, 844], ['móvil pequeño', 320, 568], ['tableta', 820, 1100], ['apaisado', 812, 375]]) {
+    const c = await navegador.newContext({ viewport: { width: ancho, height: alto }, isMobile: true, hasTouch: true });
+    const m = await c.newPage();
+    await m.goto(BASE + 'clan/', { waitUntil: 'load' });
+    await m.tap('.menu-boton');
+    await m.waitForTimeout(900);
+    const v = await m.evaluate(() => {
+      const menu = document.querySelector('.menu'), marca = getComputedStyle(menu, '::after'), primero = menu.querySelector('a').getBoundingClientRect(), cerrar = menu.querySelector('.menu-cerrar').getBoundingClientRect();
+      return { texto: marca.content, dibujo: marca.backgroundImage, abajo: parseFloat(marca.top) + parseFloat(marca.height), derecha: parseFloat(marca.left) + parseFloat(marca.width), primero: primero.top, cerrar: cerrar.left, opacidad: +marca.opacity };
+    });
+    if (caso === 'apaisado') { if (v.texto !== 'none') fallos.push(`menú ${caso}: la marca sale y no cabe: ${JSON.stringify(v)}`); }
+    else if (!v.texto.includes('GARRA IBÉRICA') || !v.dibujo.includes('emoji-garra') || !(v.opacidad > 0.9)) fallos.push(`menú ${caso}: no lleva la marca del clan: ${JSON.stringify(v)}`);
+    else if (v.abajo > v.primero || v.derecha > v.cerrar) fallos.push(`menú ${caso}: la marca pisa el primer enlace o el botón de cerrar: ${JSON.stringify(v)}`);
+    await c.close();
+  }
+  console.log('Composición (fondos, pie, cifras, ruta, combate, ficha, comparativa y menú):', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
 (async () => {

@@ -12,6 +12,15 @@
   const campos = { orden, dieta, grupo: somos };
   const estado = caja.querySelector('[role="status"]');
   const filas = [...lista.children];
+  // Bajo cada cifra, una barra que la mide frente a la mayor de su columna. Se pintan al llegar la lista a la vista.
+  for (const k of ['peso', 'crece', 'grupo']) {
+    const tope = Math.max(...filas.map(f => +f.dataset[k] || 0));
+    if (tope) for (const f of filas) f.style.setProperty(`--b-${k}`, ((+f.dataset[k] || 0) / tope).toFixed(4));
+  }
+  if ('IntersectionObserver' in window) {
+    const alVer = new IntersectionObserver(([e]) => { if (e.isIntersecting) { lista.classList.add('medida'); alVer.disconnect(); } });
+    alVer.observe(lista);
+  } else lista.classList.add('medida');
   const abc = new Intl.Collator(document.documentElement.lang);
   const criterios = {
     fichas: (a, b) => filas.indexOf(a) - filas.indexOf(b),

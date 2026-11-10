@@ -213,6 +213,15 @@ code { font: .92em/1 ui-monospace, Consolas, monospace; background: rgba(255, 25
     .menu[popover] a[aria-current] { color: var(--ascua-viva); }
     .menu[popover] .menu-idioma { display: block; margin-top: 1.4rem; font: 600 1.05rem/1.4 var(--etiquetas); letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
     .menu[popover] .menu-cerrar { display: grid; }
+    /* Arriba a la izquierda, la marca del clan: la de la barra queda tapada por el menú. Es adorno:
+       el enlace al inicio es el primero de la lista, así que los lectores de pantalla no la leen. */
+    .menu[popover]::after {
+      content: "GARRA IBÉRICA"; content: "GARRA IBÉRICA" / "";
+      position: absolute; top: .9rem; left: max(24px, 8vw); display: flex; align-items: center; height: 44px; padding-left: 2.9rem;
+      background: url("img/emoji-garra.webp") left center / 2.25rem 2.25rem no-repeat;
+      font: 1.35rem/1 var(--titulos); letter-spacing: .04em; white-space: nowrap; color: var(--hueso); pointer-events: none;
+      animation: menu-entra .6s var(--suave-salida) both;
+    }
     .menu a:nth-child(2) { --n: 1; } .menu a:nth-child(3) { --n: 2; } .menu a:nth-child(4) { --n: 3; }
     .menu a:nth-child(5) { --n: 4; } .menu a:nth-child(6) { --n: 5; } .menu a:nth-child(7) { --n: 6; }
     html:has(.menu:popover-open) { overflow: hidden; }
@@ -1235,6 +1244,21 @@ details.dino[open] > summary { padding-left: 0; color: inherit; }
 .comparar-lista > .marcada { box-shadow: inset 2px 0 0 var(--ascua); background: rgba(255, 53, 31, .1); padding-left: .7rem; }
 .comparar-lista .c-peso, .comparar-lista .c-crece, .comparar-lista .c-grupo { transition: color .3s; }
 .comparar[data-orden="peso"] .c-peso, .comparar[data-orden="crece"] .c-crece, .comparar[data-orden="grupo"] .c-grupo { color: var(--ascua-viva); }
+/* Bajo cada cifra, una barra que la mide frente a la mayor de su columna (guia.js pone la medida y marca la lista
+   al llegar a la vista; sin JavaScript no hay barra). La más corta se queda en un punto para que no parezca que falta.
+   Sin eventos: así se sigue pulsando el enlace que cubre toda la fila también sobre la barra. */
+.comparar-lista dd > span::after {
+  content: ""; display: block; width: min(100%, 9rem); height: 2px; margin-top: .4rem; border-radius: 1px; pointer-events: none;
+  background: linear-gradient(90deg, var(--ascua-viva), rgba(255, 92, 74, .3)); opacity: .6;
+  transform-origin: left; transform: scaleX(0);
+}
+.comparar-lista .c-peso::after { --b: var(--b-peso, 0); }
+.comparar-lista .c-crece::after { --b: var(--b-crece, 0); }
+.comparar-lista .c-grupo::after { --b: var(--b-grupo, 0); }
+.comparar-lista.medida dd > span::after { transform: scaleX(max(var(--b), .02)); }
+.anim .comparar-lista dd > span::after { transition: transform 1s var(--suave-salida), opacity .3s; }
+.comparar[data-orden="peso"] .c-peso::after, .comparar[data-orden="crece"] .c-crece::after, .comparar[data-orden="grupo"] .c-grupo::after { opacity: 1; }
+@media print, (forced-colors: active) { .comparar-lista dd > span::after { content: none; } }
 @media (min-width: 760px) {
   .comparar-fila, .comparar-lista > div { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.75fr); align-items: center; }
   .comparar-cabeza > span:first-child { display: block; }
@@ -1447,6 +1471,7 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
   .menu[popover] { flex-wrap: wrap; align-content: flex-start; justify-content: flex-start; column-gap: 3.5rem; padding: 1rem max(24px, 6vw); }
   .menu[popover] a { font-size: min(11vh, 2.3rem); }
   .menu[popover] .menu-idioma { margin-top: .5rem; }
+  .menu[popover]::after { content: none; }
 }
 @media (min-width: 900px) {
   .cabecera-dos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 3rem; align-items: end; }

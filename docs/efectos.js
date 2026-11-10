@@ -565,16 +565,47 @@
   addEventListener('pageswap', e => { if (ligera) e.viewTransition?.skipTransition(); });
   addEventListener('resize', () => { clearTimeout(cambioVentana); cambioVentana = setTimeout(medirFluidez, 400); });
 
+  // Cifras y podio de la portada: al aparecer cuentan desde cero hasta su valor. Mientras cuentan, el valor de
+  // verdad sigue escrito para los lectores de pantalla y lo que se mueve va aparte; al acabar vuelve el texto
+  // tal cual venía. El ancho se fija mientras tanto para que la fila no baile.
+  const cuentas = new Map([...document.querySelectorAll('.cifras li.revelar b, .podio-lista li.revelar b')]
+    .filter(b => /^\d[\d\s.,]*$/.test(b.textContent) && +b.textContent.replace(/\D/g, '') >= 20)
+    .map(b => [b.closest('.revelar'), b]));
+  const contar = el => {
+    const b = cuentas.get(el);
+    if (!b || ligera) return;
+    cuentas.delete(el);
+    const escrito = b.textContent, valor = +escrito.replace(/\D/g, ''), separador = escrito.match(/\D/)?.[0] || '';
+    // El mismo formato que lo escrito: en español el separador de miles solo aparece desde 10 000.
+    const pinta = n => (separador && (separador === ',' || n >= 10000) ? String(n).replace(/\B(?=(\d{3})+$)/g, separador) : String(n));
+    const fijo = document.createElement('span'), vivo = document.createElement('span');
+    fijo.className = 'oculto';
+    fijo.textContent = escrito;
+    vivo.setAttribute('aria-hidden', 'true');
+    vivo.textContent = pinta(0);
+    b.style.minWidth = `${b.offsetWidth}px`;
+    b.replaceChildren(fijo, vivo);
+    const inicio = performance.now(), dura = Math.min(1500, 1000 + valor / 4);
+    const paso = ahora => {
+      const t = Math.min(1, Math.max(0, (ahora - inicio) / dura)), texto = pinta(Math.round(valor * (1 - (1 - t) ** 3)));
+      if (vivo.textContent !== texto) vivo.textContent = texto;
+      if (t < 1) { requestAnimationFrame(paso); return; }
+      b.textContent = escrito;
+      b.style.removeProperty('min-width');
+    };
+    requestAnimationFrame(paso);
+  };
+
   // Apariciones al hacer scroll. Lo que ya está en pantalla se marca antes del primer
   // fotograma para que no parpadee.
   const revelables = [...document.querySelectorAll('.revelar')];
   const enPantalla = el => el.getBoundingClientRect().top < innerHeight * 0.92;
-  revelables.forEach(el => { if (enPantalla(el)) el.classList.add('visible'); });
+  revelables.forEach(el => { if (enPantalla(el)) { el.classList.add('visible'); contar(el); } });
   if (!ligera) raiz.classList.add('anim');
   if (portada) portada.addEventListener('animationend', ev => { if (ev.animationName === 'encender') portada.classList.add('encendida'); });
   const observador = new IntersectionObserver(entradas => {
     for (const e of entradas) {
-      if (e.isIntersecting) { e.target.classList.add('visible'); observador.unobserve(e.target); }
+      if (e.isIntersecting) { e.target.classList.add('visible'); contar(e.target); observador.unobserve(e.target); }
     }
   }, { rootMargin: '0px 0px -8% 0px' });
   revelables.forEach(el => { if (!el.classList.contains('visible')) observador.observe(el); });
