@@ -660,10 +660,11 @@ const fotosMovil = async navegador => {
       const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, deviceScaleFactor: 1 });
       const p = await ctx.newPage();
       await p.goto(BASE + r, { waitUntil: 'load' });
-      await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
+      // Cada baldosa es ahora una escena a pantalla completa: las de abajo quedan lejos y no se piden solas.
+      await p.evaluate(() => { document.querySelectorAll('.baldosa-fondo').forEach(i => { i.loading = 'eager'; }); document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }); });
       await p.waitForFunction(() => [...document.querySelectorAll('.baldosa-fondo')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 });
       const fotos = await p.evaluate(() => [...document.querySelectorAll('.baldosa-fondo')].map(i => ({
-        foto: i.currentSrc.split('/').pop(), pinta: i.getBoundingClientRect().width,
+        foto: i.currentSrc.split('/').pop(), pinta: i.offsetWidth, // la caja ya asentada: mientras entra la escena, la foto llega algo acercada
         trae: parseInt(i.srcset.split(',').map(s => s.trim().split(/\s+/)).find(([u]) => new URL(u, location).href === i.currentSrc)?.[1]) })));
       for (const f of fotos) if (!(f.trae >= f.pinta * 0.98)) borrosas.push(`${w}px: ${f.foto} de ${f.trae} px pintada a ${Math.round(f.pinta)}`);
       await ctx.close();
@@ -825,7 +826,7 @@ const ventana = async navegador => {
       salida.mayor = Math.max(salida.mayor || 0, media);
       if (media > lim.letras) salida.largas.push(`${el.className || el.parentElement.className || el.tagName} ${media}`);
     }
-    const fotos = [['.portada-fondo, .cabecera-fondo', lim.ampliar.fondo], ['.foto img, .baldosa-fondo, .tira img, .marco img', lim.ampliar.contenido]];
+    const fotos = [['.portada-fondo, .cabecera-fondo, .mosaico .baldosa-fondo, .escena-fondo', lim.ampliar.fondo], ['.foto img, .baldosa-fondo:not(.mosaico *), .tira img, .marco img', lim.ampliar.contenido]];
     for (const [sel, max] of fotos) for (const img of document.querySelectorAll(sel)) {
       if (!img.naturalWidth || !visible(img)) continue;
       // naturalWidth con srcset no es el ancho del fichero, sino el que dice «sizes»: el de verdad está en el srcset.
@@ -1632,7 +1633,8 @@ const composicion = async navegador => {
     else if (v.nota.arriba < v.nota.filaAntes - 1 || v.nota.abajo > v.nota.filaDespues + 1 || v.nota.ancho < v.nota.lista * 0.9) fallos.push(`/${r}: la nota de las cifras no va a lo ancho entre sus dos filas: ${JSON.stringify(v.nota)}`);
     if (ancho !== 1366) continue;
     if (!v.ruta) fallos.push(`/${r}: la prueba no encuentra la baldosa de la ruta`);
-    else if (v.ruta.pasos.left < v.ruta.texto.right || v.ruta.pasos.top > v.ruta.texto.bottom + 60 || v.ruta.texto.top - v.ruta.caja.top > 70) fallos.push(`/${r}: la baldosa de la ruta no lleva el texto y los pasos lado a lado, sin hueco arriba: ${JSON.stringify(v.ruta)}`);
+    // La ruta es ahora una escena a pantalla completa: el contenido va abajo, sobre el velo, no pegado arriba.
+    else if (v.ruta.pasos.left < v.ruta.texto.right || v.ruta.pasos.top > v.ruta.texto.bottom + 60 || v.ruta.caja.bottom - Math.max(v.ruta.texto.bottom, v.ruta.pasos.bottom) > 160) fallos.push(`/${r}: la escena de la ruta no lleva el texto y los pasos lado a lado, asentados abajo: ${JSON.stringify(v.ruta)}`);
   }
   await p.setViewportSize({ width: 1366, height: 850 });
   for (const r of ['combate/', 'en/combat/']) {

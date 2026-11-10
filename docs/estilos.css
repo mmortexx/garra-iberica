@@ -2067,22 +2067,25 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
    detrás y el título muy grande. Solo en pantalla: en papel se queda la versión normal. */
 @media screen {
   /* Cartel: la foto llena la pantalla y el nombre del clan la cruza por abajo. */
-  .portada { --margen: clamp(16px, 4vw, 4rem); min-height: 100svh; align-items: flex-end; padding: 6rem var(--margen) clamp(5.5rem, 12vh, 8.5rem); }
   .portada-in { max-width: none; }
-  .portada::before {
-    background:
-      linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .8) 26%, rgba(6, 6, 6, .1) 62%, rgba(6, 6, 6, .42) 100%),
-      linear-gradient(90deg, rgba(6, 6, 6, .55), transparent 55%);
+  /* En el móvil y con el móvil tumbado se queda el cartel de siempre: foto arriba y texto debajo, que se lee. */
+  @media (min-width: 701px) and (min-height: 501px) {
+    .portada { --margen: clamp(16px, 4vw, 4rem); min-height: 100svh; align-items: flex-end; padding: 6rem var(--margen) clamp(5.5rem, 12vh, 8.5rem); }
+    .portada::before {
+      background:
+        linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .86) 30%, rgba(6, 6, 6, .1) 64%, rgba(6, 6, 6, .42) 100%),
+        linear-gradient(90deg, rgba(6, 6, 6, .6), transparent 55%);
+    }
+    .portada .h1-marca { font-size: min(16rem, calc((100vw - 2 * var(--margen)) / 5.9), 32vh); line-height: 1.04; margin-top: 0; }
+    .portada .h1-sub, .portada .h1-sub:lang(en) { font-size: min(2.3rem, calc((100vw - 2 * var(--margen)) / 19.8)); margin-top: .2rem; }
+    .portada .entrada { max-width: 40rem; }
   }
-  .portada .h1-marca { font-size: min(16rem, calc((100vw - 2 * var(--margen)) / 5.9), 32vh); line-height: 1.04; margin-top: 0; }
-  .portada .h1-sub, .portada .h1-sub:lang(en) { font-size: min(2.3rem, calc((100vw - 2 * var(--margen)) / 19.8)); margin-top: .2rem; }
-  .portada .entrada { max-width: 40rem; }
 
   /* Quiénes somos: la manada detrás, el texto sobre un velo y la ficha en cristal. */
   .escena { isolation: isolate; overflow: clip; min-height: 100svh; display: grid; align-items: center; padding-block: clamp(5rem, 12vh, 9rem); background: none; }
   .escena-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
   .escena > .envoltura { width: 100%; }
-  .escena > .envoltura::before {
+  .escena::before {
     content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background:
       linear-gradient(180deg, var(--fondo) 0%, transparent 22%, transparent 78%, var(--fondo) 100%),
@@ -2094,7 +2097,7 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   /* Explora la manada: seis escenas, una por destino. En ordenador cada una tapa a la anterior al bajar. */
   .seccion:has(.mosaico) { padding-inline: 0; padding-bottom: 0; }
   .seccion:has(.mosaico) > .envoltura { max-width: none; }
-  .seccion:has(.mosaico) > .envoltura > .revelar:first-child { max-width: var(--ancho); margin: 0 auto; padding: 0 16px; }
+  .seccion:has(.mosaico) > .envoltura > .revelar:first-child { max-width: calc(var(--ancho) + 32px); margin: 0 auto; padding: 0 16px; }
   .mosaico { display: block; margin-top: 2.4rem; }
   .mosaico .baldosa {
     min-height: 100svh; padding: 6rem clamp(16px, 6vw, 7rem) clamp(3rem, 9vh, 6rem); justify-content: flex-end; align-content: end; align-items: stretch;
@@ -2129,20 +2132,22 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   }
 }
 .ligera .escena-fondo { animation: none; }
-/* Cabeceras de cine en el resto de páginas: la foto manda, el título va abajo y muy grande. */
+/* Cabeceras de cine en el resto de páginas: la foto manda, el título va abajo y muy grande.
+   El texto sigue en la misma vertical que la marca y los títulos de sección. */
 @media screen {
-  .cabecera { --margen: clamp(16px, 4vw, 4rem); min-height: min(88svh, 54rem); padding: 7rem var(--margen) clamp(3rem, 8vh, 5.5rem); }
+  .cabecera { min-height: min(88svh, 54rem); padding: 7rem 16px clamp(3rem, 8vh, 5.5rem); }
   .cabecera-baja { min-height: min(70svh, 42rem); }
-  .cabecera > .envoltura { max-width: none; }
-  .cabecera::before {
-    background:
-      linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .8) 26%, rgba(6, 6, 6, .08) 64%, rgba(6, 6, 6, .36) 100%),
-      linear-gradient(90deg, rgba(6, 6, 6, .78) calc(100% - var(--foto)), rgba(6, 6, 6, .3) calc(100% - .6 * var(--foto)), transparent calc(100% - .3 * var(--foto)));
-  }
   .cabecera h1 { font-size: clamp(2.8rem, 7.6vw, 6.8rem); line-height: .98; max-width: 19ch; text-wrap: balance; }
-  .cabecera h1.especie-nombre { font-size: min(clamp(2.8rem, 10vw, 9rem), (100vw - 2 * var(--margen)) / 9.2); }
+  .cabecera h1.especie-nombre { font-size: min(clamp(2.8rem, 10vw, 9rem), min(100vw - 2rem, var(--ancho)) / 9.2); }
   .seccion h2 { font-size: clamp(2.1rem, 4.6vw, 4.2rem); line-height: 1; }
   .llamada h2.especie-nombre { font-size: min(clamp(2.7rem, 8.6vw, 8rem), (100vw - 2rem) / 9.8); }
+  @media (min-width: 701px) {
+    .cabecera::before {
+      background:
+        linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .8) 26%, rgba(6, 6, 6, .08) 64%, rgba(6, 6, 6, .36) 100%),
+        linear-gradient(90deg, rgba(6, 6, 6, .95) calc(100% - var(--foto)), rgba(6, 6, 6, .74) calc(100% - .62 * var(--foto)), rgba(6, 6, 6, .28) calc(100% - .4 * var(--foto)), transparent calc(100% - .15 * var(--foto)));
+    }
+  }
   @media (max-width: 700px) {
     .cabecera { min-height: min(74svh, 36rem); padding-top: 5.5rem; }
     .cabecera-baja { min-height: min(58svh, 28rem); }
@@ -2167,8 +2172,11 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
     .portada-in { transform-origin: left bottom; }
     .mosaico .baldosa { view-timeline-name: --escena; }
     .mosaico .baldosa-fondo { animation: baldosa-lenta linear both, asentar linear both; animation-timeline: view(), --escena; animation-range: normal, entry 0% entry 100%; }
-    @keyframes asentar { from { scale: 1.28; } }
-    .anim .mosaico .baldosa h3 { animation: titulo-sube linear both; animation-timeline: --escena; animation-range: entry 35% entry 100%; }
+    @keyframes asentar { from { scale: 1.16; } }
+    .baldosa-titulo { display: inline-block; }
+    .anim .mosaico .baldosa-titulo { animation: titulo-sube linear both; animation-timeline: --escena; animation-range: entry 35% entry 100%; }
+    /* Se anima el texto, no el h3 ni el enlace: recortar o mover uno de los dos recorta también la zona de clic,
+       que debe ser toda la escena. */
     @keyframes titulo-sube { from { translate: 0 .9em; clip-path: inset(0 0 100% 0); } to { translate: 0 0; clip-path: inset(-.2em -1em -.3em -.2em); } }
     .anim .mosaico .baldosa > div > p, .anim .mosaico .baldosa :is(.cuenta, .especies, .baldosa-pasos, .tira-marco) { animation: texto-llega linear both; animation-timeline: --escena; animation-range: entry 60% entry 100%; }
     @keyframes texto-llega { from { opacity: 0; translate: 0 2.2rem; } }
@@ -2188,9 +2196,31 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
       .mosaico .baldosa:nth-child(4) > :is(div, ol) { animation-timeline: --e5; }
       .mosaico .baldosa:nth-child(5) > :is(div, ol) { animation-timeline: --e6; }
       .mosaico .baldosa:nth-child(6) > :is(div, ol) { animation: none; }
-      @keyframes hundirse { to { opacity: 0; translate: 0 -5rem; scale: .94; } }
+      @keyframes hundirse { to { opacity: 0; } }
     }
   }
 }
-.ligera .mosaico .baldosa :is(h3, p, .cuenta, .especies, .baldosa-pasos, .tira-marco, .baldosa-fondo), .ligera .mosaico .baldosa > :is(div, ol) { animation: none; }
+.ligera .mosaico .baldosa :is(.baldosa-titulo, p, .cuenta, .especies, .baldosa-pasos, .tira-marco, .baldosa-fondo), .ligera .mosaico .baldosa > :is(div, ol) { animation: none; }
 
+/* Remates del cine. Las fotos de fondo no se llevan los clics del enlace que tapan. En ventanas grandes
+   ninguna foto se estira más de lo que da su fichero: se queda con tope y se funde con el fondo. */
+@media screen {
+  .baldosa-fondo, .escena-fondo { pointer-events: none; }
+  /* Tope de alto también en ventanas altas y estrechas: una foto apaisada estirada a toda la altura sale borrosa. */
+  .mosaico .baldosa-fondo, .escena-fondo {
+    inset: 0 0 auto auto; width: min(100%, 2175px); height: min(100%, 971px);
+    -webkit-mask-image: linear-gradient(0deg, transparent, #000000 34%); mask-image: linear-gradient(0deg, transparent, #000000 34%);
+  }
+  .escena-fondo { width: min(100%, 1880px); height: min(100%, 755px); object-position: 50% 30%; }
+  .portada-fondo { max-height: 975px; }
+  .cabecera-fondo { max-height: 940px; }
+  .cabecera-baja .cabecera-fondo { max-height: 750px; }
+  @media (min-width: 1441px) {
+    .portada-fondo { -webkit-mask-image: linear-gradient(0deg, transparent, #000000 30%); mask-image: linear-gradient(0deg, transparent, #000000 30%); }
+    .cabecera-fondo, .mosaico .baldosa-fondo, .escena-fondo {
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000000 16%), linear-gradient(0deg, transparent, #000000 32%);
+      mask-image: linear-gradient(90deg, transparent, #000000 16%), linear-gradient(0deg, transparent, #000000 32%);
+      -webkit-mask-composite: source-in; mask-composite: intersect;
+    }
+  }
+}
