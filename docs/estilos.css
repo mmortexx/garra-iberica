@@ -2062,3 +2062,70 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
 @keyframes casilla { 40% { scale: 1.16; box-shadow: 0 0 0 5px rgba(255, 53, 31, .25); } }
 @keyframes aviso-entra { from { opacity: 0; translate: 0 -.4rem; } }
 @media (prefers-reduced-motion: reduce) { .ahora-li-barra::before { transition: none; } }
+
+/* Portada de cine: cada parte de la portada es una escena a pantalla completa, con la foto del juego
+   detrás y el título muy grande. Solo en pantalla: en papel se queda la versión normal. */
+@media screen {
+  /* Cartel: la foto llena la pantalla y el nombre del clan la cruza por abajo. */
+  .portada { --margen: clamp(16px, 4vw, 4rem); min-height: 100svh; align-items: flex-end; padding: 6rem var(--margen) clamp(5.5rem, 12vh, 8.5rem); }
+  .portada-in { max-width: none; }
+  .portada::before {
+    background:
+      linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .8) 26%, rgba(6, 6, 6, .1) 62%, rgba(6, 6, 6, .42) 100%),
+      linear-gradient(90deg, rgba(6, 6, 6, .55), transparent 55%);
+  }
+  .portada .h1-marca { font-size: min(16rem, calc((100vw - 2 * var(--margen)) / 5.9), 32vh); line-height: 1.04; margin-top: 0; }
+  .portada .h1-sub, .portada .h1-sub:lang(en) { font-size: min(2.3rem, calc((100vw - 2 * var(--margen)) / 19.8)); margin-top: .2rem; }
+  .portada .entrada { max-width: 40rem; }
+
+  /* Quiénes somos: la manada detrás, el texto sobre un velo y la ficha en cristal. */
+  .escena { isolation: isolate; overflow: clip; min-height: 100svh; display: grid; align-items: center; padding-block: clamp(5rem, 12vh, 9rem); background: none; }
+  .escena-fondo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+  .escena > .envoltura { width: 100%; }
+  .escena > .envoltura::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      linear-gradient(180deg, var(--fondo) 0%, transparent 22%, transparent 78%, var(--fondo) 100%),
+      linear-gradient(90deg, rgba(6, 6, 6, .93) 0%, rgba(6, 6, 6, .8) 48%, rgba(6, 6, 6, .5) 100%);
+  }
+  .escena h2 { font-size: clamp(2.1rem, 4.6vw, 4.2rem); line-height: 1; }
+  .escena .ficha { padding: 1.5rem 1.6rem 1rem 1.8rem; border: 1px solid var(--linea); background: rgba(10, 10, 10, .58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+  /* Explora la manada: seis escenas, una por destino. En ordenador cada una tapa a la anterior al bajar. */
+  .seccion:has(.mosaico) { padding-inline: 0; padding-bottom: 0; }
+  .seccion:has(.mosaico) > .envoltura { max-width: none; }
+  .seccion:has(.mosaico) > .envoltura > .revelar:first-child { max-width: var(--ancho); margin: 0 auto; padding: 0 16px; }
+  .mosaico { display: block; margin-top: 2.4rem; }
+  .mosaico .baldosa {
+    min-height: 100svh; padding: 6rem clamp(16px, 6vw, 7rem) clamp(3rem, 9vh, 6rem); justify-content: flex-end; align-content: end; align-items: end;
+    border: 0; border-top: 1px solid var(--linea); border-radius: 0; box-shadow: none; background: var(--fondo);
+  }
+  .mosaico .baldosa-dinos, .mosaico .baldosa-caceria { align-items: stretch; }
+  .mosaico .baldosa-galeria { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 1.6rem; }
+  .mosaico .baldosa-fondo { opacity: 1; }
+  .mosaico .baldosa::before {
+    background:
+      linear-gradient(0deg, rgba(6, 6, 6, .96) 0%, rgba(6, 6, 6, .74) 36%, rgba(6, 6, 6, .1) 72%, rgba(6, 6, 6, .3) 100%),
+      linear-gradient(90deg, rgba(6, 6, 6, .62), transparent 62%);
+  }
+  .mosaico .baldosa-dinos::before { background: linear-gradient(0deg, rgba(6, 6, 6, .96) 0%, rgba(6, 6, 6, .84) 55%, rgba(6, 6, 6, .3) 100%); }
+  .mosaico .baldosa h3 { justify-content: flex-start; gap: .3em; font-size: clamp(2.6rem, 8.6vw, 8rem); line-height: .96; margin-bottom: 1rem; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
+  .mosaico .baldosa h3::after { font-size: .34em; }
+  .mosaico .baldosa p { font-size: clamp(1.05rem, 1.5vw, 1.25rem); max-width: 38rem; color: #dedede; }
+  .mosaico .baldosa:hover, .mosaico .baldosa:active { translate: none; scale: none; box-shadow: none; }
+  .mosaico .baldosa:hover .baldosa-fondo { opacity: 1; scale: 1.03; }
+  @media (min-width: 1000px) and (min-height: 640px) {
+    .mosaico .baldosa { position: sticky; top: 0; height: 100svh; min-height: 0; box-shadow: 0 -24px 60px rgba(0, 0, 0, .7); }
+    .mosaico .baldosa:hover, .mosaico .baldosa:active { box-shadow: 0 -24px 60px rgba(0, 0, 0, .7); }
+  }
+
+  /* Llamada final: pantalla propia y pregunta enorme. */
+  .llamada { min-height: 92svh; display: grid; align-content: center; }
+  .llamada h2 { font-size: clamp(2.7rem, 8.6vw, 8rem); line-height: .96; }
+}
+@supports (animation-timeline: view()) {
+  @media screen and (prefers-reduced-motion: no-preference) {
+    .escena-fondo { top: -8%; height: 116%; animation: baldosa-lenta linear both; animation-timeline: view(); }
+  }
+}
+.ligera .escena-fondo { animation: none; }
