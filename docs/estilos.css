@@ -2129,6 +2129,30 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
   }
 }
 .ligera .escena-fondo { animation: none; }
+/* Cabeceras de cine en el resto de páginas: la foto manda, el título va abajo y muy grande. */
+@media screen {
+  .cabecera { --margen: clamp(16px, 4vw, 4rem); min-height: min(88svh, 54rem); padding: 7rem var(--margen) clamp(3rem, 8vh, 5.5rem); }
+  .cabecera-baja { min-height: min(70svh, 42rem); }
+  .cabecera > .envoltura { max-width: none; }
+  .cabecera::before {
+    background:
+      linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .8) 26%, rgba(6, 6, 6, .08) 64%, rgba(6, 6, 6, .36) 100%),
+      linear-gradient(90deg, rgba(6, 6, 6, .78) calc(100% - var(--foto)), rgba(6, 6, 6, .3) calc(100% - .6 * var(--foto)), transparent calc(100% - .3 * var(--foto)));
+  }
+  .cabecera h1 { font-size: clamp(2.8rem, 7.6vw, 6.8rem); line-height: .98; max-width: 19ch; text-wrap: balance; }
+  .cabecera h1.especie-nombre { font-size: min(clamp(2.8rem, 10vw, 9rem), (100vw - 2 * var(--margen)) / 9.2); }
+  .seccion h2 { font-size: clamp(2.1rem, 4.6vw, 4.2rem); line-height: 1; }
+  .llamada h2.especie-nombre { font-size: min(clamp(2.7rem, 8.6vw, 8rem), (100vw - 2rem) / 9.8); }
+  @media (max-width: 700px) {
+    .cabecera { min-height: min(74svh, 36rem); padding-top: 5.5rem; }
+    .cabecera-baja { min-height: min(58svh, 28rem); }
+  }
+  @media (max-height: 500px) and (orientation: landscape) {
+    .cabecera, .cabecera-baja { min-height: 0; padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .cabecera h1, .cabecera h1.especie-nombre { max-width: none; font-size: min(clamp(2.5rem, 7.4vw, 5.2rem), 14vh); }
+  }
+}
+
 /* Cine en movimiento, todo atado al scroll (nada al ratón): la foto del cartel se acerca mientras el título
    se va; cada escena llega con la foto asentándose y el título subiendo desde abajo; en ordenador, la escena
    que queda debajo se hunde y se apaga bajo la siguiente. */
