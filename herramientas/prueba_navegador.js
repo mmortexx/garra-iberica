@@ -9,7 +9,8 @@
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
-// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan y barras del podio,
+// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan y barras del podio, composición
+// (fondos de sección, pie, cifras, baldosa de la ruta, columnas de combate y de la ficha de especie),
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
 // Uso: con la web servida en http://127.0.0.1:8765/ (ver README) y Playwright y axe-core instalados:
 //   node herramientas/prueba_navegador.js
@@ -720,9 +721,18 @@ const imprimir = async navegador => {
       return {
         anim: document.documentElement.classList.contains('anim'),
         malos: [...malos],
-        ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
+        ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra, .foco')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
+        // Adornos pintados con ::after: en papel, ni barras del podio, ni destello de las baldosas, ni el nombre de fondo del pie.
+        adornos: [['.podio-lista li', 'barras del podio'], ['.baldosa.inclinable', 'destello de las baldosas'], ['.pie', 'nombre de fondo del pie']].map(([sel, que]) => {
+          const suyos = [...document.querySelectorAll(sel)];
+          return [que, suyos.length, suyos.filter(e => getComputedStyle(e, '::after').content !== 'none').length];
+        }),
       };
     });
+    for (const [que, hay, pintados] of m.adornos) {
+      if (r === '' && !hay) fallos.push(`/: la prueba no encuentra dónde irían: ${que}`);
+      if (pintados) fallos.push(`/${r}: al imprimir sale ${que}`);
+    }
     if (!m.anim) fallos.push(`/${r}: la página no lleva «anim» y la prueba no demuestra nada`);
     if (m.malos.length) fallos.push(`/${r}: ${m.malos.length} sin verse, como ${m.malos.slice(0, 3).join(', ')}`);
     if (m.ambiente.length) fallos.push(`/${r}: al imprimir sale ${m.ambiente.slice(0, 3).join(', ')}`);
@@ -1444,9 +1454,33 @@ const ambiente = async navegador => {
       ancho: document.documentElement.scrollWidth - document.documentElement.clientWidth, alto: document.documentElement.scrollHeight,
     };
   });
+  // Baja hasta el podio, espera a que crezcan las barras y compara cada una con sus bajas.
+  const medirPodio = async (p, caso) => {
+    const podio = await p.evaluate(async () => {
+      const lista = document.querySelector('.podio-lista');
+      if (!lista) return [];
+      lista.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 2600));
+      return [...lista.children].map(li => {
+        const r = li.getBoundingClientRect(), barra = getComputedStyle(li, '::after');
+        return {
+          bajas: +li.querySelector('b').textContent.replace(/\D/g, ''), p: parseFloat(li.style.getPropertyValue('--p')),
+          escala: barra.content === 'none' ? null : new DOMMatrix(barra.transform).a, eventos: barra.pointerEvents,
+          enlace: !li.querySelector('a') || document.elementFromPoint(r.left + 30, r.bottom - 2)?.closest('a') === li.querySelector('a'),
+        };
+      });
+    });
+    if (!podio.length) fallos.push(`${caso}: la portada no tiene podio`);
+    const tope = Math.max(...podio.map(e => e.bajas));
+    for (const [i, e] of podio.entries()) {
+      const debe = e.bajas / tope;
+      if (!(Math.abs(e.p - debe) < 0.002)) fallos.push(`${caso}: podio, puesto ${i + 1}: la barra dice ${e.p} y son ${e.bajas} de ${tope}`);
+      else if (e.escala === null || Math.abs(e.escala - debe) > 0.01) fallos.push(`${caso}: podio, puesto ${i + 1}: la barra pintada mide ${e.escala} y debía ${debe.toFixed(3)}`);
+      if (e.eventos !== 'none' || !e.enlace) fallos.push(`${caso}: podio, puesto ${i + 1}: la barra tapa el enlace`);
+    }
+  };
   {
     const { ctx, p, errores } = await abrir();
-    const altoAntes = await p.evaluate(() => document.documentElement.scrollHeight);
     const quieto = await foco(p);
     if (!quieto) fallos.push('con ratón no hay foco de ascua');
     else {
@@ -1463,14 +1497,23 @@ const ambiente = async navegador => {
       await p.mouse.move(1362, 846);
       await p.waitForTimeout(600);
       const esquina = await foco(p);
-      if (esquina.ancho > 0 || esquina.alto !== altoAntes) fallos.push(`con el ratón en la esquina la página crece (${esquina.ancho} px de ancho, alto ${altoAntes} → ${esquina.alto})`);
+      if (esquina.ancho > 0) fallos.push(`con el ratón en la esquina la página se ensancha ${esquina.ancho} px`);
       await p.evaluate(() => dispatchEvent(new Event('blur')));
       await p.waitForTimeout(900);
       if ((await foco(p)).opacidad !== 0) fallos.push('en reposo el foco sigue encendido');
+      // Al volver, el ratón puede estar en la otra punta: el foco aparece allí, no llega cruzando la pantalla.
       await p.evaluate(() => dispatchEvent(new Event('focus')));
-      await p.mouse.move(600, 400);
+      await p.mouse.move(200, 600);
+      await p.waitForTimeout(100);
+      const volviendo = await foco(p);
+      if (volviendo.opacidad > 0.02 && Math.hypot(volviendo.cx - 200, volviendo.cy - 600) > 40) fallos.push(`al volver del reposo el foco cruza la pantalla: se ve en ${volviendo.cx}, ${volviendo.cy} con el ratón en 200, 600`);
+      await p.mouse.move(220, 620);
       await p.waitForTimeout(900);
-      if (!((await foco(p)).opacidad > 0.9)) fallos.push('al volver del reposo el foco no se enciende');
+      const vuelto = await foco(p);
+      if (!(vuelto.opacidad > 0.9) || Math.abs(vuelto.cx - 220) > 3 || Math.abs(vuelto.cy - 620) > 3) fallos.push(`al volver del reposo el foco no se enciende bajo el ratón: ${JSON.stringify(vuelto)}`);
+      await p.evaluate(() => document.documentElement.dispatchEvent(new PointerEvent('pointerleave')));
+      await p.waitForTimeout(900);
+      if ((await foco(p)).opacidad !== 0) fallos.push('con el ratón fuera de la ventana el foco sigue encendido');
       await p.evaluate(() => document.documentElement.classList.add('ligera'));
       if ((await foco(p)).ver !== 'none') fallos.push('en modo ligero el foco se sigue pintando');
       await p.evaluate(() => document.documentElement.classList.remove('ligera'));
@@ -1483,66 +1526,167 @@ const ambiente = async navegador => {
       return { x: q.left, y: q.top, w: q.width, h: q.height };
     });
     await p.waitForTimeout(700);
+    // Profundidad del centro de cada lado: más de 1, ese lado se aleja de quien mira; menos, se acerca.
     const inclinacion = () => p.evaluate(() => {
-      const b = document.querySelector('.baldosa-dinos'), m = new DOMMatrix(getComputedStyle(b).transform);
-      return { plana: m.isIdentity, gx: parseFloat(b.style.getPropertyValue('--gx')) || 0, gy: parseFloat(b.style.getPropertyValue('--gy')) || 0, dentro: b.matches(':hover') };
+      const b = document.querySelector('.baldosa-dinos'), m = new DOMMatrix(getComputedStyle(b).transform), w = b.offsetWidth / 2, h = b.offsetHeight / 2;
+      const fondo = (x, y) => +m.transformPoint(new DOMPoint(x, y)).w.toFixed(4);
+      return {
+        plana: m.isIdentity, izquierda: fondo(-w, 0), derecha: fondo(w, 0), arriba: fondo(0, -h), abajo: fondo(0, h),
+        gx: parseFloat(b.style.getPropertyValue('--gx')) || 0, gy: parseFloat(b.style.getPropertyValue('--gy')) || 0, dentro: b.matches(':hover'),
+      };
     });
     await p.mouse.move(caja.x + caja.w * 0.5, caja.y + caja.h * 0.5);
     await p.mouse.move(caja.x + caja.w * 0.2, caja.y + caja.h * 0.25);
     await p.waitForTimeout(900);
     const arriba = await inclinacion();
     if (!arriba.dentro) fallos.push('la prueba de la baldosa no tiene el ratón encima');
-    else if (arriba.plana || !(arriba.gx < 0) || !(arriba.gy < 0)) fallos.push(`la baldosa no se inclina hacia el ratón: ${JSON.stringify(arriba)}`);
+    else if (arriba.plana || !(arriba.izquierda > 1.001 && arriba.arriba > 1.001 && arriba.derecha < 0.999 && arriba.abajo < 0.999)) fallos.push(`la baldosa no se hunde bajo el ratón: ${JSON.stringify(arriba)}`);
     else if (Math.abs(arriba.gx) > 3 || Math.abs(arriba.gy) > 3) fallos.push(`la baldosa se inclina demasiado para leerla: ${JSON.stringify(arriba)}`);
+    // Un dedo sobre una baldosa (portátil táctil con ratón) no la inclina: el toque deja el «hover» pegado y se quedaría torcida.
+    await p.mouse.move(caja.x + caja.w * 0.5, caja.y + caja.h * 0.5);
+    await p.waitForTimeout(900);
+    const centrada = await inclinacion();
+    await p.evaluate(({ x, y }) => document.querySelector('.baldosa-dinos').dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientX: x, clientY: y, bubbles: true })), { x: caja.x + caja.w * 0.2, y: caja.y + caja.h * 0.25 });
+    await p.waitForTimeout(300);
+    const tocada = await inclinacion();
+    if (tocada.gx !== centrada.gx || tocada.gy !== centrada.gy) fallos.push(`un toque inclina la baldosa: ${JSON.stringify(centrada)} → ${JSON.stringify(tocada)}`);
+    // Pegado al borde, la inclinación no puede retirar la baldosa de debajo del ratón: entraría y saldría sin parar.
+    await p.evaluate(() => { window.__salidas = 0; document.querySelector('.baldosa-dinos').addEventListener('pointerleave', () => { window.__salidas++; }); });
+    for (const lado of [caja.x + caja.w - 2, caja.x + 2]) {
+      for (let i = 0; i < 6; i++) {
+        await p.mouse.move(lado, caja.y + caja.h * 0.5 + (i % 2 ? 6 : -6));
+        await p.waitForTimeout(350);
+      }
+    }
+    const enElBorde = await p.evaluate(() => ({ salidas: window.__salidas, dentro: document.querySelector('.baldosa-dinos').matches(':hover') }));
+    if (enElBorde.salidas || !enElBorde.dentro) fallos.push(`con el ratón pegado al borde la baldosa se le escapa: ${JSON.stringify(enElBorde)}`);
+    await p.evaluate(() => document.documentElement.classList.add('ligera'));
+    await p.mouse.move(caja.x + caja.w * 0.2, caja.y + caja.h * 0.25);
+    await p.waitForTimeout(900);
+    if (!(await inclinacion()).plana) fallos.push('en modo ligero la baldosa se inclina');
+    await p.evaluate(() => document.documentElement.classList.remove('ligera'));
     await p.mouse.move(caja.x + caja.w * 0.5, caja.y - 60);
     await p.waitForTimeout(1100);
     const fuera = await inclinacion();
     if (!fuera.plana) fallos.push(`al salir el ratón la baldosa se queda torcida: ${JSON.stringify(fuera)}`);
     // Podio: la barra de cada especie mide sus bajas frente a la primera.
-    const podio = await p.evaluate(async () => {
-      const lista = document.querySelector('.podio-lista');
-      if (!lista) return null;
-      lista.scrollIntoView({ block: 'center', behavior: 'instant' });
-      await new Promise(r => setTimeout(r, 2600));
-      return [...lista.children].map(li => {
-        const r = li.getBoundingClientRect(), barra = getComputedStyle(li, '::after');
-        return {
-          bajas: +li.querySelector('b').textContent.replace(/\D/g, ''), p: parseFloat(li.style.getPropertyValue('--p')),
-          escala: barra.content === 'none' ? null : new DOMMatrix(barra.transform).a, eventos: barra.pointerEvents,
-          enlace: !li.querySelector('a') || document.elementFromPoint(r.left + 30, r.bottom - 2)?.closest('a') === li.querySelector('a'),
-        };
-      });
-    });
-    if (podio && podio.length) {
-      const tope = Math.max(...podio.map(e => e.bajas));
-      for (const [i, e] of podio.entries()) {
-        const debe = e.bajas / tope;
-        if (!(Math.abs(e.p - debe) < 0.002)) fallos.push(`podio, puesto ${i + 1}: la barra dice ${e.p} y son ${e.bajas} de ${tope}`);
-        else if (e.escala === null || Math.abs(e.escala - debe) > 0.01) fallos.push(`podio, puesto ${i + 1}: la barra pintada mide ${e.escala} y debía ${debe.toFixed(3)}`);
-        if (e.eventos !== 'none' || !e.enlace) fallos.push(`podio, puesto ${i + 1}: la barra tapa el enlace`);
-      }
-    }
+    await medirPodio(p, 'con ratón');
+    await p.evaluate(() => document.documentElement.classList.add('ligera'));
+    await medirPodio(p, 'en modo ligero');
     if (errores.length) fallos.push(`errores en la página: ${errores.join('; ')}`);
     await ctx.close();
   }
   for (const [caso, opts] of [['con el dedo', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }], ['con «reducir movimiento»', { reducedMotion: 'reduce' }]]) {
     const { ctx, p } = await abrir(opts);
-    const v = await p.evaluate(() => ({
-      foco: !!document.querySelector('.foco'), inclinables: document.querySelectorAll('.baldosa.inclinable').length,
-      barras: [...document.querySelectorAll('.podio-lista li')].map(li => new DOMMatrix(getComputedStyle(li, '::after').transform).a),
-    }));
+    const v = await p.evaluate(() => ({ foco: !!document.querySelector('.foco'), inclinables: document.querySelectorAll('.baldosa.inclinable').length }));
     if (v.foco) fallos.push(`${caso} hay foco de ascua`);
     if (v.inclinables) fallos.push(`${caso} las baldosas se inclinan`);
-    if (caso !== 'con el dedo' && v.barras.length && !(v.barras[0] === 1 && v.barras.every(a => a > 0 && a <= 1))) fallos.push(`${caso} las barras del podio no están puestas: ${v.barras.join(', ')}`);
+    await medirPodio(p, caso);
+    await ctx.close();
+  }
+  {
+    // En alto contraste los adornos sobran: sin foco, sin destello, sin barras y sin el nombre de fondo del pie.
+    const { ctx, p } = await abrir({ forcedColors: 'active' });
+    const v = await p.evaluate(() => {
+      const contenido = (sel, ps) => [...document.querySelectorAll(sel)].map(e => getComputedStyle(e, ps).content);
+      return {
+        foco: [...document.querySelectorAll('.foco')].map(f => getComputedStyle(f).display),
+        barras: contenido('.podio-lista li', '::after'), destellos: contenido('.baldosa.inclinable', '::after'), pie: contenido('.pie', '::after'),
+      };
+    });
+    for (const [que, vistos] of [['el foco', v.foco], ['las barras del podio', v.barras], ['el destello de las baldosas', v.destellos], ['el nombre de fondo del pie', v.pie]]) {
+      if (!vistos.length) fallos.push(`en alto contraste la prueba no encuentra ${que}`);
+      else if (vistos.some(c => c !== 'none')) fallos.push(`en alto contraste se sigue pintando ${que}`);
+    }
     await ctx.close();
   }
   {
     const { ctx, p } = await abrir({ javaScriptEnabled: false });
     const barras = await p.evaluate(() => [...document.querySelectorAll('.podio-lista li')].map(li => new DOMMatrix(getComputedStyle(li, '::after').transform).a));
+    if (!barras.length) fallos.push('sin JavaScript la portada no tiene podio');
     if (barras.some(a => a !== 0)) fallos.push(`sin JavaScript el podio pinta barras sin medida: ${barras.join(', ')}`);
     await ctx.close();
   }
   console.log('Ambiente que sigue al ratón y barras del podio:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  return fallos.length;
+};
+// Composición: lo que, roto, deja la página entera pero peor puesta, sin ningún error. Los fondos que alternan
+// entre secciones, el pie con su línea de ascua y el nombre en contorno, la nota de las cifras a pie de su
+// fila, la baldosa de la ruta sin hueco, el entrenamiento en tres columnas y la ficha de especie en dos.
+// SOLO=composicion prueba solo esto.
+const composicion = async navegador => {
+  const fallos = [];
+  const ctx = await navegador.newContext({ viewport: { width: 1366, height: 850 } });
+  const p = await ctx.newPage();
+  const ir = async r => { await p.goto(BASE + r, { waitUntil: 'load' }); await p.waitForTimeout(300); };
+  for (const [r, ancho] of [['', 1366], ['en/', 1366], ['', 1920], ['', 2560], ['', 390]]) {
+    await p.setViewportSize({ width: ancho, height: 850 });
+    await ir(r);
+    const v = await p.evaluate(async () => {
+      const caja = e => e.getBoundingClientRect();
+      // Las cifras entran desplazadas hasta que aparecen: se miden ya en su sitio.
+      document.querySelector('.cifras')?.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 1800));
+      const secciones = [...document.querySelectorAll('.seccion')].map(s => {
+        const fondo = getComputedStyle(s).backgroundImage, sig = s.nextElementSibling;
+        return { brasa: fondo.includes('radial-gradient'), zarpazo: fondo.includes('data:image/svg'), sigueOtra: !!sig && sig.matches('.seccion') };
+      });
+      const pie = document.querySelector('.pie'), linea = getComputedStyle(pie, '::before'), nombre = getComputedStyle(pie, '::after');
+      const cifras = [...document.querySelectorAll('.cifras > li')], nota = cifras.findIndex(li => li.matches('.cifras-nota'));
+      const ruta = document.querySelector('.baldosa-ruta');
+      return {
+        secciones,
+        pie: {
+          recorta: getComputedStyle(pie).overflowY !== 'visible', arriba: parseFloat(linea.top), alto: parseFloat(linea.height), color: linea.backgroundImage, nombre: nombre.content, trazo: parseFloat(nombre.webkitTextStrokeWidth),
+          // Dónde empieza el nombre de fondo (su letra asoma 0,64 de su alto) y dónde acaba la última línea del pie.
+          nombreArriba: caja(pie).bottom - parseFloat(nombre.fontSize) * 0.64, textoAbajo: Math.max(...[...pie.querySelectorAll('a, p')].map(e => caja(e).bottom)),
+        },
+        nota: nota < 1 || nota === cifras.length - 1 ? null : {
+          arriba: caja(cifras[nota].firstElementChild).top, abajo: caja(cifras[nota].firstElementChild).bottom, ancho: caja(cifras[nota]).width, lista: caja(cifras[0].parentElement).width,
+          filaAntes: Math.max(...cifras.slice(0, nota).map(li => caja(li.lastElementChild).bottom)), filaDespues: Math.min(...cifras.slice(nota + 1).map(li => caja(li.firstElementChild).top)),
+        },
+        ruta: ruta && { texto: caja(ruta.querySelector('h3')), pasos: caja(ruta.querySelector('.baldosa-pasos')), caja: caja(ruta) },
+      };
+    });
+    if (v.secciones.length < 2) fallos.push(`/${r}: la prueba no encuentra las secciones`);
+    if (v.secciones.some(s => !s.brasa)) fallos.push(`/${r}: hay secciones sin su resplandor de fondo`);
+    if (!v.secciones.some(s => s.zarpazo)) fallos.push(`/${r}: ninguna sección lleva el zarpazo de fondo`);
+    if (v.secciones.some((s, i) => s.sigueOtra && s.zarpazo === v.secciones[i + 1].zarpazo)) fallos.push(`/${r}: dos secciones seguidas con el mismo fondo`);
+    if (!(v.pie.alto >= 1) || !v.pie.color.includes('gradient')) fallos.push(`/${r}: el pie no tiene su línea de ascua: ${JSON.stringify(v.pie)}`);
+    else if (v.pie.recorta && v.pie.arriba < 0) fallos.push(`/${r}: la línea de ascua del pie queda recortada (está ${-v.pie.arriba} px por encima de donde el pie recorta)`);
+    if (!v.pie.nombre.includes('GARRA IBÉRICA') || !(v.pie.trazo > 0)) fallos.push(`/${r}: el pie no lleva el nombre del clan en contorno: ${v.pie.nombre}`);
+    if (!v.pie.recorta) fallos.push(`/${r}: el pie no recorta el nombre de fondo, que sobresale por abajo`);
+    if (v.pie.nombreArriba < v.pie.textoAbajo) fallos.push(`/${r} a ${ancho} px: el nombre de fondo del pie se mete ${Math.round(v.pie.textoAbajo - v.pie.nombreArriba)} px bajo su última línea`);
+    if (!v.nota) fallos.push(`/${r}: la prueba no encuentra la nota de las cifras entre dos filas`);
+    else if (v.nota.arriba < v.nota.filaAntes - 1 || v.nota.abajo > v.nota.filaDespues + 1 || v.nota.ancho < v.nota.lista * 0.9) fallos.push(`/${r}: la nota de las cifras no va a lo ancho entre sus dos filas: ${JSON.stringify(v.nota)}`);
+    if (ancho !== 1366) continue;
+    if (!v.ruta) fallos.push(`/${r}: la prueba no encuentra la baldosa de la ruta`);
+    else if (v.ruta.pasos.left < v.ruta.texto.right || v.ruta.pasos.top > v.ruta.texto.bottom + 60 || v.ruta.texto.top - v.ruta.caja.top > 70) fallos.push(`/${r}: la baldosa de la ruta no lleva el texto y los pasos lado a lado, sin hueco arriba: ${JSON.stringify(v.ruta)}`);
+  }
+  await p.setViewportSize({ width: 1366, height: 850 });
+  for (const r of ['combate/', 'en/combat/']) {
+    await ir(r);
+    const trios = await p.evaluate(() => [...document.querySelectorAll('.reglamento:not(.pelea-heridas)')].filter(g => g.children.length === 3).map(g => [...g.children].map(b => { const c = b.getBoundingClientRect(); return [Math.round(c.left), Math.round(c.top)]; })));
+    if (!trios.length) fallos.push(`/${r}: la prueba no encuentra un bloque de tres`);
+    for (const t of trios) if (!(t[0][1] === t[1][1] && t[1][1] === t[2][1] && t[0][0] < t[1][0] && t[1][0] < t[2][0])) fallos.push(`/${r}: un bloque de tres no va en tres columnas: ${JSON.stringify(t)}`);
+  }
+  for (const r of ['dinosaurios/tyrannosaurus/', 'en/dinosaurs/tyrannosaurus/']) {
+    await ir(r);
+    const v = await p.evaluate(() => {
+      const caja = e => e.getBoundingClientRect();
+      const ficha = document.querySelector('.dinos:not(.dinos-plegadas) > .dino:first-child'), mut = document.querySelector('.dinos:not(.dinos-plegadas) .dino-mut');
+      if (!ficha || !mut) return null;
+      const datos = caja(ficha.querySelector('.dino-datos')), hab = caja(ficha.querySelector('.dino-sub')), lista = caja(ficha.querySelector('.dino-lista'));
+      return { datos: [datos.left, datos.right, datos.top], hab: [hab.left, hab.top], lista: lista.left, fichaAbajo: caja(ficha).bottom, mutArriba: caja(mut).top, mutColumnas: getComputedStyle(mut).columnCount, mutAncho: caja(mut).width, fichaAncho: caja(ficha).width };
+    });
+    if (!v) fallos.push(`/${r}: la prueba no encuentra la ficha y sus mutaciones`);
+    else {
+      if (!(v.hab[0] >= v.datos[1] && v.lista >= v.datos[1] && Math.abs(v.hab[1] - v.datos[2]) < 40)) fallos.push(`/${r}: la ficha no lleva los datos a un lado y las habilidades al otro: ${JSON.stringify(v)}`);
+      if (!(v.mutArriba >= v.fichaAbajo) || v.mutColumnas !== '2' || v.mutAncho < v.fichaAncho * 0.8) fallos.push(`/${r}: las mutaciones no van debajo, a lo ancho y en dos columnas: ${JSON.stringify(v)}`);
+    }
+  }
+  await ctx.close();
+  console.log('Composición (fondos, pie, cifras, ruta, combate y ficha):', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
 (async () => {
@@ -1603,6 +1747,11 @@ const ambiente = async navegador => {
   }
   if (process.env.SOLO === 'ambiente') {
     const n = await ambiente(navegador);
+    await navegador.close();
+    process.exit(n ? 1 : 0);
+  }
+  if (process.env.SOLO === 'composicion') {
+    const n = await composicion(navegador);
     await navegador.close();
     process.exit(n ? 1 : 0);
   }
@@ -3283,6 +3432,7 @@ const ambiente = async navegador => {
   malos += await transicionSaltada(navegador);
   malos += await pulido(navegador);
   malos += await ambiente(navegador);
+  malos += await composicion(navegador);
   await navegador.close();
   if (SALIDAS.length) {
     malos++;

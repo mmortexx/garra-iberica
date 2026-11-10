@@ -626,18 +626,21 @@
       bt.addEventListener('pointerleave', () => { bt.style.removeProperty('--bx'); bt.style.removeProperty('--by'); });
     });
     // Las baldosas se inclinan un poco hacia el ratón, menos cuanto más anchas, y un destello lo sigue.
+    // La inclinación crece hacia dentro y vuelve a cero en el borde: si el borde se retirase de debajo
+    // del ratón, la baldosa entraría y saldría sin parar. El 2,6 deja el máximo en 1.
+    const haciaDentro = t => t * (1 - t * t) * 2.6;
     document.querySelectorAll('.baldosa').forEach(b => {
       let r = null, medidoEn = -1;
       b.classList.add('inclinable');
       b.addEventListener('pointermove', unaVezPorFotograma(ev => {
-        if (ligera || !b.matches(':hover')) return;
+        if (ligera || ev.pointerType === 'touch' || !b.matches(':hover')) return;
         if (!r || medidoEn !== desplazamientos) { r = b.getBoundingClientRect(); medidoEn = desplazamientos; }
         const x = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height));
         const grados = Math.min(2.6, 1300 / r.width);
         b.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
         b.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
-        b.style.setProperty('--gx', ((x - 0.5) * 2 * grados).toFixed(2));
-        b.style.setProperty('--gy', ((y - 0.5) * 2 * Math.min(grados, 1.8)).toFixed(2));
+        b.style.setProperty('--gx', (haciaDentro((x - 0.5) * 2) * grados).toFixed(2));
+        b.style.setProperty('--gy', (haciaDentro((y - 0.5) * 2) * Math.min(grados, 1.8)).toFixed(2));
       }));
       b.addEventListener('pointerleave', () => { r = null; b.style.removeProperty('--gx'); b.style.removeProperty('--gy'); });
     });
@@ -654,7 +657,10 @@
       if (colocado) foco.classList.add('encendido');
       colocado = true;
     }), { passive: true });
-    raiz.addEventListener('pointerleave', () => { colocado = false; foco.classList.remove('encendido'); });
+    const apagar = () => { colocado = false; foco.classList.remove('encendido'); };
+    raiz.addEventListener('pointerleave', apagar);
+    // En reposo también se apaga del todo: al volver, el ratón puede estar en la otra punta.
+    alCambiarReposo.push(() => { if (enReposo) apagar(); });
   }
 
   // Ascuas que suben. Cada ascua es una copia de un brillo dibujado una sola vez; se crean
