@@ -1622,7 +1622,10 @@ html.ligera :is(.portada-fondo, .cabecera-fondo, .h1-marca, .latido), html.liger
     .anim .foto.revelar, .anim .marco.revelar { animation-name: telon; animation-range: entry 0% entry min(100%, 46vh); }
     @keyframes telon { from { clip-path: inset(100% 0 0 0); translate: 0 36px; } to { clip-path: inset(0); } }
     .anim .llamada .revelar { animation-name: llegar; animation-range: entry 0% cover 38%; }
-    @keyframes llegar { from { opacity: 0; scale: 1.16; filter: blur(10px); } 60% { filter: blur(0); } }
+    @keyframes llegar { from { opacity: 0; scale: 1.16; } }
+    /* El desenfoque, solo con ratón: en táctil repinta a cada paso y se come el procesador de un móvil. */
+    @media (hover: hover) and (pointer: fine) { .anim .llamada .revelar { animation-name: llegar-enfocando; } }
+    @keyframes llegar-enfocando { from { opacity: 0; scale: 1.16; filter: blur(10px); } 60% { filter: blur(0); } }
     .pie { view-timeline-name: --pie; }
     .pie::after { animation: prender linear both; animation-timeline: --pie; animation-range: entry 10% entry 100%; }
     @keyframes prender { from { -webkit-text-stroke-color: rgba(255, 92, 74, .08); translate: -50% 22%; scale: 1.06; } }

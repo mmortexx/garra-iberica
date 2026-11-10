@@ -333,11 +333,11 @@ const efectos = async navegador => {
   // Al hacer scroll: cada animación ligada al scroll depende de la página, no de una caja suya que no se
   // mueve (un overflow: hidden de más la deja clavada y no da ningún error), y de verdad avanza al bajar
   // y vuelve al subir. Lo que entra acaba entero, también al final de la página.
-  const ESPERADAS = { '': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'en/': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'caceria/': ['salir-portada', 'fondo-lento', 'aparecer', 'cartel', 'linea-seccion', 'rombo'], 'en/clan/': ['salir-portada', 'fondo-lento', 'aparecer', 'linea-seccion', 'rombo'], 'galeria/': ['salir-portada', 'fondo-lento', 'aparecer'] };
+  const ESPERADAS = { '': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'en/': ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'linea-seccion', 'rombo'], 'caceria/': ['salir-portada', 'fondo-lento', 'aparecer', 'telon', 'cartel', 'linea-seccion', 'rombo'], 'en/clan/': ['salir-portada', 'fondo-lento', 'aparecer', 'linea-seccion', 'rombo'], 'galeria/': ['salir-portada', 'fondo-lento', 'telon'] };
   for (const [aparato, opts] of [['PC', {}], ['móvil', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
     for (const [r, nombres] of Object.entries(ESPERADAS)) {
       const { ctx, p } = await abrir(r, opts);
-      const v = await p.evaluate(async () => {
+      const v = await p.evaluate(async nombres => {
         const unFotograma = () => new Promise(z => requestAnimationFrame(() => requestAnimationFrame(z)));
         const irA = async y => { scrollTo({ top: y, behavior: 'instant' }); await unFotograma(); };
         const deScroll = () => document.getAnimations().filter(a => a.timeline && a.timeline.constructor.name !== 'DocumentTimeline' && a.animationName !== 'progreso');
@@ -347,7 +347,8 @@ const efectos = async navegador => {
         const repasar = () => { for (const a of deScroll()) { vistas.add(a.animationName); if (a.timeline.source !== document.documentElement) clavadas.add(quien(a)); } };
         repasar();
         // Cada animación, con su caja a dos alturas de la pantalla: tiene que dar valores distintos.
-        for (const nombre of ['salir-portada', 'fondo-lento', 'aparecer', 'baldosa-lenta', 'cartel', 'linea-seccion', 'rombo']) {
+        // Solo las que esa página promete: en la galería, lo único que «aparece» ya está entero al cargar.
+        for (const nombre of nombres) {
           // Una que aún esté por debajo de la pantalla: la primera puede estar ya entera al cargar.
           const suyas = deScroll().filter(x => x.animationName === nombre);
           const a = suyas.find(x => x.effect.target.getBoundingClientRect().top > innerHeight * 1.2) || suyas[0];
@@ -355,7 +356,7 @@ const efectos = async navegador => {
           const caja = a.effect.target.closest('.seccion') && /linea|rombo/.test(nombre) ? a.effect.target : a.effect.target.closest('.portada, .cabecera') || a.effect.target;
           const yCaja = caja.getBoundingClientRect().top + scrollY;
           const alturas = /salir|fondo/.test(nombre) ? [yCaja + caja.offsetHeight * .3, yCaja + caja.offsetHeight * .9]
-            : /aparecer|linea|rombo/.test(nombre) ? [yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .18) * .25, yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .3) * .85]
+            : /aparecer|telon|linea|rombo/.test(nombre) ? [yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .18) * .25, yCaja - innerHeight + Math.min(caja.offsetHeight, innerHeight * .3) * .85]
               : [yCaja - innerHeight * .7, yCaja - innerHeight * .1];
           await irA(alturas[0]);
           const uno = avance(a);
@@ -372,7 +373,7 @@ const efectos = async navegador => {
         await new Promise(z => setTimeout(z, 1400));
         const a_medias = [...document.querySelectorAll('.revelar')].filter(el => parseFloat(getComputedStyle(el).opacity) < .99).map(el => el.className);
         return { clavadas: [...clavadas], vistas: [...vistas], quietas, a_medias, sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth };
-      });
+      }, nombres);
       // El cartel de la Cacería en el móvil va quieto a propósito: el zoom cortaría las letras.
       const faltan = nombres.filter(n => !v.vistas.includes(n) && !(n === 'cartel' && aparato === 'móvil'));
       const lugar = `${aparato} /${r}`;
