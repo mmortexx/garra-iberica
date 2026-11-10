@@ -9,7 +9,7 @@
 // vídeo ligero en el móvil,
 // hora de la Cacería en cada zona, efectos (menú al cerrarse, bruma, arañazos, fotos, vídeos, comparativa),
 // contraste del texto sobre fotos, tamaño para pulsar e iconos en el alto contraste de Windows, ventanas grandes,
-// scroll sin reaccionar al ratón, foco de ascua, baldosas que se inclinan, barras del podio y cifras que cuentan,
+// scroll sin reaccionar al ratón, nada que siga al ratón, barras del podio, cifras que cuentan y efectos atados al scroll,
 // composición (fondos de sección, pie, cifras, baldosa de la ruta, columnas de combate y de la ficha de especie,
 // barras de la comparativa y marca del menú a pantalla completa),
 // y auditoría de accesibilidad con axe-core en todas las páginas, con lo plegado abierto, el menú y el visor.
@@ -722,9 +722,9 @@ const imprimir = async navegador => {
       return {
         anim: document.documentElement.classList.contains('anim'),
         malos: [...malos],
-        ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra, .foco')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
-        // Adornos pintados con ::after: en papel, ni barras del podio, ni destello de las baldosas, ni el nombre de fondo del pie.
-        adornos: [['.podio-lista li', 'barras del podio', ''], ['.baldosa.inclinable', 'destello de las baldosas', ''], ['.pie', 'nombre de fondo del pie', ''], ['.comparar-lista dd > span', 'barras de la comparativa', 'dinosaurios/']].map(([sel, que, donde]) => {
+        ambiente: [...document.querySelectorAll('.ascuas, .bruma, .barra')].filter(e => getComputedStyle(e).display !== 'none').map(quien),
+        // Adornos pintados con ::after: en papel, ni barras del podio ni el nombre de fondo del pie.
+        adornos: [['.podio-lista li', 'barras del podio', ''], ['.pie', 'nombre de fondo del pie', ''], ['.comparar-lista dd > span', 'barras de la comparativa', 'dinosaurios/']].map(([sel, que, donde]) => {
           const suyos = [...document.querySelectorAll(sel)];
           return [que, suyos.length, suyos.filter(e => getComputedStyle(e, '::after').content !== 'none').length, donde];
         }),
@@ -1431,9 +1431,9 @@ const ahoraToca = async navegador => {
   console.log('Ruta de logros, «Ahora toca»:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
-// Lo que responde al ratón y a los datos sin decir nada si se rompe: el foco de ascua que lo sigue por detrás
-// del contenido, las baldosas que se inclinan hacia él y las barras del podio. Con el dedo, con «reducir
-// movimiento» y en modo ligero no hay foco ni inclinación; las barras son un dato y se quedan. SOLO=ambiente.
+// Nada sigue al ratón (lo pidió el clan: ni foco, ni baldosas que se inclinan, ni botones que se dejan atraer, ni
+// luz que lo persigue): moverlo no deja marcas ni mueve nada. Y lo que sale de los datos sin decir nada si se
+// rompe: las barras del podio y las cifras que cuentan. SOLO=ambiente.
 const ambiente = async navegador => {
   const fallos = [];
   const abrir = async (opts = {}) => {
@@ -1445,16 +1445,6 @@ const ambiente = async navegador => {
     await p.waitForTimeout(300);
     return { ctx, p, errores };
   };
-  const foco = p => p.evaluate(() => {
-    const f = document.querySelector('.foco');
-    if (!f) return null;
-    const cs = getComputedStyle(f), r = f.getBoundingClientRect();
-    return {
-      oculto: f.getAttribute('aria-hidden'), eventos: cs.pointerEvents, posicion: cs.position, capa: cs.zIndex, ver: cs.display, opacidad: +cs.opacity,
-      cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2), lado: Math.round(r.width),
-      ancho: document.documentElement.scrollWidth - document.documentElement.clientWidth, alto: document.documentElement.scrollHeight,
-    };
-  });
   // Baja hasta el podio, espera a que crezcan las barras y compara cada una con sus bajas.
   const medirPodio = async (p, caso) => {
     const podio = await p.evaluate(async () => {
@@ -1482,94 +1472,35 @@ const ambiente = async navegador => {
   };
   {
     const { ctx, p, errores } = await abrir();
-    const quieto = await foco(p);
-    if (!quieto) fallos.push('con ratón no hay foco de ascua');
-    else {
-      if (quieto.oculto !== 'true' || quieto.eventos !== 'none' || quieto.posicion !== 'fixed' || quieto.capa !== '-1') fallos.push(`el foco no es un adorno tras el contenido: ${JSON.stringify(quieto)}`);
-      if (quieto.opacidad !== 0) fallos.push('el foco se ve antes de mover el ratón');
-      await p.mouse.move(400, 300);
-      await p.mouse.move(420, 320);
-      await p.waitForTimeout(900);
-      const movido = await foco(p);
-      if (!(movido.opacidad > 0.9)) fallos.push(`al mover el ratón el foco no se enciende (opacidad ${movido.opacidad})`);
-      if (Math.abs(movido.cx - 420) > 3 || Math.abs(movido.cy - 320) > 3) fallos.push(`el foco no queda bajo el ratón: ${movido.cx}, ${movido.cy}`);
-      if (movido.lado < 400) fallos.push(`el foco mide ${movido.lado} px: no se nota`);
-      if (await p.evaluate(() => document.elementFromPoint(420, 320).closest('.foco') !== null)) fallos.push('el foco tapa lo que hay debajo del ratón');
-      await p.mouse.move(1362, 846);
-      await p.waitForTimeout(600);
-      const esquina = await foco(p);
-      if (esquina.ancho > 0) fallos.push(`con el ratón en la esquina la página se ensancha ${esquina.ancho} px`);
-      await p.evaluate(() => dispatchEvent(new Event('blur')));
-      await p.waitForTimeout(900);
-      if ((await foco(p)).opacidad !== 0) fallos.push('en reposo el foco sigue encendido');
-      // Al volver, el ratón puede estar en la otra punta: el foco aparece allí, no llega cruzando la pantalla.
-      await p.evaluate(() => dispatchEvent(new Event('focus')));
-      await p.mouse.move(200, 600);
-      await p.waitForTimeout(100);
-      const volviendo = await foco(p);
-      if (volviendo.opacidad > 0.02 && Math.hypot(volviendo.cx - 200, volviendo.cy - 600) > 40) fallos.push(`al volver del reposo el foco cruza la pantalla: se ve en ${volviendo.cx}, ${volviendo.cy} con el ratón en 200, 600`);
-      await p.mouse.move(220, 620);
-      await p.waitForTimeout(900);
-      const vuelto = await foco(p);
-      if (!(vuelto.opacidad > 0.9) || Math.abs(vuelto.cx - 220) > 3 || Math.abs(vuelto.cy - 620) > 3) fallos.push(`al volver del reposo el foco no se enciende bajo el ratón: ${JSON.stringify(vuelto)}`);
-      await p.evaluate(() => document.documentElement.dispatchEvent(new PointerEvent('pointerleave')));
-      await p.waitForTimeout(900);
-      if ((await foco(p)).opacidad !== 0) fallos.push('con el ratón fuera de la ventana el foco sigue encendido');
-      await p.evaluate(() => document.documentElement.classList.add('ligera'));
-      if ((await foco(p)).ver !== 'none') fallos.push('en modo ligero el foco se sigue pintando');
-      await p.evaluate(() => document.documentElement.classList.remove('ligera'));
-    }
-    // Baldosas: se inclinan hacia el ratón, poco, y al salir vuelven a su sitio.
-    const caja = await p.evaluate(() => {
-      const b = document.querySelector('.baldosa-dinos'), r = b.getBoundingClientRect();
-      scrollTo({ top: r.top + scrollY - 200, behavior: 'instant' });
-      const q = b.getBoundingClientRect();
-      return { x: q.left, y: q.top, w: q.width, h: q.height };
-    });
-    await p.waitForTimeout(700);
-    // Profundidad del centro de cada lado: más de 1, ese lado se aleja de quien mira; menos, se acerca.
-    const inclinacion = () => p.evaluate(() => {
-      const b = document.querySelector('.baldosa-dinos'), m = new DOMMatrix(getComputedStyle(b).transform), w = b.offsetWidth / 2, h = b.offsetHeight / 2;
-      const fondo = (x, y) => +m.transformPoint(new DOMPoint(x, y)).w.toFixed(4);
-      return {
-        plana: m.isIdentity, izquierda: fondo(-w, 0), derecha: fondo(w, 0), arriba: fondo(0, -h), abajo: fondo(0, h),
-        gx: parseFloat(b.style.getPropertyValue('--gx')) || 0, gy: parseFloat(b.style.getPropertyValue('--gy')) || 0, dentro: b.matches(':hover'),
-      };
-    });
-    await p.mouse.move(caja.x + caja.w * 0.5, caja.y + caja.h * 0.5);
-    await p.mouse.move(caja.x + caja.w * 0.2, caja.y + caja.h * 0.25);
-    await p.waitForTimeout(900);
-    const arriba = await inclinacion();
-    if (!arriba.dentro) fallos.push('la prueba de la baldosa no tiene el ratón encima');
-    else if (arriba.plana || !(arriba.izquierda > 1.001 && arriba.arriba > 1.001 && arriba.derecha < 0.999 && arriba.abajo < 0.999)) fallos.push(`la baldosa no se hunde bajo el ratón: ${JSON.stringify(arriba)}`);
-    else if (Math.abs(arriba.gx) > 3 || Math.abs(arriba.gy) > 3) fallos.push(`la baldosa se inclina demasiado para leerla: ${JSON.stringify(arriba)}`);
-    // Un dedo sobre una baldosa (portátil táctil con ratón) no la inclina: el toque deja el «hover» pegado y se quedaría torcida.
-    await p.mouse.move(caja.x + caja.w * 0.5, caja.y + caja.h * 0.5);
-    await p.waitForTimeout(900);
-    const centrada = await inclinacion();
-    await p.evaluate(({ x, y }) => document.querySelector('.baldosa-dinos').dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientX: x, clientY: y, bubbles: true })), { x: caja.x + caja.w * 0.2, y: caja.y + caja.h * 0.25 });
-    await p.waitForTimeout(300);
-    const tocada = await inclinacion();
-    if (tocada.gx !== centrada.gx || tocada.gy !== centrada.gy) fallos.push(`un toque inclina la baldosa: ${JSON.stringify(centrada)} → ${JSON.stringify(tocada)}`);
-    // Pegado al borde, la inclinación no puede retirar la baldosa de debajo del ratón: entraría y saldría sin parar.
-    await p.evaluate(() => { window.__salidas = 0; document.querySelector('.baldosa-dinos').addEventListener('pointerleave', () => { window.__salidas++; }); });
-    for (const lado of [caja.x + caja.w - 2, caja.x + 2]) {
-      for (let i = 0; i < 6; i++) {
-        await p.mouse.move(lado, caja.y + caja.h * 0.5 + (i % 2 ? 6 : -6));
-        await p.waitForTimeout(350);
+    // Dentro de cada cosa se pasa el ratón por dos puntos: en los dos tiene que estar igual puesta.
+    const mirar = sel => p.evaluate(sel => {
+      const e = document.querySelector(sel), r = e.getBoundingClientRect(), antes = getComputedStyle(e, '::before'), despues = getComputedStyle(e, '::after');
+      // La foto de la portada se acerca sola durante 22 s: de ella se mira el desplazamiento, no la caja.
+      return (sel === '.portada-fondo' ? getComputedStyle(e).translate : [r.left, r.top + scrollY, r.width, r.height].map(n => n.toFixed(1)).join(' ')) + ' | ' + getComputedStyle(e).transform + ' | ' + antes.backgroundImage + ' | ' + despues.backgroundImage;
+    }, sel);
+    for (const [sobre, mide] of [['.portada', '.portada-fondo'], ['.portada .boton', '.portada .boton'], ['.ficha.luz', '.ficha.luz'], ['.baldosa-dinos', '.baldosa-dinos']]) {
+      const caja = await p.evaluate(sel => {
+        const e = document.querySelector(sel);
+        if (!e) return null;
+        e.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const r = e.getBoundingClientRect();
+        return { x: r.left, y: Math.max(r.top, 70), w: r.width, h: Math.min(r.bottom, innerHeight) - Math.max(r.top, 70) };
+      }, sobre);
+      if (!caja) { fallos.push(`la prueba no encuentra ${sobre}`); continue; }
+      const vistas = [];
+      for (const [fx, fy] of [[0.5, 0.5], [0.2, 0.3], [0.8, 0.7]]) {
+        await p.mouse.move(caja.x + caja.w * fx, caja.y + caja.h * fy);
+        await p.waitForTimeout(900);
+        if (fx !== 0.5) vistas.push(await mirar(mide));
       }
+      if (!await p.evaluate(sel => document.querySelector(sel).matches(':hover'), sobre)) fallos.push(`la prueba no tiene el ratón sobre ${sobre}`);
+      if (vistas[0] !== vistas[1]) fallos.push(`${sobre} sigue al ratón: ${vistas[0].slice(0, 120)} → ${vistas[1].slice(0, 120)}`);
     }
-    const enElBorde = await p.evaluate(() => ({ salidas: window.__salidas, dentro: document.querySelector('.baldosa-dinos').matches(':hover') }));
-    if (enElBorde.salidas || !enElBorde.dentro) fallos.push(`con el ratón pegado al borde la baldosa se le escapa: ${JSON.stringify(enElBorde)}`);
-    await p.evaluate(() => document.documentElement.classList.add('ligera'));
-    await p.mouse.move(caja.x + caja.w * 0.2, caja.y + caja.h * 0.25);
-    await p.waitForTimeout(900);
-    if (!(await inclinacion()).plana) fallos.push('en modo ligero la baldosa se inclina');
-    await p.evaluate(() => document.documentElement.classList.remove('ligera'));
-    await p.mouse.move(caja.x + caja.w * 0.5, caja.y - 60);
-    await p.waitForTimeout(1100);
-    const fuera = await inclinacion();
-    if (!fuera.plana) fallos.push(`al salir el ratón la baldosa se queda torcida: ${JSON.stringify(fuera)}`);
+    const rastro = await p.evaluate(() => ({
+      foco: document.querySelectorAll('.foco').length, marcados: document.querySelectorAll('.inclinable, .magnetico').length,
+      puestos: [...document.querySelectorAll('.portada, .boton, .luz, .baldosa')].filter(e => ['--px', '--py', '--bx', '--by', '--mx', '--my', '--gx', '--gy'].some(v => e.style.getPropertyValue(v))).length,
+    }));
+    if (rastro.foco || rastro.marcados || rastro.puestos) fallos.push(`mover el ratón deja rastro en la página: ${JSON.stringify(rastro)}`);
     // Podio: la barra de cada especie mide sus bajas frente a la primera.
     await medirPodio(p, 'con ratón');
     await p.evaluate(() => document.documentElement.classList.add('ligera'));
@@ -1579,23 +1510,17 @@ const ambiente = async navegador => {
   }
   for (const [caso, opts] of [['con el dedo', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }], ['con «reducir movimiento»', { reducedMotion: 'reduce' }]]) {
     const { ctx, p } = await abrir(opts);
-    const v = await p.evaluate(() => ({ foco: !!document.querySelector('.foco'), inclinables: document.querySelectorAll('.baldosa.inclinable').length }));
-    if (v.foco) fallos.push(`${caso} hay foco de ascua`);
-    if (v.inclinables) fallos.push(`${caso} las baldosas se inclinan`);
     await medirPodio(p, caso);
     await ctx.close();
   }
   {
-    // En alto contraste los adornos sobran: sin foco, sin destello, sin barras y sin el nombre de fondo del pie.
+    // En alto contraste los adornos sobran: sin barras y sin el nombre de fondo del pie.
     const { ctx, p } = await abrir({ forcedColors: 'active' });
     const v = await p.evaluate(() => {
       const contenido = (sel, ps) => [...document.querySelectorAll(sel)].map(e => getComputedStyle(e, ps).content);
-      return {
-        foco: [...document.querySelectorAll('.foco')].map(f => getComputedStyle(f).display),
-        barras: contenido('.podio-lista li', '::after'), destellos: contenido('.baldosa.inclinable', '::after'), pie: contenido('.pie', '::after'),
-      };
+      return { barras: contenido('.podio-lista li', '::after'), pie: contenido('.pie', '::after') };
     });
-    for (const [que, vistos] of [['el foco', v.foco], ['las barras del podio', v.barras], ['el destello de las baldosas', v.destellos], ['el nombre de fondo del pie', v.pie]]) {
+    for (const [que, vistos] of [['las barras del podio', v.barras], ['el nombre de fondo del pie', v.pie]]) {
       if (!vistos.length) fallos.push(`en alto contraste la prueba no encuentra ${que}`);
       else if (vistos.some(c => c !== 'none')) fallos.push(`en alto contraste se sigue pintando ${que}`);
     }
@@ -1650,7 +1575,7 @@ const ambiente = async navegador => {
     if (barras.some(a => a !== 0)) fallos.push(`sin JavaScript el podio pinta barras sin medida: ${barras.join(', ')}`);
     await ctx.close();
   }
-  console.log('Ambiente que sigue al ratón y barras del podio:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  console.log('Nada sigue al ratón; podio y cifras:', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
 // Composición: lo que, roto, deja la página entera pero peor puesta, sin ningún error. Los fondos que alternan
@@ -1673,7 +1598,7 @@ const composicion = async navegador => {
       await new Promise(r => setTimeout(r, 1800));
       const secciones = [...document.querySelectorAll('.seccion')].map(s => {
         const fondo = getComputedStyle(s).backgroundImage, sig = s.nextElementSibling;
-        return { brasa: fondo.includes('radial-gradient'), zarpazo: fondo.includes('data:image/svg'), sigueOtra: !!sig && sig.matches('.seccion') };
+        return { luz: fondo.includes('gradient'), dibujo: fondo.includes('url('), sigueOtra: !!sig && sig.matches('.seccion') };
       });
       const pie = document.querySelector('.pie'), linea = getComputedStyle(pie, '::before'), nombre = getComputedStyle(pie, '::after');
       const cifras = [...document.querySelectorAll('.cifras > li')], nota = cifras.findIndex(li => li.matches('.cifras-nota'));
@@ -1693,9 +1618,10 @@ const composicion = async navegador => {
       };
     });
     if (v.secciones.length < 2) fallos.push(`/${r}: la prueba no encuentra las secciones`);
-    if (v.secciones.some(s => !s.brasa)) fallos.push(`/${r}: hay secciones sin su resplandor de fondo`);
-    if (!v.secciones.some(s => s.zarpazo)) fallos.push(`/${r}: ninguna sección lleva el zarpazo de fondo`);
-    if (v.secciones.some((s, i) => s.sigueOtra && s.zarpazo === v.secciones[i + 1].zarpazo)) fallos.push(`/${r}: dos secciones seguidas con el mismo fondo`);
+    // Fondos limpios: ningún dibujo detrás del texto (las garras de fondo se quitaron a petición del clan) y planos que alternan.
+    if (v.secciones.some(s => s.dibujo)) fallos.push(`/${r}: hay secciones con un dibujo de fondo`);
+    if (!v.secciones.some(s => s.luz)) fallos.push(`/${r}: ninguna sección lleva su luz de fondo`);
+    if (v.secciones.some((s, i) => s.sigueOtra && s.luz === v.secciones[i + 1].luz)) fallos.push(`/${r}: dos secciones seguidas con el mismo fondo`);
     if (!(v.pie.alto >= 1) || !v.pie.color.includes('gradient')) fallos.push(`/${r}: el pie no tiene su línea de ascua: ${JSON.stringify(v.pie)}`);
     else if (v.pie.recorta && v.pie.arriba < 0) fallos.push(`/${r}: la línea de ascua del pie queda recortada (está ${-v.pie.arriba} px por encima de donde el pie recorta)`);
     if (!v.pie.nombre.includes('GARRA IBÉRICA') || !(v.pie.trazo > 0)) fallos.push(`/${r}: el pie no lleva el nombre del clan en contorno: ${v.pie.nombre}`);
@@ -1769,7 +1695,53 @@ const composicion = async navegador => {
     else if (v.abajo > v.primero || v.derecha > v.cerrar) fallos.push(`menú ${caso}: la marca pisa el primer enlace o el botón de cerrar: ${JSON.stringify(v)}`);
     await c.close();
   }
-  console.log('Composición (fondos, pie, cifras, ruta, combate, ficha, comparativa y menú):', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
+  // Tres efectos atados al scroll: las fotos se descubren como un telón, la llamada final llega desenfocada y el
+  // nombre del pie se enciende al tocar fondo. A medio camino se nota; al terminar, todo queda entero y nítido;
+  // con «reducir movimiento» no hay nada que esperar.
+  for (const [caso, opts] of [['con movimiento', {}], ['con «reducir movimiento»', { reducedMotion: 'reduce' }]]) {
+    const c2 = await navegador.newContext({ viewport: { width: 1366, height: 850 }, ...opts });
+    const q = await c2.newPage();
+    const mueve = caso === 'con movimiento';
+    const medir = (sel, donde, pseudo) => q.evaluate(async ([sel, donde, pseudo]) => {
+      const e = document.querySelector(sel);
+      if (!e) return null;
+      const arriba = e.getBoundingClientRect().top + scrollY;
+      // «entrando»: asoma 60 px por abajo. «dentro»: entero a la vista o, si no cabe, con la página al fondo.
+      scrollTo({ top: donde === 'entrando' ? arriba - innerHeight + 60 : Math.min(arriba - innerHeight * 0.3, document.documentElement.scrollHeight), behavior: 'instant' });
+      if (donde === 'fondo') scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 400));
+      const cs = getComputedStyle(e, pseudo || undefined);
+      return { recorte: cs.clipPath, opacidad: +cs.opacity, filtro: cs.filter, escala: cs.scale, trazo: +(cs.webkitTextStrokeColor.match(/[\d.]+/g) || [])[3] };
+    }, [sel, donde, pseudo]);
+    await q.goto(BASE + 'galeria/', { waitUntil: 'load' });
+    await q.waitForTimeout(300);
+    const foto = '.foto.revelar:nth-of-type(8)';
+    const fotoEntra = await medir(foto, 'entrando'), fotoDentro = await medir(foto, 'dentro');
+    if (!fotoEntra) fallos.push(`${caso}: la prueba no encuentra la foto de la galería`);
+    else {
+      const tapada = /inset\((?!0px\))/.test(fotoEntra.recorte);
+      if (mueve && !tapada) fallos.push(`${caso}: la foto no se descubre como un telón al entrar: ${fotoEntra.recorte}`);
+      if (!mueve && tapada) fallos.push(`${caso}: la foto entra recortada: ${fotoEntra.recorte}`);
+      if (/inset\((?!0px\))/.test(fotoDentro.recorte) || fotoDentro.opacidad !== 1) fallos.push(`${caso}: la foto, ya dentro, se queda a medio descubrir: ${JSON.stringify(fotoDentro)}`);
+    }
+    await q.goto(BASE, { waitUntil: 'load' });
+    await q.waitForTimeout(300);
+    const llamada = '.llamada .revelar';
+    const llamaEntra = await medir(llamada, 'entrando'), llamaDentro = await medir(llamada, 'dentro');
+    if (!llamaEntra) fallos.push(`${caso}: la prueba no encuentra la llamada final`);
+    else {
+      if (mueve && !(llamaEntra.opacidad < 0.5 && llamaEntra.filtro.includes('blur'))) fallos.push(`${caso}: la llamada final no llega desenfocada: ${JSON.stringify(llamaEntra)}`);
+      if (!mueve && llamaEntra.opacidad !== 1) fallos.push(`${caso}: la llamada final entra apagada: ${JSON.stringify(llamaEntra)}`);
+      if (llamaDentro.opacidad !== 1 || /blur\((?!0px)/.test(llamaDentro.filtro) || !['none', '1'].includes(llamaDentro.escala)) fallos.push(`${caso}: la llamada final, ya dentro, no queda nítida y a su tamaño: ${JSON.stringify(llamaDentro)}`);
+    }
+    const pieEntra = await medir('.pie', 'entrando', '::after'), pieFondo = await medir('.pie', 'fondo', '::after');
+    if (mueve && !(pieEntra.trazo < 0.2)) fallos.push(`${caso}: el nombre del pie ya está encendido al asomar (trazo ${pieEntra.trazo})`);
+    if (!(pieFondo.trazo > 0.3)) fallos.push(`${caso}: al tocar fondo el nombre del pie no queda encendido (trazo ${pieFondo.trazo})`);
+    await q.evaluate(() => document.documentElement.classList.add('ligera'));
+    if ((await q.evaluate(() => getComputedStyle(document.querySelector('.pie'), '::after').animationName)) !== 'none') fallos.push(`${caso}: en modo ligero el nombre del pie sigue animado`);
+    await c2.close();
+  }
+  console.log('Composición (fondos, pie, cifras, ruta, combate, ficha, comparativa, menú y efectos de scroll):', fallos.length ? `${fallos.length} fallos\n  ${fallos.join('\n  ')}` : 'bien');
   return fallos.length;
 };
 (async () => {
