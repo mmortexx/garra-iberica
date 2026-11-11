@@ -1616,7 +1616,7 @@ const composicion = async navegador => {
           arriba: caja(cifras[nota].firstElementChild).top, abajo: caja(cifras[nota].firstElementChild).bottom, ancho: caja(cifras[nota]).width, lista: caja(cifras[0].parentElement).width,
           filaAntes: Math.max(...cifras.slice(0, nota).map(li => caja(li.lastElementChild).bottom)), filaDespues: Math.min(...cifras.slice(nota + 1).map(li => caja(li.firstElementChild).top)),
         },
-        ruta: ruta && { texto: caja(ruta.querySelector('h3')), pasos: caja(ruta.querySelector('.baldosa-pasos')), caja: caja(ruta) },
+        ruta: ruta && { texto: caja(ruta.querySelector(':scope > div')), pasos: caja(ruta.querySelector('.baldosa-pasos')), caja: caja(ruta) },
       };
     });
     if (v.secciones.length < 2) fallos.push(`/${r}: la prueba no encuentra las secciones`);
@@ -1634,7 +1634,10 @@ const composicion = async navegador => {
     if (ancho !== 1366) continue;
     if (!v.ruta) fallos.push(`/${r}: la prueba no encuentra la baldosa de la ruta`);
     // La ruta es ahora una escena a pantalla completa: el contenido va abajo, sobre el velo, no pegado arriba.
-    else if (v.ruta.pasos.left < v.ruta.texto.right || v.ruta.pasos.top > v.ruta.texto.bottom + 60 || v.ruta.caja.bottom - Math.max(v.ruta.texto.bottom, v.ruta.pasos.bottom) > 160) fallos.push(`/${r}: la escena de la ruta no lleva el texto y los pasos lado a lado, asentados abajo: ${JSON.stringify(v.ruta)}`);
+    // Se mide la columna de texto entera (título y párrafo), no solo el título: los pasos se asientan abajo, junto al
+    // párrafo, y cuánto quedan por debajo del título depende de las líneas que ocupe el párrafo (en inglés y con otra
+    // letra son más). Lo que no puede pasar es que caigan debajo de la columna.
+    else if (v.ruta.pasos.left < v.ruta.texto.right || v.ruta.pasos.top >= v.ruta.texto.bottom || v.ruta.caja.bottom - Math.max(v.ruta.texto.bottom, v.ruta.pasos.bottom) > 160) fallos.push(`/${r}: la escena de la ruta no lleva el texto y los pasos lado a lado, asentados abajo: ${JSON.stringify(v.ruta)}`);
   }
   await p.setViewportSize({ width: 1366, height: 850 });
   for (const r of ['combate/', 'en/combat/']) {
