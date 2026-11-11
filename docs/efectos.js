@@ -36,6 +36,14 @@
   };
   addEventListener('hashchange', abrirNombrado);
   abrirNombrado();
+  // En la primera visita, lo que llega después (la comparativa, las fotos) mueve la página mientras dura el salto
+  // suave y la ficha quedaba fuera de la pantalla: al terminar de cargar se vuelve a ella, salvo que ya se haya tocado.
+  if (document.readyState !== 'complete' && location.hash) {
+    let tocado = false;
+    const tocar = () => { tocado = true; };
+    ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(e => addEventListener(e, tocar, { once: true, passive: true }));
+    addEventListener('load', () => { if (!tocado) abrirNombrado(); }, { once: true });
+  }
   // Un enlace a lo que ya nombra la dirección no da «hashchange»: si esa respuesta se cerró a mano, se abre igual.
   document.addEventListener('click', e => {
     const a = !e.defaultPrevented && e.target.closest?.('a[href*="#"]');
