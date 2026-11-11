@@ -2809,7 +2809,8 @@ const composicion = async navegador => {
     const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
     const p = await ctx.newPage();
     await p.goto(BASE + r, { waitUntil: 'load' });
-    await p.evaluate(() => document.querySelector('.mosaico').scrollIntoView({ behavior: 'instant' }));
+    // La galería es la última escena, a varias pantallas del principio: se llega hasta ella.
+    await p.evaluate(() => document.querySelector('.baldosa-galeria').scrollIntoView({ behavior: 'instant' }));
     // Hasta 10 s: en una máquina cargada 2,5 s no siempre bastan, y la tira tarda más en deslizarlas.
     await p.waitForFunction(() => [...document.querySelectorAll('.tira img')].every(i => i.complete && i.naturalWidth), null, { timeout: 10000 }).catch(() => {});
     const sin = await p.evaluate(() => [...document.querySelectorAll('.tira img')].filter(i => !(i.complete && i.naturalWidth)).map(i => i.getAttribute('src').split('/').pop()));
@@ -2893,7 +2894,9 @@ const composicion = async navegador => {
       // se queda en su fila, plegada, y se abre al pulsarla.
       const ficha = await ctx.newPage();
       await ficha.goto(`${BASE}${r}#triceratops`, { waitUntil: 'load' });
-      await ficha.waitForTimeout(1500);
+      // El salto es suave y la página, más larga: se espera a que llegue en vez de un tiempo fijo.
+      await ficha.waitForFunction(() => { const t = document.getElementById('triceratops').getBoundingClientRect().top; return t >= -2 && t < innerHeight; }, null, { timeout: 8000 }).catch(() => {});
+      await ficha.waitForTimeout(300);
       const vista = await ficha.evaluate(() => {
         const d = document.getElementById('triceratops'), c = d.getBoundingClientRect();
         return { abierta: d.open, arriba: c.top, ve: c.top >= -2 && c.top < innerHeight, cerradas: document.querySelectorAll('details.dino:not([open])').length, total: document.querySelectorAll('details.dino').length, alto: document.documentElement.scrollHeight };
@@ -3036,7 +3039,8 @@ const composicion = async navegador => {
     const p = await ctx.newPage();
     await p.goto(BASE + inicio, { waitUntil: 'load' });
     const [g, c] = await p.evaluate(() => ['.baldosa-dinos', '.baldosa-caceria'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return { izq: r.left, arriba: r.top }; }));
-    if (!(g.izq < c.izq) || Math.abs(g.arriba - c.arriba) > 1) fallos.push(`en ancho, guía y Cacería descolocadas (${JSON.stringify([g, c])})`);
+    // Portada de cine: cada parte es una escena a todo el ancho, una bajo otra, con la Cacería la primera.
+    if (g.izq !== 0 || c.izq !== 0 || !(c.arriba < g.arriba)) fallos.push(`en ancho, guía y Cacería descolocadas (${JSON.stringify([g, c])})`);
     await ctx.close();
     if (fallos.length) malos++;
     console.log(ruta(inicio), 'botón principal a la vista y mosaico en su sitio:', fallos.length ? fallos.join('; ') : 'bien');

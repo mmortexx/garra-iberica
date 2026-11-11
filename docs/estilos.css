@@ -2074,7 +2074,7 @@ details .sesion-cuerpo p, details .sesion-cuerpo li { padding: 0; }
     .portada::before {
       background:
         linear-gradient(0deg, var(--fondo) 0%, rgba(6, 6, 6, .86) 30%, rgba(6, 6, 6, .1) 64%, rgba(6, 6, 6, .42) 100%),
-        linear-gradient(90deg, rgba(6, 6, 6, .6), transparent 55%);
+        linear-gradient(90deg, rgba(6, 6, 6, .74), transparent 60%);
     }
     .portada .h1-marca { font-size: min(16rem, calc((100vw - 2 * var(--margen)) / 5.9), 32vh); line-height: 1.04; margin-top: 0; }
     .portada .h1-sub, .portada .h1-sub:lang(en) { font-size: min(2.3rem, calc((100vw - 2 * var(--margen)) / 19.8)); margin-top: .2rem; }
