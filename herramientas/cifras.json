@@ -1,17 +1,17 @@
 {
  "fecha": "2026-11-15",
- "bajas": 1471,
- "horas": 3395.1,
- "misiones": 4573,
+ "bajas": 1481,
+ "horas": 3418.0,
+ "misiones": 4649,
  "jugadores": 32,
  "especies": [
   {
    "name": "Tyrannosaurus",
-   "kills": 266
+   "kills": 267
   },
   {
    "name": "Triceratops",
-   "kills": 233
+   "kills": 238
   },
   {
    "name": "Carnotaurus",
@@ -19,11 +19,11 @@
   },
   {
    "name": "Allosaurus",
-   "kills": 190
+   "kills": 192
   },
   {
    "name": "Deinosuchus",
-   "kills": 148
+   "kills": 150
   },
   {
    "name": "Pachycephalosaurus",
